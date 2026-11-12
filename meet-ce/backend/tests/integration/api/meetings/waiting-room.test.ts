@@ -359,7 +359,7 @@ describe('Waiting room', () => {
 
 			const tooMany = await admitFromWaitingRoom(roomId, [ana.participantIdentity, bob.participantIdentity]);
 			expect(tooMany.status).toBe(409);
-			expect(tooMany.body.error).toBe('not_enough_places');
+			expect(tooMany.body).toMatchObject({ error: 'not_enough_places', availablePlaces: 1 });
 			expect(await waiting(roomId)).toEqual(['Ana', 'Bob']);
 		});
 

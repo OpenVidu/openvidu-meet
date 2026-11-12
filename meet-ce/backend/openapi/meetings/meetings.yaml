@@ -516,11 +516,10 @@
             | `["ana-a1b2c3", "ben_smith"]` | Exactly the ones listed, all or none |
 
             A decision on named participants applies to all of them or to none: it answers `404`, naming the first
-            identity that no longer waits, and admits nobody, or `409` when the participants named outnumber the free
-            places of the meeting (see `availablePlaces` of
-            [`participantWaitingList`](#/operations/participantWaitingList)), which count the participants admitted
-            who have not joined yet. An empty list and a repeated identity are rejected with a
-            `422`: an empty list is never read as everyone waiting.
+            identity that no longer waits, and admits nobody, or `409` with the free places in `availablePlaces` when
+            the participants named outnumber them, counting the participants admitted who have not joined yet, as
+            `availablePlaces` of [`participantWaitingList`](#/operations/participantWaitingList) does. An empty list
+            and a repeated identity are rejected with a `422`: an empty list is never read as everyone waiting.
 
             Admitting everyone waiting never answers `409` for the places: it admits the first waiting, in arrival
             order, up to the free places and leaves the rest waiting, in their place.

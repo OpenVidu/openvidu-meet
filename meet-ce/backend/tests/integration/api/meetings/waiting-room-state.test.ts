@@ -211,7 +211,10 @@ describe('Waiting room state in Redis', () => {
 			await knock('zoe');
 			await state.decide(roomId, 'admit', ['ana'], 2);
 
-			expect(await state.decide(roomId, 'admit', ['ben', 'zoe'], 2)).toEqual({ noPlaces: true });
+			expect(await state.decide(roomId, 'admit', ['ben', 'zoe'], 2)).toEqual({
+				noPlaces: true,
+				availablePlaces: 1
+			});
 			expect(await lineOf()).toEqual(['ben', 'zoe']);
 		});
 

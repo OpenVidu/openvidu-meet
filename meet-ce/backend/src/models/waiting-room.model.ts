@@ -56,7 +56,9 @@ export interface WaitingRoomKnockResult {
 export type WaitingRoomDecision = 'admit' | 'reject';
 
 export type WaitingRoomDecisionResult =
-	{ decided: WaitingRoomEntry[]; line: WaitingRoomLine } | { notWaiting: string } | { noPlaces: true };
+	| { decided: WaitingRoomEntry[]; line: WaitingRoomLine }
+	| { notWaiting: string }
+	| { noPlaces: true; availablePlaces: number };
 
 /** The entry a ticket change applied to, or the current status of a wait it did not apply to (none when unknown). */
 export type WaitingRoomTicketChange = { entry: WaitingRoomEntry } | { status?: MeetWaitingRoomStatus };
