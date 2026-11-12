@@ -23,9 +23,10 @@ export enum MeetWaitingRoomStatus {
 	/** The participant left the waiting room, or asked again and so started a new wait */
 	LEFT = 'left',
 	/**
-	 * The participant lost their place: their meeting stopped being in touch for a minute, or an
-	 * admission was not used within a minute. The embedded event also reports it when the meeting
-	 * gave up reconnecting, no longer knew the wait, or lost the answer after an admission.
+	 * The participant lost their place: their meeting stopped being in touch for a minute, or 15 seconds
+	 * after its page closed, or an admission was not used within a minute. The embedded event also
+	 * reports it when the meeting gave up reconnecting, no longer knew the wait, or lost the answer after
+	 * an admission.
 	 */
 	EXPIRED = 'expired',
 	/** The meeting was ended explicitly, or reached its duration limit, while the participant waited */

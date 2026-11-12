@@ -7,6 +7,7 @@ import {
 } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import type { WebSocketAddress, WebSocketConnection, WebSocketFeature } from '../../models/websocket.model.js';
+import { WEBSOCKET_GOING_AWAY_CLOSE_CODE } from '../../models/websocket.model.js';
 import { RoomRepository } from '../../repositories/room.repository.js';
 import { LoggerService } from '../logger.service.js';
 import { WebSocketService } from '../websocket.service.js';
@@ -52,6 +53,12 @@ export class WaitingRoomRealtimeHandler implements WebSocketFeature {
 
 	onPong(connection: WebSocketConnection): Promise<void> {
 		return this.sendState(connection);
+	}
+
+	onClose({ address, lastSeenAt }: WebSocketConnection, code: number): Promise<void> {
+		if (code !== WEBSOCKET_GOING_AWAY_CLOSE_CODE) return Promise.resolve();
+
+		return this.waitingRoomStateService.pageClosed(address, Date.now() - lastSeenAt);
 	}
 
 	protected async sendState(connection: WebSocketConnection): Promise<void> {

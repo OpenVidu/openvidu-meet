@@ -39,8 +39,8 @@ properties:
               confirms it. Using up an admission when the join token is issued sends no webhook.
             - `rejected`: a holder of `waitingRoomAdmin` rejected the participant.
             - `left`: the participant left the waiting room, or asked to join again and so started a new wait.
-            - `expired`: the participant lost their place: their meeting stopped being in touch for a minute, or an
-              admission was not used within a minute.
+            - `expired`: the participant lost their place: their meeting stopped being in touch for a minute, or
+              15 seconds after its page closed, or an admission was not used within a minute.
             - `meeting_ended`: the meeting was ended explicitly, or reached its duration limit, while the
               participant waited.
             - `room_closed`: the room was closed or deleted while the participant waited.

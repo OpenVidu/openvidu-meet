@@ -44,6 +44,8 @@ import { click } from './helpers/ui-utils.helper';
 
 /** The server forgets a waiter whose connection has been gone for a minute; its sweep runs every 5 s. */
 const PLACE_LOST_TIMEOUT = 90_000;
+/** A waiter whose page closed is dropped 15 s later, by a sweep that runs every 5 s. */
+const PAGE_CLOSED_TIMEOUT = 30_000;
 /** A waiter's state is sent again at every answered ping, every 20 s. */
 const NEXT_PING_TIMEOUT = 30_000;
 
@@ -300,16 +302,20 @@ test.describe('Waiting room E2E Tests', () => {
 			await expect.poll(waitingRoomNames, { timeout: 5_000 }).toEqual([]);
 		});
 
-		test('should remove a participant whose page closed within about a minute', async ({ browser }) => {
-			test.setTimeout(PLACE_LOST_TIMEOUT + 30_000);
+		test('should remove a participant whose page closed from the line and from the moderator panel within seconds', async ({
+			browser
+		}) => {
 			await createWaitingRoomRoom();
+			const hostPage = await host(browser);
+			await openParticipantsPanel(hostPage);
 			const ana = await waiter(browser, 'Ana');
-			await expectQueuePosition(ana, '1st');
+			await expect(waitingRoomRow(hostPage, 'Ana')).toBeVisible({ timeout: 10_000 });
 
 			await ana.context().close();
 
 			expect(await waitingRoomNames()).toEqual(['Ana']);
-			await expect.poll(waitingRoomNames, { timeout: PLACE_LOST_TIMEOUT, intervals: [2_000] }).toEqual([]);
+			await expect(waitingRoomRow(hostPage, 'Ana')).toBeHidden({ timeout: PAGE_CLOSED_TIMEOUT });
+			expect(await waitingRoomNames()).toEqual([]);
 		});
 	});
 
