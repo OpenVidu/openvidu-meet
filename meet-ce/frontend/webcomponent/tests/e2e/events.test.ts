@@ -1129,15 +1129,16 @@ for (const integration of INTEGRATIONS) {
 					.poll(() => lastWaitingRoomUpdate(page), { timeout: NEXT_STATE_TIMEOUT })
 					.toEqual({ roomId: waitingRoomRoomId, participants: [zoe], availablePlaces: 0 });
 				expect(await knocks(page)).toHaveLength(1);
+				// Back in line is reported at once, and again with the place once Zoe's meeting knows it.
 				await expect
-					.poll(async () => (await waitingRoomStatuses(zoePage)).map(({ status }) => status), {
-						timeout: NEXT_STATE_TIMEOUT
-					})
-					.toEqual([
-						MeetWaitingRoomStatus.WAITING,
-						MeetWaitingRoomStatus.ADMITTED,
-						MeetWaitingRoomStatus.WAITING
-					]);
+					.poll(async () => (await waitingRoomStatuses(zoePage)).at(-1), { timeout: NEXT_STATE_TIMEOUT })
+					.toMatchObject({ status: MeetWaitingRoomStatus.WAITING, queuePosition: 1 });
+				const statuses = (await waitingRoomStatuses(zoePage)).map(({ status }) => status);
+				expect(statuses.filter((status, index) => status !== statuses[index - 1])).toEqual([
+					MeetWaitingRoomStatus.WAITING,
+					MeetWaitingRoomStatus.ADMITTED,
+					MeetWaitingRoomStatus.WAITING
+				]);
 			});
 		});
 
