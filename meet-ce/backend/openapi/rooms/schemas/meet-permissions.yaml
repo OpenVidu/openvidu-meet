@@ -80,7 +80,8 @@ properties:
         example: false
         description: >
             Can share the room's anonymous access links to invite others: the holder reads the URL of
-            each anonymous link whose permissions they also hold (see `MeetRoomAccess`).
+            each anonymous link whose permissions they also hold (see `MeetRoomAccess`), as granted to them,
+            also with a room member token obtained without joining a room with the waiting room on.
     participantPromote:
         type: boolean
         example: false

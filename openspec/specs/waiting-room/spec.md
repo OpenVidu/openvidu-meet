@@ -524,6 +524,19 @@ In a room with the waiting room on, a room member token without a participant id
 - **WHEN** its holder calls `recordingList` for the room
 - **THEN** the server answers `200`
 
+### Requirement: Share links before joining
+In a room with the waiting room on, the anonymous links `roomShareAccessLinks` reveals to a token obtained without joining SHALL be measured against the permissions the token was granted, as once joined: a moderator shares the room's links from the Join screen, and a participant who waits never reads a link that lets its holder skip the waiting room.
+
+#### Scenario: Moderator shares the room before joining
+- **GIVEN** a room with the waiting room on and a moderator on the Join screen, with a token obtained without joining
+- **WHEN** their client reads the room's access links
+- **THEN** the server returns the moderator and speaker links and the Join screen offers the share link
+
+#### Scenario: Waiting speaker allowed to share
+- **GIVEN** a room with the waiting room on whose speaker role grants `roomShareAccessLinks`
+- **WHEN** a speaker who has not joined reads the room's access links
+- **THEN** the server returns the speaker link and not the moderator link
+
 ### Requirement: Rejected participants may ask again
 A rejected participant SHALL leave the waiting list and be told they were not let in. Their screen SHALL offer "Ask to join again", disabled for the 15 seconds after the rejection; asking again starts a new wait at the end of the line.
 

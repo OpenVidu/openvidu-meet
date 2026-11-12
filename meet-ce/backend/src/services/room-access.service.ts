@@ -38,6 +38,23 @@ export class RoomAccessService {
 	 * @throws The `404` room not found error when an authenticated user asks about a room that does not exist
 	 */
 	async getAuthenticatedRoomMemberPermissions(roomId: string): Promise<MeetRoomMemberPermissions> {
+		if (this.requestSessionService.getRoomIdFromMember() === roomId) {
+			return this.getRoomMemberTokenPermissions(roomId);
+		}
+
+		return this.getGrantedRoomMemberPermissions(roomId);
+	}
+
+	/**
+	 * The permissions the authenticated room member was granted in the room, which the waiting room never
+	 * narrows: what the anonymous links they may share are measured against, so a moderator shares the room's
+	 * links before joining as they do once joined, and a participant who waits never reads a link that lets
+	 * its holder skip the waiting room they lack.
+	 *
+	 * @param roomId The ID of the room.
+	 * @throws The `404` room not found error when an authenticated user asks about a room that does not exist
+	 */
+	async getGrantedRoomMemberPermissions(roomId: string): Promise<MeetRoomMemberPermissions> {
 		const user = this.requestSessionService.getAuthenticatedUser();
 		const memberRoomId = this.requestSessionService.getRoomIdFromMember();
 
@@ -47,7 +64,7 @@ export class RoomAccessService {
 				return MeetRoomMemberHelper.noPermissions();
 			}
 
-			return this.getRoomMemberTokenPermissions(roomId);
+			return this.requestSessionService.getRoomMemberPermissions()!;
 		}
 
 		// Authenticated user

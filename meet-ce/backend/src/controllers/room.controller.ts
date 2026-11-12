@@ -71,7 +71,7 @@ export const getRooms = async (_req: Request, res: Response) => {
 			? await runConcurrently(
 					rooms,
 					async (room) => {
-						const permissions = await roomAccessService.getAuthenticatedRoomMemberPermissions(room.roomId!);
+						const permissions = await roomAccessService.getGrantedRoomMemberPermissions(room.roomId!);
 						const filteredRoom = MeetRoomHelper.applyPermissionFiltering(room, permissions);
 						return MeetRoomHelper.applyFieldFilters(
 							filteredRoom,
@@ -118,7 +118,7 @@ export const getRoom = async (req: Request, res: Response) => {
 		);
 
 		if (shouldApplyPermissionFiltering) {
-			const permissions = await container.get(RoomAccessService).getAuthenticatedRoomMemberPermissions(roomId);
+			const permissions = await container.get(RoomAccessService).getGrantedRoomMemberPermissions(roomId);
 			room = MeetRoomHelper.applyPermissionFiltering(room, permissions);
 			room = MeetRoomHelper.applyFieldFilters(room, fields, extraFields);
 		}
