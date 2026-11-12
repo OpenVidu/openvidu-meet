@@ -170,7 +170,7 @@ export class WaitingRoomService {
 		try {
 			answer = await this.requestAnswer(entry);
 		} catch (error) {
-			if (!isWaitingRoomFull(error)) throw error;
+			if (this.entry !== entry || !isWaitingRoomFull(error)) throw error;
 
 			this.finish(entry);
 			this.show('full');

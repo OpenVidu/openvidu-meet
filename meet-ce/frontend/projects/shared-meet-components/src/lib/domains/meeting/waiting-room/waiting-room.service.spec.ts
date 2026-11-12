@@ -188,6 +188,17 @@ describe('WaitingRoomService', () => {
 			expect(service.outcome()).toBe('full');
 			expect(waitingRoomEvents()).toEqual([]);
 		});
+
+		it('shows nothing when the full waiting room answers after the page went away', async () => {
+			joinToken.request.and.rejectWith(refusal(409, { error: MeetWaitingRoomErrorCode.WAITING_ROOM_FULL }));
+
+			service.join(ANA).catch(() => undefined);
+			service.dispose();
+			await flush();
+
+			expect(service.outcome()).toBeUndefined();
+			expect(phase.phase()).not.toBe('disconnected');
+		});
 	});
 
 	describe('after a reload', () => {
