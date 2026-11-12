@@ -7,7 +7,6 @@ import {
 	provideBrowserGlobalErrorListeners,
 	provideZonelessChangeDetection
 } from '@angular/core';
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter } from '@angular/router';
 import { ceRoutes } from '@app/app.routes';
 import {
@@ -50,7 +49,6 @@ export const appConfig: ApplicationConfig = {
 		provideTranslations(ROOM_MEMBERS_TRANSLATIONS),
 		provideTranslations(SHARED_TRANSLATIONS),
 		provideRouter(ceRoutes),
-		provideAnimationsAsync(),
 		provideHttpClient(withXhr(), withInterceptors([httpInterceptor])),
 		{
 			provide: STEPPER_GLOBAL_OPTIONS,
