@@ -15,9 +15,16 @@ export interface JoinScreenState {
 	canJoinMeeting: boolean;
 }
 
-/** The join screen shows when asked to, and whenever it has something to ask or tell. */
-export function joinScreenNeeded(options: MeetingEntryOptions, state: JoinScreenState): boolean {
+/**
+ * The join screen shows when asked to, and whenever it has something to ask or tell. A participant
+ * resuming a wait that a reload interrupted already pressed it: it only shows for what is missing.
+ */
+export function joinScreenNeeded(options: MeetingEntryOptions, state: JoinScreenState, resumingWait = false): boolean {
 	return (
-		options.showJoinScreen || !state.nameKnown || state.e2eeKeyMissing || state.roomClosed || !state.canJoinMeeting
+		(options.showJoinScreen && !resumingWait) ||
+		!state.nameKnown ||
+		state.e2eeKeyMissing ||
+		state.roomClosed ||
+		!state.canJoinMeeting
 	);
 }

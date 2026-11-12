@@ -45,5 +45,6 @@ export enum SessionStorageKeys {
 	ROOM_SECRET = 'roomSecret',
 	REDIRECT_URL = 'redirectUrl',
 	E2EE_DATA = 'e2eeData',
-	MUST_CHANGE_PASSWORD = 'mustChangePassword'
+	MUST_CHANGE_PASSWORD = 'mustChangePassword',
+	WAITING_ROOM_TICKET = 'waitingRoomTicket'
 }

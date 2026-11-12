@@ -7,6 +7,7 @@ import { RoomService } from '../../rooms/services/room.service';
 import { DEFAULT_MEETING_ENTRY_OPTIONS, JoinScreenState } from '../utils/meeting-entry-flow.utils';
 import { MeetingContextService } from './meeting-context.service';
 import { MeetingEntryFlowService } from './meeting-entry-flow.service';
+import { WaitingRoomService } from '../waiting-room/waiting-room.service';
 import { MeetingJoinService } from './meeting-join.service';
 
 class LoggerServiceStub {
@@ -23,6 +24,7 @@ describe('MeetingEntryFlowService', () => {
 	let joinService: jasmine.SpyObj<MeetingJoinService>;
 	let roomService: jasmine.SpyObj<RoomService>;
 	let showDialog: jasmine.Spy;
+	let hasPendingWait: jasmine.Spy;
 
 	beforeEach(() => {
 		joinService = jasmine.createSpyObj<MeetingJoinService>('MeetingJoinService', [
@@ -37,6 +39,7 @@ describe('MeetingEntryFlowService', () => {
 		roomService = jasmine.createSpyObj<RoomService>('RoomService', ['loadRoomConfig']);
 		roomService.loadRoomConfig.and.resolveTo(undefined);
 		showDialog = jasmine.createSpy('showDialog');
+		hasPendingWait = jasmine.createSpy('hasPendingWait').and.returnValue(false);
 
 		TestBed.configureTestingModule({
 			providers: [
@@ -45,6 +48,7 @@ describe('MeetingEntryFlowService', () => {
 				{ provide: LoggerService, useClass: LoggerServiceStub },
 				{ provide: MeetingJoinService, useValue: joinService },
 				{ provide: RoomService, useValue: roomService },
+				{ provide: WaitingRoomService, useValue: { hasPendingWait } },
 				{ provide: MeetingContextService, useValue: { roomId: () => ROOM_ID } },
 				{ provide: DialogService, useValue: { showDialog } },
 				{ provide: TranslateService, useValue: { translate: (key: string) => key } }
@@ -64,6 +68,14 @@ describe('MeetingEntryFlowService', () => {
 
 		expect(flow.step()).toBe('join');
 		expect(roomService.loadRoomConfig).not.toHaveBeenCalled();
+	});
+
+	it('goes on to the meeting, without the join screen, to continue a wait a reload interrupted', async () => {
+		hasPendingWait.and.returnValue(true);
+
+		await flow.start();
+
+		expect(flow.step()).toBe('meeting');
 	});
 
 	it('shows the error step and a dialog when the room cannot be loaded', async () => {

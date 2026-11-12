@@ -13,6 +13,7 @@ import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import { HttpService } from '../../../shared/services/http.service';
 import { LoggerService } from '../../../shared/services/logger.service';
 import { NavigationService } from '../../../shared/services/navigation.service';
+import { SessionStorageService } from '../../../shared/services/session-storage.service';
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
 import { EmbeddedEventBusService } from '../../embedded/services/embedded-event-bus.service';
 import { ACCESS_DENIED_STATUSES } from '../../room-members/services/room-member-context.service';
@@ -64,6 +65,7 @@ export class WaitingRoomService {
 	private readonly localMedia = inject(LocalMediaService);
 	private readonly navigation = inject(NavigationService);
 	private readonly runtimeConfig = inject(RuntimeConfigService);
+	private readonly sessionStorage = inject(SessionStorageService);
 	private readonly eventBus = inject(EmbeddedEventBusService);
 	private readonly log = inject(LoggerService).get('OpenVidu Meet - WaitingRoomService');
 
@@ -121,6 +123,11 @@ export class WaitingRoomService {
 		});
 	}
 
+	/** Whether a wait of this room is unfinished in this tab, as a reload leaves it. The next request to join continues it. */
+	hasPendingWait(): boolean {
+		return !!this.pendingTicket();
+	}
+
 	/** Leaves the waiting room: tells the server even while the connection is down, and disconnects. */
 	leave(): void {
 		const entry = this.entry;
@@ -159,7 +166,7 @@ export class WaitingRoomService {
 		let answer: JoinAnswer;
 
 		try {
-			answer = await this.joinToken.request(entry.request);
+			answer = await this.requestAnswer(entry);
 		} catch (error) {
 			if (!isWaitingRoomFull(error)) throw error;
 
@@ -177,8 +184,32 @@ export class WaitingRoomService {
 		}
 	}
 
+	/**
+	 * Continues the wait a reload interrupted, which keeps its place and identity, and starts a new one
+	 * when that wait is over or cannot be continued.
+	 */
+	private async requestAnswer(entry: Entry): Promise<JoinAnswer> {
+		const ticket = this.pendingTicket();
+
+		if (ticket) {
+			try {
+				return await this.joinToken.requestWithTicket(entry.request, ticket.waitingRoomTicket);
+			} catch (error) {
+				this.log.d('The wait left by the reload cannot be continued:', error);
+				this.sessionStorage.removeWaitingRoomTicket();
+			}
+		}
+
+		return this.joinToken.request(entry.request);
+	}
+
+	private pendingTicket(): MeetWaitingRoomTicketResponse | null {
+		return this.sessionStorage.getWaitingRoomTicket(this.meetingContext.roomId() ?? '');
+	}
+
 	private wait(entry: Entry, ticket: MeetWaitingRoomTicketResponse): void {
 		entry.ticket = ticket;
+		this.sessionStorage.setWaitingRoomTicket(this.meetingContext.roomId() ?? '', ticket);
 		this._status.set(MeetWaitingRoomStatus.WAITING);
 		this._queuePosition.set(undefined);
 		this._knockedAt.set(Date.now());
@@ -386,6 +417,8 @@ export class WaitingRoomService {
 		if (this.entry === entry) this.entry = undefined;
 
 		if (entry.ticket) this.webSocket.disconnect();
+
+		this.sessionStorage.removeWaitingRoomTicket();
 
 		this._status.set(undefined);
 	}

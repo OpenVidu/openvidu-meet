@@ -11,6 +11,7 @@ import {
 } from '@openvidu-meet/typings';
 import { Subject } from 'rxjs';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
+import { SessionStorageService } from '../../../shared/services/session-storage.service';
 import { LoggerService } from '../../../shared/services/logger.service';
 import { NavigationService } from '../../../shared/services/navigation.service';
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
@@ -121,6 +122,7 @@ describe('WaitingRoomService', () => {
 			]
 		});
 
+		TestBed.inject(SessionStorageService).removeWaitingRoomTicket();
 		service = TestBed.inject(WaitingRoomService);
 		phase = TestBed.inject(MeetingPhaseService);
 		eventBus = TestBed.inject(EmbeddedEventBusService);
@@ -183,6 +185,68 @@ describe('WaitingRoomService', () => {
 
 			expect(service.outcome()).toBe('full');
 			expect(waitingRoomEvents()).toEqual([]);
+		});
+	});
+
+	describe('after a reload', () => {
+		const leaveWaitBehind = () => TestBed.inject(SessionStorageService).setWaitingRoomTicket(ROOM_ID, TICKET);
+
+		it('remembers the wait while it lasts, and forgets it when it ends', async () => {
+			expect(service.hasPendingWait()).toBeFalse();
+
+			void service.join(ANA);
+			await flush();
+
+			expect(service.hasPendingWait()).toBeTrue();
+
+			service.leave();
+
+			expect(service.hasPendingWait()).toBeFalse();
+		});
+
+		it('continues the wait with its ticket instead of asking again', async () => {
+			leaveWaitBehind();
+			joinToken.requestWithTicket.and.resolveTo(WAITING);
+
+			expect(service.hasPendingWait()).toBeTrue();
+
+			void service.join(ANA);
+			await flush();
+
+			expect(joinToken.requestWithTicket).toHaveBeenCalledOnceWith(ANA, TICKET.waitingRoomTicket);
+			expect(joinToken.request).not.toHaveBeenCalled();
+			expect(webSocket.connect).toHaveBeenCalledOnceWith(
+				{ name: 'waitingRoomTicket', value: TICKET.waitingRoomTicket },
+				{ giveUpAfterMs: 60_000 }
+			);
+			expect(service.isWaiting()).toBeTrue();
+		});
+
+		it('joins with the token the ticket answers once the participant was let in', async () => {
+			leaveWaitBehind();
+			joinToken.requestWithTicket.and.resolveTo(tokenAnswer());
+
+			await expectAsync(service.join(ANA)).toBeResolvedTo('join-token');
+
+			expect(joinToken.request).not.toHaveBeenCalled();
+			expect(service.hasPendingWait()).toBeFalse();
+		});
+
+		it('asks again when the wait is over', async () => {
+			leaveWaitBehind();
+			joinToken.requestWithTicket.and.rejectWith(refusal(409, { message: 'The wait has ended' }));
+
+			void service.join(ANA);
+			await flush();
+
+			expect(joinToken.request).toHaveBeenCalledOnceWith(ANA);
+			expect(service.isWaiting()).toBeTrue();
+		});
+
+		it('does not continue the wait of another room', () => {
+			TestBed.inject(SessionStorageService).setWaitingRoomTicket('other-room', TICKET);
+
+			expect(service.hasPendingWait()).toBeFalse();
 		});
 	});
 
