@@ -4,6 +4,7 @@ import type { RedisOptions, SentinelAddress } from 'ioredis';
 import { Redis } from 'ioredis';
 import ms from 'ms';
 import { IoredisAdapter } from 'redlock-universal';
+import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
 import { internalError } from '../models/error.model.js';
 import { RedisRedlock } from '../models/redis-lock.model.js';
@@ -128,7 +129,13 @@ export class RedisService extends EventEmitter {
 		const keys: string[] = [];
 
 		do {
-			const [nextCursor, partialKeys] = await this.client.scan(cursor, 'MATCH', pattern);
+			const [nextCursor, partialKeys] = await this.client.scan(
+				cursor,
+				'MATCH',
+				pattern,
+				'COUNT',
+				INTERNAL_CONFIG.BATCH_SIZE_REDIS_SCAN
+			);
 			keys.push(...partialKeys);
 			cursor = nextCursor;
 		} while (cursor !== '0');
