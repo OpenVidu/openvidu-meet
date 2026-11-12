@@ -1,6 +1,6 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
-import { MeetRoom, MeetRoomStatus } from '@openvidu-meet/typings';
+import { MeetRoom, MeetRoomConfig, MeetRoomStatus } from '@openvidu-meet/typings';
 import { LeaveRedirectService } from '../../../shared/services/leave-redirect.service';
 import { NavigationService } from '../../../shared/services/navigation.service';
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
@@ -127,9 +127,11 @@ export class MeetingJoinService {
 	};
 
 	/**
-	 * Initializes the join screen state by fetching room data and configuring UI
+	 * Initializes the join screen state by fetching room data and configuring UI.
+	 *
+	 * @returns The config of the room, which the meeting of this entry starts with
 	 */
-	async initialize(): Promise<void> {
+	async initialize(): Promise<MeetRoomConfig> {
 		try {
 			const roomId = this.meetingContextService.roomId();
 
@@ -175,6 +177,8 @@ export class MeetingJoinService {
 
 				form.get('e2eeKey')?.updateValueAndValidity();
 			}
+
+			return room.config;
 		} catch (error) {
 			this.clearJoinState();
 			throw error;
