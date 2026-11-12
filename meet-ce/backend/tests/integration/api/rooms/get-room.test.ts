@@ -258,6 +258,19 @@ describe('Room API Tests', () => {
 			expect(anonymousLinksWithUrl(response.body)).toEqual(['moderator', 'recording']);
 		});
 
+		it('should return the links a token obtained without joining was granted, in a room with the waiting room', async () => {
+			const { room, moderatorToken, speakerToken } = await tokensFor({
+				config: { waitingRoom: { enabled: true } },
+				roles: { speaker: { permissions: { roomShareAccessLinks: true } } }
+			});
+
+			const asModerator = await getRoom(room.roomId, undefined, undefined, moderatorToken);
+			const asSpeaker = await getRoom(room.roomId, undefined, undefined, speakerToken);
+
+			expect(anonymousLinksWithUrl(asModerator.body)).toEqual(['moderator', 'speaker', 'recording']);
+			expect(anonymousLinksWithUrl(asSpeaker.body)).toEqual(['speaker', 'recording']);
+		});
+
 		it('should return the three anonymous links to an API key', async () => {
 			const { room } = await tokensFor({
 				roles: { moderator: { permissions: { roomShareAccessLinks: false } } }

@@ -55,6 +55,17 @@ test.describe('Share Link E2E Tests', () => {
 			await expect(page.locator('ov-share-room-access-link .copy-url-btn')).toBeVisible();
 		});
 
+		test('should render the share room access link on the join screen of a room with the waiting room on', async ({
+			page
+		}) => {
+			const room = await createRoom({ config: { waitingRoom: { enabled: true } } });
+			createdRoomIds.push(room.roomId);
+
+			await openJoinScreen(page, room.access.anonymous.moderator.url);
+
+			await expect(page.locator('ov-share-room-access-link .copy-url-btn')).toBeVisible();
+		});
+
 		test('should not render the share room access link on the join screen when member cannot share access links', async ({
 			page
 		}) => {
