@@ -257,9 +257,7 @@ test.describe('Waiting room E2E Tests', () => {
 			await expectInMeeting(ana);
 		});
 
-		test('should let a rejected participant ask again after the pause, at the end of the line', async ({
-			browser
-		}) => {
+		test('should let a rejected participant ask again at once, at the end of the line', async ({ browser }) => {
 			await createWaitingRoomRoom();
 			const hostPage = await host(browser);
 			await openParticipantsPanel(hostPage);
@@ -267,11 +265,9 @@ test.describe('Waiting room E2E Tests', () => {
 
 			await denyFromPanel(hostPage, 'Ana');
 			await expect(waitingOutcome(ana, 'rejected')).toBeVisible({ timeout: 10_000 });
-			await expect(askToJoinAgain(ana)).toBeDisabled();
 
 			await waiter(browser, 'Ben');
 
-			await expect(askToJoinAgain(ana)).toBeEnabled({ timeout: 20_000 });
 			await click(askToJoinAgain(ana));
 
 			await expectWaitingScreen(ana);

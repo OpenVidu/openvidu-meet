@@ -538,15 +538,10 @@ In a room with the waiting room on, the anonymous links `roomShareAccessLinks` r
 - **THEN** the server returns the speaker link and not the moderator link
 
 ### Requirement: Rejected participants may ask again
-A rejected participant SHALL leave the waiting list and be told they were not let in. Their screen SHALL offer "Ask to join again", disabled for the 15 seconds after the rejection; asking again starts a new wait at the end of the line.
-
-#### Scenario: Pause after a rejection
-- **GIVEN** a participant rejected five seconds ago
-- **WHEN** they look at their screen
-- **THEN** "Ask to join again" is disabled, and it becomes enabled 15 seconds after the rejection
+A rejected participant SHALL leave the waiting list and be told they were not let in. Their screen SHALL offer "Ask to join again" at once; asking again starts a new wait at the end of the line.
 
 #### Scenario: Asking again after a rejection
-- **GIVEN** a participant who was rejected 20 seconds ago while Ben waits
+- **GIVEN** a participant who was rejected while Ben waits
 - **WHEN** they press "Ask to join again"
 - **THEN** they wait behind Ben
 
