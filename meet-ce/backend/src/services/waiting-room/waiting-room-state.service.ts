@@ -35,7 +35,9 @@ const lineOf = (line: WaitingRoomLine): WaitingRoomLine => ({ ...line, waiting: 
 
 /**
  * The waiting room in Redis, changed only by atomic scripts:
- * - `<prefix>:<roomId>`, hash of the room's line: participant identity to its entry, waiting or admitted;
+ * - `<prefix>:<roomId>`, hash of the room's entries: participant identity to its entry, waiting or admitted;
+ * - `<prefix>_line:<roomId>`, sorted set of the identities waiting in the room by when they asked, so a
+ *   place in line is read without decoding every entry;
  * - `<prefix>_wait:<waitId>`, hash of one wait, which its ticket finds: no TTL while it lasts, kept with its
  *   outcome for {@link INTERNAL_CONFIG.WAITING_ROOM_ENDED_WAIT_TTL} once it ends;
  * - `<prefix>_seen`, sorted set of every room's entries (`<roomId>:<waitId>`) by when their client was last
