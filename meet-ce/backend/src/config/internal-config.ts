@@ -112,6 +112,7 @@ export const INTERNAL_CONFIG = {
 	BATCH_SIZE_MEETING_DURATION_LIMIT_GC: 100, // Number of duration-limited active rooms to re-arm or end per batch during the duration-limit GC
 	BATCH_SIZE_RECORDINGS: 100, // Process 100 recordings at a time to balance throughput and memory
 	BATCH_SIZE_REGISTRY_LOCKS_RETRIEVAL: 100, // Number of recording locks to retrieve from registry in each batch during orphaned locks GC
+	BATCH_SIZE_REDIS_SCAN: 1000, // Keys Redis examines per SCAN call when listing the keys that match a pattern
 	CONCURRENCY_STALE_RECORDINGS_GC: 20, // Concurrency limit for processing stale recordings garbage collection
 	CONCURRENCY_ORPHANED_LOCKS_GC: 10, // Concurrency limit for processing orphaned recording locks with failFast enabled
 	CONCURRENCY_VALIDATE_ROOMS_STATUS: 10, // Concurrency limit for validating and cleaning up inconsistent rooms
