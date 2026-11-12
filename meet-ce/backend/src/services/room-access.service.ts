@@ -1,4 +1,4 @@
-import type { MeetRoomMemberPermissions, MeetUser } from '@openvidu-meet/typings';
+import type { MeetRoomField, MeetRoomMemberPermissions, MeetUser, ProjectedMeetRoom } from '@openvidu-meet/typings';
 import { MeetUserRole } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { MeetRoomMemberHelper } from '../helpers/room-member.helper.js';
@@ -7,6 +7,13 @@ import { RoomMemberRepository } from '../repositories/room-member.repository.js'
 import { RoomRepository } from '../repositories/room.repository.js';
 import { WaitingRoomAdmissionPolicy } from './waiting-room/waiting-room-admission.policy.js';
 import { RequestSessionService } from './request-session.service.js';
+
+/**
+ * The fields of a room that decide the permissions a user is granted in it.
+ */
+export const ROOM_ACCESS_FIELDS = ['roomId', 'owner', 'access', 'roles'] as const satisfies readonly MeetRoomField[];
+
+export type RoomAccessFacts = ProjectedMeetRoom<typeof ROOM_ACCESS_FIELDS>;
 
 /**
  * Decides what the principal of the current request may do in a room.
@@ -55,53 +62,101 @@ export class RoomAccessService {
 	 * @throws The `404` room not found error when an authenticated user asks about a room that does not exist
 	 */
 	async getGrantedRoomMemberPermissions(roomId: string): Promise<MeetRoomMemberPermissions> {
+		const user = this.userWithRoomDependentPermissions();
+
+		if (!user) {
+			return this.roomIndependentPermissions(roomId);
+		}
+
+		const room = await this.roomRepository.findByRoomId(roomId, ROOM_ACCESS_FIELDS);
+
+		if (!room) {
+			throw errorRoomNotFound(roomId);
+		}
+
+		const [permissions] = await this.getUserPermissionsInRooms(user.userId, [room]);
+		return permissions;
+	}
+
+	/**
+	 * {@link getGrantedRoomMemberPermissions} for each of the given rooms, already read, with the memberships of the
+	 * authenticated user in all of them read at once.
+	 *
+	 * @param rooms The rooms, carrying at least {@link ROOM_ACCESS_FIELDS}.
+	 * @returns The permissions in each room, in the order of the rooms.
+	 */
+	async getGrantedRoomMemberPermissionsInRooms(
+		rooms: readonly RoomAccessFacts[]
+	): Promise<MeetRoomMemberPermissions[]> {
+		const user = this.userWithRoomDependentPermissions();
+
+		if (!user) {
+			return rooms.map(({ roomId }) => this.roomIndependentPermissions(roomId));
+		}
+
+		return this.getUserPermissionsInRooms(user.userId, rooms);
+	}
+
+	/**
+	 * The authenticated user of the current request when their permissions depend on the room: a user other than an
+	 * admin, and no room member token.
+	 */
+	private userWithRoomDependentPermissions(): MeetUser | undefined {
 		const user = this.requestSessionService.getAuthenticatedUser();
+
+		if (this.requestSessionService.getRoomIdFromMember() || user?.role === MeetUserRole.ADMIN) {
+			return undefined;
+		}
+
+		return user;
+	}
+
+	/**
+	 * The permissions of a room member token in the room, or all of them for an admin or a system process (no
+	 * authenticated user nor room member token).
+	 */
+	private roomIndependentPermissions(roomId: string): MeetRoomMemberPermissions {
 		const memberRoomId = this.requestSessionService.getRoomIdFromMember();
 
-		// Room member token
-		if (memberRoomId) {
-			if (memberRoomId !== roomId) {
-				return MeetRoomMemberHelper.noPermissions();
-			}
-
-			return this.requestSessionService.getRoomMemberPermissions()!;
+		if (!memberRoomId) {
+			return MeetRoomMemberHelper.allPermissions();
 		}
 
-		// Authenticated user
-		if (user) {
-			if (user.role === MeetUserRole.ADMIN) {
+		return memberRoomId === roomId
+			? this.requestSessionService.getRoomMemberPermissions()!
+			: MeetRoomMemberHelper.noPermissions();
+	}
+
+	/**
+	 * All permissions in the rooms the user owns; elsewhere their membership's, or the speaker role's when the room
+	 * lets users in without one.
+	 */
+	private async getUserPermissionsInRooms(
+		userId: string,
+		rooms: readonly RoomAccessFacts[]
+	): Promise<MeetRoomMemberPermissions[]> {
+		const notOwnedRoomIds = rooms.filter((room) => room.owner !== userId).map((room) => room.roomId);
+		const memberships =
+			notOwnedRoomIds.length > 0
+				? await this.roomMemberRepository.findByMemberIdInRooms(userId, notOwnedRoomIds, [
+						'roomId',
+						'effectivePermissions'
+					])
+				: [];
+		const membershipPermissions = new Map(
+			memberships.map((member) => [member.roomId, member.effectivePermissions])
+		);
+
+		return rooms.map((room) => {
+			if (room.owner === userId) {
 				return MeetRoomMemberHelper.allPermissions();
 			}
 
-			const room = await this.roomRepository.findByRoomId(roomId, ['owner', 'access', 'roles']);
-
-			if (!room) {
-				throw errorRoomNotFound(roomId);
-			}
-
-			if (room.owner === user.userId) {
-				return MeetRoomMemberHelper.allPermissions();
-			}
-
-			// Get permissions for room members
-			const member = await this.roomMemberRepository.findByRoomAndMemberId(roomId, user.userId, [
-				'effectivePermissions'
-			]);
-
-			if (member) {
-				return member.effectivePermissions;
-			}
-
-			// If not a room member, check if user access is enabled to determine if we should return speaker permissions or no permissions
-			if (room.access.user.enabled) {
-				return room.roles.speaker.permissions;
-			}
-
-			return MeetRoomMemberHelper.noPermissions();
-		}
-
-		// No authenticated user nor room member token - return all permissions for system processes
-		return MeetRoomMemberHelper.allPermissions();
+			return (
+				membershipPermissions.get(room.roomId) ??
+				(room.access.user.enabled ? room.roles.speaker.permissions : MeetRoomMemberHelper.noPermissions())
+			);
+		});
 	}
 
 	/**
