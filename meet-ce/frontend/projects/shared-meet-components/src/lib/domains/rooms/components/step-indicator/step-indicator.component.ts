@@ -1,5 +1,5 @@
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
-import { StepperOrientation, StepperSelectionEvent } from '@angular/cdk/stepper';
+import { STEPPER_GLOBAL_OPTIONS, StepperOrientation, StepperSelectionEvent } from '@angular/cdk/stepper';
 import { Component, computed, inject, input, output } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -14,7 +14,8 @@ type LayoutType = 'vertical-sidebar' | 'horizontal-compact' | 'vertical-compact'
 	selector: 'ov-step-indicator',
 	imports: [MatStepperModule, ReactiveFormsModule, TranslatePipe],
 	templateUrl: './step-indicator.component.html',
-	styleUrl: './step-indicator.component.scss'
+	styleUrl: './step-indicator.component.scss',
+	providers: [{ provide: STEPPER_GLOBAL_OPTIONS, useValue: { showError: true } }]
 })
 export class StepIndicatorComponent {
 	steps = input.required<WizardStep[]>();
@@ -69,7 +70,7 @@ export class StepIndicatorComponent {
 	 * `[state]` binding when `STEPPER_GLOBAL_OPTIONS.displayDefaultIndicatorType` is explicitly
 	 * `false` (not the case here); the number/edit/done inference is otherwise entirely internal.
 	 * `[hasError]` is the one binding it does honor for a custom error indicator, gated by the
-	 * `showError` global option this app already sets — so this is the actual seam, not `state`.
+	 * `showError` global option this component provides — so this is the actual seam, not `state`.
 	 * Also covers a step that's already valid on its own but fell out of sync with a *different*
 	 * step's later change (e.g. the Meeting participant limit vs. the Recording trigger) via stepWarnings.
 	 */
