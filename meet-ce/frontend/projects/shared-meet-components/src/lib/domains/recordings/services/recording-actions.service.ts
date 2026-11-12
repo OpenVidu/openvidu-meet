@@ -48,7 +48,7 @@ export class RecordingActionsService {
 				this.recordingService.downloadRecording(action.recordings[0]);
 				break;
 			case 'shareLink':
-				this.recordingService.openShareRecordingDialog(
+				await this.recordingService.openShareRecordingDialog(
 					action.recordings[0].recordingId,
 					context.canPlayRecording?.(action.recordings[0])
 				);
