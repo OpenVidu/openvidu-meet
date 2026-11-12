@@ -18,6 +18,10 @@ local function wait_key(wait_id)
 	return prefix .. '_wait:' .. wait_id
 end
 
+local function line_key(room_id)
+	return prefix .. '_line:' .. room_id
+end
+
 local function seen_member(room_id, wait_id)
 	return room_id .. ':' .. wait_id
 end
@@ -43,12 +47,12 @@ end
 
 local function line_of(room_id)
 	local line = {}
-	for _, entry in ipairs(entries_of(room_id)) do
-		if entry.status == 'waiting' then
-			line[#line + 1] = entry
+	local identities = redis.call('ZRANGE', line_key(room_id), 0, -1)
+	if #identities > 0 then
+		for index, value in ipairs(redis.call('HMGET', room_key(room_id), unpack(identities))) do
+			line[index] = cjson.decode(value)
 		end
 	end
-	table.sort(line, by_arrival)
 	return line
 end
 
@@ -66,11 +70,17 @@ end
 
 local function save(room_id, entry)
 	redis.call('HSET', room_key(room_id), entry.participantIdentity, cjson.encode(entry))
+	if entry.status == 'waiting' then
+		redis.call('ZADD', line_key(room_id), ms(entry.knockDate), entry.participantIdentity)
+	else
+		redis.call('ZREM', line_key(room_id), entry.participantIdentity)
+	end
 end
 
 -- An admission already used keeps the outcome it recorded and is not told again.
 local function finish(room_id, entry, outcome)
 	redis.call('HDEL', room_key(room_id), entry.participantIdentity)
+	redis.call('ZREM', line_key(room_id), entry.participantIdentity)
 	redis.call('ZREM', seen_key, seen_member(room_id, entry.waitId))
 	if not entry.used then
 		redis.call('HSET', wait_key(entry.waitId), 'outcome', outcome)

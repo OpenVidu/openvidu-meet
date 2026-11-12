@@ -54,6 +54,16 @@ class TestWaitingRoomState extends WaitingRoomStateService {
 		return entries.flat().map(({ waitId }) => waitId);
 	}
 
+	/** The identities the line index of a room holds, first in line first. */
+	async lineIndex(roomId: string): Promise<string[]> {
+		const identities = await this.redis.runScript(
+			"return redis.call('ZRANGE', KEYS[1], 0, -1)",
+			[`${this.prefix}_line:${roomId}`],
+			[]
+		);
+		return identities as string[];
+	}
+
 	async cleanup(): Promise<void> {
 		const keys = await this.keys();
 
@@ -109,6 +119,7 @@ describe('Waiting room state in Redis', () => {
 	afterEach(async () => {
 		setInternalConfig({ WAITING_ROOM_MAX_ENTRIES: originalMaxEntries });
 		await expectEndedWaitsToExpire();
+		expect(await state.lineIndex(roomId)).toEqual(await lineOf());
 	});
 
 	afterAll(async () => {

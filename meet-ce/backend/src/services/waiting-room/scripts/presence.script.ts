@@ -15,16 +15,10 @@ end
 
 if entry and entry.status == 'waiting' then
 	redis.call('ZADD', seen_key, ms(now), seen_member(room_id, wait_id))
-	local position = 0
-	for index, waiting in ipairs(line_of(room_id)) do
-		if waiting.waitId == wait_id then
-			position = index
-		end
-	end
 	return cjson.encode({
 		roomId = room_id,
 		status = 'waiting',
-		queuePosition = position,
+		queuePosition = redis.call('ZRANK', line_key(room_id), entry.participantIdentity) + 1,
 		waitedSeconds = math.floor((now - entry.knockDate) / 1000)
 	})
 end
