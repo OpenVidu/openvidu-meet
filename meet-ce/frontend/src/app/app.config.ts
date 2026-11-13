@@ -1,4 +1,3 @@
-import { STEPPER_GLOBAL_OPTIONS } from '@angular/cdk/stepper';
 import { provideHttpClient, withInterceptors, withXhr } from '@angular/common/http';
 import type { ApplicationConfig } from '@angular/core';
 import {
@@ -51,10 +50,6 @@ export const appConfig: ApplicationConfig = {
 		provideTranslations(SHARED_TRANSLATIONS),
 		provideRouter(ceRoutes),
 		provideAnimationsAsync(),
-		provideHttpClient(withXhr(), withInterceptors([httpInterceptor])),
-		{
-			provide: STEPPER_GLOBAL_OPTIONS,
-			useValue: { showError: true } // Show error messages in stepper
-		}
+		provideHttpClient(withXhr(), withInterceptors([httpInterceptor]))
 	]
 };
