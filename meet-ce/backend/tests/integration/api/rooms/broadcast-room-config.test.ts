@@ -193,7 +193,9 @@ describe('Broadcast Room Configuration Tests', () => {
 				broadcast: { enabled: true, destinations: room.config.broadcast.destinations }
 			});
 			expect(echoed.status).toBe(200);
-			expect(Object.values(await storedUrls(room.roomId))).toEqual(urls);
+			expect(await storedUrls(room.roomId)).toEqual(
+				Object.fromEntries(room.config.broadcast.destinations.map(({ id }, index) => [id, urls[index]]))
+			);
 		});
 
 		it('should reject a destination URL with a fragment, no host, user information, a malformed escape, a line break or tab inside, or whose stream key is only a query string', async () => {
