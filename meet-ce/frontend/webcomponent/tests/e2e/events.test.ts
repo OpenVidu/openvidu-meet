@@ -244,7 +244,7 @@ for (const integration of INTEGRATIONS) {
 			test('should receive embeddedCloseRequested from an access error screen before its leave redirect', async ({
 				page
 			}) => {
-				const received = await recordHostEvents(page);
+				const hostEvents = await recordHostEvents(page);
 				await openWebcomponentWithAttributes(
 					page,
 					{
@@ -260,7 +260,7 @@ for (const integration of INTEGRATIONS) {
 				await meetLocator(page, integration, '.error-actions button').click();
 
 				await waitForPageRedirect(page, LEAVE_REDIRECT_URL);
-				expect(received).toContain(EmbeddedEventName.EMBEDDED_CLOSE_REQUESTED);
+				expect(await hostEvents()).toContain(EmbeddedEventName.EMBEDDED_CLOSE_REQUESTED);
 			});
 
 			test.describe('from a recording screen', () => {
