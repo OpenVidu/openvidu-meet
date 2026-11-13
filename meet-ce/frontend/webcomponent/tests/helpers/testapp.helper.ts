@@ -555,28 +555,38 @@ export const kickParticipantLegacyCommand = async (page: Page, participantIdenti
 /** Locator for a `.event-{name}` DOM marker. */
 export const eventLocator = (page: Page, eventName: EmbeddedEventName): Locator => page.locator(`.event-${eventName}`);
 
+const HOST_EVENTS_KEY = '__hostEvents';
+
 /**
- * Records, outside the page, the name of every lifecycle event the testapp receives from now on, so the
- * record outlives a leave redirect that replaces the testapp and its event markers.
+ * Records the name of every lifecycle event the testapp receives from now on in its `sessionStorage`, which
+ * outlives a leave redirect to the testapp itself. A Playwright binding would not: the redirect destroys the
+ * page's execution context before Playwright reads a call the page made just before it, and drops that call.
+ *
+ * @returns A function reading the names recorded so far, oldest first.
  */
-export const recordHostEvents = async (page: Page): Promise<string[]> => {
-	const received: string[] = [];
+export const recordHostEvents = async (page: Page): Promise<() => Promise<string[]>> => {
 	await ensureFixture(page);
-	await page.exposeFunction('__recordHostEvent', (name: string) => received.push(name));
-	await page.evaluate((eventNames) => {
-		eventNames.forEach((name) => {
-			document.addEventListener(
-				name,
-				(ev) => {
-					if ((ev.target as Element | null)?.getAttribute?.('data-testid') === 'event-sink') {
-						(window as any).__recordHostEvent(name);
-					}
-				},
-				true
-			);
-		});
-	}, Object.values(EmbeddedEventName));
-	return received;
+	await page.evaluate(
+		({ eventNames, key }) => {
+			sessionStorage.setItem(key, '[]');
+			eventNames.forEach((name) => {
+				document.addEventListener(
+					name,
+					(ev) => {
+						if ((ev.target as Element | null)?.getAttribute?.('data-testid') === 'event-sink') {
+							sessionStorage.setItem(
+								key,
+								JSON.stringify([...JSON.parse(sessionStorage.getItem(key)!), name])
+							);
+						}
+					},
+					true
+				);
+			});
+		},
+		{ eventNames: Object.values(EmbeddedEventName), key: HOST_EVENTS_KEY }
+	);
+	return () => page.evaluate((key) => JSON.parse(sessionStorage.getItem(key) ?? '[]') as string[], HOST_EVENTS_KEY);
 };
 
 /** The names of the events the page has received, in the order they arrived. */
