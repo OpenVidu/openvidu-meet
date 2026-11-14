@@ -492,6 +492,7 @@ describe('the validators, against a change made in the same millisecond as the t
 				});
 				expect(roomRepository.findByRoomId).toHaveBeenCalledWith('room-1', [
 					'roomId',
+					'roomName',
 					'rolesUpdatedAt',
 					'config'
 				]);
