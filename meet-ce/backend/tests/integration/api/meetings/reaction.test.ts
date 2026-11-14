@@ -3,6 +3,7 @@ import { MeetReaction } from '@openvidu-meet/typings';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { MeetRoomHelper } from '../../../../src/helpers/room.helper.js';
 import { FrontendEventService } from '../../../../src/services/frontend-event.service.js';
+import { LiveKitService } from '../../../../src/services/livekit.service.js';
 import { errorInsufficientPermissions, errorUnauthorized } from '../../../../src/models/error.model.js';
 import { disconnectFakeParticipants, joinFakeParticipant } from '../../../helpers/livekit-cli-helpers.js';
 import {
@@ -63,6 +64,7 @@ describe('Meetings API Tests', () => {
 		it('should send the reaction on behalf of the participant the token belongs to', async () => {
 			const alice = await joinSpeaker('Alice');
 			const signalSpy = spyOnReactionSignal();
+			const roomLookupSpy = jest.spyOn(container.get(LiveKitService), 'getRoom');
 
 			const response = await sendParticipantReaction(
 				roomData.room.roomId,
@@ -72,6 +74,7 @@ describe('Meetings API Tests', () => {
 
 			expect(response.status).toBe(200);
 			expect(signalSpy).toHaveBeenCalledWith(roomData.room.roomId, alice.identity, MeetReaction.THUMBS_UP);
+			expect(roomLookupSpy).not.toHaveBeenCalled();
 		});
 
 		it('should reject a reaction while the room has reactions disabled', async () => {

@@ -18,7 +18,7 @@ import { RoomService } from '../../../src/services/room.service.js';
  * check that only gates a feature on that room's config takes it from there. Any other request, or a
  * check on another room, still reads the room from MongoDB.
  */
-describe('RoomService.getRequestRoomConfig', () => {
+describe('RoomService.getRequestRoomConfig and getRequestRoomName', () => {
 	const sharedConfig = { reactions: { enabled: true } } as MeetRoomConfig;
 	const storedConfig = { reactions: { enabled: false } } as MeetRoomConfig;
 
@@ -26,15 +26,15 @@ describe('RoomService.getRequestRoomConfig', () => {
 	let requestSessionService: RequestSessionService;
 	let roomService: RoomService;
 
-	const inRequestValidatedAgainst = (roomId: string, read: () => Promise<MeetRoomConfig>) =>
+	const inRequestValidatedAgainst = <T>(roomId: string, read: () => Promise<T>) =>
 		requestSessionService.run(() => {
-			requestSessionService.setRoom({ roomId, rolesUpdatedAt: 0, config: sharedConfig });
+			requestSessionService.setRoom({ roomId, roomName: 'Shared name', rolesUpdatedAt: 0, config: sharedConfig });
 			return read();
 		});
 
 	beforeEach(() => {
 		const logger = { debug: () => {} } as unknown as LoggerService;
-		findByRoomId = jest.fn(async () => ({ config: storedConfig }));
+		findByRoomId = jest.fn(async () => ({ config: storedConfig, roomName: 'Stored name' }));
 		requestSessionService = new RequestSessionService(logger);
 		roomService = new RoomService(
 			logger,
@@ -74,6 +74,20 @@ describe('RoomService.getRequestRoomConfig', () => {
 		await expect(
 			inRequestValidatedAgainst('room-2', () => roomService.getRequestRoomConfig('room-1'))
 		).rejects.toMatchObject({ statusCode: 404 });
+	});
+
+	it('takes the name of the room the request was validated against without reading it again', async () => {
+		const name = await inRequestValidatedAgainst('room-1', () => roomService.getRequestRoomName('room-1'));
+
+		expect(name).toBe('Shared name');
+		expect(findByRoomId).not.toHaveBeenCalled();
+	});
+
+	it('reads the name of any other room', async () => {
+		const name = await inRequestValidatedAgainst('room-2', () => roomService.getRequestRoomName('room-1'));
+
+		expect(name).toBe('Stored name');
+		expect(findByRoomId).toHaveBeenCalledWith('room-1', ['roomName']);
 	});
 });
 

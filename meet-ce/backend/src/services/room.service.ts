@@ -584,6 +584,25 @@ export class RoomService {
 	}
 
 	/**
+	 * Retrieves the name of a room, reusing the room the room member token of the current request was validated
+	 * against instead of reading it again, when it is that same room. A room keeps the name it was created with.
+	 *
+	 * @param roomId - The ID of the room
+	 * @returns A promise that resolves to the name of the room
+	 * @throws The `404` room not found error when the room does not exist
+	 */
+	async getRequestRoomName(roomId: string): Promise<string> {
+		const requestRoom = this.requestSessionService.getRoom(roomId);
+
+		if (requestRoom) {
+			return requestRoom.roomName;
+		}
+
+		const { roomName } = await this.getMeetRoom(roomId, ['roomName']);
+		return roomName;
+	}
+
+	/**
 	 * Deletes a room based on the specified policies for handling active meetings and recordings.
 	 *
 	 * @param roomId - The unique identifier of the room to delete

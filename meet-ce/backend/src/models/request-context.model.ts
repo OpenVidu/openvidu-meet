@@ -10,7 +10,12 @@ import type {
 /**
  * The fields the room member token validator reads from the room it validates the token against.
  */
-export const REQUEST_ROOM_FIELDS = ['roomId', 'rolesUpdatedAt', 'config'] as const satisfies readonly MeetRoomField[];
+export const REQUEST_ROOM_FIELDS = [
+	'roomId',
+	'roomName',
+	'rolesUpdatedAt',
+	'config'
+] as const satisfies readonly MeetRoomField[];
 
 /**
  * The room a room member token was validated against, as read once by the validator for the rest of its request.

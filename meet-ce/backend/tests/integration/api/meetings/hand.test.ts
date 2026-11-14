@@ -2,11 +2,13 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, jest } from '@je
 import { MeetEventOrigin } from '@openvidu-meet/typings';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { MeetRoomHelper } from '../../../../src/helpers/room.helper.js';
+import { LiveKitService } from '../../../../src/services/livekit.service.js';
 import { WebhookDispatcherService } from '../../../../src/services/webhook-dispatcher.service.js';
 import { errorHandNotOwn, errorInsufficientPermissions } from '../../../../src/models/error.model.js';
 import { disconnectFakeParticipants, joinFakeParticipant } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	deleteAllRooms,
+	endMeeting,
 	generateRoomMemberToken,
 	getMeetingParticipant,
 	lowerAllHands,
@@ -74,6 +76,7 @@ describe('Meetings API Tests', () => {
 		it('should raise and lower the own hand, reporting each change to the webhooks', async () => {
 			const alice = await joinSpeaker('Alice');
 			const webhookSpy = spyOnHandWebhook();
+			const roomLookupSpy = jest.spyOn(container.get(LiveKitService), 'getRoom');
 
 			const raise = await updateParticipantHand(
 				roomData.room.roomId,
@@ -116,6 +119,7 @@ describe('Meetings API Tests', () => {
 				})
 			);
 			expect(webhookSpy).toHaveBeenCalledTimes(2);
+			expect(roomLookupSpy).not.toHaveBeenCalled();
 		});
 
 		it('should keep the place in the queue when a raised hand is raised again', async () => {
@@ -252,6 +256,20 @@ describe('Meetings API Tests', () => {
 			);
 			expect(response.status).toBe(403);
 			expect(response.body.error).toBe('Hand Error');
+		});
+
+		it('should fail with the 404 of the meeting, not of the participant, once the meeting has ended', async () => {
+			const alice = await joinSpeaker('Alice');
+			await endMeeting(roomData.room.roomId, roomData.moderatorToken);
+
+			const response = await updateParticipantHand(
+				roomData.room.roomId,
+				alice.identity,
+				{ raised: true },
+				alice.token
+			);
+			expect(response.status).toBe(404);
+			expect(response.body.error).toBe('Meeting Error');
 		});
 
 		it('should fail with 404 if the participant is not in the meeting', async () => {

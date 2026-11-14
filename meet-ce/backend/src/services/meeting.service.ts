@@ -218,15 +218,16 @@ export class MeetingService {
 	 * progress, or a 403 when the room has the feature disabled
 	 */
 	async updateParticipantHand(roomId: string, participantIdentity: string, raised: boolean): Promise<void> {
-		const room = await this.getActiveMeetingRoom(roomId);
 		const own = participantIdentity === this.requestSessionService.getParticipantIdentity();
 
-		if (raised && !own) {
-			throw errorHandNotOwn(participantIdentity, roomId);
-		}
+		await this.inActiveMeeting(roomId, async () => {
+			if (raised && !own) {
+				throw errorHandNotOwn(participantIdentity, roomId);
+			}
 
-		const origin = own ? MeetEventOrigin.PARTICIPANT : MeetEventOrigin.MODERATOR;
-		await this.setHand(room, participantIdentity, raised, origin);
+			const origin = own ? MeetEventOrigin.PARTICIPANT : MeetEventOrigin.MODERATOR;
+			await this.setHand(roomId, participantIdentity, raised, origin);
+		});
 	}
 
 	/**
@@ -238,11 +239,11 @@ export class MeetingService {
 	 * @throws A 404 error when the room has no active meeting
 	 */
 	async lowerAllHands(roomId: string): Promise<void> {
-		const [room, participants] = await this.withActiveMeetingRoom(roomId, this.getStandardParticipants(roomId));
+		const [, participants] = await this.withActiveMeetingRoom(roomId, this.getStandardParticipants(roomId));
 		const raised = participants.filter((participant) => MeetParticipantHelper.isHandRaised(participant));
 		const results = await runConcurrently(
 			raised,
-			(participant) => this.setHand(room, participant.identity, false, MeetEventOrigin.MODERATOR),
+			(participant) => this.setHand(roomId, participant.identity, false, MeetEventOrigin.MODERATOR),
 			{ concurrency: INTERNAL_CONFIG.CONCURRENCY_BULK_PARTICIPANT_UPDATES }
 		);
 		const failures = results.filter((result): result is PromiseRejectedResult => result.status === 'rejected');
@@ -258,32 +259,32 @@ export class MeetingService {
 	 * instead of writing the same change a second time.
 	 */
 	protected async setHand(
-		room: Room,
+		roomId: string,
 		participantIdentity: string,
 		raised: boolean,
 		origin: MeetParticipantHandChangedPayload['origin']
 	): Promise<void> {
 		const done = await this.mutexService.withRetryLock(
-			MeetLock.getHandLock(room.name, participantIdentity),
+			MeetLock.getHandLock(roomId, participantIdentity),
 			ms(INTERNAL_CONFIG.HAND_LOCK_TTL),
 			async () => {
-				const participant = await this.getStandardParticipant(room.name, participantIdentity);
+				const participant = await this.getStandardParticipant(roomId, participantIdentity);
 
 				if (raised === MeetParticipantHelper.isHandRaised(participant)) {
 					return true;
 				}
 
 				if (raised) {
-					await this.ensureHandEnabled(room.name);
+					await this.ensureHandEnabled(roomId);
 				}
 
-				await this.writeHand(room, participant, raised, origin);
+				await this.writeHand(roomId, participant, raised, origin);
 				return true;
 			}
 		);
 
 		if (!done) {
-			throw errorHandUpdateInProgress(participantIdentity, room.name);
+			throw errorHandUpdateInProgress(participantIdentity, roomId);
 		}
 	}
 
@@ -300,15 +301,15 @@ export class MeetingService {
 	 * from, and reports the change to the webhooks once LiveKit has acknowledged it.
 	 */
 	protected async writeHand(
-		room: Room,
+		roomId: string,
 		participant: ParticipantInfo,
 		raised: boolean,
 		origin: MeetParticipantHandChangedPayload['origin']
 	): Promise<void> {
 		const attributes = raised ? raisedHandAttributes(Date.now()) : loweredHandAttributes(origin);
-		const updated = await this.livekitService.updateParticipant(room.name, participant.identity, { attributes });
-		const roomName = await this.roomService.getMeetRoomName(room);
-		const payload = MeetParticipantHelper.toParticipantHandChangedPayload(room.name, roomName, updated, origin);
+		const updated = await this.livekitService.updateParticipant(roomId, participant.identity, { attributes });
+		const roomName = await this.roomService.getRequestRoomName(roomId);
+		const payload = MeetParticipantHelper.toParticipantHandChangedPayload(roomId, roomName, updated, origin);
 		this.webhookDispatcherService.sendParticipantHandChangedWebhook(payload);
 	}
 
@@ -324,18 +325,20 @@ export class MeetingService {
 	 * or the participant is not in the meeting
 	 */
 	async sendParticipantReaction(roomId: string, participantIdentity: string, reaction: MeetReaction): Promise<void> {
-		const [, [config, senderInMeeting]] = await this.withActiveMeetingRoom(
-			roomId,
-			Promise.all([this.roomService.getRequestRoomConfig(roomId), this.isInMeeting(roomId, participantIdentity)])
-		);
+		await this.inActiveMeeting(roomId, async () => {
+			const [config, senderInMeeting] = await Promise.all([
+				this.roomService.getRequestRoomConfig(roomId),
+				this.isInMeeting(roomId, participantIdentity)
+			]);
 
-		if (!config.reactions.enabled) {
-			throw errorReactionsDisabled(roomId);
-		}
+			if (!config.reactions.enabled) {
+				throw errorReactionsDisabled(roomId);
+			}
 
-		if (!senderInMeeting) {
-			throw errorReactionSenderNotInMeeting(participantIdentity, roomId);
-		}
+			if (!senderInMeeting) {
+				throw errorReactionSenderNotInMeeting(participantIdentity, roomId);
+			}
+		});
 
 		await this.frontendEventService.sendParticipantReactionSentSignal(roomId, participantIdentity, reaction);
 	}
@@ -404,6 +407,19 @@ export class MeetingService {
 		}
 
 		return [roomResult.value, readResult.value];
+	}
+
+	/**
+	 * Runs an operation on the meeting of a room and looks the room up only when the operation fails, so that a room
+	 * with no active meeting still answers with its meeting-scoped 404 instead of the failure it caused.
+	 */
+	protected async inActiveMeeting(roomId: string, operation: () => Promise<void>): Promise<void> {
+		try {
+			await operation();
+		} catch (error) {
+			await this.getActiveMeetingRoom(roomId);
+			throw error;
+		}
 	}
 
 	/**
