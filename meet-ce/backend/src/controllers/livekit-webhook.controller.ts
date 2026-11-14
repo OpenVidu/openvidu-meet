@@ -1,11 +1,23 @@
 import type { Request, Response } from 'express';
-import type { WebhookEvent } from 'livekit-server-sdk';
+import type { WebhookEvent, WebhookEventNames } from 'livekit-server-sdk';
 import ms from 'ms';
 import { container } from '../config/dependency-injector.config.js';
 import { MeetLock } from '../helpers/redis.helper.js';
 import { LivekitWebhookService } from '../services/livekit-webhook.service.js';
 import { LoggerService } from '../services/logger.service.js';
 import { MutexService } from '../services/mutex.service.js';
+
+type WebhookHandler = (service: LivekitWebhookService, event: WebhookEvent) => Promise<void>;
+
+const handlers: Partial<Record<WebhookEventNames, WebhookHandler>> = {
+	egress_started: (service, { egressInfo }) => service.handleEgressStarted(egressInfo!),
+	egress_updated: (service, { egressInfo }) => service.handleEgressUpdated(egressInfo!),
+	egress_ended: (service, { egressInfo }) => service.handleEgressEnded(egressInfo!),
+	participant_joined: (service, { room, participant }) => service.handleParticipantJoined(room!, participant!),
+	participant_left: (service, { room, participant }) => service.handleParticipantLeft(room!, participant!),
+	room_started: (service, { room }) => service.handleRoomStarted(room!),
+	room_finished: (service, { room }) => service.handleRoomFinished(room!)
+};
 
 export const lkWebhookHandler = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
@@ -17,6 +29,12 @@ export const lkWebhookHandler = async (req: Request, res: Response) => {
 			req.body as string,
 			req.get('Authorization')
 		);
+		const handle = handlers[webhookEvent.event];
+
+		if (!handle) {
+			logger.debug(`Webhook skipped: ${webhookEvent.event}. OpenVidu Meet does not handle it.`);
+			return res.status(200).send();
+		}
 
 		const webhookLockKey = MeetLock.getWebhookLock(webhookEvent);
 		const belongsToOpenViduMeet = await lkWebhookService.webhookEventBelongsToOpenViduMeet(webhookEvent);
@@ -27,36 +45,8 @@ export const lkWebhookHandler = async (req: Request, res: Response) => {
 		}
 
 		const executionResult = await mutexService.withLock(webhookLockKey, ms('5s'), async () => {
-			const { event: eventType, egressInfo, room, participant } = webhookEvent;
-
-			logger.verbose(`Webhook received: ${eventType}`);
-
-			switch (eventType) {
-				case 'egress_started':
-					await lkWebhookService.handleEgressStarted(egressInfo!);
-					break;
-				case 'egress_updated':
-					await lkWebhookService.handleEgressUpdated(egressInfo!);
-					break;
-				case 'egress_ended':
-					await lkWebhookService.handleEgressEnded(egressInfo!);
-					break;
-				case 'participant_joined':
-					await lkWebhookService.handleParticipantJoined(room!, participant!);
-					break;
-				case 'participant_left':
-					await lkWebhookService.handleParticipantLeft(room!, participant!);
-					break;
-				case 'room_started':
-					await lkWebhookService.handleRoomStarted(room!);
-					break;
-				case 'room_finished':
-					await lkWebhookService.handleRoomFinished(room!);
-					break;
-				default:
-					break;
-			}
-
+			logger.verbose(`Webhook received: ${webhookEvent.event}`);
+			await handle(lkWebhookService, webhookEvent);
 			return true;
 		});
 
