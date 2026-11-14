@@ -777,4 +777,65 @@ describe('the validators, against a change made in the same millisecond as the t
 			expect(requestSessionService.setUser).not.toHaveBeenCalled();
 		});
 	});
+
+	describe('reading the records a credential depends on', () => {
+		const held = <T>(value: T) => {
+			let release!: () => void;
+			const promise = new Promise<T>((resolve) => (release = () => resolve(value)));
+			return { promise, release };
+		};
+		const pending = () => new Promise(setImmediate);
+
+		beforeEach(() => {
+			jest.spyOn(tokenService, 'parseTokenMetadata').mockReturnValue({
+				iat: ISSUED_AT,
+				tokenType: TokenType.ACCESS
+			} as never);
+		});
+
+		it('reads the user of an access token and its revocations at the same time', async () => {
+			const userRead = held(user());
+			jest.spyOn(userRepository, 'findByUserId').mockReturnValue(userRead.promise as never);
+			const revocationsRead = jest.spyOn(redisService, 'getMany');
+
+			const validation = accessTokenValidator(MeetUserRole.ADMIN).validate(accessTokenRequest());
+			await pending();
+
+			expect(revocationsRead).toHaveBeenCalled();
+			userRead.release();
+			await validation;
+			expect(requestSessionService.setUser).toHaveBeenCalled();
+		});
+
+		it('reads the API keys and the user behind them at the same time', async () => {
+			const keysRead = held(true);
+			jest.spyOn(apiKeyService, 'validateApiKey').mockReturnValue(keysRead.promise);
+			const userRead = jest.spyOn(userService, 'getUserAssociatedWithApiKey').mockResolvedValue(user());
+
+			const validation = apiKeyValidator.validate(requestWith({ 'x-api-key': 'a-key' }));
+			await pending();
+
+			expect(userRead).toHaveBeenCalled();
+			keysRead.release();
+			await validation;
+			expect(requestSessionService.setUser).toHaveBeenCalled();
+		});
+
+		it('reads the user of the access token riding along a room member token while it checks that token', async () => {
+			const roomMemberTokenCheck = held({ participantIdentity: 'user-1', metadata: {}, room: {} });
+			jest.spyOn(tokenService, 'verifyRoomMemberToken').mockReturnValue(roomMemberTokenCheck.promise as never);
+			jest.spyOn(requestSessionService, 'setRoom').mockImplementation(() => {});
+			const userRead = jest.spyOn(userRepository, 'findByUserId').mockResolvedValue(user());
+
+			const validation = roomMemberTokenValidator.validate(
+				requestWith({ 'x-room-member-token': 'Bearer a-token', authorization: 'Bearer a-token' })
+			);
+			await pending();
+
+			expect(userRead).toHaveBeenCalled();
+			roomMemberTokenCheck.release();
+			await validation;
+			expect(requestSessionService.setUser).toHaveBeenCalled();
+		});
+	});
 });
