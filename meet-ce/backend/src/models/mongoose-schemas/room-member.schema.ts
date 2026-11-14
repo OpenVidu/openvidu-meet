@@ -114,6 +114,7 @@ MeetRoomMemberSchema.index({ roomId: 1, name: 1, _id: 1 });
 // Renamed from 'effectivePermissions.canRetrieveRecordings' in the permission-key migration;
 // syncIndexes() drops the old index and creates this one on the startup that migrates.
 MeetRoomMemberSchema.index({ memberId: 1, 'effectivePermissions.recordingList': 1 });
+MeetRoomMemberSchema.index({ schemaVersion: 1 });
 
 export const meetRoomMemberCollectionName = 'MeetRoomMember';
 

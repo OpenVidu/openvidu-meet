@@ -74,6 +74,7 @@ MeetUserSchema.index({ registrationDate: -1, _id: -1 });
 MeetUserSchema.index({ name: 1, _id: 1 });
 MeetUserSchema.index({ role: 1, registrationDate: -1, _id: -1 });
 MeetUserSchema.index({ role: 1, name: 1, _id: 1 });
+MeetUserSchema.index({ schemaVersion: 1 });
 
 export const meetUserCollectionName = 'MeetUser';
 
