@@ -497,6 +497,7 @@ MeetRoomSchema.index({ status: 1, creationDate: -1, _id: -1 });
 MeetRoomSchema.index({ owner: 1, creationDate: -1, _id: -1 });
 MeetRoomSchema.index({ 'access.user.enabled': 1, creationDate: -1, _id: -1 });
 MeetRoomSchema.index({ autoDeletionDate: 1, _id: 1 });
+MeetRoomSchema.index({ schemaVersion: 1 });
 
 export const meetRoomCollectionName = 'MeetRoom';
 

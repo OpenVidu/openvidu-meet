@@ -212,7 +212,8 @@ const schemas: [string, { schema: Schema; modelName: string }, Record<string, st
 			[{ status: 1, creationDate: -1, _id: -1 }, {}],
 			[{ owner: 1, creationDate: -1, _id: -1 }, {}],
 			[{ 'access.user.enabled': 1, creationDate: -1, _id: -1 }, {}],
-			[{ autoDeletionDate: 1, _id: 1 }, {}]
+			[{ autoDeletionDate: 1, _id: 1 }, {}],
+			[{ schemaVersion: 1 }, {}]
 		]
 	],
 	[
@@ -224,7 +225,8 @@ const schemas: [string, { schema: Schema; modelName: string }, Record<string, st
 			[{ roomId: 1, membershipDate: -1, _id: -1 }, {}],
 			[{ roomId: 1, name: 1, membershipDate: -1, _id: -1 }, {}],
 			[{ roomId: 1, name: 1, _id: 1 }, {}],
-			[{ memberId: 1, 'effectivePermissions.recordingList': 1 }, {}]
+			[{ memberId: 1, 'effectivePermissions.recordingList': 1 }, {}],
+			[{ schemaVersion: 1 }, {}]
 		]
 	],
 	[
@@ -241,7 +243,8 @@ const schemas: [string, { schema: Schema; modelName: string }, Record<string, st
 			[{ roomUserAccess: 1, startDate: -1, _id: -1 }, {}],
 			[{ status: 1, startDate: -1, _id: -1 }, {}],
 			[{ duration: -1, _id: -1 }, {}],
-			[{ size: -1, _id: -1 }, {}]
+			[{ size: -1, _id: -1 }, {}],
+			[{ schemaVersion: 1 }, {}]
 		]
 	],
 	[
@@ -253,7 +256,8 @@ const schemas: [string, { schema: Schema; modelName: string }, Record<string, st
 			[{ registrationDate: -1, _id: -1 }, {}],
 			[{ name: 1, _id: 1 }, {}],
 			[{ role: 1, registrationDate: -1, _id: -1 }, {}],
-			[{ role: 1, name: 1, _id: 1 }, {}]
+			[{ role: 1, name: 1, _id: 1 }, {}],
+			[{ schemaVersion: 1 }, {}]
 		]
 	],
 	['MeetApiKey', MeetApiKeyModel, apiKeyPaths, [[{ key: 1 }, { unique: true }]]],

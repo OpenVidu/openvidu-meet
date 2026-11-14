@@ -155,6 +155,7 @@ MeetRecordingSchema.index({ roomUserAccess: 1, startDate: -1, _id: -1 });
 MeetRecordingSchema.index({ status: 1, startDate: -1, _id: -1 });
 MeetRecordingSchema.index({ duration: -1, _id: -1 });
 MeetRecordingSchema.index({ size: -1, _id: -1 });
+MeetRecordingSchema.index({ schemaVersion: 1 });
 
 export const meetRecordingCollectionName = 'MeetRecording';
 
