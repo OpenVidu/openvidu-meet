@@ -829,6 +829,45 @@ describe('Webhook Integration Tests', () => {
 			expect(handleRoomStartedSpy).not.toHaveBeenCalled();
 		});
 
+		it('responds 200 to an event Meet does not handle without checking its room or taking its lock', async () => {
+			const service = container.get(LivekitWebhookService);
+			const event = { id: 'track-event', event: 'track_published', room: { name: 'meet-room' } } as WebhookEvent;
+
+			jest.spyOn(getWebhookReceiver(service), 'receive').mockResolvedValue(event);
+			const belongsSpy = jest.spyOn(service, 'webhookEventBelongsToOpenViduMeet');
+			const withLockSpy = jest.spyOn(container.get(MutexService), 'withLock');
+
+			const res = createMockResponse();
+			await lkWebhookHandler(createMockRequest(event), res as unknown as Response);
+
+			expectResponseSent(res);
+			expect(belongsSpy).not.toHaveBeenCalled();
+			expect(withLockSpy).not.toHaveBeenCalled();
+		});
+
+		it.each([
+			['egress_started', 'handleEgressStarted', 'egressInfo'],
+			['egress_updated', 'handleEgressUpdated', 'egressInfo'],
+			['egress_ended', 'handleEgressEnded', 'egressInfo'],
+			['participant_joined', 'handleParticipantJoined', 'room'],
+			['participant_left', 'handleParticipantLeft', 'room'],
+			['room_started', 'handleRoomStarted', 'room'],
+			['room_finished', 'handleRoomFinished', 'room']
+		] as const)('hands %s to %s with the event %s', async (eventName, handlerName, field) => {
+			const service = container.get(LivekitWebhookService);
+			const payload = { name: 'meet-room', roomName: 'meet-room' };
+			const event = { id: `${eventName}-event`, event: eventName, [field]: payload } as unknown as WebhookEvent;
+
+			jest.spyOn(getWebhookReceiver(service), 'receive').mockResolvedValue(event);
+			jest.spyOn(service, 'webhookEventBelongsToOpenViduMeet').mockResolvedValue(true);
+			const handlerSpy = jest.spyOn(service, handlerName).mockResolvedValue();
+
+			await lkWebhookHandler(createMockRequest(event), createMockResponse() as unknown as Response);
+
+			expect(handlerSpy).toHaveBeenCalledTimes(1);
+			expect(handlerSpy.mock.calls[0][0]).toBe(payload);
+		});
+
 		it('responds 200 when the event belongs to OpenVidu Meet and is processed', async () => {
 			const service = container.get(LivekitWebhookService);
 			const event = createWebhookEvent('meet-event', 'meet-room', true);
