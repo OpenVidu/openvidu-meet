@@ -1,4 +1,4 @@
-import type { MeetUserRole } from '@openvidu-meet/typings';
+import type { MeetUser, MeetUserRole } from '@openvidu-meet/typings';
 import type { NextFunction, Request, RequestHandler, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
@@ -136,14 +136,20 @@ const createAccessTokenValidator = (roles: MeetUserRole[], admitsPendingPassword
 				throw errorInvalidToken();
 			}
 
-			const userService = container.get(UserService);
-			const user = userId ? await userService.getUser(userId) : null;
+			if (!userId) {
+				throw errorInvalidTokenSubject();
+			}
+
+			const [user, revoked] = await Promise.all([
+				container.get(UserService).getUser(userId),
+				isRevokedUserToken(userId, metadata)
+			]);
 
 			if (!user) {
 				throw errorInvalidTokenSubject();
 			}
 
-			if (metadata.iat < user.roleUpdatedAt || (await isRevokedUserToken(user.userId, metadata))) {
+			if (metadata.iat < user.roleUpdatedAt || revoked) {
 				throw errorInvalidToken();
 			}
 
@@ -205,12 +211,17 @@ export const roomMemberTokenValidator: AuthValidator = {
 			throw errorUnauthorized();
 		}
 
-		const { participantIdentity, metadata, room } = await container.get(TokenService).verifyRoomMemberToken(token);
+		const [{ participantIdentity, metadata, room }, user] = await Promise.all([
+			container.get(TokenService).verifyRoomMemberToken(token),
+			findAuthenticatedUser(req)
+		]);
 		const requestSessionService = container.get(RequestSessionService);
 		requestSessionService.setRoomMemberTokenInfo(metadata, participantIdentity);
 		requestSessionService.setRoom(room);
 
-		await setAuthenticatedUserIfPresent(req);
+		if (user) {
+			requestSessionService.setUser(user);
+		}
 	}
 };
 
@@ -235,15 +246,14 @@ export const apiKeyValidator: AuthValidator = {
 			throw errorUnauthorized();
 		}
 
-		const apiKeyService = container.get(ApiKeyService);
-		const isValidApiKey = await apiKeyService.validateApiKey(apiKey as string);
+		const [isValidApiKey, apiUser] = await Promise.all([
+			container.get(ApiKeyService).validateApiKey(apiKey as string),
+			container.get(UserService).getUserAssociatedWithApiKey()
+		]);
 
 		if (!isValidApiKey) {
 			throw errorInvalidApiKey();
 		}
-
-		const userService = container.get(UserService);
-		const apiUser = await userService.getUserAssociatedWithApiKey();
 
 		if (!apiUser) {
 			throw errorInvalidApiKeySubject();
@@ -269,35 +279,41 @@ export const allowAnonymous: AuthValidator = {
 	},
 
 	async validate(req: Request): Promise<void> {
-		await setAuthenticatedUserIfPresent(req);
+		const user = await findAuthenticatedUser(req);
+
+		if (user) {
+			container.get(RequestSessionService).setUser(user);
+		}
 	}
 };
 
 /**
- * Set authenticated user in request context if access token is present and valid
+ * The user of the request's access token, when it carries a valid one
  */
-const setAuthenticatedUserIfPresent = async (req: Request): Promise<void> => {
-	// Check if there is a user already authenticated
+const findAuthenticatedUser = async (req: Request): Promise<MeetUser | undefined> => {
 	const token = getAccessToken(req);
 
 	if (!token) {
-		return;
+		return undefined;
 	}
 
 	try {
 		const tokenService = container.get(TokenService);
 		const { sub: userId, metadata } = await tokenService.verifyToken(token);
 
-		const userService = container.get(UserService);
-		const user = userId ? await userService.getUser(userId) : null;
-
-		if (user && !(await isRevokedUserToken(user.userId, tokenService.parseTokenMetadata(metadata ?? '')))) {
-			const requestSessionService = container.get(RequestSessionService);
-			requestSessionService.setUser(user);
+		if (!userId) {
+			return undefined;
 		}
+
+		const [user, revoked] = await Promise.all([
+			container.get(UserService).getUser(userId),
+			isRevokedUserToken(userId, tokenService.parseTokenMetadata(metadata ?? ''))
+		]);
+		return user && !revoked ? user : undefined;
 	} catch (error) {
 		const logger = container.get(LoggerService);
 		logger.debug('Token found but invalid:', error);
+		return undefined;
 	}
 };
 
