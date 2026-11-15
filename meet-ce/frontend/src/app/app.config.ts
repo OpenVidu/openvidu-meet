@@ -12,20 +12,16 @@ import {
 	AUTH_TRANSLATIONS,
 	AuthHeaderProviderService,
 	AuthInterceptorErrorHandlerService,
-	CONSOLE_TRANSLATIONS,
 	httpInterceptor,
 	provideEmbeddedIframeBridge,
 	provideMaterialSymbols,
 	provideOpenViduComponents,
 	provideTranslations,
 	RECORDINGS_TRANSLATIONS,
-	ROOM_MEMBERS_TRANSLATIONS,
 	RoomMemberHeaderProviderService,
 	RoomMemberInterceptorErrorHandlerService,
-	ROOMS_TRANSLATIONS,
 	SHARED_TRANSLATIONS,
-	ThemeService,
-	USERS_TRANSLATIONS
+	ThemeService
 } from '@openvidu-meet/shared-components';
 
 export const appConfig: ApplicationConfig = {
@@ -42,12 +38,8 @@ export const appConfig: ApplicationConfig = {
 		provideEmbeddedIframeBridge(),
 		provideOpenViduComponents(),
 		provideMaterialSymbols(),
-		provideTranslations(CONSOLE_TRANSLATIONS),
-		provideTranslations(ROOMS_TRANSLATIONS),
-		provideTranslations(USERS_TRANSLATIONS),
 		provideTranslations(RECORDINGS_TRANSLATIONS),
 		provideTranslations(AUTH_TRANSLATIONS),
-		provideTranslations(ROOM_MEMBERS_TRANSLATIONS),
 		provideTranslations(SHARED_TRANSLATIONS),
 		provideRouter(ceRoutes),
 		provideHttpClient(withXhr(), withInterceptors([httpInterceptor]))
