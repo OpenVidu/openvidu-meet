@@ -264,13 +264,11 @@ export class LivekitWebhookService {
 	 * nothing keeps doing until one of them turns a device on.
 	 */
 	protected async findRecordingInProgress(roomId: string): Promise<MeetRecordingInfo | undefined> {
-		for (const status of [MeetRecordingStatus.ACTIVE, MeetRecordingStatus.STARTING]) {
-			const { recordings } = await this.recordingService.getAllRecordings({ roomId, status });
-
-			if (recordings.length > 0) return recordings[0];
-		}
-
-		return undefined;
+		const recordings = await this.recordingRepository.findAllByRoomIdAndStatus(roomId, [
+			MeetRecordingStatus.ACTIVE,
+			MeetRecordingStatus.STARTING
+		]);
+		return recordings.find(({ status }) => status === MeetRecordingStatus.ACTIVE) ?? recordings[0];
 	}
 
 	/**

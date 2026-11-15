@@ -683,8 +683,8 @@ describe('LivekitWebhookService.handleParticipantJoined (a session that joined w
 
 		service = new LivekitWebhookService(
 			...([
-				{ startAutoRecordingIfNeeded: async () => {}, getAllRecordings: async () => ({ recordings: [] }) },
-				{},
+				{ startAutoRecordingIfNeeded: async () => {} },
+				{ findAllByRoomIdAndStatus: async () => [] },
 				{ getParticipant: async () => liveParticipant, deleteParticipant },
 				{ getMeetRoomName: async () => 'Room 1' },
 				{},
@@ -795,7 +795,11 @@ describe('LivekitWebhookService participant presence and meeting state', () => {
 		sid: 'RM_1',
 		metadata: JSON.stringify({ roomOptions: { roomName: 'Room 1' } })
 	} as Room;
-	const recording = { recordingId: 'room-1--EG_1--uid', roomId: 'room-1' } as MeetRecordingInfo;
+	const recording = {
+		recordingId: 'room-1--EG_1--uid',
+		roomId: 'room-1',
+		status: MeetRecordingStatus.ACTIVE
+	} as MeetRecordingInfo;
 	const broadcasts = [{ broadcastId: 'EG_2' }, { broadcastId: 'EG_3' }];
 
 	class AlwaysCurrentTokenService extends LivekitWebhookService {
@@ -814,10 +818,7 @@ describe('LivekitWebhookService participant presence and meeting state', () => {
 			...overrides
 		}) as ParticipantInfo;
 
-	const build = ({
-		recordingsByStatus = {} as Partial<Record<MeetRecordingStatus, MeetRecordingInfo[]>>,
-		roomBroadcasts = [] as unknown[]
-	} = {}) => {
+	const build = ({ roomRecordings = [] as MeetRecordingInfo[], roomBroadcasts = [] as unknown[] } = {}) => {
 		const calls: string[] = [];
 		const record =
 			(name: string) =>
@@ -829,13 +830,11 @@ describe('LivekitWebhookService participant presence and meeting state', () => {
 		const webhooks = { sendParticipantJoinedWebhook: jest.fn(), sendParticipantLeftWebhook: jest.fn() };
 		const service = new AlwaysCurrentTokenService(
 			...([
+				{ startAutoRecordingIfNeeded: async () => {} },
 				{
-					startAutoRecordingIfNeeded: async () => {},
-					getAllRecordings: async ({ status }: { status: MeetRecordingStatus }) => ({
-						recordings: recordingsByStatus[status] ?? []
-					})
+					findAllByRoomIdAndStatus: async (_roomId: string, statuses: MeetRecordingStatus[]) =>
+						roomRecordings.filter(({ status }) => statuses.includes(status))
 				},
-				{},
 				{},
 				{ getMeetRoomName: async () => 'Room 1' },
 				{},
@@ -875,7 +874,7 @@ describe('LivekitWebhookService participant presence and meeting state', () => {
 
 	it('records the presence of a signed-in user and tells them about the recording and broadcasts in progress', async () => {
 		const { service, calls, webhooks } = build({
-			recordingsByStatus: { [MeetRecordingStatus.ACTIVE]: [recording] },
+			roomRecordings: [recording],
 			roomBroadcasts: broadcasts
 		});
 
@@ -893,8 +892,8 @@ describe('LivekitWebhookService participant presence and meeting state', () => {
 	});
 
 	it('tells a joining participant about a recording that is still starting', async () => {
-		const starting = { ...recording, recordingId: 'room-1--EG_9--uid' };
-		const { service, calls } = build({ recordingsByStatus: { [MeetRecordingStatus.STARTING]: [starting] } });
+		const starting = { ...recording, recordingId: 'room-1--EG_9--uid', status: MeetRecordingStatus.STARTING };
+		const { service, calls } = build({ roomRecordings: [starting] });
 
 		await service.handleParticipantJoined(ROOM, participant({ metadata: '' }));
 
@@ -902,13 +901,8 @@ describe('LivekitWebhookService participant presence and meeting state', () => {
 	});
 
 	it('prefers the recording that is already recording over one still starting', async () => {
-		const starting = { ...recording, recordingId: 'room-1--EG_9--uid' };
-		const { service, calls } = build({
-			recordingsByStatus: {
-				[MeetRecordingStatus.ACTIVE]: [recording],
-				[MeetRecordingStatus.STARTING]: [starting]
-			}
-		});
+		const starting = { ...recording, recordingId: 'room-1--EG_9--uid', status: MeetRecordingStatus.STARTING };
+		const { service, calls } = build({ roomRecordings: [starting, recording] });
 
 		await service.handleParticipantJoined(ROOM, participant({ metadata: '' }));
 
@@ -1118,12 +1112,8 @@ describe('LivekitWebhookService handlers whose collaborators fail', () => {
 
 	const service = new LivekitWebhookService(
 		...([
-			{
-				startAutoRecordingIfNeeded: async () => {},
-				getAllRecordings: failing,
-				reactivateAutoRecording: async () => {}
-			},
-			{},
+			{ startAutoRecordingIfNeeded: async () => {}, reactivateAutoRecording: async () => {} },
+			{ findAllByRoomIdAndStatus: failing },
 			{},
 			{ getMeetRoom: failing },
 			{ finishMeeting: failing },

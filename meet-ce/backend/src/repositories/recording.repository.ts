@@ -305,6 +305,17 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 	}
 
 	/**
+	 * Finds the recordings of a room that are in one of the given statuses.
+	 *
+	 * @param roomId - The ID of the room
+	 * @param statuses - The statuses to look for
+	 * @returns The matching recordings, in no particular order
+	 */
+	findAllByRoomIdAndStatus(roomId: string, statuses: MeetRecordingStatus[]): Promise<MeetRecordingInfo[]> {
+		return this.findAll({ roomId, status: { $in: statuses } });
+	}
+
+	/**
 	 * Finds access secrets for a specific recording.
 	 * This is the only method that returns the access secrets.
 	 *
