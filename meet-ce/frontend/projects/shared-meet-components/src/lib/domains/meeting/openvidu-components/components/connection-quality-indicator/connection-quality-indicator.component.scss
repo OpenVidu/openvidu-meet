@@ -8,7 +8,6 @@
 		align-items: center;
 		justify-content: center;
 		background-color: var(--ov-secondary-action-color);
-		backdrop-filter: blur(8px);
 		border-radius: var(--ov-video-radius);
 		width: 28px;
 		height: 28px;
@@ -42,7 +41,6 @@
 			width: 16px;
 			height: 16px;
 			background-color: var(--ov-text-secondary-color);
-			backdrop-filter: none;
 			border-radius: 50%;
 			box-shadow: 0 0 0 2px var(--ov-surface-color);
 
