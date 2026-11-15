@@ -52,6 +52,8 @@ const build = async () => {
       absWorkingDir: browserDir,
       // Allow top-level await (used by Angular)
       supported: { 'top-level-await': true },
+      // A module script is always decoded as UTF-8, so its text needs no \uXXXX escapes
+      charset: 'utf8',
       logLevel: 'warning',
       outfile: outEsm,
     }),

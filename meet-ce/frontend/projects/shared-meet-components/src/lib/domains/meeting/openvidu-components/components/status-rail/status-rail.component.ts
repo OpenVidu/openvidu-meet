@@ -156,11 +156,11 @@ export class StatusRailComponent implements OnDestroy {
 
 	private readonly host: HTMLElement = inject(ElementRef).nativeElement;
 	private readonly resizes = new ResizeObserver(() => this.measureRows());
-	private readonly mutations = new MutationObserver(() => this.measureRows());
+	private readonly mutations = new MutationObserver(() => this.observeChipSizes());
 
 	constructor() {
-		this.resizes.observe(this.host);
-		this.mutations.observe(this.host, { childList: true, subtree: true, characterData: true });
+		this.observeChipSizes();
+		this.mutations.observe(this.host, { childList: true, subtree: true });
 	}
 
 	ngOnDestroy(): void {
@@ -179,6 +179,15 @@ export class StatusRailComponent implements OnDestroy {
 		if (!this.canOpenActivitiesPanel() || this.panelService.isActivitiesPanelOpened()) return;
 
 		this.panelService.togglePanel(PanelType.ACTIVITIES, activity);
+	}
+
+	/** The rail, its groups and their chips: the boxes {@link oneRowWidth} adds up. */
+	private observeChipSizes(): void {
+		this.resizes.disconnect();
+		this.resizes.observe(this.host);
+		this.host
+			.querySelectorAll('.status-rail > *, .status-rail > * > *')
+			.forEach((box) => this.resizes.observe(box));
 	}
 
 	private measureRows(): void {
