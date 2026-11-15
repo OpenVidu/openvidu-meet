@@ -108,7 +108,9 @@ recording and live broadcast UI.
   a name computed in TypeScript is typed with its domain's `<Domain>MaterialSymbol` so the compiler
   catches it. The `Material Icons` font (`<mat-icon>` without that class) is loaded whole.
 - **i18n**: custom engine (not Transloco). Per-scope JSON bundles under each domain's `lang/`,
-  registered with `provideTranslations(<DOMAIN>_TRANSLATIONS)`; one shared language preference. Add
+  registered with `provideTranslations(<DOMAIN>_TRANSLATIONS)`; one shared language preference. The
+  domains only the console renders (console, rooms, users, room members) are registered instead by
+  the lazy console shell with `TranslateService.register()`, so a guest never downloads them. Add
   keys to every locale file in the bundle. Permission label keys were renamed to match the new
   permission names (`ROOM_MEMBERS.PERMISSIONS.ITEMS.recordingPlay.LABEL` instead of the old `can*`
   one); a deployment or PRO with translation overrides for these keys needs the same rename.

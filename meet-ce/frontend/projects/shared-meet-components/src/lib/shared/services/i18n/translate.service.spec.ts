@@ -77,6 +77,52 @@ describe('TranslateService', () => {
 
 		expect(service.translateDefault('PANEL.CHAT.TITLE')).toBe('Chat');
 	});
+
+	describe('a bundle registered once its area opens', () => {
+		const consoleBundle = {
+			default: { NAV: { ROOMS: 'Rooms', USERS: 'Users' } },
+			loaders: { es: async () => ({ NAV: { ROOMS: 'Salas' } }) }
+		};
+		const turn = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+		it('serves its default locale at once', () => {
+			service.register(consoleBundle);
+
+			expect(service.translate('NAV.ROOMS')).toBe('Rooms');
+		});
+
+		it('serves the selected language once it loads, keeping the strings of the bundles before it', async () => {
+			service.setCurrentLanguage('es');
+			await turn();
+
+			service.register(consoleBundle);
+
+			expect(service.translate('NAV.ROOMS')).toBe('Rooms');
+			await turn();
+			expect(service.translate('NAV.ROOMS')).toBe('Salas');
+			expect(service.translate('NAV.USERS')).toBe('Users');
+			expect(service.translate('PANEL.CHAT.TITLE')).toBe('Conversación');
+		});
+
+		it('lets a language chosen while it loads win over it', async () => {
+			let loadSpanish!: (translations: object) => void;
+			const slowBundle = {
+				default: { NAV: { ROOMS: 'Rooms' } },
+				loaders: { es: () => new Promise<object>((resolve) => (loadSpanish = resolve)) }
+			};
+			service.setCurrentLanguage('es');
+			await turn();
+			service.register(slowBundle);
+
+			service.setCurrentLanguage('en');
+			await turn();
+			loadSpanish({ NAV: { ROOMS: 'Salas' } });
+			await turn();
+
+			expect(service.translate('NAV.ROOMS')).toBe('Rooms');
+			expect(service.translate('PANEL.CHAT.TITLE')).toBe('Chat');
+		});
+	});
 });
 
 /**
