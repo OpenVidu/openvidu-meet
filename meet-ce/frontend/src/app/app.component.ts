@@ -2,7 +2,7 @@ import type { OnInit } from '@angular/core';
 import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { AppContextService } from '@openvidu-meet/shared-components';
-import packageInfo from '../../package.json';
+import { version } from '../../package.json';
 
 @Component({
 	selector: 'app-root',
@@ -14,6 +14,6 @@ export class AppComponent implements OnInit {
 	private readonly appCtxService = inject(AppContextService);
 
 	ngOnInit() {
-		this.appCtxService.setVersion(packageInfo.version);
+		this.appCtxService.setVersion(version);
 	}
 }
