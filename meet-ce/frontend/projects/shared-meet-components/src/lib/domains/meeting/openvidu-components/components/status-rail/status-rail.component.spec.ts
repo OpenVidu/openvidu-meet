@@ -174,6 +174,19 @@ describe('StatusRailComponent', () => {
 		expect(fixture.nativeElement.classList).not.toContain('needs-second-row');
 	});
 
+	it('measures nothing while a tick of the clock leaves every chip its size', async () => {
+		meetingStartedAt.set(Date.now());
+		hiddenParticipants.set({ count: 6, names: [] });
+		await renderAt(700);
+		const measure = spyOn(window, 'getComputedStyle').and.callThrough();
+
+		meetingStartedAt.set(Date.now() - 5_500);
+		await renderAt(700);
+
+		expect(find('#meeting-elapsed-time')?.textContent).toContain('0:00:05');
+		expect(measure).not.toHaveBeenCalled();
+	});
+
 	it('shows the class pulse in the middle of the row, most shown reaction first', async () => {
 		reactionCounts.set([
 			{ reaction: MeetReaction.CONFUSED_FACE, count: 2 },
