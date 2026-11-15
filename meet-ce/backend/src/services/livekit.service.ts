@@ -9,7 +9,7 @@ import type {
 	SendDataOptions,
 	StartEgressRequest
 } from 'livekit-server-sdk';
-import { DataPacket_Kind, EgressStatus, LiveKitAPI } from 'livekit-server-sdk';
+import { DataPacket_Kind, LiveKitAPI } from 'livekit-server-sdk';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
 import { EgressHelper } from '../helpers/egress.helper.js';
@@ -567,7 +567,7 @@ export class LiveKitService {
 	/**
 	 * Retrieves all in-progress recording egress sessions for a specific room or all rooms.
 	 *
-	 * This method checks it is in any "in-progress" state, including EGRESS_STARTING, EGRESS_ACTIVE, and EGRESS_ENDING.
+	 * LiveKit filters them: `active` keeps the EGRESS_STARTING, EGRESS_ACTIVE and EGRESS_ENDING ones.
 	 *
 	 * @param {string} [roomName] - Optional room name to filter recordings by room
 	 * @returns {Promise<EgressInfo[]>} A promise that resolves to an array of in-progress recording EgressInfo objects
@@ -575,14 +575,8 @@ export class LiveKitService {
 	 */
 	async getInProgressRecordingsEgress(roomName?: string): Promise<EgressInfo[]> {
 		try {
-			const egressArray = await this.getRecordingsEgress(roomName);
-
-			return egressArray.filter((egress) => {
-				// Check if recording is in any "in-progress" state
-				return [EgressStatus.EGRESS_STARTING, EgressStatus.EGRESS_ACTIVE, EgressStatus.EGRESS_ENDING].includes(
-					egress.status
-				);
-			});
+			const egressArray = await this.getEgress(roomName, undefined, true);
+			return egressArray.filter((egress) => EgressHelper.isFileEgress(egress));
 		} catch (error) {
 			this.logger.error(`Error getting in-progress recordings for room '${roomName}'`, error);
 			throw internalError(`getting in-progress egress for room '${roomName}'`);

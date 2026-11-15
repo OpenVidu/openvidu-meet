@@ -98,6 +98,19 @@ describe('LiveKitService calls to an egress', () => {
 	});
 });
 
+describe('LiveKitService.getInProgressRecordingsEgress', () => {
+	it('asks LiveKit for the active egress of the room and keeps the recordings', async () => {
+		const service = new LiveKitService(logger as unknown as LoggerService);
+		const recording = { egressId: 'EG_FILE', fileResults: [{}] } as unknown as EgressInfo;
+		const broadcast = { egressId: 'EG_STREAM', streamResults: [{}] } as unknown as EgressInfo;
+		const listEgress = jest.fn(async (_options: unknown) => [recording, broadcast]);
+		(service as unknown as { lk: unknown }).lk = { egress: { listEgress } };
+
+		expect(await service.getInProgressRecordingsEgress('room-1')).toEqual([recording]);
+		expect(listEgress).toHaveBeenCalledWith({ roomName: 'room-1', egressId: undefined, active: true });
+	});
+});
+
 describe('LiveKitService.sendData', () => {
 	const buildSendingService = (sendData: () => Promise<void>) => {
 		const listRooms = jest.fn(async () => []);
