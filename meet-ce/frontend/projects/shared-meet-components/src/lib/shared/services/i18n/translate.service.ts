@@ -1,6 +1,6 @@
 import { effect, inject, Service, isDevMode, signal } from '@angular/core';
 import { AvailableLangs, LangOption } from '../../models/lang.model';
-import { DEFAULT_LANG, TRANSLATION_BUNDLES } from '../../models/translation-bundle.model';
+import { DEFAULT_LANG, TRANSLATION_BUNDLES, TranslationBundle } from '../../models/translation-bundle.model';
 import { LanguageService } from './language.service';
 
 /**
@@ -34,7 +34,7 @@ interface LanguageRules {
 @Service()
 export class TranslateService {
 	private readonly languageService = inject(LanguageService);
-	private readonly bundles = inject(TRANSLATION_BUNDLES, { optional: true }) ?? [];
+	private readonly bundles = [...(inject(TRANSLATION_BUNDLES, { optional: true }) ?? [])];
 
 	// Default locale flattened once: the permanent fallback layer and the synchronous first-paint seed.
 	private readonly base = this.bundles.reduce(
@@ -45,6 +45,7 @@ export class TranslateService {
 	// Flattened lookup for the active language (base fallback + active locale on top). `translate` reads this.
 	private active = this.base;
 	private activeLang: AvailableLangs = DEFAULT_LANG;
+	private latestLoad = 0;
 	private readonly rulesByLang = new Map<AvailableLangs, LanguageRules>();
 
 	/** Currently selected language option (shared across the whole application). */
@@ -65,6 +66,27 @@ export class TranslateService {
 			const { lang } = this.languageService.selectedLanguage();
 			this.load(lang).then(() => this.translationsLoaded.update((v) => v + 1));
 		});
+	}
+
+	/**
+	 * Adds the bundles of an area that loads lazily, such as the console, so a page that never opens
+	 * it never downloads its strings. Their default locale applies at once; the active language
+	 * follows as soon as it loads.
+	 */
+	register(...bundles: TranslationBundle[]): void {
+		const added = bundles.filter((bundle) => !this.bundles.includes(bundle));
+
+		if (added.length === 0) return;
+
+		this.bundles.push(...added);
+
+		for (const bundle of added) {
+			this.flatten(bundle.default, '', this.base);
+
+			if (this.active !== this.base) this.flatten(bundle.default, '', this.active);
+		}
+
+		this.load(this.activeLang).then(() => this.translationsLoaded.update((v) => v + 1));
 	}
 
 	/** Selects a language by code (shared preference). */
@@ -175,6 +197,8 @@ export class TranslateService {
 	 * bundle's loader and flattened over a copy of the base, so untranslated keys fall back to default.
 	 */
 	private async load(lang: AvailableLangs): Promise<void> {
+		const load = ++this.latestLoad;
+
 		if (lang === DEFAULT_LANG) {
 			this.active = this.base;
 			this.activeLang = lang;
@@ -184,6 +208,10 @@ export class TranslateService {
 		const parts = await Promise.all(
 			this.bundles.map((bundle) => bundle.loaders?.[lang]?.().catch(() => ({})) ?? Promise.resolve({}))
 		);
+
+		// A language chosen, or a bundle registered, while this one loaded has started a newer load
+		if (load !== this.latestLoad) return;
+
 		this.active = parts.reduce<Map<string, string>>((map, part) => this.flatten(part, '', map), new Map(this.base));
 		this.activeLang = lang;
 	}
