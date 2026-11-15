@@ -73,6 +73,10 @@ export class LoggerService {
 
 	// Generic method to log messages with a specific level
 	protected log(level: string, message: string, ...meta: unknown[]): void {
+		if (!this.logger.isLevelEnabled(level)) {
+			return;
+		}
+
 		this.logger.log(level, message, ...meta);
 	}
 
