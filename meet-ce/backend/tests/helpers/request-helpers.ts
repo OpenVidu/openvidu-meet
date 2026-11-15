@@ -45,6 +45,7 @@ import { MeetingDurationLimitService } from '../../src/services/meeting-duration
 import { RecordingService } from '../../src/services/recording.service.js';
 import { RedisService } from '../../src/services/redis.service.js';
 import { RoomScheduledTasksService } from '../../src/services/room-scheduled-tasks.service.js';
+import { TaskSchedulerService } from '../../src/services/task-scheduler.service.js';
 import { MongoDBService } from '../../src/services/storage/mongodb.service.js';
 import { getBasePath } from '../../src/utils/html-dynamic-base-path.utils.js';
 import {
@@ -83,7 +84,21 @@ export const startTestServer = async (): Promise<Express> => {
 
 	registerDependencies();
 	app = createApp();
+
+	// Every cron task runs once as soon as it is scheduled, without anyone waiting for it. A test that stages
+	// rooms or recordings right after the server starts would race with that pass, so the server is not handed
+	// over until it has finished.
+	const taskScheduler = container.get(TaskSchedulerService);
+	const runCronTask = taskScheduler['runCronTask'].bind(taskScheduler);
+	const bootPasses: Promise<void>[] = [];
+	taskScheduler['runCronTask'] = (...args) => {
+		const pass = runCronTask(...args);
+		bootPasses.push(pass);
+		return pass;
+	};
 	await initializeEagerServices();
+	await Promise.all(bootPasses);
+	taskScheduler['runCronTask'] = runCronTask;
 	return app;
 };
 
