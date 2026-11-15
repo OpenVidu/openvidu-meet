@@ -165,6 +165,8 @@ export class RecordingService {
 				return;
 			}
 
+			if (await this.mutexService.lockExists(MeetLock.getRecordingActiveLock(roomId))) return;
+
 			const autoStartConfig = RecordingHelper.getAutoStartConfig(recording.autoStart);
 			const participants = await this.livekitService.listRoomParticipants(roomId);
 			const thresholdReached = this.recAutoStartStateService.hasReachedAutoStartThreshold(

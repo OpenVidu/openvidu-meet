@@ -237,6 +237,10 @@ class FakeLockMutexService {
 	released: string[] = [];
 	acquirable = true;
 
+	async lockExists(): Promise<boolean> {
+		return !this.acquirable;
+	}
+
 	async acquireWithRegistry(key: string): Promise<object | null> {
 		return this.acquirable ? { key } : null;
 	}
@@ -409,7 +413,7 @@ describe('RecordingService.startAutoRecordingIfNeeded (the guards that say no)',
 	const autoStartMode = MeetRecordingAutoStartMode.WHEN_FIRST_PARTICIPANT_JOINS;
 
 	const buildAutoStartService = (config: unknown, latchDisabled = false) => {
-		const { service, latch } = buildStartService(latchDisabled);
+		const { service, livekit, mutex, latch } = buildStartService(latchDisabled);
 		Object.assign(service, {
 			roomRepository: { findByRoomId: async () => ({ config }) }
 		});
@@ -426,7 +430,7 @@ describe('RecordingService.startAutoRecordingIfNeeded (the guards that say no)',
 				{ identity: 'participant-1' } as ParticipantInfo
 			);
 
-		return { start, starts, latch };
+		return { start, starts, latch, livekit, mutex };
 	};
 
 	it.each([
@@ -449,6 +453,20 @@ describe('RecordingService.startAutoRecordingIfNeeded (the guards that say no)',
 
 		await start();
 
+		expect(starts).toEqual([]);
+	});
+
+	it('neither lists the participants nor tries to start while the room is already recording', async () => {
+		const { start, starts, livekit, mutex } = buildAutoStartService({
+			recording: { enabled: true, autoStart: autoStartMode },
+			e2ee: { enabled: false }
+		});
+		mutex.acquirable = false;
+		const listRoomParticipants = jest.spyOn(livekit, 'listRoomParticipants');
+
+		await start();
+
+		expect(listRoomParticipants).not.toHaveBeenCalled();
 		expect(starts).toEqual([]);
 	});
 
