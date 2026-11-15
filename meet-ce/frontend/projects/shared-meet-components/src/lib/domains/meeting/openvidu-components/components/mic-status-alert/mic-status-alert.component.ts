@@ -85,8 +85,7 @@ export class MicStatusAlertComponent implements AfterViewInit, OnDestroy {
 
 	private overlayRef?: OverlayRef;
 	private bubbleResizeObserver?: ResizeObserver;
-	private originTrackerId?: number;
-	private lastOriginRect?: DOMRect;
+	private stopObservingOriginMoves?: () => void;
 	private viewReady = false;
 
 	constructor() {
@@ -201,53 +200,30 @@ export class MicStatusAlertComponent implements AfterViewInit, OnDestroy {
 			this.syncArrow();
 		});
 		this.bubbleResizeObserver.observe(this.overlayRef.overlayElement);
+		this.bubbleResizeObserver.observe(this.resolveOrigin());
 	}
 
 	/**
-	 * Keeps the bubble glued to the mic button while the page moves underneath it.
+	 * Keeps the bubble glued to the mic button while the page moves underneath it: the prejoin card
+	 * slides in, a side panel opening shifts the toolbar. Those move the button without resizing
+	 * anything, which no ResizeObserver reports.
 	 */
 	private trackOriginPosition(): void {
-		if (this.originTrackerId !== undefined || typeof requestAnimationFrame === 'undefined') {
+		if (this.stopObservingOriginMoves || typeof IntersectionObserver === 'undefined') {
 			return;
 		}
 
-		const tick = () => {
-			if (!this.overlayRef?.hasAttached()) {
-				this.originTrackerId = undefined;
-				return;
-			}
-
-			const rect = this.resolveOrigin().getBoundingClientRect();
-			const previous = this.lastOriginRect;
-			const moved =
-				!previous ||
-				previous.top !== rect.top ||
-				previous.left !== rect.left ||
-				previous.width !== rect.width ||
-				previous.height !== rect.height;
-
-			if (moved) {
-				this.lastOriginRect = rect;
-				this.overlayRef.updatePosition();
-				this.syncArrow();
-			}
-
-			this.originTrackerId = requestAnimationFrame(tick);
-		};
-
-		this.originTrackerId = requestAnimationFrame(tick);
+		this.stopObservingOriginMoves = observeMove(this.resolveOrigin(), () => {
+			this.overlayRef?.updatePosition();
+			this.syncArrow();
+		});
 	}
 
 	private stopTracking(): void {
 		this.bubbleResizeObserver?.disconnect();
 		this.bubbleResizeObserver = undefined;
-
-		if (this.originTrackerId !== undefined) {
-			cancelAnimationFrame(this.originTrackerId);
-			this.originTrackerId = undefined;
-		}
-
-		this.lastOriginRect = undefined;
+		this.stopObservingOriginMoves?.();
+		this.stopObservingOriginMoves = undefined;
 	}
 
 	private hideOverlay(): void {
@@ -298,4 +274,48 @@ export class MicStatusAlertComponent implements AfterViewInit, OnDestroy {
 		const offset = Math.max(EDGE, Math.min(bubbleRect.width - EDGE, originCenterX - bubbleRect.left));
 		pointer.style.left = `${Math.round(offset)}px`;
 	}
+}
+
+/**
+ * Calls `onMove` each time the element moves, without reading its position on every frame: an
+ * IntersectionObserver whose root is shrunk to the element's own box reports the element leaving
+ * it, then starts over from the new box. It is the layout-shift check of Floating UI's `autoUpdate`.
+ *
+ * @returns Stops observing
+ */
+function observeMove(element: Element, onMove: () => void): () => void {
+	let observer: IntersectionObserver | undefined;
+
+	const observe = (threshold = 1) => {
+		observer?.disconnect();
+		const { top, left, width, height } = element.getBoundingClientRect();
+		const { clientWidth, clientHeight } = document.documentElement;
+		const insets = [top, clientWidth - left - width, clientHeight - top - height, left];
+		let firstReport = true;
+
+		observer = new IntersectionObserver(
+			([{ intersectionRatio }]) => {
+				if (firstReport) {
+					firstReport = false;
+
+					if (intersectionRatio === threshold || intersectionRatio === 0) return;
+
+					// Part of the box is out of the viewport, so it never shows whole: watch the part it shows
+					if (threshold === 1) {
+						observe(intersectionRatio);
+						return;
+					}
+				}
+
+				onMove();
+				observe();
+			},
+			// The document as root, or an embedded Meet would be measured against the host page's viewport
+			{ root: document, rootMargin: insets.map((inset) => `${-Math.floor(inset)}px`).join(' '), threshold }
+		);
+		observer.observe(element);
+	};
+
+	observe();
+	return () => observer?.disconnect();
 }
