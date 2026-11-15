@@ -44,6 +44,9 @@
 		display: flex;
 		justify-content: flex-end;
 		align-items: center;
+		// Until the icon font arrives, an icon is laid out as the text of its name, and Material leaves
+		// the icons with a badge unclipped: that text must not read as the toolbar overflowing.
+		overflow: clip;
 
 		ov-toolbar-panel-buttons {
 			display: contents;

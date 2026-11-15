@@ -419,6 +419,26 @@ test.describe('Room Features E2E Tests', () => {
 			await leaveMeeting(page, { role: 'moderator' });
 		});
 
+		test('should keep the panel buttons in a wide toolbar laid out before its icon font arrives', async ({
+			page
+		}) => {
+			await page.route('https://fonts.googleapis.com/icon?family=Material+Icons', (route) =>
+				route.fulfill({
+					contentType: 'text/css',
+					body: `@font-face {
+						font-family: 'Material Icons';
+						src: local('DejaVu Sans'), local('Liberation Sans'), local('Arial');
+						size-adjust: 300%;
+					}`
+				})
+			);
+			await openMeeting(page, roomId, { role: 'speaker' });
+
+			await expect(wcLocator(page, '#participants-panel-btn')).toBeVisible();
+
+			await leaveMeeting(page);
+		});
+
 		test('should show participants panel', async ({ page }) => {
 			await openMeeting(page, roomId, { role: 'speaker' });
 
