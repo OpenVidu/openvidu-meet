@@ -50,18 +50,18 @@ export enum EmbeddedCommandName {
 	 * Raises the local participant's hand. Every participant is notified through the
 	 * `participantHandChanged` event. Rejected while the room's `raiseHand.enabled` config is `false`.
 	 */
-	PARTICIPANT_HAND_RAISE = 'participantHandRaise',
+	PARTICIPANT_RAISE_HAND = 'participantRaiseHand',
 	/**
 	 * Lowers the local participant's hand, or another participant's when `participantIdentity` is
 	 * given. Only lowering someone else's hand needs the permission.
-	 * @permission participantHandLower
+	 * @permission participantLowerHand
 	 */
-	PARTICIPANT_HAND_LOWER = 'participantHandLower',
+	PARTICIPANT_LOWER_HAND = 'participantLowerHand',
 	/**
 	 * Lowers every raised hand in the meeting.
-	 * @permission participantHandLower
+	 * @permission participantLowerHand
 	 */
-	PARTICIPANT_HAND_LOWER_ALL = 'participantHandLowerAll',
+	PARTICIPANT_LOWER_ALL_HANDS = 'participantLowerAllHands',
 	/**
 	 * Admits the waiting participant `participantIdentity`, if a place is free.
 	 * @permission waitingParticipantAdmin
@@ -85,9 +85,9 @@ export enum EmbeddedCommandName {
 	/**
 	 * Sends a reaction from the local participant, which every participant sees for a few seconds and
 	 * is notified of through the `participantReactionSent` event.
-	 * @permission participantReactionSend
+	 * @permission participantSendReaction
 	 */
-	PARTICIPANT_REACTION_SEND = 'participantReactionSend',
+	PARTICIPANT_SEND_REACTION = 'participantSendReaction',
 	/**
 	 * Toggles the local participant's microphone, or sets it when `active` is provided.
 	 * @permission mediaPublishAudio
@@ -198,20 +198,20 @@ export interface EmbeddedCommandPayloads {
 		action: MeetParticipantModerationAction;
 	};
 	/**
-	 * Payload for the {@link EmbeddedCommandName.PARTICIPANT_HAND_RAISE} command.
+	 * Payload for the {@link EmbeddedCommandName.PARTICIPANT_RAISE_HAND} command.
 	 */
-	[EmbeddedCommandName.PARTICIPANT_HAND_RAISE]: void;
+	[EmbeddedCommandName.PARTICIPANT_RAISE_HAND]: void;
 	/**
-	 * Payload for the {@link EmbeddedCommandName.PARTICIPANT_HAND_LOWER} command.
+	 * Payload for the {@link EmbeddedCommandName.PARTICIPANT_LOWER_HAND} command.
 	 * When `participantIdentity` is omitted, the local participant's own hand is lowered.
 	 */
-	[EmbeddedCommandName.PARTICIPANT_HAND_LOWER]: {
+	[EmbeddedCommandName.PARTICIPANT_LOWER_HAND]: {
 		participantIdentity?: string;
 	};
 	/**
-	 * Payload for the {@link EmbeddedCommandName.PARTICIPANT_HAND_LOWER_ALL} command.
+	 * Payload for the {@link EmbeddedCommandName.PARTICIPANT_LOWER_ALL_HANDS} command.
 	 */
-	[EmbeddedCommandName.PARTICIPANT_HAND_LOWER_ALL]: void;
+	[EmbeddedCommandName.PARTICIPANT_LOWER_ALL_HANDS]: void;
 	/**
 	 * Payload for the {@link EmbeddedCommandName.WAITING_PARTICIPANT_ADMIT} command. See
 	 * {@link MeetWaitingParticipantDecisionOptions}.
@@ -231,10 +231,10 @@ export interface EmbeddedCommandPayloads {
 	 */
 	[EmbeddedCommandName.WAITING_PARTICIPANT_REJECT_ALL]: void;
 	/**
-	 * Payload for the {@link EmbeddedCommandName.PARTICIPANT_REACTION_SEND} command.
+	 * Payload for the {@link EmbeddedCommandName.PARTICIPANT_SEND_REACTION} command.
 	 * `reaction` is one of the reactions in {@link MeetReaction}.
 	 */
-	[EmbeddedCommandName.PARTICIPANT_REACTION_SEND]: {
+	[EmbeddedCommandName.PARTICIPANT_SEND_REACTION]: {
 		reaction: MeetReaction;
 	};
 	/**
@@ -395,30 +395,30 @@ export interface EmbeddedParticipantUpdateRoleCommand {
 }
 
 /**
- * Command message for {@link EmbeddedCommandName.PARTICIPANT_HAND_RAISE} (no payload).
+ * Command message for {@link EmbeddedCommandName.PARTICIPANT_RAISE_HAND} (no payload).
  * @category Communication
  */
-export interface EmbeddedParticipantHandRaiseCommand {
-	command: EmbeddedCommandName.PARTICIPANT_HAND_RAISE;
+export interface EmbeddedParticipantRaiseHandCommand {
+	command: EmbeddedCommandName.PARTICIPANT_RAISE_HAND;
 }
 
 /**
- * Command message for {@link EmbeddedCommandName.PARTICIPANT_HAND_LOWER}: the command name plus its
+ * Command message for {@link EmbeddedCommandName.PARTICIPANT_LOWER_HAND}: the command name plus its
  * optional payload (omitted payload or `participantIdentity` = the local participant's own hand),
  * derived from {@link EmbeddedCommandPayloadFor}.
  * @category Communication
  */
-export interface EmbeddedParticipantHandLowerCommand {
-	command: EmbeddedCommandName.PARTICIPANT_HAND_LOWER;
-	payload?: EmbeddedCommandPayloadFor<EmbeddedCommandName.PARTICIPANT_HAND_LOWER>;
+export interface EmbeddedParticipantLowerHandCommand {
+	command: EmbeddedCommandName.PARTICIPANT_LOWER_HAND;
+	payload?: EmbeddedCommandPayloadFor<EmbeddedCommandName.PARTICIPANT_LOWER_HAND>;
 }
 
 /**
- * Command message for {@link EmbeddedCommandName.PARTICIPANT_HAND_LOWER_ALL} (no payload).
+ * Command message for {@link EmbeddedCommandName.PARTICIPANT_LOWER_ALL_HANDS} (no payload).
  * @category Communication
  */
-export interface EmbeddedParticipantHandLowerAllCommand {
-	command: EmbeddedCommandName.PARTICIPANT_HAND_LOWER_ALL;
+export interface EmbeddedParticipantLowerAllHandsCommand {
+	command: EmbeddedCommandName.PARTICIPANT_LOWER_ALL_HANDS;
 }
 
 /**
@@ -458,13 +458,13 @@ export interface EmbeddedWaitingParticipantRejectAllCommand {
 }
 
 /**
- * Command message for {@link EmbeddedCommandName.PARTICIPANT_REACTION_SEND}: the command name plus its
+ * Command message for {@link EmbeddedCommandName.PARTICIPANT_SEND_REACTION}: the command name plus its
  * payload, derived from {@link EmbeddedCommandPayloadFor}.
  * @category Communication
  */
-export interface EmbeddedParticipantReactionSendCommand {
-	command: EmbeddedCommandName.PARTICIPANT_REACTION_SEND;
-	payload: EmbeddedCommandPayloadFor<EmbeddedCommandName.PARTICIPANT_REACTION_SEND>;
+export interface EmbeddedParticipantSendReactionCommand {
+	command: EmbeddedCommandName.PARTICIPANT_SEND_REACTION;
+	payload: EmbeddedCommandPayloadFor<EmbeddedCommandName.PARTICIPANT_SEND_REACTION>;
 }
 
 /**
@@ -581,14 +581,14 @@ export type EmbeddedCommand =
 	| EmbeddedParticipantMuteCommand
 	| EmbeddedParticipantMuteAllCommand
 	| EmbeddedParticipantUpdateRoleCommand
-	| EmbeddedParticipantHandRaiseCommand
-	| EmbeddedParticipantHandLowerCommand
-	| EmbeddedParticipantHandLowerAllCommand
+	| EmbeddedParticipantRaiseHandCommand
+	| EmbeddedParticipantLowerHandCommand
+	| EmbeddedParticipantLowerAllHandsCommand
 	| EmbeddedWaitingParticipantAdmitCommand
 	| EmbeddedWaitingParticipantAdmitAllCommand
 	| EmbeddedWaitingParticipantRejectCommand
 	| EmbeddedWaitingParticipantRejectAllCommand
-	| EmbeddedParticipantReactionSendCommand
+	| EmbeddedParticipantSendReactionCommand
 	| EmbeddedMediaToggleAudioCommand
 	| EmbeddedMediaToggleVideoCommand
 	| EmbeddedMediaToggleScreenShareCommand
