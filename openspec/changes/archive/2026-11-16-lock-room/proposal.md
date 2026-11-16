@@ -8,9 +8,9 @@ The waiting room merged in #219 for 3.10.0 uses names that do not follow the res
 
 - The feature becomes the **locked room**: a room whose `access.lock.enabled` is on makes the participants without `accessBypassLock` ask to join and wait until a holder of `waitingParticipantAdmin` admits or rejects them. The room config field `waitingRoom` leaves the config and becomes `access.lock` (`MeetRoomLock`) next to the room's other access settings, set with `createRoom` and `updateRoomAccess` instead of `updateRoomConfig`. The permissions `waitingRoomBypass` and `waitingRoomAdmin` become `accessBypassLock` and `waitingParticipantAdmin`, and the console and meeting UI call the feature "Locked room".
 - What happens to a participant who waits is named `waitingParticipant*` on every surface:
-  - REST, under `/api/v1/meetings/{roomId}/waiting-participants`: `waitingParticipantList` (`GET`), the new `waitingParticipantGet` (`GET /{participantIdentity}`), `waitingParticipantAdmit` (`POST /{participantIdentity}/admit`), `waitingParticipantAdmitAll` (`POST /admit`), `waitingParticipantReject` (`DELETE /{participantIdentity}`) and `bulkRejectWaitingParticipants` (`DELETE ?participantIdentities=a,b`), named and shaped like the released bulk deletes. The internal leave request moves to `POST /internal-api/v1/meetings/{roomId}/waiting-participants/leave` (`waitingParticipantLeave`).
-  - Webhooks `waitingParticipantKnocked` and `waitingParticipantStatusChanged`.
-  - Embedded events `waitingParticipantKnocked`, `waitingParticipantListUpdated` and `waitingParticipantStatusChanged` (the webhook and the event share one name; the event reaches the participant who waits and, for every wait, those in the meeting holding `waitingParticipantAdmin`), and commands `waitingParticipantAdmit`, `waitingParticipantAdmitAll`, `waitingParticipantReject` and `waitingParticipantRejectAll`.
+    - REST, under `/api/v1/meetings/{roomId}/waiting-participants`: `waitingParticipantList` (`GET`), the new `waitingParticipantGet` (`GET /{participantIdentity}`), `waitingParticipantAdmit` (`POST /{participantIdentity}/admit`), `waitingParticipantAdmitAll` (`POST /admit`), `waitingParticipantReject` (`DELETE /{participantIdentity}`) and `bulkRejectWaitingParticipants` (`DELETE ?participantIdentities=a,b`), named and shaped like the released bulk deletes. The internal leave request moves to `POST /internal-api/v1/meetings/{roomId}/waiting-participants/leave` (`waitingParticipantLeave`).
+    - Webhooks `waitingParticipantKnocked` and `waitingParticipantStatusChanged`.
+    - Embedded events `waitingParticipantKnocked`, `waitingParticipantListUpdated` and `waitingParticipantStatusChanged` (the webhook and the event share one name; the event reaches the participant who waits and, for every wait, those in the meeting holding `waitingParticipantAdmin`), and commands `waitingParticipantAdmit`, `waitingParticipantAdmitAll`, `waitingParticipantReject` and `waitingParticipantRejectAll`.
 - An admission names one participant in the path or applies to everyone waiting. A rejection names one participant in the path, or several in the query of the bulk rejection, which rejects each one on its own and answers `200`, or `400` listing those who did not wait, as the released bulk deletes do.
 - Admitting everyone waiting admits all of them or nobody: when they outnumber the free places it answers `409` `not_enough_places` and the console disables "Admit all" in that case. It no longer admits the first in line up to the free places, and it answers `{ message }` like `participantMuteAll`, the webhooks telling who got in.
 - **Removed**: `availablePlaces` (from the list, the `409` body and the `waitingParticipantListUpdated` event), the position in line (`queuePosition`, the "You're 2nd in line" waiting screen text and its screen reader announcements) and the arrival-order guarantee of the list. The meeting UI computes the free places it shows from the room and meeting data it already holds.
@@ -21,9 +21,11 @@ None of these names were released: every one replaces a 3.10.0 name outright, wi
 ## Capabilities
 
 ### New Capabilities
+
 - `locked-room`: a locked room and its waiting participants on every surface (REST, webhooks, embedded API, meeting UI, console), replacing `waiting-room`.
 
 ### Modified Capabilities
+
 - `waiting-room`: every requirement is removed, moved to `locked-room`.
 - `room-config`: the `waitingRoom` feature object leaves the config.
 - `room-access`: the room's access settings gain `lock`, with its defaults, its validation and its disclosure; an access update is refused atomically while a meeting runs.
