@@ -191,7 +191,7 @@ A name the participant typed SHALL be remembered in the browser for later entrie
 - **THEN** the name field is empty
 
 ### Requirement: Joining happens from the device setup screen
-Submitting the join screen SHALL open the device setup screen, where the participant prepares their camera and microphone (see `meeting-media`), and the participant SHALL join only when they press its join button: until then the meeting is not started (see `meetings`), no name is reserved and capacity is not checked. A participant who would wait asks to join from the join screen instead, and prepares their devices while waiting or joins at once if let in without waiting (see `waiting-room`).
+Submitting the join screen SHALL open the device setup screen, where the participant prepares their camera and microphone (see `meeting-media`), and the participant SHALL join only when they press its join button: until then the meeting is not started (see `meetings`), no name is reserved and capacity is not checked. A participant who would wait asks to join from the join screen instead, and prepares their devices while waiting or joins at once if let in without waiting (see `locked-room`).
 
 #### Scenario: Choosing devices
 - **GIVEN** an open room without a meeting
@@ -209,7 +209,7 @@ Submitting the join screen SHALL open the device setup screen, where the partici
 - **THEN** they join once, with a single name and identity
 
 #### Scenario: Participant who would wait
-- **GIVEN** a room with the waiting room on and a speaker without `waitingRoomBypass`
+- **GIVEN** a locked room and a speaker without `accessBypassLock`
 - **WHEN** the speaker submits the join screen
 - **THEN** they wait without seeing the device setup screen
 
@@ -219,7 +219,7 @@ The server SHALL issue a participant's join token only if:
 - they hold `meetingJoin` (`403`);
 - a name is given or known from their member record or account (`400`);
 - the meeting is below its `maxParticipants` (`409`, see `meetings`);
-- with the waiting room on, they hold `waitingRoomBypass` or an admitted wait's ticket, or else they wait (see `waiting-room`).
+- in a locked room, they hold `accessBypassLock` or an admitted wait's ticket, or else they wait (see `locked-room`).
 
 The meeting SHALL show the "Closed room", "Forbidden room access" or "Meeting full" error screen.
 
@@ -243,8 +243,8 @@ The meeting SHALL show the "Closed room", "Forbidden room access" or "Meeting fu
 - **WHEN** a join token is requested with `joinMeeting` true and no `participantName`
 - **THEN** the server answers `400`
 
-#### Scenario: Waiting room on
-- **GIVEN** a room with the waiting room on and a speaker without `waitingRoomBypass`
+#### Scenario: Locked room
+- **GIVEN** a locked room and a speaker without `accessBypassLock`
 - **WHEN** a join token is requested for the speaker
 - **THEN** the server answers with a waiting ticket instead of a join token
 
@@ -409,7 +409,7 @@ The `reason` of `meetingLeft` SHALL be one of the leave reasons of `meetings`, `
 - **THEN** the element emits `meetingLeft` with `reason` `duplicate_identity`
 
 ### Requirement: Leaving the meeting
-Every participant SHALL be able to leave the meeting from the toolbar; a participant holding `meetingEnd` SHALL get a choice between leaving and ending the meeting for everyone (ending is defined in `meetings`). The embedded command `meetingLeave`, and its deprecated alias `leaveRoom` until 3.12.0, SHALL leave like the toolbar and need no permission. Before the participant has joined it SHALL do nothing, except leave the waiting room while they wait (see `waiting-room`).
+Every participant SHALL be able to leave the meeting from the toolbar; a participant holding `meetingEnd` SHALL get a choice between leaving and ending the meeting for everyone (ending is defined in `meetings`). The embedded command `meetingLeave`, and its deprecated alias `leaveRoom` until 3.12.0, SHALL leave like the toolbar and need no permission. Before the participant has joined it SHALL do nothing, except stop the wait while they wait (see `locked-room`).
 
 #### Scenario: Participant without meetingEnd
 - **GIVEN** a speaker without `meetingEnd` in a meeting
@@ -429,7 +429,7 @@ Every participant SHALL be able to leave the meeting from the toolbar; a partici
 #### Scenario: Leave command while waiting
 - **GIVEN** an embedded element whose participant waits to be admitted
 - **WHEN** the host calls `meetingLeave()`
-- **THEN** the participant leaves the waiting room
+- **THEN** the participant stops waiting
 
 ### Requirement: End screen
 After the local participant leaves a meeting, the meeting SHALL show the end screen, whose title and message state the reason: they left, were removed by a moderator, a moderator ended the meeting, they ended it, it reached its duration limit, the network or the server dropped them, they joined from another tab or device, or an unexpected error.
