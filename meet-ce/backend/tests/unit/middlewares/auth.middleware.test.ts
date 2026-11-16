@@ -217,10 +217,12 @@ describe('the validators, against a change made in the same millisecond as the t
 		it('refuses a token signed with the same credentials that carries no Meet metadata', async () => {
 			jest.spyOn(tokenService, 'verifyToken').mockResolvedValue({ sub: 'user-1' } as never);
 
-			await expect(accessTokenValidator(MeetUserRole.ADMIN).validate(accessTokenRequest())).rejects.toMatchObject({
-				statusCode: 401,
-				message: 'Invalid token'
-			});
+			await expect(accessTokenValidator(MeetUserRole.ADMIN).validate(accessTokenRequest())).rejects.toMatchObject(
+				{
+					statusCode: 401,
+					message: 'Invalid token'
+				}
+			);
 		});
 
 		it('refuses a refresh token used as an access token', async () => {
@@ -229,10 +231,12 @@ describe('the validators, against a change made in the same millisecond as the t
 				tokenType: TokenType.REFRESH
 			} as never);
 
-			await expect(accessTokenValidator(MeetUserRole.ADMIN).validate(accessTokenRequest())).rejects.toMatchObject({
-				statusCode: 401,
-				message: 'Invalid token'
-			});
+			await expect(accessTokenValidator(MeetUserRole.ADMIN).validate(accessTokenRequest())).rejects.toMatchObject(
+				{
+					statusCode: 401,
+					message: 'Invalid token'
+				}
+			);
 		});
 
 		it('refuses a token whose user is gone', async () => {
@@ -473,8 +477,8 @@ describe('the validators, against a change made in the same millisecond as the t
 			).rejects.toMatchObject({ statusCode: 401 });
 		});
 
-		// The handlers that gate a feature on the room config take it from the room the validator read, so that
-		// read has to carry the config, and a refused token must not leave a room behind for them.
+		// The handlers that gate a feature on the room config or its lock take them from the room the validator read,
+		// so that read has to carry both, and a refused token must not leave a room behind for them.
 		describe('the room it shares with the rest of the request', () => {
 			const validateInRequest = (updates: typeof sameInstant) =>
 				requestSessionService.run(async () => {
@@ -485,7 +489,7 @@ describe('the validators, against a change made in the same millisecond as the t
 					return { outcome, room: requestSessionService.getRoom('room-1') };
 				});
 
-			it('keeps the room it read, config included, once it accepts the token', async () => {
+			it('keeps the room it read, config and access included, once it accepts the token', async () => {
 				expect(await validateInRequest(sameInstant)).toEqual({
 					outcome: 'accepted',
 					room: { roomId: 'room-1', rolesUpdatedAt: ISSUED_AT, config }
@@ -494,7 +498,8 @@ describe('the validators, against a change made in the same millisecond as the t
 					'roomId',
 					'roomName',
 					'rolesUpdatedAt',
-					'config'
+					'config',
+					'access'
 				]);
 			});
 

@@ -49,12 +49,14 @@ paths:
         $ref: './meetings/meetings.yaml#/~1meetings~1{roomId}~1participants~1{participantIdentity}~1role'
     /meetings/{roomId}/participants/{participantIdentity}/hand:
         $ref: './meetings/meetings.yaml#/~1meetings~1{roomId}~1participants~1{participantIdentity}~1hand'
-    /meetings/{roomId}/waiting-room:
-        $ref: './meetings/meetings.yaml#/~1meetings~1{roomId}~1waiting-room'
-    /meetings/{roomId}/waiting-room/admit:
-        $ref: './meetings/meetings.yaml#/~1meetings~1{roomId}~1waiting-room~1admit'
-    /meetings/{roomId}/waiting-room/reject:
-        $ref: './meetings/meetings.yaml#/~1meetings~1{roomId}~1waiting-room~1reject'
+    /meetings/{roomId}/waiting-participants:
+        $ref: './meetings/meetings.yaml#/~1meetings~1{roomId}~1waiting-participants'
+    /meetings/{roomId}/waiting-participants/admit:
+        $ref: './meetings/meetings.yaml#/~1meetings~1{roomId}~1waiting-participants~1admit'
+    /meetings/{roomId}/waiting-participants/{participantIdentity}:
+        $ref: './meetings/meetings.yaml#/~1meetings~1{roomId}~1waiting-participants~1{participantIdentity}'
+    /meetings/{roomId}/waiting-participants/{participantIdentity}/admit:
+        $ref: './meetings/meetings.yaml#/~1meetings~1{roomId}~1waiting-participants~1{participantIdentity}~1admit'
     /recordings:
         $ref: './recordings/recordings.yaml#/~1recordings'
     /recordings/download:
@@ -103,8 +105,8 @@ components:
             $ref: ./meetings/schemas/meet-meeting-info.yaml
         MeetParticipantInfo:
             $ref: ./meetings/schemas/meet-participant-info.yaml
-        MeetWaitingRoomParticipant:
-            $ref: ./meetings/schemas/meet-waiting-room-participant.yaml
+        MeetWaitingParticipant:
+            $ref: ./meetings/schemas/meet-waiting-participant.yaml
         MeetRecording:
             $ref: ./recordings/schemas/meet-recording.yaml
         MeetBroadcast:

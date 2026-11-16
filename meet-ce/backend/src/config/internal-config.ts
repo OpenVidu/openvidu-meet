@@ -66,14 +66,14 @@ export const INTERNAL_CONFIG = {
 	WEBSOCKET_MAX_CONNECTIONS_PER_ADDRESS: 5, // Connections one replica keeps per room and address; a newer one closes the oldest with 1008
 	WEBSOCKET_MAX_PAYLOAD_BYTES: 4096, // Largest frame a client may send; the server ignores client frames anyway
 
-	// Waiting room
-	WAITING_ROOM_MAX_ENTRIES: 100, // Participants a room's waiting room holds, admitted ones not joined yet included; one more asking answers 409
-	WAITING_ROOM_UNSEEN_TIMEOUT: '60s' as StringValue, // A waiting participant unseen this long, or an admission not used by joining within it, expires
-	WAITING_ROOM_UNCONNECTED_KNOCK_TIMEOUT: '15s' as StringValue, // A knock whose waiting screen never connects expires this long after it, through the same rule as WAITING_ROOM_UNSEEN_TIMEOUT
-	WAITING_ROOM_ENDED_WAIT_TTL: '5m' as StringValue, // How long an ended wait remembers its outcome, so a client that reconnects learns how it ended
-	WAITING_ROOM_SWEEP_INTERVAL: '5s' as StringValue, // Interval of the sweep that expires the waits of WAITING_ROOM_UNSEEN_TIMEOUT
-	WAITING_ROOM_SWEEP_MAX_GAP: '15s' as StringValue, // A sweep run following a longer pause since the previous one (a Redis outage, a stalled replica) expires nobody
-	WAITING_ROOM_SWEEP_GAP_GRACE: '25s' as StringValue, // Nor do the runs within this long after such a pause: one ping cycle plus margin, so every connection has refreshed its presence
+	// Waiting participants of a locked room
+	WAITING_PARTICIPANT_MAX_ENTRIES: 100, // Participants a locked room holds waiting, admitted ones not joined yet included; one more asking answers 409
+	WAITING_PARTICIPANT_UNSEEN_TIMEOUT: '60s' as StringValue, // A waiting participant unseen this long, or an admission not used by joining within it, expires
+	WAITING_PARTICIPANT_UNCONNECTED_KNOCK_TIMEOUT: '15s' as StringValue, // A knock whose waiting screen never connects expires this long after it, through the same rule as WAITING_PARTICIPANT_UNSEEN_TIMEOUT
+	WAITING_PARTICIPANT_ENDED_WAIT_TTL: '5m' as StringValue, // How long an ended wait remembers its outcome, so a client that reconnects learns how it ended
+	WAITING_PARTICIPANT_SWEEP_INTERVAL: '5s' as StringValue, // Interval of the sweep that expires the waits of WAITING_PARTICIPANT_UNSEEN_TIMEOUT
+	WAITING_PARTICIPANT_SWEEP_MAX_GAP: '15s' as StringValue, // A sweep run following a longer pause since the previous one (a Redis outage, a stalled replica) expires nobody
+	WAITING_PARTICIPANT_SWEEP_GAP_GRACE: '25s' as StringValue, // Nor do the runs within this long after such a pause: one ping cycle plus margin, so every connection has refreshed its presence
 
 	// Additional intervals
 	MIN_ROOM_AUTO_DELETE_DURATION: '1h' as StringValue, // Minimum duration before a room can be auto-deleted
@@ -128,7 +128,7 @@ export const INTERNAL_CONFIG = {
 	CONCURRENCY_BULK_UPDATE_PERMISSIONS: 20, // Concurrency limit for bulk updating room members' permissions
 	CONCURRENCY_BULK_CLEANUP_USER_RESOURCES: 20, // Concurrency limit for bulk cleanup of user resources
 	CONCURRENCY_BULK_CLEANUP_PARTICIPANT_NAME_RESERVATIONS: 20, // Concurrency limit for bulk cleanup of participant name reservations
-	CONCURRENCY_WAITING_ROOM_SWEEP: 10, // Concurrency limit for the rooms whose waits one pass of the waiting room sweep expires
+	CONCURRENCY_WAITING_PARTICIPANT_SWEEP: 10, // Concurrency limit for the rooms whose waits one pass of the waiting participant sweep expires
 
 	ANALYTICS_EXPIRING_ROOMS_WINDOW: '7d' as StringValue, // How far ahead an auto-deletion date counts a room as expiring soon in the analytics
 

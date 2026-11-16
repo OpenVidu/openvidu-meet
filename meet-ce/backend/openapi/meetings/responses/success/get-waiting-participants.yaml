@@ -1,0 +1,26 @@
+description: The participants waiting
+content:
+    application/json:
+        schema:
+            type: object
+            required:
+                - participants
+            properties:
+                participants:
+                    type: array
+                    description: >
+                        The participants waiting, in no promised order, at most 100. An admitted participant is not in
+                        the list. Empty when the room is not locked.
+                    items:
+                        $ref: '../../schemas/meet-waiting-participant.yaml'
+        example:
+            participants:
+                - participantIdentity: 'ana-a1b2c3'
+                  participantName: 'Ana'
+                  type: anonymous
+                  externalId: 'user-42'
+                  knockDate: 1620000000000
+                - participantIdentity: 'ben_smith'
+                  participantName: 'Ben'
+                  type: identified_guest
+                  knockDate: 1620000004000

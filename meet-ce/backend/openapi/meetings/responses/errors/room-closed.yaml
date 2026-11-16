@@ -1,6 +1,6 @@
 description: >
-    Room closed, meeting full, the participant's role being changed when regenerating their token, the waiting
-    room full (`error` is `waiting_room_full`), or the wait of a `waitingRoomTicket` over (`error` is `wait_ended`)
+    Room closed, meeting full, the participant's role being changed when regenerating their token, too many
+    participants waiting (`error` is `waiting_list_full`), or the wait of a `waitingTicket` over (`error` is `wait_ended`)
 content:
     application/json:
         schema:
@@ -36,18 +36,18 @@ content:
                 value:
                     error: 'Participant Error'
                     message: "Participant 'alice_smith' in room 'room_123' is already being updated"
-            waiting_room_full:
-                summary: The waiting room is full, with 100 participants waiting
+            waiting_list_full:
+                summary: Too many participants waiting, 100 already
                 value:
-                    error: waiting_room_full
-                    message: "The waiting room of room 'room_123' is full"
-            waiting_room_wait_ended:
+                    error: waiting_list_full
+                    message: "Room 'room_123' already has as many waiting participants as it can hold"
+            wait_ended:
                 summary: The wait of the ticket has ended, rejected here
                 value:
                     error: wait_ended
                     message: 'The wait has ended'
                     status: rejected
-            waiting_room_wait_unknown:
+            wait_unknown:
                 summary: Meet does not know the ticket, or it belongs to another room
                 value:
                     error: wait_ended

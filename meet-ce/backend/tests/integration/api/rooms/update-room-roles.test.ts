@@ -181,46 +181,46 @@ describe('Room API Tests', () => {
 			);
 		});
 
-		it('should create the default roles with the waiting room permissions granted to the moderator role only', async () => {
-			const createdRoom = await createRoom({ roomName: 'default-waiting-room-roles' }, undefined, {
+		it('should create the default roles with the locked room permissions granted to the moderator role only', async () => {
+			const createdRoom = await createRoom({ roomName: 'default-locked-room-roles' }, undefined, {
 				xExtraFields: 'roles'
 			});
 
 			expect(createdRoom.roles.moderator.permissions).toMatchObject({
-				waitingRoomBypass: true,
-				waitingRoomAdmin: true
+				accessBypassLock: true,
+				waitingParticipantAdmin: true
 			});
 			expect(createdRoom.roles.speaker.permissions).toMatchObject({
-				waitingRoomBypass: false,
-				waitingRoomAdmin: false
+				accessBypassLock: false,
+				waitingParticipantAdmin: false
 			});
 		});
 
-		it('should update each waiting room permission independently of the other', async () => {
-			const createdRoom = await createRoom({ roomName: 'waiting-room-roles-update' });
+		it('should update each locked room permission independently of the other', async () => {
+			const createdRoom = await createRoom({ roomName: 'locked-room-roles-update' });
 
 			const updateResponse = await updateRoomRoles(createdRoom.roomId, {
-				moderator: { permissions: { waitingRoomBypass: false } },
-				speaker: { permissions: { waitingRoomAdmin: true } }
+				moderator: { permissions: { accessBypassLock: false } },
+				speaker: { permissions: { waitingParticipantAdmin: true } }
 			});
 			expect(updateResponse.status).toBe(200);
 
 			const getResponse = await getRoom(createdRoom.roomId, undefined, 'roles');
 			expect(getResponse.body.roles.moderator.permissions).toMatchObject({
-				waitingRoomBypass: false,
-				waitingRoomAdmin: true
+				accessBypassLock: false,
+				waitingParticipantAdmin: true
 			});
 			expect(getResponse.body.roles.speaker.permissions).toMatchObject({
-				waitingRoomBypass: false,
-				waitingRoomAdmin: true
+				accessBypassLock: false,
+				waitingParticipantAdmin: true
 			});
 		});
 
-		it('should reject a waiting room permission that is not a boolean', async () => {
-			const createdRoom = await createRoom({ roomName: 'waiting-room-roles-invalid' });
+		it('should reject a locked room permission that is not a boolean', async () => {
+			const createdRoom = await createRoom({ roomName: 'locked-room-roles-invalid' });
 
 			const response = await updateRoomRoles(createdRoom.roomId, {
-				speaker: { permissions: { waitingRoomAdmin: 'yes' } }
+				speaker: { permissions: { waitingParticipantAdmin: 'yes' } }
 			} as unknown as MeetRoomRolesConfig);
 
 			expect(response.status).toBe(422);

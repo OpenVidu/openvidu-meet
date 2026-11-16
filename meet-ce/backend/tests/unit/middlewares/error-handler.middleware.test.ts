@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it, jest } from '@jest/globals';
-import { MeetWaitingRoomStatus } from '@openvidu-meet/typings';
+import { MeetWaitingParticipantStatus } from '@openvidu-meet/typings';
 import express, { type NextFunction, type Request, type Response } from 'express';
 import request from 'supertest';
 import { container, registerDependencies } from '../../../src/config/dependency-injector.config.js';
@@ -8,7 +8,7 @@ import { DocumentNotFoundError } from '../../../src/models/database.model.js';
 import {
 	errorLivekitNotAvailable,
 	errorRecordingNotFound,
-	errorWaitingRoomWaitEnded,
+	errorWaitEnded,
 	OpenViduMeetError
 } from '../../../src/models/error.model.js';
 import { LoggerService } from '../../../src/services/logger.service.js';
@@ -32,10 +32,10 @@ const buildApp = () => {
 		throw errorLivekitNotAvailable();
 	});
 	app.post('/wait-ended', () => {
-		throw errorWaitingRoomWaitEnded(MeetWaitingRoomStatus.REJECTED);
+		throw errorWaitEnded(MeetWaitingParticipantStatus.REJECTED);
 	});
 	app.post('/wait-unknown', () => {
-		throw errorWaitingRoomWaitEnded();
+		throw errorWaitEnded();
 	});
 	app.post('/typed-object', () => {
 		throw { type: 'entity.parse.failed' };

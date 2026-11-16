@@ -95,7 +95,8 @@ describe('MeetRoomHelper anonymous link disclosure', () => {
 				speaker: { enabled: true, url: '/room/room-1?secret=spk' },
 				recording: { enabled: false, url: '/room/room-1/recordings?secret=rec' }
 			},
-			user: { enabled: true, url: '/room/room-1' }
+			user: { enabled: true, url: '/room/room-1' },
+			lock: { enabled: false }
 		}
 	});
 	const linksReturnedTo = (permissions: MeetRoomMemberPermissions, filteredRoom = room()) => {
@@ -181,12 +182,13 @@ describe('MeetRoomHelper anonymous link disclosure', () => {
 			expect(linksReturnedTo(moderatorPermissions, withoutRoles)).toEqual([]);
 		});
 
-		it('should keep every enabled flag and the user access link', () => {
+		it('should keep every enabled flag, the user access link and the lock', () => {
 			const { access } = MeetRoomHelper.applyPermissionFiltering(room(), MeetRoomMemberHelper.noPermissions());
 
 			expect(access).toEqual({
 				anonymous: { moderator: { enabled: true }, speaker: { enabled: true }, recording: { enabled: false } },
-				user: { enabled: true, url: '/room/room-1' }
+				user: { enabled: true, url: '/room/room-1' },
+				lock: { enabled: false }
 			});
 		});
 

@@ -25,6 +25,3 @@ content:
                     enabled: true
                 virtualBackground:
                     enabled: true
-                waitingRoom:
-                    enabled: true
-                    message: The host will let you in shortly.

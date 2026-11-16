@@ -61,7 +61,8 @@ charter"; registry: `meet-ce/typings/src/api-registry.ts`), enforced by
 violation:
 
 - Every new `operationId` is `moduleAction` camelCase (`meetingEnd`, `participantKick`), starting
-  with a registered module token. The pre-charter operations (`createRoom`, `startRecording`, …)
+  with a registered module token, or, for a bulk operation, `bulk` + verb + a module token's plural
+  (`bulkRejectWaitingParticipants`), as the released bulk deletes are named. The pre-charter operations (`createRoom`, `startRecording`, …)
   are frozen in an allowlist inside the lint script — do not add to it; public `operationId`s
   generate SDK method names and get renamed in the next major.
 - A new **top-level path segment** must be registered in `MEET_API_REST_GROUPS` first, and that is

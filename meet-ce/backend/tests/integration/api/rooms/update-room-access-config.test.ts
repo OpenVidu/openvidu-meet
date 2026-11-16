@@ -1,5 +1,5 @@
 import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
-import { MeetRoomAccessConfig } from '@openvidu-meet/typings';
+import { MeetRoomAccessConfig, MeetRoomConfigOptions } from '@openvidu-meet/typings';
 import { MeetRecordingModel } from '../../../../src/models/mongoose-schemas/recording.schema.js';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
 import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
@@ -9,7 +9,8 @@ import {
 	deleteAllRooms,
 	getRoom,
 	startTestServer,
-	updateRoomAccessConfig
+	updateRoomAccessConfig,
+	updateRoomConfig
 } from '../../../helpers/request-helpers.js';
 import { createRecordingForRoom, setupSingleRoom } from '../../../helpers/test-scenarios.js';
 
@@ -171,6 +172,67 @@ describe('Room API Tests', () => {
 			expect(response.body.message).toContain(`Room '${roomData.room.roomId}' has an active meeting`);
 		});
 
+		it('should lock the room and keep its message when the update leaves it out', async () => {
+			const createdRoom = await createRoom({
+				roomName: 'locked-room-update',
+				access: { lock: { enabled: false, message: 'Please wait' } }
+			});
+
+			const turnedOn = await updateRoomAccessConfig(createdRoom.roomId, { lock: { enabled: true } });
+			expect(turnedOn.status).toBe(200);
+			expect(turnedOn.body.lock).toEqual({ enabled: true, message: 'Please wait' });
+
+			const getResponse = await getRoom(createdRoom.roomId, 'access');
+			expect(getResponse.body.access.lock).toEqual({ enabled: true, message: 'Please wait' });
+		});
+
+		it('should replace the lock message and remove it when the update sends null', async () => {
+			const createdRoom = await createRoom({
+				roomName: 'locked-room-message',
+				access: { lock: { enabled: true, message: 'Please wait' } }
+			});
+
+			const replaced = await updateRoomAccessConfig(createdRoom.roomId, {
+				lock: { enabled: true, message: 'Soon' }
+			});
+			expect(replaced.status).toBe(200);
+			expect(replaced.body.lock).toEqual({ enabled: true, message: 'Soon' });
+
+			const removed = await updateRoomAccessConfig(createdRoom.roomId, {
+				lock: { enabled: true, message: null }
+			});
+			expect(removed.status).toBe(200);
+			expect(removed.body.lock).toEqual({ enabled: true });
+
+			const getResponse = await getRoom(createdRoom.roomId, 'access');
+			expect(getResponse.body.access.lock).toEqual({ enabled: true });
+		});
+
+		it('should reject locking the room during an active meeting', async () => {
+			const roomData = await setupSingleRoom(true);
+
+			const response = await updateRoomAccessConfig(roomData.room.roomId, { lock: { enabled: true } });
+			expect(response.status).toBe(409);
+
+			const getResponse = await getRoom(roomData.room.roomId, 'access');
+			expect(getResponse.body.access.lock).toEqual({ enabled: false });
+		});
+
+		it('should leave the lock alone when the room config update carries it', async () => {
+			const createdRoom = await createRoom({
+				roomName: 'lock-not-in-config',
+				access: { lock: { enabled: true, message: 'Please wait' } }
+			});
+
+			const response = await updateRoomConfig(createdRoom.roomId, {
+				locked: { enabled: false, message: null }
+			} as unknown as MeetRoomConfigOptions);
+			expect(response.status).toBe(200);
+
+			const getResponse = await getRoom(createdRoom.roomId, 'access');
+			expect(getResponse.body.access.lock).toEqual({ enabled: true, message: 'Please wait' });
+		});
+
 		it('should return 404 when updating access config for non-existent room', async () => {
 			const nonExistentRoomId = 'non-existent-room';
 
@@ -198,6 +260,25 @@ describe('Room API Tests', () => {
 				invalidAccessConfig as unknown as MeetRoomAccessConfig
 			);
 			expectValidationError(response, 'access.user.enabled', 'Expected boolean');
+		});
+
+		it('should reject a lock without its switch or with a message over 500 characters', async () => {
+			const createdRoom = await createRoom({ roomName: 'locked-room-validation' });
+
+			let response = await updateRoomAccessConfig(createdRoom.roomId, {
+				lock: { message: 'Please wait' }
+			} as unknown as MeetRoomAccessConfig);
+			expectValidationError(response, 'access.lock.enabled', 'Required');
+
+			response = await updateRoomAccessConfig(createdRoom.roomId, {
+				lock: { enabled: true, message: 'a'.repeat(501) }
+			});
+			expectValidationError(response, 'access.lock.message', 'Must not exceed 500 characters');
+
+			response = await updateRoomAccessConfig(createdRoom.roomId, {
+				lock: { enabled: true, message: 'a'.repeat(500) }
+			});
+			expect(response.status).toBe(200);
 		});
 
 		it('should fail when access object is missing', async () => {

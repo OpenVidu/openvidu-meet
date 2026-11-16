@@ -26,10 +26,10 @@ content:
                             - meetingEnded
                             - participantJoined
                             - participantLeft
-                            - participantKnocked
+                            - waitingParticipantKnocked
                             - participantRoleChanged
                             - participantHandChanged
-                            - participantWaitingChanged
+                            - waitingParticipantStatusChanged
                             - recordingStarted
                             - recordingUpdated
                             - recordingEnded

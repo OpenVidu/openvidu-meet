@@ -1,6 +1,7 @@
 import { expect } from '@jest/globals';
 import {
 	MeetPermissionsInput,
+	MeetRoomAccessConfig,
 	MeetRoomConfig,
 	MeetRoomMember,
 	MeetRoomMemberOptions,
@@ -43,17 +44,20 @@ let mockWebhookServer: http.Server;
  * @param withParticipant Whether to join a fake participant in the room.
  * @param roomName        Name of the room to create.
  * @param config     Optional room config.
+ * @param access     Optional room access config.
  * @returns               Room data including secrets and tokens.
  */
 export const setupSingleRoom = async (
 	withParticipant = false,
 	roomName = 'TEST_ROOM',
-	config?: Partial<MeetRoomConfig>
+	config?: Partial<MeetRoomConfig>,
+	access?: MeetRoomAccessConfig
 ): Promise<RoomData> => {
 	const room = await createRoom(
 		{
 			roomName,
-			config
+			config,
+			access
 		},
 		undefined,
 		// Request the 'roles' extra field so consumers can read room.roles (excluded from responses by default)

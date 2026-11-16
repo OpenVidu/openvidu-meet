@@ -66,8 +66,8 @@ const expectedCurrentEffectivePermissions = {
 	participantMute: false,
 	participantHandLower: false,
 	participantReactionSend: true,
-	waitingRoomBypass: false,
-	waitingRoomAdmin: false,
+	accessBypassLock: false,
+	waitingParticipantAdmin: false,
 	meetingEnd: false,
 	mediaPublishVideo: true,
 	mediaPublishAudio: true,
@@ -77,11 +77,11 @@ const expectedCurrentEffectivePermissions = {
 	mediaChangeVirtualBackground: true
 };
 
-// v6 is what the live broadcast builds store: the current shape without the waiting room permissions.
+// v6 is what the live broadcast builds store: the current shape without the locked room permissions.
 const buildLegacyRoomMemberV6 = (roomId: string, memberId: string, baseRole: MeetRoomMemberRole) => {
 	const {
-		waitingRoomBypass: _bypass,
-		waitingRoomAdmin: _admin,
+		accessBypassLock: _bypass,
+		waitingParticipantAdmin: _admin,
 		...effectivePermissions
 	} = expectedCurrentEffectivePermissions;
 
@@ -123,7 +123,7 @@ describe('Room Member Schema Migrations', () => {
 			expect(migratedMember.customPermissions).toEqual(expectedCurrentCustomPermissions);
 		});
 
-		it('should transform room member schema from v6 to v7 granting the waiting room permissions to a moderator only', () => {
+		it('should transform room member schema from v6 to v7 granting the locked room permissions to a moderator only', () => {
 			const migrationName = generateSchemaMigrationName(meetRoomMemberCollectionName, 6, 7);
 			const transform = roomMemberMigrations.get(migrationName);
 			expect(transform).toBeDefined();
@@ -135,7 +135,10 @@ describe('Room Member Schema Migrations', () => {
 					MeetRoomMemberRole.MODERATOR
 				) as unknown as MeetRoomMemberDocument
 			);
-			expect(moderator.effectivePermissions).toMatchObject({ waitingRoomBypass: true, waitingRoomAdmin: true });
+			expect(moderator.effectivePermissions).toMatchObject({
+				accessBypassLock: true,
+				waitingParticipantAdmin: true
+			});
 			expect(moderator.customPermissions).toEqual({ chatWrite: false });
 
 			const speaker = transform!(
@@ -145,7 +148,10 @@ describe('Room Member Schema Migrations', () => {
 					MeetRoomMemberRole.SPEAKER
 				) as unknown as MeetRoomMemberDocument
 			);
-			expect(speaker.effectivePermissions).toMatchObject({ waitingRoomBypass: false, waitingRoomAdmin: false });
+			expect(speaker.effectivePermissions).toMatchObject({
+				accessBypassLock: false,
+				waitingParticipantAdmin: false
+			});
 		});
 
 		it('should leave an absent customPermissions untouched', () => {
@@ -215,8 +221,8 @@ describe('Room Member Schema Migrations', () => {
 				schemaVersion: INTERNAL_CONFIG.ROOM_MEMBER_SCHEMA_VERSION,
 				effectivePermissions: {
 					...expectedCurrentEffectivePermissions,
-					waitingRoomBypass: true,
-					waitingRoomAdmin: true
+					accessBypassLock: true,
+					waitingParticipantAdmin: true
 				},
 				customPermissions: { chatWrite: false }
 			});

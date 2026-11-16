@@ -1,12 +1,12 @@
 import bodyParser from 'body-parser';
 import { Router } from 'express';
-import * as waitingRoomCtrl from '../controllers/waiting-room.controller.js';
+import * as waitingParticipantCtrl from '../controllers/waiting-participant.controller.js';
 import * as meetingCtrl from '../controllers/meeting.controller.js';
 import { apiKeyValidator, roomMemberTokenValidator, withAuth } from '../middlewares/auth.middleware.js';
 import { apiLimiter } from '../middlewares/rate-limit.middleware.js';
 import {
-	validateWaitingRoomDecisionReq,
-	validateWaitingRoomLeaveReq,
+	validateBulkRejectWaitingParticipantsReq,
+	validateWaitingParticipantLeaveReq,
 	validateLowerAllHandsReq,
 	validateMuteParticipantMediaReq,
 	validateSendParticipantReactionReq,
@@ -98,29 +98,49 @@ meetingRouter.put(
 	meetingCtrl.updateParticipantHand
 );
 
-// Waiting room routes: they answer with no meeting running, since participants wait before it starts.
+// Waiting participant routes: they answer with no meeting running, since participants wait before it starts.
 meetingRouter.get(
-	'/:roomId/waiting-room',
+	'/:roomId/waiting-participants',
 	withAuth(apiKeyValidator, roomMemberTokenValidator),
 	withValidRoomId,
-	withRoomPermission('waitingRoomAdmin'),
-	waitingRoomCtrl.getWaitingRoom
+	withRoomPermission('waitingParticipantAdmin'),
+	waitingParticipantCtrl.getWaitingParticipants
 );
 meetingRouter.post(
-	'/:roomId/waiting-room/admit',
+	'/:roomId/waiting-participants/admit',
 	withAuth(apiKeyValidator, roomMemberTokenValidator),
 	withValidRoomId,
-	validateWaitingRoomDecisionReq,
-	withRoomPermission('waitingRoomAdmin'),
-	waitingRoomCtrl.admitFromWaitingRoom
+	withRoomPermission('waitingParticipantAdmin'),
+	waitingParticipantCtrl.admitAllWaitingParticipants
+);
+meetingRouter.delete(
+	'/:roomId/waiting-participants',
+	withAuth(apiKeyValidator, roomMemberTokenValidator),
+	withValidRoomId,
+	validateBulkRejectWaitingParticipantsReq,
+	withRoomPermission('waitingParticipantAdmin'),
+	waitingParticipantCtrl.bulkRejectWaitingParticipants
+);
+meetingRouter.get(
+	'/:roomId/waiting-participants/:participantIdentity',
+	withAuth(apiKeyValidator, roomMemberTokenValidator),
+	withValidRoomId,
+	withRoomPermission('waitingParticipantAdmin'),
+	waitingParticipantCtrl.getWaitingParticipant
 );
 meetingRouter.post(
-	'/:roomId/waiting-room/reject',
+	'/:roomId/waiting-participants/:participantIdentity/admit',
 	withAuth(apiKeyValidator, roomMemberTokenValidator),
 	withValidRoomId,
-	validateWaitingRoomDecisionReq,
-	withRoomPermission('waitingRoomAdmin'),
-	waitingRoomCtrl.rejectFromWaitingRoom
+	withRoomPermission('waitingParticipantAdmin'),
+	waitingParticipantCtrl.admitWaitingParticipant
+);
+meetingRouter.delete(
+	'/:roomId/waiting-participants/:participantIdentity',
+	withAuth(apiKeyValidator, roomMemberTokenValidator),
+	withValidRoomId,
+	withRoomPermission('waitingParticipantAdmin'),
+	waitingParticipantCtrl.rejectWaitingParticipant
 );
 
 // Internal meeting routes
@@ -141,8 +161,8 @@ internalMeetingRouter.post(
 
 // The ticket is the only credential, and no header is needed, so a page that unloads sends it without a CORS preflight.
 internalMeetingRouter.post(
-	'/:roomId/waiting-room/leave',
+	'/:roomId/waiting-participants/leave',
 	withValidRoomId,
-	validateWaitingRoomLeaveReq,
-	waitingRoomCtrl.leaveWaitingRoom
+	validateWaitingParticipantLeaveReq,
+	waitingParticipantCtrl.leaveWaiting
 );

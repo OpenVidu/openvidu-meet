@@ -2,9 +2,10 @@ import { beforeAll, describe, expect, it } from '@jest/globals';
 import { MeetReaction } from '@openvidu-meet/typings';
 import type { z } from 'zod';
 import { configureZodErrorMessages } from '../../../src/config/zod-config.js';
+import { INTERNAL_CONFIG } from '../../../src/config/internal-config.js';
 import {
-	WaitingRoomDecisionReqSchema,
-	WaitingRoomLeaveReqSchema,
+	BulkRejectWaitingParticipantsReqSchema,
+	WaitingParticipantLeaveReqSchema,
 	LowerAllHandsReqSchema,
 	MuteParticipantMediaReqSchema,
 	SendParticipantReactionReqSchema,
@@ -107,47 +108,43 @@ describe('SendParticipantReactionReqSchema', () => {
 	});
 });
 
-describe('WaitingRoomDecisionReqSchema', () => {
-	it('reads an empty body as everyone waiting', () => {
-		expect(WaitingRoomDecisionReqSchema.parse({})).toEqual({});
-	});
-
-	it('accepts one participant or several, each named once', () => {
-		expect(WaitingRoomDecisionReqSchema.parse({ participantIdentities: ['ana'] })).toEqual({
-			participantIdentities: ['ana']
+describe('WaitingParticipantLeaveReqSchema', () => {
+	it('needs the ticket of the wait', () => {
+		expect(WaitingParticipantLeaveReqSchema.parse({ waitingTicket: 'q8d1u3Zr0m6ZxVwK9tHc2A' })).toEqual({
+			waitingTicket: 'q8d1u3Zr0m6ZxVwK9tHc2A'
 		});
-		expect(WaitingRoomDecisionReqSchema.parse({ participantIdentities: ['ana', 'ben'] })).toEqual({
+		expect(issues(WaitingParticipantLeaveReqSchema, {})).toHaveLength(1);
+		expect(issues(WaitingParticipantLeaveReqSchema, { waitingTicket: '' })).toHaveLength(1);
+	});
+});
+
+describe('BulkRejectWaitingParticipantsReqSchema', () => {
+	const identities = (count: number): string => Array.from({ length: count }, (_, i) => `p-${i}`).join(',');
+
+	it('reads the comma-separated identities, trimmed and without repetitions', () => {
+		expect(BulkRejectWaitingParticipantsReqSchema.parse({ participantIdentities: ' ana, ben,,ana ' })).toEqual({
 			participantIdentities: ['ana', 'ben']
 		});
 	});
 
-	it('refuses an empty list instead of reading it as everyone waiting', () => {
-		expect(issues(WaitingRoomDecisionReqSchema, { participantIdentities: [] })).toEqual([
-			'participantIdentities: Must name at least one participant'
+	it('needs at least one identity', () => {
+		expect(issues(BulkRejectWaitingParticipantsReqSchema, {})).toEqual([
+			'participantIdentities: At least one participantIdentity is required'
 		]);
+		expect(issues(BulkRejectWaitingParticipantsReqSchema, { participantIdentities: ' , ' })).toHaveLength(1);
 	});
 
-	it('refuses an identity named twice', () => {
-		expect(issues(WaitingRoomDecisionReqSchema, { participantIdentities: ['ana', 'ana'] })).toEqual([
-			'participantIdentities: Must not repeat an identity'
+	it('accepts as many distinct identities as one bulk operation may take, and no more', () => {
+		const max = INTERNAL_CONFIG.BULK_DELETE_MAX_ITEMS;
+
+		expect(issues(BulkRejectWaitingParticipantsReqSchema, { participantIdentities: identities(max) })).toEqual([]);
+		expect(issues(BulkRejectWaitingParticipantsReqSchema, { participantIdentities: identities(max + 1) })).toEqual([
+			`participantIdentities: participantIdentities cannot exceed ${max} items`
 		]);
-	});
-
-	it('refuses more participants than a waiting room holds, and identities that are not strings', () => {
-		const identities = Array.from({ length: 101 }, (_, index) => `p-${index}`);
-
-		expect(issues(WaitingRoomDecisionReqSchema, { participantIdentities: identities })).toHaveLength(1);
-		expect(issues(WaitingRoomDecisionReqSchema, { participantIdentities: [42] })).toHaveLength(1);
-		expect(issues(WaitingRoomDecisionReqSchema, { participantIdentities: [''] })).toHaveLength(1);
-	});
-});
-
-describe('WaitingRoomLeaveReqSchema', () => {
-	it('needs the ticket of the wait', () => {
-		expect(WaitingRoomLeaveReqSchema.parse({ waitingRoomTicket: 'q8d1u3Zr0m6ZxVwK9tHc2A' })).toEqual({
-			waitingRoomTicket: 'q8d1u3Zr0m6ZxVwK9tHc2A'
-		});
-		expect(issues(WaitingRoomLeaveReqSchema, {})).toHaveLength(1);
-		expect(issues(WaitingRoomLeaveReqSchema, { waitingRoomTicket: '' })).toHaveLength(1);
+		expect(
+			issues(BulkRejectWaitingParticipantsReqSchema, {
+				participantIdentities: Array.from({ length: max + 1 }, () => 'ana').join(',')
+			})
+		).toEqual([]);
 	});
 });

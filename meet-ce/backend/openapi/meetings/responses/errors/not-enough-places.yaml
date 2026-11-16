@@ -1,0 +1,10 @@
+description: >
+    Conflict: the participants to admit outnumber the free places of the meeting, counting the participants admitted
+    who have not joined yet; `error` is `not_enough_places`. Nobody is admitted
+content:
+    application/json:
+        schema:
+            $ref: '../../../shared/schemas/error.yaml'
+        example:
+            error: not_enough_places
+            message: "The meeting of room 'room_123' has fewer free places than participants to admit"

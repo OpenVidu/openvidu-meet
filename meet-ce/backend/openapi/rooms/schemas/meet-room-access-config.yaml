@@ -40,6 +40,27 @@ properties:
                 description: |
                     Enables or disables access for users.
                     **Note**: admins, owner and members of the room will always have access regardless of this setting.
+    lock:
+        type: object
+        required:
+            - enabled
+        properties:
+            enabled:
+                type: boolean
+                default: false
+                example: false
+                description: >
+                    Locks or unlocks the room. While it is locked, a participant who asks to join waits until
+                    someone holding `waitingParticipantAdmin` admits them, unless they hold `accessBypassLock`.
+                    Unlocking it lets everyone waiting in, each through the usual join checks.
+            message:
+                type: [string, 'null']
+                maxLength: 500
+                example: 'The host will let you in shortly.'
+                description: >
+                    Message the waiting participants see while they wait, up to 500 characters; a longer one is
+                    rejected with a `422`. An omitted message keeps its current value; `null` removes it (a room
+                    never serves it as `null`: the field is left out).
 description: |
     Configuration for room access.
 

@@ -50,7 +50,7 @@ import type {
 } from '../types/room-projection.types.js';
 import { runConcurrently } from '../utils/concurrency.utils.js';
 import { LiveKitService } from './livekit.service.js';
-import { WaitingRoomService } from './waiting-room/waiting-room.service.js';
+import { WaitingParticipantService } from './waiting-participants/waiting-participant.service.js';
 import { LoggerService } from './logger.service.js';
 import { RecordingService } from './recording.service.js';
 import { RequestSessionService } from './request-session.service.js';
@@ -70,7 +70,7 @@ export class RoomService {
 		@inject(RecordingService) protected recordingService: RecordingService,
 		@inject(LiveKitService) protected livekitService: LiveKitService,
 		@inject(RequestSessionService) protected requestSessionService: RequestSessionService,
-		@inject(WaitingRoomService) protected waitingRoomService: WaitingRoomService
+		@inject(WaitingParticipantService) protected waitingParticipantService: WaitingParticipantService
 	) {}
 
 	/**
@@ -115,8 +115,8 @@ export class RoomService {
 			participantMute: true,
 			participantHandLower: true,
 			participantReactionSend: true,
-			waitingRoomBypass: true,
-			waitingRoomAdmin: true,
+			accessBypassLock: true,
+			waitingParticipantAdmin: true,
 			meetingEnd: true,
 			mediaPublishVideo: true,
 			mediaPublishAudio: true,
@@ -144,8 +144,8 @@ export class RoomService {
 			participantMute: false,
 			participantHandLower: false,
 			participantReactionSend: true,
-			waitingRoomBypass: false,
-			waitingRoomAdmin: false,
+			accessBypassLock: false,
+			waitingParticipantAdmin: false,
 			meetingEnd: false,
 			mediaPublishVideo: true,
 			mediaPublishAudio: true,
@@ -182,6 +182,10 @@ export class RoomService {
 			user: {
 				enabled: access?.user?.enabled ?? false,
 				url: `/room/${roomId}`
+			},
+			lock: {
+				enabled: access?.lock?.enabled ?? false,
+				message: access?.lock?.message ?? undefined
 			}
 		};
 
@@ -246,7 +250,6 @@ export class RoomService {
 	/**
 	 * Updates the configuration of a specific meeting room without an active meeting.
 	 * Supports partial updates - only provided fields will be updated.
-	 * Turning the waiting room off lets everyone waiting in.
 	 *
 	 * @param roomId - The unique identifier of the meeting room to update
 	 * @param config - Partial config with the fields to update
@@ -262,10 +265,6 @@ export class RoomService {
 
 		// Merge existing config with new config (partial update)
 		const updatedConfig = merge({}, room.config, config);
-
-		if (config.waitingRoom?.message === null) {
-			updatedConfig.waitingRoom.message = undefined;
-		}
 
 		// The destination list is replaced as a whole, never merged entry by entry, and its saved
 		// URLs are the only ones the room knows: a redacted URL sent back keeps the saved one.
@@ -291,13 +290,7 @@ export class RoomService {
 			broadcastDestinations.urls
 		);
 
-		if (!updatedRoom) return this.updateMeetRoomConfig(roomId, config);
-
-		if (room.config.waitingRoom.enabled && !updatedRoom.config.waitingRoom.enabled) {
-			await this.waitingRoomService.letEveryoneIn(roomId);
-		}
-
-		return updatedRoom;
+		return updatedRoom ?? this.updateMeetRoomConfig(roomId, config);
 	}
 
 	/**
@@ -348,7 +341,7 @@ export class RoomService {
 
 			if (status === MeetRoomStatus.CLOSED) {
 				this.logger.info(`Room '${roomId}' closed`);
-				await this.waitingRoomService.closeRoom(roomId);
+				await this.waitingParticipantService.closeRoom(roomId);
 			}
 
 			return { room: updatedRoom, updated: true };
@@ -447,7 +440,8 @@ export class RoomService {
 	}
 
 	/**
-	 * Updates the access configuration of a specific meeting room.
+	 * Updates the access configuration of a specific meeting room without an active meeting.
+	 * Unlocking the room lets everyone waiting in.
 	 *
 	 * @param roomId - The unique identifier of the meeting room to update
 	 * @param access - Partial access config with the fields to update
@@ -462,10 +456,18 @@ export class RoomService {
 
 		// Merge existing access config with new access config (partial update)
 		const updatedAccess = merge({}, room.access, access);
-		const updatedRoom = await this.roomRepository.updatePartial(roomId, {
-			access: updatedAccess,
-			rolesUpdatedAt: Date.now()
-		});
+
+		if (access.lock?.message === null) {
+			updatedAccess.lock.message = undefined;
+		}
+
+		const updatedRoom = await this.roomRepository.updateIdleRoomAccess(roomId, updatedAccess);
+
+		if (!updatedRoom) return this.updateMeetRoomAccess(roomId, access);
+
+		if (room.access.lock.enabled && !updatedRoom.access.lock.enabled) {
+			await this.waitingParticipantService.letEveryoneIn(roomId);
+		}
 
 		// If user access enabled/disabled, update recordings access scope metadata
 		const previousUserAccessEnabled = room.access.user.enabled;
@@ -696,7 +698,7 @@ export class RoomService {
 
 			await Promise.all([
 				this.roomMemberRepository.deleteAllByRoomId(roomId),
-				this.waitingRoomService.closeRoom(roomId)
+				this.waitingParticipantService.closeRoom(roomId)
 			]);
 			return {};
 		}
@@ -728,7 +730,7 @@ export class RoomService {
 
 			if (!updatedRoom) return null;
 
-			await this.waitingRoomService.closeRoom(roomId);
+			await this.waitingParticipantService.closeRoom(roomId);
 			return { room: updatedRoom };
 		}
 
@@ -738,7 +740,7 @@ export class RoomService {
 		await Promise.all([
 			this.recordingService.deleteAllRoomRecordings(roomId),
 			this.roomMemberRepository.deleteAllByRoomId(roomId),
-			this.waitingRoomService.closeRoom(roomId)
+			this.waitingParticipantService.closeRoom(roomId)
 		]);
 		return {};
 	}

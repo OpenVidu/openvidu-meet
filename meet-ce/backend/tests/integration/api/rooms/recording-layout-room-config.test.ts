@@ -40,8 +40,7 @@ describe('Room API Tests', () => {
 				broadcast: { enabled: false, destinations: [] },
 				captions: { enabled: true },
 				raiseHand: { enabled: true },
-				reactions: { enabled: true },
-				waitingRoom: { enabled: false }
+				reactions: { enabled: true }
 			};
 			expectValidRoom(room, 'Room with Default Layout', {
 				roomIdPrefix: 'room_with_default_layout',
@@ -74,8 +73,7 @@ describe('Room API Tests', () => {
 				broadcast: { enabled: false, destinations: [] },
 				captions: { enabled: true },
 				raiseHand: { enabled: true },
-				reactions: { enabled: true },
-				waitingRoom: { enabled: false }
+				reactions: { enabled: true }
 			};
 			expectValidRoom(room, 'Speaker Layout Room', {
 				roomIdPrefix: 'speaker_layout_room',
@@ -108,8 +106,7 @@ describe('Room API Tests', () => {
 				broadcast: { enabled: false, destinations: [] },
 				captions: { enabled: true },
 				raiseHand: { enabled: true },
-				reactions: { enabled: true },
-				waitingRoom: { enabled: false }
+				reactions: { enabled: true }
 			};
 			expectValidRoom(room, 'Single Speaker Layout Room', {
 				roomIdPrefix: 'single_speaker_layout_room',

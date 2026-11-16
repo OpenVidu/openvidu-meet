@@ -56,8 +56,8 @@ describe('Permission alias map', () => {
 			'participantMute',
 			'participantHandLower',
 			'participantReactionSend',
-			'waitingRoomBypass',
-			'waitingRoomAdmin',
+			'accessBypassLock',
+			'waitingParticipantAdmin',
 			'broadcastControl',
 			'broadcastEdit'
 		]);
@@ -108,7 +108,8 @@ describe('Permission alias map', () => {
 			'breakout',
 			'notes',
 			'whiteboard',
-			'waitingRoom',
+			'access',
+			'waitingParticipant',
 			'broadcast'
 		];
 
@@ -183,8 +184,8 @@ describe('normalizePermissions', () => {
 		participantMute: false,
 		participantHandLower: false,
 		participantReactionSend: true,
-		waitingRoomBypass: false,
-		waitingRoomAdmin: false,
+		accessBypassLock: false,
+		waitingParticipantAdmin: false,
 		broadcastControl: false,
 		broadcastEdit: false
 	};
@@ -246,20 +247,20 @@ describe('normalizePermissions', () => {
 		});
 	});
 
-	// Skipping the waiting room and deciding who enters are powers of their own: a set that cannot name
-	// them never opens a room that turns the waiting room on.
-	it('should default the waiting room permissions to false, never take them from participantKick', () => {
+	// Joining a locked room without waiting and deciding who enters are powers of their own: a set that cannot name
+	// them never opens a room that is locked.
+	it('should default the locked room permissions to false, never take them from participantKick', () => {
 		expect(normalizePermissions({ participantKick: true }, { complete: true })).toEqual({
 			participantKick: true,
 			...literalDefaults
 		});
-		expect(normalizePermissions({ waitingRoomBypass: true }, { complete: true })).toEqual({
+		expect(normalizePermissions({ accessBypassLock: true }, { complete: true })).toEqual({
 			...literalDefaults,
-			waitingRoomBypass: true
+			accessBypassLock: true
 		});
-		expect(normalizePermissions({ waitingRoomAdmin: true }, { complete: true })).toEqual({
+		expect(normalizePermissions({ waitingParticipantAdmin: true }, { complete: true })).toEqual({
 			...literalDefaults,
-			waitingRoomAdmin: true
+			waitingParticipantAdmin: true
 		});
 	});
 
@@ -331,8 +332,8 @@ describe('toDeprecatedPermissions', () => {
 			...current,
 			participantMute: false,
 			participantHandLower: false,
-			waitingRoomBypass: false,
-			waitingRoomAdmin: false,
+			accessBypassLock: false,
+			waitingParticipantAdmin: false,
 			broadcastControl: false,
 			broadcastEdit: false
 		});

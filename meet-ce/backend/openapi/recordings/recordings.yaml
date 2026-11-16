@@ -29,8 +29,8 @@
             [fetching the recording](#/operations/getRecording).
 
 
-            In a room with the waiting room on, a room member token acts on the meeting only if it carries a
-            participant identity, which only a join token does: one obtained without joining answers `403`. A
+            In a locked room, a room member token acts on the meeting only if it carries a participant
+            identity, which only a join token does: one obtained without joining answers `403`. A
             host application acting for itself uses the API key.
         tags:
             - OpenVidu Meet - Recordings
@@ -493,8 +493,8 @@
             > Stops are also serialized per room: while one stop is in flight, another stop for the
             > same room is rejected with a 409 error.
 
-            In a room with the waiting room on, a room member token acts on the meeting only if it carries a
-            participant identity, which only a join token does: one obtained without joining answers `403`. A
+            In a locked room, a room member token acts on the meeting only if it carries a participant
+            identity, which only a join token does: one obtained without joining answers `403`. A
             host application acting for itself uses the API key.
         tags:
             - OpenVidu Meet - Recordings

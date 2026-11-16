@@ -117,6 +117,8 @@ content:
                                   user:
                                       enabled: false
                                       url: 'https://example.com/room/room-123'
+                                  lock:
+                                      enabled: false
                               status: closed
                               rolesUpdatedAt: 1620000000000
                               meetingEndAction: none
@@ -151,6 +153,8 @@ content:
                                   user:
                                       enabled: false
                                       url: 'https://example.com/room/room-123'
+                                  lock:
+                                      enabled: false
                               status: active_meeting
                               rolesUpdatedAt: 1620000000000
                               meetingEndAction: delete
@@ -185,6 +189,8 @@ content:
                                   user:
                                       enabled: false
                                       url: 'https://example.com/room/room-123'
+                                  lock:
+                                      enabled: false
                               status: active_meeting
                               rolesUpdatedAt: 1620000000000
                               meetingEndAction: close
@@ -219,6 +225,8 @@ content:
                                   user:
                                       enabled: false
                                       url: 'https://example.com/room/room-123'
+                                  lock:
+                                      enabled: false
                               status: active_meeting
                               rolesUpdatedAt: 1620000000000
                               meetingEndAction: delete
@@ -253,6 +261,8 @@ content:
                                   user:
                                       enabled: false
                                       url: 'https://example.com/room/room-123'
+                                  lock:
+                                      enabled: false
                               status: active_meeting
                               rolesUpdatedAt: 1620000000000
                               meetingEndAction: close

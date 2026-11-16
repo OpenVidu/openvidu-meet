@@ -5,7 +5,7 @@ import {
 	MeetRoomMemberRole,
 	MeetRoomMemberTokenMetadata,
 	MeetRoomMemberUIBadge,
-	MeetWaitingRoomTicketResponse
+	MeetWaitingTicketResponse
 } from '@openvidu-meet/typings';
 import { Express } from 'express';
 import { jwtDecode } from 'jwt-decode';
@@ -26,15 +26,19 @@ import {
 	updateParticipantMetadata
 } from '../../../helpers/livekit-cli-helpers.js';
 import {
-	admitFromWaitingRoom,
+	admitAllWaitingParticipants,
+	admitWaitingParticipant,
 	askToJoin,
+	bulkRejectWaitingParticipants,
 	createAssistant,
 	deleteAllRooms,
 	generateRoomMemberToken,
 	getFullPath,
-	getWaitingRoom,
+	getWaitingParticipant,
+	getWaitingParticipants,
 	loginRootAdmin,
 	refreshRoomMemberTokenRequest,
+	rejectWaitingParticipant,
 	startTestServer,
 	stopAllRecordings
 } from '../../../helpers/request-helpers.js';
@@ -452,11 +456,11 @@ describe('Meeting API Security Tests', () => {
 		});
 	});
 
-	describe('Waiting room Tests', () => {
+	describe('Locked Room Tests', () => {
 		const RECORDINGS_PATH = getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`);
 
-		let waitingRoomRoomId: string;
-		let waitingRoomRoom: RoomData;
+		let lockedRoomId: string;
+		let lockedRoom: RoomData;
 		let waitingAdmitter: RoomMemberData;
 		let admittedToken: string;
 		let hostToken: string;
@@ -465,30 +469,28 @@ describe('Meeting API Security Tests', () => {
 		/** Joins the meeting with the identity and metadata of a join token, as its client would. */
 		const connectWith = async (token: string) => {
 			const { sub, metadata } = jwtDecode<ClaimGrants>(token);
-			await joinFakeParticipant(waitingRoomRoomId, sub!, metadata);
+			await joinFakeParticipant(lockedRoomId, sub!, metadata);
 			return sub!;
 		};
 
 		/** Asks to join with a link, is admitted with the API key and joins with the ticket. */
-		const joinThroughTheLine = async (secret: string, name: string) => {
-			const { waitingRoomTicket, participant } = (await askToJoin(waitingRoomRoomId, secret, name))
-				.body as MeetWaitingRoomTicketResponse;
-			expect((await admitFromWaitingRoom(waitingRoomRoomId, [participant.participantIdentity])).status).toBe(200);
-			const joined = await askToJoin(waitingRoomRoomId, secret, name, waitingRoomTicket);
+		const joinThroughAdmission = async (secret: string, name: string) => {
+			const { waitingTicket, participant } = (await askToJoin(lockedRoomId, secret, name))
+				.body as MeetWaitingTicketResponse;
+			expect((await admitWaitingParticipant(lockedRoomId, participant.participantIdentity)).status).toBe(200);
+			const joined = await askToJoin(lockedRoomId, secret, name, waitingTicket);
 			expect(joined.status).toBe(200);
 			return joined.body.token as string;
 		};
 
 		const meetingRequests = (token: string) => [
+			request(app).get(`${MEETINGS_PATH}/${lockedRoomId}`).set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, token),
 			request(app)
-				.get(`${MEETINGS_PATH}/${waitingRoomRoomId}`)
-				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, token),
-			request(app)
-				.get(`${MEETINGS_PATH}/${waitingRoomRoomId}/participants`)
+				.get(`${MEETINGS_PATH}/${lockedRoomId}/participants`)
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, token),
 			request(app)
 				.get(BROADCASTS_PATH)
-				.query({ roomId: waitingRoomRoomId })
+				.query({ roomId: lockedRoomId })
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, token)
 		];
 
@@ -496,38 +498,38 @@ describe('Meeting API Security Tests', () => {
 			request(app)
 				.post(RECORDINGS_PATH)
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, token)
-				.send({ roomId: waitingRoomRoomId });
+				.send({ roomId: lockedRoomId });
 
 		beforeAll(async () => {
-			waitingRoomRoom = await setupSingleRoom(false, 'WAITING_ROOM_ROOM', { waitingRoom: { enabled: true } });
-			waitingRoomRoomId = waitingRoomRoom.room.roomId;
-			waitingAdmitter = await setupRoomMember(waitingRoomRoomId, {
+			lockedRoom = await setupSingleRoom(false, 'LOCKED_ROOM', undefined, { lock: { enabled: true } });
+			lockedRoomId = lockedRoom.room.roomId;
+			waitingAdmitter = await setupRoomMember(lockedRoomId, {
 				name: 'Waiting Admitter',
 				baseRole: MeetRoomMemberRole.MODERATOR,
-				customPermissions: { waitingRoomBypass: false }
+				customPermissions: { accessBypassLock: false }
 			});
 
-			const host = await askToJoin(waitingRoomRoomId, waitingRoomRoom.moderatorSecret, 'Host');
+			const host = await askToJoin(lockedRoomId, lockedRoom.moderatorSecret, 'Host');
 			hostToken = `Bearer ${host.body.token}`;
 			await connectWith(host.body.token);
-			await waitForMeetingToStart(waitingRoomRoomId);
+			await waitForMeetingToStart(lockedRoomId);
 
-			const admitted = await joinThroughTheLine(guestSecretOf(waitingAdmitter.member), 'Waiting Admitter');
+			const admitted = await joinThroughAdmission(guestSecretOf(waitingAdmitter.member), 'Waiting Admitter');
 			admittedToken = `Bearer ${admitted}`;
 			await connectWith(admitted);
 
-			const demoted = await joinThroughTheLine(waitingRoomRoom.speakerSecret, 'Demoted');
+			const demoted = await joinThroughAdmission(lockedRoom.speakerSecret, 'Demoted');
 			const demotedIdentity = await connectWith(demoted);
 
 			for (const action of [MeetParticipantModerationAction.UPGRADE, MeetParticipantModerationAction.DOWNGRADE]) {
 				const response = await request(app)
-					.put(`${MEETINGS_PATH}/${waitingRoomRoomId}/participants/${demotedIdentity}/role`)
+					.put(`${MEETINGS_PATH}/${lockedRoomId}/participants/${demotedIdentity}/role`)
 					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, hostToken)
 					.send({ action });
 				expect(response.status).toBe(200);
 			}
 
-			const renewed = await refreshRoomMemberTokenRequest(waitingRoomRoomId, `Bearer ${demoted}`);
+			const renewed = await refreshRoomMemberTokenRequest(lockedRoomId, `Bearer ${demoted}`);
 			expect(renewed.status).toBe(200);
 			demotedToken = `Bearer ${renewed.body.token}`;
 		});
@@ -540,7 +542,7 @@ describe('Meeting API Security Tests', () => {
 			const responses = await Promise.all([
 				...meetingRequests(waitingAdmitter.memberToken),
 				startRecordingWith(waitingAdmitter.memberToken),
-				getWaitingRoom(waitingRoomRoomId, waitingAdmitter.memberToken)
+				getWaitingParticipants(lockedRoomId, waitingAdmitter.memberToken)
 			]);
 
 			responses.forEach((response) => expectMeetError(response, errorInsufficientPermissions()));
@@ -553,7 +555,7 @@ describe('Meeting API Security Tests', () => {
 			expect(response.status).toBe(200);
 		});
 
-		it('should act on the meeting with the join token of an admitted participant, of a holder of waitingRoomBypass and of a moderator demoted during the meeting', async () => {
+		it('should act on the meeting with the join token of an admitted participant, of a holder of accessBypassLock and of a moderator demoted during the meeting', async () => {
 			for (const token of [admittedToken, hostToken, demotedToken]) {
 				const responses = await Promise.all(meetingRequests(token));
 				responses.forEach((response) => expect(response.status).toBe(200));
@@ -563,20 +565,31 @@ describe('Meeting API Security Tests', () => {
 				expect((await startRecordingWith(token)).status).not.toBe(403);
 			}
 
-			expect((await getWaitingRoom(waitingRoomRoomId, admittedToken)).status).toBe(200);
+			expect((await getWaitingParticipants(lockedRoomId, admittedToken)).status).toBe(200);
 		});
 
-		it('should guard the waiting room operations with waitingRoomAdmin', async () => {
-			expect((await getWaitingRoom(waitingRoomRoomId)).status).toBe(200);
-			expectMeetError(await getWaitingRoom(waitingRoomRoomId, demotedToken), errorInsufficientPermissions());
+		it('should guard the waiting participant operations with waitingParticipantAdmin', async () => {
+			expect((await getWaitingParticipants(lockedRoomId)).status).toBe(200);
+
+			for (const response of await Promise.all([
+				getWaitingParticipants(lockedRoomId, demotedToken),
+				getWaitingParticipant(lockedRoomId, 'ana-1', demotedToken),
+				admitWaitingParticipant(lockedRoomId, 'ana-1', demotedToken),
+				admitAllWaitingParticipants(lockedRoomId, demotedToken),
+				rejectWaitingParticipant(lockedRoomId, 'ana-1', demotedToken),
+				bulkRejectWaitingParticipants(lockedRoomId, ['ana-1'], demotedToken)
+			])) {
+				expectMeetError(response, errorInsufficientPermissions());
+			}
+
 			expectMeetError(
 				await request(app)
-					.get(`${MEETINGS_PATH}/${waitingRoomRoomId}/waiting-room`)
+					.get(`${MEETINGS_PATH}/${lockedRoomId}/waiting-participants`)
 					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, rootAdminAccessToken),
 				errorUnauthorized()
 			);
 			expectMeetError(
-				await getWaitingRoom(waitingRoomRoomId, (await setupSingleRoom()).moderatorToken),
+				await getWaitingParticipants(lockedRoomId, (await setupSingleRoom()).moderatorToken),
 				errorInsufficientPermissions()
 			);
 		});
