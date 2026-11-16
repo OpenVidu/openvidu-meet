@@ -5,7 +5,7 @@
 }
 
 // Amber tint, apart from the solid amber of a meeting about to end and of the raised hands.
-.waiting-room-chip {
+.waiting-participants-chip {
 	@include chip.status-chip;
 	max-width: 100%;
 	min-width: 0;

@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { MeetWaitingRoomErrorCode } from '@openvidu-meet/typings';
+import { MeetWaitingParticipantErrorCode } from '@openvidu-meet/typings';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
-import { isWaitingRoomWaitEnded, isWaitingRoomFull, roomMemberTokenFailure } from './room-member-token-failure.utils';
+import { isWaitEnded, isWaitingListFull, roomMemberTokenFailure } from './room-member-token-failure.utils';
 
 describe('roomMemberTokenFailure', () => {
 	const failure = (status: number, message = '') => new HttpErrorResponse({ status, error: { message } });
@@ -42,19 +42,19 @@ describe('roomMemberTokenFailure', () => {
 	});
 });
 
-describe('waiting room refusals', () => {
+describe('waiting list refusals', () => {
 	const refusal = (status: number, error: string, message = '') =>
 		new HttpErrorResponse({ status, error: { error, message } });
 
-	it('tells a full waiting room from the other refusals of a join, by its code', () => {
-		expect(isWaitingRoomFull(refusal(409, MeetWaitingRoomErrorCode.WAITING_ROOM_FULL))).toBeTrue();
-		expect(isWaitingRoomFull(refusal(409, 'Room Error', 'The waiting room of room is full'))).toBeFalse();
-		expect(isWaitingRoomFull(refusal(409, MeetWaitingRoomErrorCode.WAIT_ENDED))).toBeFalse();
+	it('tells a full waiting list from the other refusals of a join, by its code', () => {
+		expect(isWaitingListFull(refusal(409, MeetWaitingParticipantErrorCode.WAITING_LIST_FULL))).toBeTrue();
+		expect(isWaitingListFull(refusal(409, 'Room Error', 'The waiting list of room is full'))).toBeFalse();
+		expect(isWaitingListFull(refusal(409, MeetWaitingParticipantErrorCode.WAIT_ENDED))).toBeFalse();
 	});
 
 	it('tells an ended wait from the other refusals of a join with a ticket, by its code', () => {
-		expect(isWaitingRoomWaitEnded(refusal(409, MeetWaitingRoomErrorCode.WAIT_ENDED))).toBeTrue();
-		expect(isWaitingRoomWaitEnded(refusal(409, 'Room Error', 'The wait has ended'))).toBeFalse();
-		expect(isWaitingRoomWaitEnded(refusal(409, MeetWaitingRoomErrorCode.WAITING_ROOM_FULL))).toBeFalse();
+		expect(isWaitEnded(refusal(409, MeetWaitingParticipantErrorCode.WAIT_ENDED))).toBeTrue();
+		expect(isWaitEnded(refusal(409, 'Room Error', 'The wait has ended'))).toBeFalse();
+		expect(isWaitEnded(refusal(409, MeetWaitingParticipantErrorCode.WAITING_LIST_FULL))).toBeFalse();
 	});
 });

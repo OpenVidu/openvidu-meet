@@ -1,4 +1,4 @@
-<ng-content select="ov-waiting-room-notice" />
+<ng-content select="ov-waiting-participants-notice" />
 
 @switch (entryFlow.step()) {
 	@case ('preparing') {
@@ -17,7 +17,7 @@
 		<ov-meeting-join />
 	}
 	@case ('meeting') {
-		@if (waitingRoom.outcome()) {
+		@if (waitingParticipant.outcome()) {
 			<ng-container [ngTemplateOutlet]="waitingOutcomeTemplate()" />
 		} @else {
 			<ov-meeting-view
@@ -81,7 +81,7 @@
 			     which is about the room, not about anyone in the list. The raised hands strip follows, above your own row,
 			     because lowering every hand lowers yours too -->
 				<div *ovParticipantPanelBeforeLocalParticipant>
-					<ng-content select="ov-waiting-room-panel-section" />
+					<ng-content select="ov-waiting-participants-panel-section" />
 					<ng-content select="ov-meeting-invite-panel" />
 					<ov-meeting-raised-hands-strip />
 				</div>
@@ -124,7 +124,7 @@
 				</ng-container>
 
 				<ng-container *ovStatusRailEnd>
-					<ng-content select="ov-waiting-room-status-chip" />
+					<ng-content select="ov-waiting-participants-status-chip" />
 				</ng-container>
 
 				<ng-container *ovWaiting>

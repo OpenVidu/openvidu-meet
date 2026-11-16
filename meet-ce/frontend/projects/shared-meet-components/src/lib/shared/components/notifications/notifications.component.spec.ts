@@ -34,7 +34,7 @@ describe('NotificationsComponent', () => {
 
 	it('shows the avatars of whom it is about in place of the glyph, stacked from two', async () => {
 		notificationService.showNotification({
-			kind: 'waiting-room-knock',
+			kind: 'waiting-participant-knock',
 			icon: 'hourglass_top',
 			avatars: [
 				{ name: 'zoe', color: 'rgb(255, 221, 153)' },
@@ -56,7 +56,7 @@ describe('NotificationsComponent', () => {
 		const deny = jasmine.createSpy('deny');
 		const admit = jasmine.createSpy('admit');
 		notificationService.showNotification({
-			kind: 'waiting-room-knock',
+			kind: 'waiting-participant-knock',
 			icon: 'hourglass_top',
 			message: 'Wants to join',
 			placement: 'pinned',

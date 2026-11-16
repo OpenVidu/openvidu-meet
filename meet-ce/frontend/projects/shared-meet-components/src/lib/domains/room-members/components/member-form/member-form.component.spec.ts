@@ -10,7 +10,7 @@ import { TranslateService } from '../../../../shared/services/i18n/translate.ser
 import { UserService } from '../../../users/services/user.service';
 import { MemberFormComponent } from './member-form.component';
 
-const WAITING_ROOM_PERMISSIONS = ['waitingRoomBypass', 'waitingRoomAdmin'];
+const LOCKED_ROOM_PERMISSIONS = ['accessBypassLock', 'waitingParticipantAdmin'];
 
 const permissions = (granted: (key: string) => boolean): MeetRoomMemberPermissions =>
 	Object.fromEntries(
@@ -19,10 +19,10 @@ const permissions = (granted: (key: string) => boolean): MeetRoomMemberPermissio
 
 const roomRoles: MeetRoomRoles = {
 	moderator: { permissions: permissions(() => true) },
-	speaker: { permissions: permissions((key) => !WAITING_ROOM_PERMISSIONS.includes(key)) }
+	speaker: { permissions: permissions((key) => !LOCKED_ROOM_PERMISSIONS.includes(key)) }
 };
 
-describe('MemberFormComponent (waiting room permissions)', () => {
+describe('MemberFormComponent (locked room permissions)', () => {
 	let fixture: ComponentFixture<MemberFormComponent>;
 
 	const element = (): HTMLElement => fixture.nativeElement;
@@ -55,20 +55,20 @@ describe('MemberFormComponent (waiting room permissions)', () => {
 		await fixture.whenStable();
 	});
 
-	it('groups the waiting room permissions under their own Waiting room group', () => {
+	it('groups the locked room permissions under their own Locked room group', () => {
 		const group = Array.from(element().querySelectorAll('.permission-group')).find((candidate) =>
-			candidate.querySelector('.permission-group-label')?.textContent?.includes('GROUPS.WAITING_ROOM')
+			candidate.querySelector('.permission-group-label')?.textContent?.includes('GROUPS.LOCKED_ROOM')
 		);
 
 		expect(group).toBeDefined();
 		expect(Array.from(group!.querySelectorAll('.permission-row')).map((row) => row.id)).toEqual([
-			'member-permission-waitingRoomBypass',
-			'member-permission-waitingRoomAdmin'
+			'member-permission-accessBypassLock',
+			'member-permission-waitingParticipantAdmin'
 		]);
 	});
 
-	it('starts the waiting room permissions at the base role values: off for a speaker, on for a moderator', async () => {
-		const state = () => WAITING_ROOM_PERMISSIONS.map((key) => toggle(key).getAttribute('aria-checked'));
+	it('starts the locked room permissions at the base role values: off for a speaker, on for a moderator', async () => {
+		const state = () => LOCKED_ROOM_PERMISSIONS.map((key) => toggle(key).getAttribute('aria-checked'));
 
 		expect(state()).toEqual(['false', 'false']);
 

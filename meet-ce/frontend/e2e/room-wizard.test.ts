@@ -5,6 +5,7 @@ import {
 	createRoom,
 	deleteRooms,
 	deleteUsers,
+	getRoomAccess,
 	getRoomConfig,
 	getRoomRoles,
 	MEET_BASE_URL
@@ -367,46 +368,46 @@ test.describe('Room wizard E2E Tests', () => {
 		expect(config.initialVideoActive).toBe(true);
 	});
 
-	// ── Waiting room round-trip (wizard -> API) ─────────────────────────────────
+	// ── Locked room round-trip (wizard -> API) ─────────────────────────────────
 
-	test('create mode: the waiting room and its message reach the created room', async ({ page }) => {
+	test('create mode: the locked room and its message reach the created room', async ({ page }) => {
 		await openAdvancedWizard(page);
-		await page.locator('input[formcontrolname="roomName"]').fill('wizard-waiting-room-create');
+		await page.locator('input[formcontrolname="roomName"]').fill('wizard-locked-room-create');
 		await gotoRoomAccess(page);
 
-		await setFeature(page, 'room-access-waiting-room', true);
-		await page.locator('#room-waiting-room-message').fill('The host will let you in');
+		await setFeature(page, 'room-access-locked-room', true);
+		await page.locator('#room-locked-message').fill('The host will let you in');
 		await page.locator('#wizard-finish-btn').click();
 
 		await page.waitForURL(/\/room\/[^/?]+/);
 		const roomId = /\/room\/([^/?]+)/.exec(page.url())![1];
 		createdRoomIds.push(roomId);
 
-		const { waitingRoom } = await getRoomConfig(roomId);
+		const { lock } = await getRoomAccess(roomId);
 
-		expect(waitingRoom).toEqual({ enabled: true, message: 'The host will let you in' });
+		expect(lock).toEqual({ enabled: true, message: 'The host will let you in' });
 	});
 
-	test('edit mode: a cleared waiting room message is removed from the room', async ({ page }) => {
+	test('edit mode: a cleared locked room message is removed from the room', async ({ page }) => {
 		const room = await createRoom({
-			roomName: 'wizard-waiting-room-edit',
-			config: { waitingRoom: { enabled: true, message: 'Welcome' } }
+			roomName: 'wizard-locked-room-edit',
+			access: { lock: { enabled: true, message: 'Welcome' } }
 		});
 		createdRoomIds.push(room.roomId);
 
 		await page.goto(`${MEET_BASE_URL}/rooms/${room.roomId}/edit`, { waitUntil: 'domcontentloaded' });
 		await gotoRoomAccess(page);
 
-		await expect(page.locator('#room-access-waiting-room button')).toHaveAttribute('aria-checked', 'true');
-		await expect(page.locator('#room-waiting-room-message')).toHaveValue('Welcome');
+		await expect(page.locator('#room-access-locked-room button')).toHaveAttribute('aria-checked', 'true');
+		await expect(page.locator('#room-locked-message')).toHaveValue('Welcome');
 
-		await page.locator('#room-waiting-room-message').fill('');
+		await page.locator('#room-locked-message').fill('');
 		await page.locator('#wizard-finish-btn').click();
 		await page.waitForURL(`**/rooms/${room.roomId}`);
 
-		const { waitingRoom } = await getRoomConfig(room.roomId);
+		const { lock } = await getRoomAccess(room.roomId);
 
-		expect(waitingRoom).toEqual({ enabled: true });
+		expect(lock).toEqual({ enabled: true });
 	});
 
 	// ── Recording round-trip (wizard -> API) ────────────────────────────────────

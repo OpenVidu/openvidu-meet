@@ -1,7 +1,7 @@
 import { LiveAnnouncer } from '@angular/cdk/a11y';
 import { CUSTOM_ELEMENTS_SCHEMA, provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MeetWaitingRoomStatus } from '@openvidu-meet/typings';
+import { MeetWaitingParticipantStatus } from '@openvidu-meet/typings';
 import { TranslateParams, TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { LoggerService } from '../../../../shared/services/logger.service';
 import { AudioDevicesComponent } from '../../openvidu-components/components/settings/audio-devices/audio-devices.component';
@@ -9,7 +9,7 @@ import { VideoDevicesComponent } from '../../openvidu-components/components/sett
 import { VideoElementComponent } from '../../openvidu-components/components/video-element/video-element.component';
 import { MeetingUiConfigService } from '../../openvidu-components/services/config/meeting-ui-config.service';
 import { LocalMediaService } from '../../openvidu-components/services/local-media/local-media.service';
-import { WaitingRoomService } from '../waiting-room.service';
+import { WaitingParticipantService } from '../waiting-participant.service';
 import { WaitingScreenComponent } from './waiting-screen.component';
 
 class LoggerServiceStub {
@@ -25,8 +25,7 @@ describe('WaitingScreenComponent', () => {
 	let announce: jasmine.Spy;
 	let leave: jasmine.Spy;
 	let acquire: jasmine.Spy;
-	const status = signal<MeetWaitingRoomStatus | undefined>(MeetWaitingRoomStatus.WAITING);
-	const queuePosition = signal<number | undefined>(undefined);
+	const status = signal<MeetWaitingParticipantStatus | undefined>(MeetWaitingParticipantStatus.WAITING);
 	const knockedAt = signal<number | undefined>(undefined);
 	const meetingActive = signal<boolean | undefined>(undefined);
 	const message = signal<string | undefined>(undefined);
@@ -34,8 +33,7 @@ describe('WaitingScreenComponent', () => {
 	beforeEach(async () => {
 		jasmine.clock().install();
 		jasmine.clock().mockDate(new Date('2026-11-11T10:00:00Z'));
-		status.set(MeetWaitingRoomStatus.WAITING);
-		queuePosition.set(undefined);
+		status.set(MeetWaitingParticipantStatus.WAITING);
 		knockedAt.set(undefined);
 		meetingActive.set(undefined);
 		message.set(undefined);
@@ -50,10 +48,9 @@ describe('WaitingScreenComponent', () => {
 				{ provide: LiveAnnouncer, useValue: { announce } },
 				{ provide: TranslateService, useValue: { translate, translationsLoaded: () => 0 } },
 				{
-					provide: WaitingRoomService,
+					provide: WaitingParticipantService,
 					useValue: {
 						status,
-						queuePosition,
 						knockedAt,
 						meetingActive,
 						message,
@@ -102,13 +99,8 @@ describe('WaitingScreenComponent', () => {
 		expect(acquire).toHaveBeenCalledTimes(1);
 	});
 
-	it('titles the screen with the place in line once it is known', async () => {
-		expect(text('#waiting-screen-title')).toBe('WAITING_ROOM.TITLE');
-
-		queuePosition.set(2);
-		await render();
-
-		expect(text('#waiting-screen-title')).toBe('WAITING_ROOM.POSITION {"position":2}');
+	it('says the participant waits to be let in, with no place in line', () => {
+		expect(text('#waiting-screen-title')).toBe('WAITING_PARTICIPANTS.TITLE');
 	});
 
 	it('shows the time waited from the first minute, in a region screen readers do not announce', async () => {
@@ -119,7 +111,7 @@ describe('WaitingScreenComponent', () => {
 		knockedAt.set(Date.now() - 4 * 60_000);
 		await render();
 
-		expect(text('#waiting-screen-waited')).toContain('WAITING_ROOM.WAITED {"minutes":4}');
+		expect(text('#waiting-screen-waited')).toContain('WAITING_PARTICIPANTS.WAITED {"minutes":4}');
 		expect(
 			(fixture.nativeElement as HTMLElement).querySelector('#waiting-screen-waited')!.getAttribute('aria-live')
 		).toBe('off');
@@ -132,35 +124,26 @@ describe('WaitingScreenComponent', () => {
 		message.set('We start at 10:00');
 		await render();
 
-		expect(text('#waiting-screen-not-started span')).toBe('WAITING_ROOM.NOT_STARTED');
+		expect(text('#waiting-screen-not-started span')).toBe('WAITING_PARTICIPANTS.NOT_STARTED');
 		expect(text('#waiting-screen-message span')).toBe('We start at 10:00');
 	});
 
-	it('announces the place in line politely, at most once every 10 seconds, the latest one', async () => {
-		queuePosition.set(3);
-		await render();
-		queuePosition.set(2);
-		await render();
-		queuePosition.set(1);
+	it('announces once, politely, that the participant waits', async () => {
+		jasmine.clock().tick(60_000);
 		await render();
 
-		expect(announce).toHaveBeenCalledOnceWith('WAITING_ROOM.POSITION {"position":3}', 'polite');
-
-		jasmine.clock().tick(10_000);
-
-		expect(announce).toHaveBeenCalledTimes(2);
-		expect(announce).toHaveBeenCalledWith('WAITING_ROOM.POSITION {"position":1}', 'polite');
+		expect(announce).toHaveBeenCalledOnceWith('WAITING_PARTICIPANTS.TITLE', 'polite');
 	});
 
 	it('announces the admission assertively', async () => {
-		status.set(MeetWaitingRoomStatus.ADMITTED);
+		status.set(MeetWaitingParticipantStatus.ADMITTED);
 		await render();
 
-		expect(announce).toHaveBeenCalledWith('WAITING_ROOM.ADMITTED', 'assertive');
+		expect(announce).toHaveBeenCalledWith('WAITING_PARTICIPANTS.ADMITTED', 'assertive');
 	});
 
-	it('leaves the waiting room from its button', () => {
-		(fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('#waiting-room-leave-button')!.click();
+	it('stops waiting from its button', () => {
+		(fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('#waiting-screen-stop-button')!.click();
 
 		expect(leave).toHaveBeenCalledTimes(1);
 	});

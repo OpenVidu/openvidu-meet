@@ -4,9 +4,10 @@ import { toggleParticipantsPanel } from './panels.helper';
 import { click } from './ui-utils.helper';
 
 const WAITING_SCREEN = '#waiting-screen';
-const WAITING_ROOM_SECTION = '#waiting-room-panel-section';
-const WAITING_ROOM_KNOCK_NOTIFICATION = '.ov-notification[data-kind="waiting-room-knock"]';
-const NOT_WAITING_NOTIFICATION = '.ov-notification[data-kind="waiting-room-not-waiting"]';
+const WAITING_PARTICIPANTS_SECTION = '#waiting-participants-panel-section';
+const KNOCK_NOTIFICATION = '.ov-notification[data-kind="waiting-participant-knock"]';
+const NOT_WAITING_NOTIFICATION = '.ov-notification[data-kind="waiting-participant-not-waiting"]';
+const NOT_ENOUGH_PLACES_NOTIFICATION = '.ov-notification[data-kind="waiting-participants-not-enough-places"]';
 const MEETING_FULL_TEXT = 'This meeting has reached its maximum number of participants';
 
 // ─── The participant who waits ────────────────────────────────────────────────
@@ -35,15 +36,8 @@ export const expectWaitingScreen = async (page: Page, timeoutMs = 15_000): Promi
 	await expect(page.locator(WAITING_SCREEN)).toBeVisible({ timeout: timeoutMs });
 };
 
-/** Waits for the waiting screen to say the place in line, from the server's state. */
-export const expectQueuePosition = async (page: Page, ordinal: string, timeoutMs = 15_000): Promise<void> => {
-	await expect(page.locator('#waiting-screen-title')).toHaveText(`You're ${ordinal} in line`, {
-		timeout: timeoutMs
-	});
-};
-
-export const leaveWaitingRoom = async (page: Page): Promise<void> => {
-	await click(page.locator('#waiting-room-leave-button'), 10_000);
+export const stopWaiting = async (page: Page): Promise<void> => {
+	await click(page.locator('#waiting-screen-stop-button'), 10_000);
 };
 
 /** The screen that tells how a wait ended without the participant being let in. */
@@ -114,16 +108,19 @@ export const holdBackLiveKitConnection = async (page: Page): Promise<void> => {
 
 // ─── Whoever lets participants in ─────────────────────────────────────────────
 
-export const waitingRoomSection = (page: Page): Locator => page.locator(WAITING_ROOM_SECTION);
+export const waitingParticipantsSection = (page: Page): Locator => page.locator(WAITING_PARTICIPANTS_SECTION);
 
 /** The row of a waiting participant in the moderator's panel, by the name they typed. */
-export const waitingRoomRow = (page: Page, name: string): Locator =>
-	page.locator(`${WAITING_ROOM_SECTION} .waiting-room-row`).filter({ hasText: name });
+export const waitingParticipantRow = (page: Page, name: string): Locator =>
+	page.locator(`${WAITING_PARTICIPANTS_SECTION} .waiting-participants-row`).filter({ hasText: name });
 
-export const waitingRoomNotification = (page: Page): Locator => page.locator(WAITING_ROOM_KNOCK_NOTIFICATION);
+export const knockNotification = (page: Page): Locator => page.locator(KNOCK_NOTIFICATION);
 
 /** The notice that a decision named a participant who is no longer waiting. */
 export const notWaitingNotification = (page: Page): Locator => page.locator(NOT_WAITING_NOTIFICATION);
+
+/** The notice that Admit all was refused because not everyone waiting fits. */
+export const notEnoughPlacesNotification = (page: Page): Locator => page.locator(NOT_ENOUGH_PLACES_NOTIFICATION);
 
 export const openParticipantsPanel = async (page: Page): Promise<void> => {
 	if (!(await page.locator('ov-participants-panel').isVisible())) {
@@ -142,9 +139,9 @@ export const closeParticipantsPanel = async (page: Page): Promise<void> => {
 };
 
 export const admitFromPanel = async (page: Page, name: string): Promise<void> => {
-	await click(waitingRoomRow(page, name).locator('.waiting-room-admit-btn'), 10_000);
+	await click(waitingParticipantRow(page, name).locator('.waiting-participants-admit-btn'), 10_000);
 };
 
 export const denyFromPanel = async (page: Page, name: string): Promise<void> => {
-	await click(waitingRoomRow(page, name).locator('.waiting-room-deny-btn'), 10_000);
+	await click(waitingParticipantRow(page, name).locator('.waiting-participants-deny-btn'), 10_000);
 };

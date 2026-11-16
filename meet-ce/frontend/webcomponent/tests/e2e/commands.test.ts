@@ -2,7 +2,7 @@ import {
 	EmbeddedEventName,
 	LeftEventReason,
 	MeetEventOrigin,
-	MeetWaitingRoomStatus,
+	MeetWaitingParticipantStatus,
 	MeetParticipantModerationAction,
 	MeetReaction,
 	MeetRecordingStatus,
@@ -15,9 +15,9 @@ import { INTEGRATIONS, meetLocator, wcLocator } from '../helpers/webcomponent.he
 import { createRtmpSink, deleteRtmpSinks } from '../helpers/broadcast-sink.helper';
 import {
 	createRoom,
-	decideOnWaitingRoom,
+	decideOnWaitingParticipants,
 	deleteRooms,
-	getWaitingRoom,
+	getWaitingParticipants,
 	getRecording,
 	listMeetingParticipants
 } from '../helpers/meet-api.helper';
@@ -50,8 +50,10 @@ import {
 	leaveMeeting,
 	leaveRoomCommand,
 	leaveRoomLegacyCommand,
-	waitingRoomAdmitCommand,
-	waitingRoomRejectCommand,
+	waitingParticipantAdmitAllCommand,
+	waitingParticipantAdmitCommand,
+	waitingParticipantRejectAllCommand,
+	waitingParticipantRejectCommand,
 	mediaToggleAudioCommand,
 	mediaToggleScreenShareCommand,
 	mediaToggleVideoCommand,
@@ -1015,16 +1017,16 @@ for (const integration of INTEGRATIONS) {
 			});
 		});
 
-		test.describe('Waiting room commands', () => {
+		test.describe('Waiting participant commands', () => {
 			const contexts: BrowserContext[] = [];
-			let waitingRoomRoomId: string;
+			let lockedRoomId: string;
 
-			const createWaitingRoomRoom = async (options: MeetRoomOptions = {}): Promise<void> => {
-				({ roomId: waitingRoomRoomId } = await createRoom({
+			const createLockedRoom = async (options: MeetRoomOptions = {}): Promise<void> => {
+				({ roomId: lockedRoomId } = await createRoom({
 					...options,
-					config: { waitingRoom: { enabled: true }, ...options.config }
+					access: { lock: { enabled: true }, ...options.access }
 				}));
-				createdRoomIds.push(waitingRoomRoomId);
+				createdRoomIds.push(lockedRoomId);
 			};
 
 			/** Asks to join as `name` from a web component of its own browser context, closed after the test. */
@@ -1032,27 +1034,28 @@ for (const integration of INTEGRATIONS) {
 				const context = await browser.newContext();
 				contexts.push(context);
 				const waiterPage = await context.newPage();
-				await askToJoin(waiterPage, waitingRoomRoomId, { name });
+				await askToJoin(waiterPage, lockedRoomId, { name });
 				return waiterPage;
 			};
 
+			/** Who waits, by name, sorted: the list promises no order. */
 			const waitingNames = async (): Promise<string[]> =>
-				(await getWaitingRoom(waitingRoomRoomId)).participants.map(({ participantName }) => participantName);
+				(await getWaitingParticipants(lockedRoomId)).participants
+					.map(({ participantName }) => participantName)
+					.sort();
 
-			const identitiesOf = async (...names: string[]): Promise<string[]> => {
-				const { participants } = await getWaitingRoom(waitingRoomRoomId);
-				return names.map(
-					(name) => participants.find(({ participantName }) => participantName === name)!.participantIdentity
-				);
+			const identityOf = async (name: string): Promise<string> => {
+				const { participants } = await getWaitingParticipants(lockedRoomId);
+				return participants.find(({ participantName }) => participantName === name)!.participantIdentity;
 			};
 
 			const meetingNames = async (): Promise<string[]> =>
-				(await listMeetingParticipants(waitingRoomRoomId)).map(({ participantName }) => participantName).sort();
-			const waitingRoomStatuses = async (target: Page): Promise<MeetWaitingRoomStatus[]> =>
+				(await listMeetingParticipants(lockedRoomId)).map(({ participantName }) => participantName).sort();
+			const waitingStates = async (target: Page): Promise<MeetWaitingParticipantStatus[]> =>
 				(
-					await eventPayloads<{ status: MeetWaitingRoomStatus }>(
+					await eventPayloads<{ status: MeetWaitingParticipantStatus }>(
 						target,
-						EmbeddedEventName.PARTICIPANT_WAITING_CHANGED
+						EmbeddedEventName.WAITING_PARTICIPANT_STATUS_CHANGED
 					)
 				).map(({ status }) => status);
 			const expectRejected = (waiterPage: Page) =>
@@ -1062,91 +1065,104 @@ for (const integration of INTEGRATIONS) {
 				await Promise.all(contexts.splice(0).map((context) => context.close().catch(() => {})));
 			});
 
-			test('should admit with participantWaitingAdmit the participant named, then several named', async ({
-				page,
-				browser
-			}) => {
-				await createWaitingRoomRoom();
-				await openMeeting(page, waitingRoomRoomId, { integration, role: 'moderator', name: 'Host' });
+			test('should admit with waitingParticipantAdmit the participant named', async ({ page, browser }) => {
+				await createLockedRoom();
+				await openMeeting(page, lockedRoomId, { integration, role: 'moderator', name: 'Host' });
 				await waiter(browser, 'Zoe');
 				await waiter(browser, 'Ana');
-				await waiter(browser, 'Ben');
 
-				await waitingRoomAdmitCommand(page, await identitiesOf('Ana'));
-				await expect.poll(waitingNames).toEqual(['Zoe', 'Ben']);
+				await waitingParticipantAdmitCommand(page, await identityOf('Ana'));
+
+				await expect.poll(waitingNames).toEqual(['Zoe']);
 				await expect.poll(meetingNames, { timeout: 20_000 }).toEqual(['Ana', 'Host']);
-
-				await waitingRoomAdmitCommand(page, await identitiesOf('Zoe', 'Ben'));
-				await expect.poll(waitingNames).toEqual([]);
-				await expect.poll(meetingNames, { timeout: 20_000 }).toEqual(['Ana', 'Ben', 'Host', 'Zoe']);
 			});
 
-			test('should reject with participantWaitingReject the participant named, then several named', async ({
-				page,
-				browser
-			}) => {
-				await createWaitingRoomRoom();
-				await openMeeting(page, waitingRoomRoomId, { integration, role: 'moderator' });
-				const zoe = await waiter(browser, 'Zoe');
-				const ana = await waiter(browser, 'Ana');
-				const ben = await waiter(browser, 'Ben');
-
-				await waitingRoomRejectCommand(page, await identitiesOf('Ana'));
-				await expectRejected(ana);
-				expect(await waitingNames()).toEqual(['Zoe', 'Ben']);
-
-				await waitingRoomRejectCommand(page, await identitiesOf('Zoe', 'Ben'));
-				await expectRejected(zoe);
-				await expectRejected(ben);
-				expect(await waitingNames()).toEqual([]);
-			});
-
-			test('should admit with participantWaitingAdmit without identities those first in line up to the free places', async ({
-				page,
-				browser
-			}) => {
-				await createWaitingRoomRoom({ config: { maxParticipants: 2 } });
-				await openMeeting(page, waitingRoomRoomId, { integration, role: 'moderator', name: 'Host' });
+			test('should admit everyone waiting with waitingParticipantAdmitAll', async ({ page, browser }) => {
+				await createLockedRoom({ config: { maxParticipants: 3 } });
+				await openMeeting(page, lockedRoomId, { integration, role: 'moderator', name: 'Host' });
 				await waiter(browser, 'Zoe');
 				await waiter(browser, 'Ana');
 
-				await waitingRoomAdmitCommand(page);
+				await waitingParticipantAdmitAllCommand(page);
 
-				await expect.poll(meetingNames, { timeout: 20_000 }).toEqual(['Host', 'Zoe']);
-				expect(await waitingNames()).toEqual(['Ana']);
+				await expect.poll(waitingNames).toEqual([]);
+				await expect.poll(meetingNames, { timeout: 20_000 }).toEqual(['Ana', 'Host', 'Zoe']);
 			});
 
-			test('should reject with participantWaitingReject without identities everyone waiting', async ({
+			test('should admit nobody with waitingParticipantAdmitAll when not everyone fits', async ({
 				page,
 				browser
 			}) => {
-				await createWaitingRoomRoom();
-				await openMeeting(page, waitingRoomRoomId, { integration, role: 'moderator' });
-				const zoe = await waiter(browser, 'Zoe');
+				await createLockedRoom({ config: { maxParticipants: 2 } });
+				await openMeeting(page, lockedRoomId, { integration, role: 'moderator', name: 'Host' });
+				await waiter(browser, 'Zoe');
+				await waiter(browser, 'Ana');
+
+				await waitingParticipantAdmitAllCommand(page);
+
+				await expect(
+					meetLocator(
+						page,
+						integration,
+						'.ov-notification[data-kind="waiting-participants-not-enough-places"]'
+					)
+				).toBeVisible({ timeout: 10_000 });
+				expect(await waitingNames()).toEqual(['Ana', 'Zoe']);
+				expect(await meetingNames()).toEqual(['Host']);
+			});
+
+			test('should reject with waitingParticipantReject the participant named', async ({ page, browser }) => {
+				await createLockedRoom();
+				await openMeeting(page, lockedRoomId, { integration, role: 'moderator' });
+				await waiter(browser, 'Zoe');
 				const ana = await waiter(browser, 'Ana');
 
-				await waitingRoomRejectCommand(page);
+				await waitingParticipantRejectCommand(page, await identityOf('Ana'));
+
+				await expectRejected(ana);
+				expect(await waitingNames()).toEqual(['Zoe']);
+			});
+
+			test('should reject everyone waiting with waitingParticipantRejectAll', async ({ page, browser }) => {
+				await createLockedRoom();
+				await openMeeting(page, lockedRoomId, { integration, role: 'moderator' });
+				const zoe = await waiter(browser, 'Zoe');
+				const ana = await waiter(browser, 'Ana');
+				await expect
+					.poll(
+						async () =>
+							(
+								await eventPayloads<{ participants: unknown[] }>(
+									page,
+									EmbeddedEventName.WAITING_PARTICIPANT_LIST_UPDATED
+								)
+							).at(-1)?.participants.length,
+						{ timeout: 10_000 }
+					)
+					.toBe(2);
+
+				await waitingParticipantRejectAllCommand(page);
 
 				await expectRejected(zoe);
 				await expectRejected(ana);
 				expect(await waitingNames()).toEqual([]);
 			});
 
-			test('should not decide on anyone when the caller lacks the waitingRoomAdmin permission', async ({
+			test('should not decide on anyone when the caller lacks the waitingParticipantAdmin permission', async ({
 				page,
 				browser
 			}) => {
-				await createWaitingRoomRoom({ roles: { moderator: { permissions: { waitingRoomAdmin: false } } } });
-				await openMeeting(page, waitingRoomRoomId, {
+				await createLockedRoom({ roles: { moderator: { permissions: { waitingParticipantAdmin: false } } } });
+				await openMeeting(page, lockedRoomId, {
 					integration,
 					role: 'moderator',
 					initialVideoActive: true
 				});
 				const zoe = await waiter(browser, 'Zoe');
-				const [zoeIdentity] = await identitiesOf('Zoe');
+				const zoeIdentity = await identityOf('Zoe');
 
-				await waitingRoomRejectCommand(page, [zoeIdentity]);
-				await waitingRoomAdmitCommand(page);
+				await waitingParticipantRejectCommand(page, zoeIdentity);
+				await waitingParticipantAdmitAllCommand(page);
 				// Commands run in order: once this one shows, the two before it were turned down.
 				await mediaToggleVideoCommand(page, false);
 				await expect(
@@ -1157,29 +1173,29 @@ for (const integration of INTEGRATIONS) {
 
 				expect(await waitingNames()).toEqual(['Zoe']);
 				await expect(wcLocator(zoe, '#waiting-screen')).toBeVisible();
-				expect(await waitingRoomStatuses(zoe)).toEqual([MeetWaitingRoomStatus.WAITING]);
+				expect(await waitingStates(zoe)).toEqual([MeetWaitingParticipantStatus.WAITING]);
 			});
 
-			test('should leave the waiting room with meetingLeave, without meetingLeft', async ({ page }) => {
-				await createWaitingRoomRoom();
-				const { meet } = await askToJoin(page, waitingRoomRoomId, { integration, name: 'Ben' });
-				const [ben] = await identitiesOf('Ben');
-				await expect.poll(() => waitingRoomStatuses(page)).toEqual([MeetWaitingRoomStatus.WAITING]);
+			test('should stop waiting with meetingLeave, without meetingLeft', async ({ page }) => {
+				await createLockedRoom();
+				const { meet } = await askToJoin(page, lockedRoomId, { integration, name: 'Ben' });
+				const ben = await identityOf('Ben');
+				await expect.poll(() => waitingStates(page)).toEqual([MeetWaitingParticipantStatus.WAITING]);
 
 				await leaveRoomCommand(page);
 
 				await expect(meet('#waiting-outcome-left')).toBeVisible({ timeout: 10_000 });
 				await expect
-					.poll(() => waitingRoomStatuses(page))
-					.toEqual([MeetWaitingRoomStatus.WAITING, MeetWaitingRoomStatus.LEFT]);
+					.poll(() => waitingStates(page))
+					.toEqual([MeetWaitingParticipantStatus.WAITING, MeetWaitingParticipantStatus.LEFT]);
 				await expect.poll(waitingNames, { timeout: 5_000 }).toEqual([]);
 				const left = await getWebhookFromStorage(
 					page,
-					waitingRoomRoomId,
-					MeetWebhookEventType.PARTICIPANT_WAITING_CHANGED
+					lockedRoomId,
+					MeetWebhookEventType.WAITING_PARTICIPANT_STATUS_CHANGED
 				);
 				expect(left.data).toMatchObject({
-					status: MeetWaitingRoomStatus.LEFT,
+					status: MeetWaitingParticipantStatus.LEFT,
 					origin: MeetEventOrigin.PARTICIPANT,
 					participant: { participantIdentity: ben }
 				});
@@ -1187,12 +1203,12 @@ for (const integration of INTEGRATIONS) {
 			});
 
 			if (integration === 'webcomponent') {
-				test('should leave the waiting room with meetingLeave even when the host removes the element right after', async ({
+				test('should stop waiting with meetingLeave even when the host removes the element right after', async ({
 					page
 				}) => {
-					await createWaitingRoomRoom();
-					await askToJoin(page, waitingRoomRoomId, { integration, name: 'Ben' });
-					await expect.poll(() => waitingRoomStatuses(page)).toEqual([MeetWaitingRoomStatus.WAITING]);
+					await createLockedRoom();
+					await askToJoin(page, lockedRoomId, { integration, name: 'Ben' });
+					await expect.poll(() => waitingStates(page)).toEqual([MeetWaitingParticipantStatus.WAITING]);
 
 					await leaveRoomCommand(page);
 					await removeEmbeddedMeeting(page, integration);
@@ -1200,11 +1216,11 @@ for (const integration of INTEGRATIONS) {
 					await expect.poll(waitingNames, { timeout: 5_000 }).toEqual([]);
 					const left = await getWebhookFromStorage(
 						page,
-						waitingRoomRoomId,
-						MeetWebhookEventType.PARTICIPANT_WAITING_CHANGED
+						lockedRoomId,
+						MeetWebhookEventType.WAITING_PARTICIPANT_STATUS_CHANGED
 					);
 					expect(left.data).toMatchObject({
-						status: MeetWaitingRoomStatus.LEFT,
+						status: MeetWaitingParticipantStatus.LEFT,
 						origin: MeetEventOrigin.PARTICIPANT
 					});
 				});
@@ -1213,14 +1229,14 @@ for (const integration of INTEGRATIONS) {
 			test('should turn the camera off with mediaToggleVideo while waiting and join with it off', async ({
 				page
 			}) => {
-				await createWaitingRoomRoom();
-				await askToJoin(page, waitingRoomRoomId, { integration, name: 'Ben', initialVideoActive: true });
+				await createLockedRoom();
+				await askToJoin(page, lockedRoomId, { integration, name: 'Ben', initialVideoActive: true });
 				await expectPrejoinCameraEnabled(page, integration, true);
 
 				await mediaToggleVideoCommand(page, false);
 				await expectPrejoinCameraEnabled(page, integration, false);
 
-				await decideOnWaitingRoom(waitingRoomRoomId, 'admit');
+				await decideOnWaitingParticipants(lockedRoomId, 'admit');
 				await expectEvent(page, EmbeddedEventName.MEETING_JOINED, { timeout: 20_000 });
 				await expectToolbarCameraEnabled(page, integration, false);
 			});

@@ -1,0 +1,93 @@
+@if (rows().length > 0) {
+	<section
+		id="waiting-participants-panel-section"
+		class="waiting-participants-section"
+		aria-labelledby="waiting-participants-section-title"
+	>
+		<div class="waiting-participants-header">
+			<mat-icon class="waiting-participants-header-icon">hourglass_top</mat-icon>
+			<h3 id="waiting-participants-section-title" class="waiting-participants-title">
+				{{ 'WAITING_PARTICIPANTS.ADMIN.TITLE' | translate }}
+			</h3>
+			<span id="waiting-participants-count" class="waiting-participants-count">{{ rows().length }}</span>
+			@let places = freePlaces();
+			@if (places !== null) {
+				<span
+					id="waiting-participants-places-left"
+					class="waiting-participants-places"
+					[class.none]="places === 0"
+				>
+					{{ 'WAITING_PARTICIPANTS.ADMIN.PLACES_LEFT' | translate: { count: places } }}
+				</span>
+			}
+		</div>
+
+		@if (rows().length > 1) {
+			<div id="waiting-participants-bulk-actions" class="panel-bulk-actions">
+				<span class="bulk-label">{{ 'WAITING_PARTICIPANTS.ADMIN.EVERYONE' | translate }}</span>
+				<button
+					mat-flat-button
+					id="waiting-participants-deny-all-btn"
+					class="waiting-participants-btn deny-all"
+					[disabled]="isBusy()"
+					(click)="confirmDenyAll()"
+				>
+					{{ 'WAITING_PARTICIPANTS.ADMIN.DENY_ALL' | translate }}
+				</button>
+				<button
+					mat-flat-button
+					id="waiting-participants-admit-all-btn"
+					class="waiting-participants-btn admit"
+					[disabled]="isBusy() || !canAdmitAll()"
+					(click)="admitAll()"
+				>
+					{{ 'WAITING_PARTICIPANTS.ADMIN.ADMIT_ALL' | translate }}
+				</button>
+			</div>
+		}
+
+		<ul class="waiting-participants-rows">
+			@for (row of rows(); track row.participant.participantIdentity) {
+				<li
+					class="waiting-participants-row"
+					[attr.data-participant-identity]="row.participant.participantIdentity"
+				>
+					<ov-participant-avatar variant="panel" [nickname]="row.name" [color]="row.color" />
+					<div class="waiting-participants-who">
+						<span class="waiting-participants-name">
+							{{ row.name }}
+							@if (row.sharesName) {
+								<span class="waiting-participants-knock-time"
+									>&middot; {{ row.knockedAt | date: 'HH:mm' }}</span
+								>
+							}
+						</span>
+						@if (row.viaSharedLink) {
+							<span class="waiting-participants-shared-link">{{
+								'WAITING_PARTICIPANTS.ADMIN.SHARED_LINK' | translate
+							}}</span>
+						}
+					</div>
+					<button
+						mat-stroked-button
+						class="waiting-participants-btn waiting-participants-deny-btn"
+						[disabled]="isBusy()"
+						[attr.aria-label]="'WAITING_PARTICIPANTS.ADMIN.DENY_NAMED' | translate: { name: row.name }"
+						(click)="deny(row)"
+					>
+						{{ 'WAITING_PARTICIPANTS.ADMIN.DENY' | translate }}
+					</button>
+					<button
+						mat-flat-button
+						class="waiting-participants-btn admit waiting-participants-admit-btn"
+						[disabled]="isBusy() || freePlaces() === 0"
+						[attr.aria-label]="'WAITING_PARTICIPANTS.ADMIN.ADMIT_NAMED' | translate: { name: row.name }"
+						(click)="admit(row)"
+					>
+						{{ 'WAITING_PARTICIPANTS.ADMIN.ADMIT' | translate }}
+					</button>
+				</li>
+			}
+		</ul>
+	</section>
+}

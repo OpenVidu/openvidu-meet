@@ -1,10 +1,10 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { inject, Service } from '@angular/core';
-import { MeetWaitingRoomTicketResponse } from '@openvidu-meet/typings';
+import { MeetWaitingTicketResponse } from '@openvidu-meet/typings';
 import { LoggerService } from '../../../shared/services/logger.service';
 import { NavigationService } from '../../../shared/services/navigation.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
-import { isWaitingRoomFull, roomMemberTokenFailure } from '../../room-members/utils/room-member-token-failure.utils';
+import { isWaitingListFull, roomMemberTokenFailure } from '../../room-members/utils/room-member-token-failure.utils';
 import { E2eeService } from '../openvidu-components/services/e2ee/e2ee.service';
 import { MeetingContextService } from './meeting-context.service';
 
@@ -18,7 +18,7 @@ export interface JoinRequest {
 }
 
 /** The answer to a request to join: the token to connect with, or the ticket of a wait to be let in. */
-export type JoinAnswer = { kind: 'token'; token: string } | { kind: 'waiting'; ticket: MeetWaitingRoomTicketResponse };
+export type JoinAnswer = { kind: 'token'; token: string } | { kind: 'waiting'; ticket: MeetWaitingTicketResponse };
 
 /**
  * Requests the token a participant joins the meeting with. It is requested when they commit to joining,
@@ -35,13 +35,13 @@ export class JoinTokenService {
 
 	/**
 	 * Resolves to the token to connect with, or to the ticket of a wait. A refusal shows its error screen
-	 * and rejects, except a full waiting room, whose screen belongs to the waiting room.
+	 * and rejects, except a full waiting list, whose screen belongs to the wait.
 	 */
 	async request(join: JoinRequest): Promise<JoinAnswer> {
 		try {
 			return await this.ask(join);
 		} catch (error) {
-			if (isWaitingRoomFull(error)) throw error;
+			if (isWaitingListFull(error)) throw error;
 
 			await this.showFailure(error);
 			throw new Error('Error generating room member token', { cause: error });
@@ -49,8 +49,8 @@ export class JoinTokenService {
 	}
 
 	/** Asks for the token of a wait with its ticket. Its failures are the caller's to handle. */
-	requestWithTicket(join: JoinRequest, waitingRoomTicket: string): Promise<JoinAnswer> {
-		return this.ask(join, waitingRoomTicket);
+	requestWithTicket(join: JoinRequest, waitingTicket: string): Promise<JoinAnswer> {
+		return this.ask(join, waitingTicket);
 	}
 
 	/** Shows the error screen of a refused request to join. */
@@ -66,7 +66,7 @@ export class JoinTokenService {
 
 	private async ask(
 		{ participantName, e2eeKey, nameTypedByParticipant }: JoinRequest,
-		waitingRoomTicket?: string
+		waitingTicket?: string
 	): Promise<JoinAnswer> {
 		// The correlation fields are not encrypted: they belong to the host application, which already knows them.
 		const answer = await this.roomMemberContextService.requestJoin(this.meetingContextService.roomId()!, {
@@ -75,16 +75,14 @@ export class JoinTokenService {
 			participantName: await this.nameInToken(participantName, e2eeKey),
 			participantExternalId: this.roomMemberContextService.participantExternalId(),
 			participantMetadata: this.roomMemberContextService.participantMetadata(),
-			...(waitingRoomTicket && { waitingRoomTicket })
+			...(waitingTicket && { waitingTicket })
 		});
 
 		if (nameTypedByParticipant) {
 			this.roomMemberContextService.saveParticipantNameToStorage(participantName);
 		}
 
-		return 'waitingRoomTicket' in answer
-			? { kind: 'waiting', ticket: answer }
-			: { kind: 'token', token: answer.token };
+		return 'waitingTicket' in answer ? { kind: 'waiting', ticket: answer } : { kind: 'token', token: answer.token };
 	}
 
 	/** An encrypted meeting gets the name encrypted, so the server never sees it in plain text. */

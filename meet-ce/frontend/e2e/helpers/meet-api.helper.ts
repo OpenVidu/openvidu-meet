@@ -2,11 +2,12 @@ import {
 	MeetDeprecatedPermissionKey,
 	MeetPermissionKey,
 	MeetBroadcastInfo,
-	MeetWaitingRoomList,
+	MeetWaitingParticipantList,
 	MeetRecordingInfo,
 	MeetRoom,
+	MeetRoomAccess,
+	MeetRoomAccessConfig,
 	MeetRoomConfig,
-	MeetRoomConfigOptions,
 	MeetRoomMember,
 	MeetRoomMemberOptions,
 	MeetRoomMemberRole,
@@ -186,21 +187,35 @@ export const updateRoomRoles = async (roomId: string, roles: WireRoomRolesConfig
 	assertOk(response, responseText, 'update room roles');
 };
 
+export const getRoomAccess = async (roomId: string): Promise<MeetRoomAccess> => {
+	const response = await fetch(withApiPath(`/rooms/${encodeURIComponent(roomId)}?fields=access`), {
+		method: 'GET',
+		headers: {
+			'x-api-key': API_KEY
+		}
+	});
+
+	const responseText = await response.text();
+	assertOk(response, responseText, 'get room access');
+
+	return (JSON.parse(responseText) as MeetRoom).access;
+};
+
 /**
- * Updates a room's config (partial merge). Refused with `409` while the room has a meeting running.
+ * Updates a room's access settings (partial merge). Refused with `409` while the room has a meeting running.
  */
-export const updateRoomConfig = async (roomId: string, config: MeetRoomConfigOptions): Promise<void> => {
-	const response = await fetch(withApiPath(`/rooms/${encodeURIComponent(roomId)}/config`), {
+export const updateRoomAccess = async (roomId: string, access: MeetRoomAccessConfig): Promise<void> => {
+	const response = await fetch(withApiPath(`/rooms/${encodeURIComponent(roomId)}/access`), {
 		method: 'PUT',
 		headers: {
 			'content-type': 'application/json',
 			'x-api-key': API_KEY
 		},
-		body: JSON.stringify({ config })
+		body: JSON.stringify({ access })
 	});
 
 	const responseText = await response.text();
-	assertOk(response, responseText, 'update room config');
+	assertOk(response, responseText, 'update room access');
 };
 
 /**
@@ -248,30 +263,29 @@ export const getMeetingParticipantIdentities = async (roomId: string): Promise<s
 };
 
 /**
- * Reads the room's waiting room: who waits, in arrival order, and how many places the meeting has free.
+ * Reads the room's waiting participants.
  */
-export const getWaitingRoom = async (roomId: string): Promise<MeetWaitingRoomList> => {
-	const response = await fetch(withApiPath(`/meetings/${encodeURIComponent(roomId)}/waiting-room`), {
+export const getWaitingParticipants = async (roomId: string): Promise<MeetWaitingParticipantList> => {
+	const response = await fetch(withApiPath(`/meetings/${encodeURIComponent(roomId)}/waiting-participants`), {
 		method: 'GET',
 		headers: { 'x-api-key': API_KEY }
 	});
 
 	const responseText = await response.text();
-	assertOk(response, responseText, 'get waiting room');
+	assertOk(response, responseText, 'list waiting participants');
 
-	return JSON.parse(responseText) as MeetWaitingRoomList;
+	return JSON.parse(responseText) as MeetWaitingParticipantList;
 };
 
 /**
- * Admits the given waiting participants, or everyone waiting up to the free places when none are given.
+ * Admits the waiting participant given, or everyone waiting when none is given (all of them or nobody).
  * Answers the raw response, so a test can check a refusal.
  */
-export const admitFromWaitingRoom = (roomId: string, participantIdentities?: string[]): Promise<Response> =>
-	fetch(withApiPath(`/meetings/${encodeURIComponent(roomId)}/waiting-room/admit`), {
-		method: 'POST',
-		headers: { 'content-type': 'application/json', 'x-api-key': API_KEY },
-		body: JSON.stringify(participantIdentities ? { participantIdentities } : {})
-	});
+export const admitWaitingParticipants = (roomId: string, participantIdentity?: string): Promise<Response> => {
+	const collection = `/meetings/${encodeURIComponent(roomId)}/waiting-participants`;
+	const path = participantIdentity ? `${collection}/${encodeURIComponent(participantIdentity)}` : collection;
+	return fetch(withApiPath(`${path}/admit`), { method: 'POST', headers: { 'x-api-key': API_KEY } });
+};
 
 /**
  * Adds a member to the specified room with the given options.

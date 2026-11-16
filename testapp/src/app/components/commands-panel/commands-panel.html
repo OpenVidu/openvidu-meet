@@ -329,40 +329,45 @@
 
 	<section class="ta-card">
 		<div class="ta-card__header">
-			<h2>Waiting room</h2>
-			<span class="ta-hint">identities separated by commas; none means everyone waiting</span>
-		</div>
-		<div class="ta-field">
-			<label class="ta-arg-label" for="waiting-room-identities-input">participantIdentities</label>
-			<input
-				id="waiting-room-identities-input"
-				type="text"
-				data-testid="input-waiting-room-identities"
-				[(ngModel)]="commands.waitingRoomIdentities"
-				placeholder="identities of the participants waiting"
-			/>
+			<h2>Waiting participants</h2>
+			<span class="ta-hint">admit and reject use the identity above</span>
 		</div>
 		<div class="ta-btn-row">
 			<button
-				id="waiting-room-admit-btn"
+				id="waiting-participant-admit-btn"
 				class="ta-btn ta-btn--grow"
-				data-testid="btn-waiting-room-admit"
-				(click)="commands.participantWaitingAdmit()"
+				data-testid="btn-waiting-participant-admit"
+				(click)="commands.waitingParticipantAdmit()"
 			>
-				participantWaitingAdmit()
+				waitingParticipantAdmit()
 			</button>
 			<button
-				id="waiting-room-reject-btn"
-				class="ta-btn ta-btn--grow ta-btn--danger"
-				data-testid="btn-waiting-room-reject"
-				(click)="commands.participantWaitingReject()"
+				id="waiting-participant-admit-all-btn"
+				class="ta-btn ta-btn--grow"
+				data-testid="btn-waiting-participant-admit-all"
+				(click)="commands.waitingParticipantAdmitAll()"
 			>
-				participantWaitingReject()
+				waitingParticipantAdmitAll()
 			</button>
 		</div>
-		<code class="ta-payload" data-testid="waiting-room-payload"
-			>{{ optionsArgs(commands.waitingRoomOptions()) }}</code
-		>
+		<div class="ta-btn-row">
+			<button
+				id="waiting-participant-reject-btn"
+				class="ta-btn ta-btn--grow ta-btn--danger"
+				data-testid="btn-waiting-participant-reject"
+				(click)="commands.waitingParticipantReject()"
+			>
+				waitingParticipantReject()
+			</button>
+			<button
+				id="waiting-participant-reject-all-btn"
+				class="ta-btn ta-btn--grow ta-btn--danger"
+				data-testid="btn-waiting-participant-reject-all"
+				(click)="commands.waitingParticipantRejectAll()"
+			>
+				waitingParticipantRejectAll()
+			</button>
+		</div>
 	</section>
 
 	<section class="ta-card">

@@ -34,13 +34,13 @@ describe('PERMISSION_GROUPS', () => {
 		]);
 	});
 
-	it('should list the two waiting room permissions in the WAITING_ROOM group, independent of each other', () => {
-		const waitingRoom = PERMISSION_GROUPS.find((group) => group.label.endsWith('.WAITING_ROOM'));
+	it('should list the two locked room permissions in the LOCKED_ROOM group, independent of each other', () => {
+		const lockedRoom = PERMISSION_GROUPS.find((group) => group.label.endsWith('.LOCKED_ROOM'));
 
-		expect(waitingRoom).toBeDefined();
-		expect(waitingRoom!.permissions.map((item) => [item.key, item.dependsOn])).toEqual([
-			['waitingRoomBypass', undefined],
-			['waitingRoomAdmin', undefined]
+		expect(lockedRoom).toBeDefined();
+		expect(lockedRoom!.permissions.map((item) => [item.key, item.dependsOn])).toEqual([
+			['accessBypassLock', undefined],
+			['waitingParticipantAdmin', undefined]
 		]);
 	});
 

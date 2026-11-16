@@ -19,7 +19,7 @@ import {
 	AnyWizardStep,
 	BroadcastFormGroup,
 	MAX_DURATION_MINUTES_LIMIT,
-	MAX_WAITING_ROOM_MESSAGE_LENGTH,
+	MAX_LOCKED_MESSAGE_LENGTH,
 	MAX_PARTICIPANTS_LIMIT,
 	MIN_DURATION_MINUTES_LIMIT,
 	MIN_PARTICIPANTS_LIMIT,
@@ -52,8 +52,8 @@ const DEFAULT_MODERATOR_PERMISSIONS: MeetRoomMemberPermissions = {
 	chatRead: true,
 	chatWrite: true,
 	mediaChangeVirtualBackground: true,
-	waitingRoomBypass: true,
-	waitingRoomAdmin: true
+	accessBypassLock: true,
+	waitingParticipantAdmin: true
 };
 
 const DEFAULT_SPEAKER_PERMISSIONS: MeetRoomMemberPermissions = {
@@ -79,8 +79,8 @@ const DEFAULT_SPEAKER_PERMISSIONS: MeetRoomMemberPermissions = {
 	chatRead: true,
 	chatWrite: true,
 	mediaChangeVirtualBackground: true,
-	waitingRoomBypass: false,
-	waitingRoomAdmin: false
+	accessBypassLock: false,
+	waitingParticipantAdmin: false
 };
 
 // Default room config following the app's defaults
@@ -96,7 +96,6 @@ const DEFAULT_CONFIG: MeetRoomConfig = {
 	captions: { enabled: true },
 	raiseHand: { enabled: true },
 	reactions: { enabled: true },
-	waitingRoom: { enabled: false },
 	initialAudioActive: true,
 	initialVideoActive: true
 };
@@ -110,7 +109,8 @@ const DEFAULT_ROOM_OPTIONS: MeetRoomOptions = {
 			speaker: { enabled: true },
 			recording: { enabled: true }
 		},
-		user: { enabled: false }
+		user: { enabled: false },
+		lock: { enabled: false }
 	},
 	roles: {
 		moderator: {
@@ -394,12 +394,10 @@ export class RoomWizardStateService {
 						initialRoomOptions.access!.anonymous!.speaker!.enabled
 					),
 					userEnabled: this.formBuilder.nonNullable.control(initialRoomOptions.access!.user!.enabled),
-					waitingRoomEnabled: this.formBuilder.nonNullable.control(
-						initialRoomOptions.config!.waitingRoom!.enabled
-					),
-					waitingRoomMessage: this.formBuilder.nonNullable.control(
-						initialRoomOptions.config!.waitingRoom!.message ?? '',
-						[Validators.maxLength(MAX_WAITING_ROOM_MESSAGE_LENGTH)]
+					lockedEnabled: this.formBuilder.nonNullable.control(initialRoomOptions.access!.lock!.enabled),
+					lockedMessage: this.formBuilder.nonNullable.control(
+						initialRoomOptions.access!.lock!.message ?? '',
+						[Validators.maxLength(MAX_LOCKED_MESSAGE_LENGTH)]
 					),
 					moderator: this.formBuilder.group({
 						...this.buildPermissionsFormConfig(initialRoomOptions.roles!.moderator!.permissions)

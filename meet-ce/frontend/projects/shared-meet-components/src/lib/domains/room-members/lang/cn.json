@@ -118,7 +118,7 @@
         "RECORDINGS": "录像",
         "BROADCAST": "直播",
         "CHAT": "聊天",
-        "WAITING_ROOM": "等候室"
+        "LOCKED_ROOM": "锁定房间"
       },
       "ITEMS": {
         "meetingJoin": {
@@ -209,11 +209,11 @@
           "LABEL": "发送消息",
           "DESCRIPTION": "允许发送聊天消息。需要“阅读”"
         },
-        "waitingRoomBypass": {
-          "LABEL": "无需等待直接加入",
-          "DESCRIPTION": "允许无需等待准入，直接加入设有等候室的房间"
+        "accessBypassLock": {
+          "LABEL": "加入锁定的房间",
+          "DESCRIPTION": "允许无需等待准入，直接加入锁定的房间"
         },
-        "waitingRoomAdmin": {
+        "waitingParticipantAdmin": {
           "LABEL": "准入参与者",
           "DESCRIPTION": "允许准入或拒绝正在等待加入的参与者"
         }

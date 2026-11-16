@@ -165,7 +165,7 @@ export const openMeetingAtMediaSetup = async (
 };
 
 /**
- * Mounts the meeting like {@link openMeetingAtMediaSetup} in a room with the waiting room on, where
+ * Mounts the meeting like {@link openMeetingAtMediaSetup} in a locked room, where
  * submitting the join screen asks to join, and waits for the waiting screen.
  */
 export const askToJoin = async (page: Page, roomId: string, options?: OpenMeetingOptions): Promise<MountedMeeting> => {
@@ -505,18 +505,30 @@ export const broadcastStopToCommand = async (page: Page, names: string[]): Promi
 	await page.getByTestId('btn-broadcast-stop').click();
 };
 
-/** Clicks the testapp's `participantWaitingAdmit()` button naming `participantIdentities`, or, with none, everyone waiting. */
-export const waitingRoomAdmitCommand = async (page: Page, participantIdentities: string[] = []): Promise<void> => {
+/** Clicks the testapp's `waitingParticipantAdmit()` button naming `participantIdentity` as the target participant. */
+export const waitingParticipantAdmitCommand = async (page: Page, participantIdentity: string): Promise<void> => {
 	await showControlsPanel(page, 'commands');
-	await page.getByTestId('input-waiting-room-identities').fill(participantIdentities.join(','));
-	await page.getByTestId('btn-waiting-room-admit').click();
+	await page.getByTestId('input-participant-identity').fill(participantIdentity);
+	await page.getByTestId('btn-waiting-participant-admit').click();
 };
 
-/** Clicks the testapp's `participantWaitingReject()` button naming `participantIdentities`, or, with none, everyone waiting. */
-export const waitingRoomRejectCommand = async (page: Page, participantIdentities: string[] = []): Promise<void> => {
+/** Clicks the testapp's `waitingParticipantAdmitAll()` button. */
+export const waitingParticipantAdmitAllCommand = async (page: Page): Promise<void> => {
 	await showControlsPanel(page, 'commands');
-	await page.getByTestId('input-waiting-room-identities').fill(participantIdentities.join(','));
-	await page.getByTestId('btn-waiting-room-reject').click();
+	await page.getByTestId('btn-waiting-participant-admit-all').click();
+};
+
+/** Clicks the testapp's `waitingParticipantReject()` button naming `participantIdentity` as the target participant. */
+export const waitingParticipantRejectCommand = async (page: Page, participantIdentity: string): Promise<void> => {
+	await showControlsPanel(page, 'commands');
+	await page.getByTestId('input-participant-identity').fill(participantIdentity);
+	await page.getByTestId('btn-waiting-participant-reject').click();
+};
+
+/** Clicks the testapp's `waitingParticipantRejectAll()` button. */
+export const waitingParticipantRejectAllCommand = async (page: Page): Promise<void> => {
+	await showControlsPanel(page, 'commands');
+	await page.getByTestId('btn-waiting-participant-reject-all').click();
 };
 
 /** Removes the embedded meeting from the host page, the element or the iframe, as a host application would. */

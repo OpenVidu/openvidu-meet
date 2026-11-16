@@ -310,16 +310,28 @@ export class IframeBridgeService {
 				break;
 			}
 
-			case EmbeddedCommandName.PARTICIPANT_WAITING_ADMIT:
-				await commandService.participantWaitingAdmit({
-					participantIdentities: this.extractParticipantIdentities(message)
-				});
+			case EmbeddedCommandName.WAITING_PARTICIPANT_ADMIT: {
+				const participantIdentity = this.extractWaitingParticipantIdentity(command, message);
+
+				if (participantIdentity) await commandService.waitingParticipantAdmit({ participantIdentity });
+
+				break;
+			}
+
+			case EmbeddedCommandName.WAITING_PARTICIPANT_REJECT: {
+				const participantIdentity = this.extractWaitingParticipantIdentity(command, message);
+
+				if (participantIdentity) await commandService.waitingParticipantReject({ participantIdentity });
+
+				break;
+			}
+
+			case EmbeddedCommandName.WAITING_PARTICIPANT_ADMIT_ALL:
+				await commandService.waitingParticipantAdmitAll();
 				break;
 
-			case EmbeddedCommandName.PARTICIPANT_WAITING_REJECT:
-				await commandService.participantWaitingReject({
-					participantIdentities: this.extractParticipantIdentities(message)
-				});
+			case EmbeddedCommandName.WAITING_PARTICIPANT_REJECT_ALL:
+				await commandService.waitingParticipantRejectAll();
 				break;
 
 			default:
@@ -327,10 +339,18 @@ export class IframeBridgeService {
 		}
 	}
 
-	/** Reads the optional `participantIdentities` of a waiting room command: absent means everyone waiting. */
-	private extractParticipantIdentities(message: EmbeddedCommand): string[] | undefined {
+	/** Reads the `participantIdentity` a waiting participant command names, logging its absence. */
+	private extractWaitingParticipantIdentity(
+		command: EmbeddedCommandName,
+		message: EmbeddedCommand
+	): string | undefined {
 		const payload = 'payload' in message ? message.payload : undefined;
-		return payload && 'participantIdentities' in payload ? payload.participantIdentities : undefined;
+		const participantIdentity =
+			payload && 'participantIdentity' in payload ? payload.participantIdentity : undefined;
+
+		if (!participantIdentity) this.log.e(`${command} command received without a participantIdentity`);
+
+		return participantIdentity;
 	}
 
 	/**

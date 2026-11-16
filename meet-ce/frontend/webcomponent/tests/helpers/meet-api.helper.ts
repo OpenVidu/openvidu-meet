@@ -1,5 +1,5 @@
 import {
-	MeetWaitingRoomList,
+	MeetWaitingParticipantList,
 	MeetParticipantModerationAction,
 	MeetParticipantPayload,
 	MeetRecordingInfo,
@@ -147,39 +147,37 @@ export const waitForMeetingParticipant = async (roomId: string, participantName:
 };
 
 /**
- * Reads the room's waiting room via the Meet API: who waits, in arrival order, and the free places.
+ * Reads the room's waiting participants via the Meet API.
  */
-export const getWaitingRoom = async (roomId: string): Promise<MeetWaitingRoomList> => {
-	const response = await fetch(withApiPath(`/meetings/${encodeURIComponent(roomId)}/waiting-room`), {
+export const getWaitingParticipants = async (roomId: string): Promise<MeetWaitingParticipantList> => {
+	const response = await fetch(withApiPath(`/meetings/${encodeURIComponent(roomId)}/waiting-participants`), {
 		method: 'GET',
 		headers: { 'x-api-key': MEET_API_KEY }
 	});
 
 	const responseText = await response.text();
-	assertOk(response, responseText, 'get waiting room');
+	assertOk(response, responseText, 'list waiting participants');
 
-	return JSON.parse(responseText) as MeetWaitingRoomList;
+	return JSON.parse(responseText) as MeetWaitingParticipantList;
 };
 
 /**
- * Admits or rejects waiting participants via the Meet API, those named or, with none, everyone waiting.
+ * Admits or rejects the waiting participant named via the Meet API or, admitting with none named, everyone waiting.
  */
-export const decideOnWaitingRoom = async (
+export const decideOnWaitingParticipants = async (
 	roomId: string,
 	decision: 'admit' | 'reject',
-	participantIdentities?: string[]
+	participantIdentity?: string
 ): Promise<void> => {
-	const response = await fetch(withApiPath(`/meetings/${encodeURIComponent(roomId)}/waiting-room/${decision}`), {
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json',
-			'x-api-key': MEET_API_KEY
-		},
-		body: JSON.stringify(participantIdentities ? { participantIdentities } : {})
+	const collection = `/meetings/${encodeURIComponent(roomId)}/waiting-participants`;
+	const path = participantIdentity ? `${collection}/${encodeURIComponent(participantIdentity)}` : collection;
+	const response = await fetch(withApiPath(decision === 'admit' ? `${path}/admit` : path), {
+		method: decision === 'admit' ? 'POST' : 'DELETE',
+		headers: { 'x-api-key': MEET_API_KEY }
 	});
 
 	const responseText = await response.text();
-	assertOk(response, responseText, `waiting room ${decision}`);
+	assertOk(response, responseText, `waiting participant ${decision}`);
 };
 
 /**

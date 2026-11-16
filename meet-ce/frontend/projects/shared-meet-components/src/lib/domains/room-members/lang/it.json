@@ -118,7 +118,7 @@
         "RECORDINGS": "Registrazioni",
         "BROADCAST": "Diretta streaming",
         "CHAT": "Chat",
-        "WAITING_ROOM": "Sala d'attesa"
+        "LOCKED_ROOM": "Stanza bloccata"
       },
       "ITEMS": {
         "meetingJoin": {
@@ -209,11 +209,11 @@
           "LABEL": "Scrivere",
           "DESCRIPTION": "Consenti di inviare messaggi nella chat. Richiede \"Leggere\""
         },
-        "waitingRoomBypass": {
-          "LABEL": "Partecipare senza attendere",
-          "DESCRIPTION": "Consenti di partecipare senza attendere l'ammissione in una stanza con sala d'attesa"
+        "accessBypassLock": {
+          "LABEL": "Partecipare a una stanza bloccata",
+          "DESCRIPTION": "Consenti di partecipare a una stanza bloccata senza attendere l'ammissione"
         },
-        "waitingRoomAdmin": {
+        "waitingParticipantAdmin": {
           "LABEL": "Ammettere i partecipanti",
           "DESCRIPTION": "Consenti di ammettere o rifiutare i partecipanti in attesa di entrare"
         }

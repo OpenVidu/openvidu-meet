@@ -266,27 +266,26 @@
 		"BACK_TO_ROOMS": "返回房间",
 		"ASK_BUTTON": "请求加入"
 	},
-	"WAITING_ROOM": {
+	"WAITING_PARTICIPANTS": {
 		"TITLE": "等待主持人准许进入",
-		"POSITION": "您排在第 {position} 位",
 		"SUBTITLE": "主持人已知道您在这里。获准后您将立即加入。",
 		"RECONNECTING": "正在重新连接… 如果您在一分钟内恢复连接，将保留您的位置。",
 		"WAITED": "{minutes, plural, other {已等待 # 分钟}}",
 		"NOT_STARTED": "会议尚未开始",
 		"PREVIEW_PRIVATE": "会议中的人还看不到也听不到您",
-		"LEAVE": "离开等候室",
+		"LEAVE": "停止等待",
 		"ADMITTED": "您已获准进入，正在加入会议",
 		"ASK_AGAIN": "再次请求加入",
 		"REJECTED_TITLE": "您未获准进入",
 		"REJECTED_MESSAGE": "您的加入请求未被接受。您可以再次请求。",
-		"LEFT_TITLE": "您已离开等候室",
+		"LEFT_TITLE": "您已停止等待",
 		"LEFT_MESSAGE": "您没有加入会议，您的请求已撤回。",
 		"EXPIRED_TITLE": "您已失去排队位置",
-		"EXPIRED_MESSAGE": "您离开的时间过长，或您从其他地方请求了加入。如果再次请求，您将排在队尾。",
+		"EXPIRED_MESSAGE": "您离开的时间过长，或您从其他地方请求了加入。您可以再次请求。",
 		"ENDED_TITLE": "会议已结束",
 		"ENDED_MESSAGE": "会议在您获准进入前已结束。如果再次请求，您将等待下一场会议。",
-		"FULL_TITLE": "等候室已满",
-		"FULL_MESSAGE": "目前等待加入此会议的人数过多。请几分钟后再试。",
+		"FULL_TITLE": "等待的人太多",
+		"FULL_MESSAGE": "目前没有其他人可以请求加入此会议。请过几分钟再试。",
 		"ADMIN": {
 			"TITLE": "等待加入",
 			"PLACES_LEFT": "{count, plural, =0 {没有空位} other {剩余 # 个空位}}",
@@ -295,7 +294,7 @@
 			"DENY": "拒绝",
 			"ADMIT_NAMED": "准许 {name}",
 			"DENY_NAMED": "拒绝 {name}",
-			"ADMIT_COUNT": "{count, plural, other {准许 # 人}}",
+			"ADMIT_ALL": "全部准许",
 			"DENY_ALL": "全部拒绝",
 			"DENY_ALL_TITLE": "拒绝所有等待者？",
 			"DENY_ALL_MESSAGE": "所有等待加入的人都会看到自己未获准进入。他们可以再次请求加入。",
@@ -306,7 +305,9 @@
 			"WANTS_TO_JOIN": "请求加入",
 			"VIEW": "查看",
 			"GONE_TITLE": "{name} 已经离开",
-			"GONE_MESSAGE": "在等候室中未找到该参与者。"
+			"GONE_MESSAGE": "该参与者已不再等待加入。",
+			"NOT_ENOUGH_PLACES_TITLE": "无法容纳所有人",
+			"NOT_ENOUGH_PLACES_MESSAGE": "等待的人数多于空位数。未准许任何人。"
 		}
 	},
 	"SHARE_ACCESS": {

@@ -7,7 +7,7 @@ import { LoggerService } from '../../../shared/services/logger.service';
 import { RoomFeatureService } from '../../rooms/services/room-feature.service';
 import { DEFAULT_MEETING_ENTRY_OPTIONS, JoinScreenState } from '../utils/meeting-entry-flow.utils';
 import { MeetingEntryFlowService } from './meeting-entry-flow.service';
-import { WaitingRoomService } from '../waiting-room/waiting-room.service';
+import { WaitingParticipantService } from '../waiting-participants/waiting-participant.service';
 import { MeetingJoinService } from './meeting-join.service';
 
 class LoggerServiceStub {
@@ -18,11 +18,13 @@ class LoggerServiceStub {
 
 describe('MeetingEntryFlowService', () => {
 	const ROOM_CONFIG = { chat: { enabled: false } } as MeetRoomConfig;
+	const ROOM_LOCK = { enabled: true };
 	const ready: JoinScreenState = { nameKnown: true, e2eeKeyMissing: false, roomClosed: false, canJoinMeeting: true };
 
 	let flow: MeetingEntryFlowService;
 	let joinService: jasmine.SpyObj<MeetingJoinService>;
 	let setRoomConfig: jasmine.Spy;
+	let setRoomLock: jasmine.Spy;
 	let showDialog: jasmine.Spy;
 	let hasPendingWait: jasmine.Spy;
 	let asksToJoin: jasmine.Spy;
@@ -33,13 +35,14 @@ describe('MeetingEntryFlowService', () => {
 			'submit',
 			'joinScreenState'
 		]);
-		joinService.initialize.and.resolveTo(ROOM_CONFIG);
+		joinService.initialize.and.resolveTo({ config: ROOM_CONFIG, access: { lock: ROOM_LOCK } } as never);
 		joinService.submit.and.returnValue(true);
 		joinService.joinScreenState.and.returnValue(ready);
 		asksToJoin = jasmine.createSpy('asksToJoin').and.returnValue(true);
 		Object.assign(joinService, { asksToJoin });
 
 		setRoomConfig = jasmine.createSpy('setRoomConfig');
+		setRoomLock = jasmine.createSpy('setRoomLock');
 		showDialog = jasmine.createSpy('showDialog');
 		hasPendingWait = jasmine.createSpy('hasPendingWait').and.returnValue(false);
 
@@ -49,8 +52,8 @@ describe('MeetingEntryFlowService', () => {
 				MeetingEntryFlowService,
 				{ provide: LoggerService, useClass: LoggerServiceStub },
 				{ provide: MeetingJoinService, useValue: joinService },
-				{ provide: RoomFeatureService, useValue: { setRoomConfig } },
-				{ provide: WaitingRoomService, useValue: { hasPendingWait } },
+				{ provide: RoomFeatureService, useValue: { setRoomConfig, setRoomLock } },
+				{ provide: WaitingParticipantService, useValue: { hasPendingWait } },
 				{ provide: DialogService, useValue: { showDialog } },
 				{ provide: TranslateService, useValue: { translate: (key: string) => key } }
 			]
@@ -64,11 +67,12 @@ describe('MeetingEntryFlowService', () => {
 		expect(flow.options()).toEqual(DEFAULT_MEETING_ENTRY_OPTIONS);
 	});
 
-	it('shows the join screen once the room has loaded, with the room config already applied', async () => {
+	it('shows the join screen once the room has loaded, with the room config and lock already applied', async () => {
 		await flow.start();
 
 		expect(flow.step()).toBe('join');
 		expect(setRoomConfig).toHaveBeenCalledOnceWith(ROOM_CONFIG);
+		expect(setRoomLock).toHaveBeenCalledOnceWith(ROOM_LOCK);
 	});
 
 	it('goes on to the meeting, without the join screen, to continue a wait a reload interrupted', async () => {

@@ -3,8 +3,8 @@ import {
 	MeetBroadcastInfo,
 	MeetBroadcastStatus,
 	MeetEventOrigin,
-	MeetWaitingRoomParticipantType,
-	MeetWaitingRoomStatus,
+	MeetWaitingParticipantType,
+	MeetWaitingParticipantStatus,
 	MeetParticipantJoinedPayload,
 	MeetParticipantLeftPayload,
 	MeetParticipantModerationAction,
@@ -17,7 +17,7 @@ import {
 } from '@openvidu-meet/typings';
 import { expect, test } from '@playwright/test';
 import { createRtmpSink, deleteRtmpSinks } from '../helpers/broadcast-sink.helper';
-import { createRoom, deleteRooms, getWaitingRoom, getRecording, getRoom } from '../helpers/meet-api.helper';
+import { createRoom, deleteRooms, getWaitingParticipants, getRecording, getRoom } from '../helpers/meet-api.helper';
 import { startRecording, stopRecording } from '../helpers/recordings.helper';
 import {
 	askToJoin,
@@ -27,8 +27,8 @@ import {
 	expectWebhook,
 	joinedParticipantIdentity,
 	leaveMeeting,
-	waitingRoomAdmitCommand,
-	waitingRoomRejectCommand,
+	waitingParticipantAdmitCommand,
+	waitingParticipantRejectCommand,
 	openMeeting,
 	participantUpdateRoleCommand,
 	webhookLocator
@@ -261,58 +261,60 @@ test.describe('Webhooks E2E Tests', () => {
 		expect(ended.status).toBe(MeetBroadcastStatus.COMPLETE);
 	});
 
-	test('should receive participantKnocked once per wait and participantWaitingChanged for each decision', async ({
+	test('should receive waitingParticipantKnocked once per wait and waitingParticipantStatusChanged for each decision', async ({
 		page,
 		browser
 	}) => {
-		const { roomId: waitingRoomRoomId, roomName } = await createRoom({
-			config: { waitingRoom: { enabled: true } }
+		const { roomId: lockedRoomId, roomName } = await createRoom({
+			access: { lock: { enabled: true } }
 		});
-		createdRoomIds.push(waitingRoomRoomId);
-		await openMeeting(page, waitingRoomRoomId, { role: 'moderator' });
+		createdRoomIds.push(lockedRoomId);
+		await openMeeting(page, lockedRoomId, { role: 'moderator' });
 
 		const anaContext = await browser.newContext();
 		const benContext = await browser.newContext();
-		await askToJoin(await anaContext.newPage(), waitingRoomRoomId, { name: 'Ana', externalId: 'u-42' });
-		await askToJoin(await benContext.newPage(), waitingRoomRoomId, { name: 'Ben' });
-		const [ana, ben] = (await getWaitingRoom(waitingRoomRoomId)).participants;
+		await askToJoin(await anaContext.newPage(), lockedRoomId, { name: 'Ana', externalId: 'u-42' });
+		await askToJoin(await benContext.newPage(), lockedRoomId, { name: 'Ben' });
+		const waiting = (await getWaitingParticipants(lockedRoomId)).participants;
+		const named = (name: string) => waiting.find(({ participantName }) => participantName === name)!;
+		const [ana, ben] = [named('Ana'), named('Ben')];
 		expect(ana).toMatchObject({
 			participantName: 'Ana',
-			type: MeetWaitingRoomParticipantType.ANONYMOUS,
+			type: MeetWaitingParticipantType.ANONYMOUS,
 			externalId: 'u-42'
 		});
 
-		const knocked = () => webhooksFromStorage(page, waitingRoomRoomId, MeetWebhookEventType.PARTICIPANT_KNOCKED);
+		const knocked = () => webhooksFromStorage(page, lockedRoomId, MeetWebhookEventType.WAITING_PARTICIPANT_KNOCKED);
 		await expect
 			.poll(async () => (await knocked()).map(({ data }) => data))
 			.toEqual(
 				expect.arrayContaining([
-					{ roomId: waitingRoomRoomId, roomName, participant: ana },
-					{ roomId: waitingRoomRoomId, roomName, participant: ben }
+					{ roomId: lockedRoomId, roomName, participant: ana },
+					{ roomId: lockedRoomId, roomName, participant: ben }
 				])
 			);
 
-		await waitingRoomRejectCommand(page, [ana.participantIdentity]);
-		await waitingRoomAdmitCommand(page, [ben.participantIdentity]);
+		await waitingParticipantRejectCommand(page, ana.participantIdentity);
+		await waitingParticipantAdmitCommand(page, ben.participantIdentity);
 
 		const statusChanged = () =>
-			webhooksFromStorage(page, waitingRoomRoomId, MeetWebhookEventType.PARTICIPANT_WAITING_CHANGED);
+			webhooksFromStorage(page, lockedRoomId, MeetWebhookEventType.WAITING_PARTICIPANT_STATUS_CHANGED);
 		await expect
 			.poll(async () => (await statusChanged()).map(({ data }) => data))
 			.toEqual(
 				expect.arrayContaining([
 					{
-						roomId: waitingRoomRoomId,
+						roomId: lockedRoomId,
 						roomName,
 						participant: ana,
-						status: MeetWaitingRoomStatus.REJECTED,
+						status: MeetWaitingParticipantStatus.REJECTED,
 						origin: MeetEventOrigin.MODERATOR
 					},
 					{
-						roomId: waitingRoomRoomId,
+						roomId: lockedRoomId,
 						roomName,
 						participant: ben,
-						status: MeetWaitingRoomStatus.ADMITTED,
+						status: MeetWaitingParticipantStatus.ADMITTED,
 						origin: MeetEventOrigin.MODERATOR
 					}
 				])

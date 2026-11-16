@@ -3,8 +3,8 @@ import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
 	MeetRoomMemberTokenOptions,
-	MeetWaitingRoomErrorCode,
-	MeetWaitingRoomParticipantType
+	MeetWaitingParticipantErrorCode,
+	MeetWaitingParticipantType
 } from '@openvidu-meet/typings';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import { LoggerService } from '../../../shared/services/logger.service';
@@ -83,11 +83,11 @@ describe('JoinTokenService', () => {
 
 	it('answers the ticket of a participant who has to wait', async () => {
 		const ticket = {
-			waitingRoomTicket: 'ticket-1',
+			waitingTicket: 'ticket-1',
 			participant: {
 				participantIdentity: 'alice-1',
 				participantName: 'Alice',
-				type: MeetWaitingRoomParticipantType.ANONYMOUS,
+				type: MeetWaitingParticipantType.ANONYMOUS,
 				knockDate: 1_800_000_000_000
 			}
 		};
@@ -99,14 +99,14 @@ describe('JoinTokenService', () => {
 	it('sends the ticket of a wait with the same request', async () => {
 		await service.requestWithTicket(alice, 'ticket-1');
 
-		expect(tokenOptions()).toEqual(jasmine.objectContaining({ joinMeeting: true, waitingRoomTicket: 'ticket-1' }));
+		expect(tokenOptions()).toEqual(jasmine.objectContaining({ joinMeeting: true, waitingTicket: 'ticket-1' }));
 	});
 
-	it('leaves the screen of a full waiting room to the waiting room', async () => {
+	it('leaves the screen of a full waiting list to the wait', async () => {
 		roomMemberContext.requestJoin.and.rejectWith(
 			new HttpErrorResponse({
 				status: 409,
-				error: { error: MeetWaitingRoomErrorCode.WAITING_ROOM_FULL, message: '' }
+				error: { error: MeetWaitingParticipantErrorCode.WAITING_LIST_FULL, message: '' }
 			})
 		);
 

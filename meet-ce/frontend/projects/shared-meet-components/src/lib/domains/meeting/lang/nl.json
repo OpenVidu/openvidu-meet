@@ -266,27 +266,26 @@
 		"BACK_TO_ROOMS": "Terug naar kamers",
 		"ASK_BUTTON": "Vragen om deel te nemen"
 	},
-	"WAITING_ROOM": {
+	"WAITING_PARTICIPANTS": {
 		"TITLE": "Wachten tot u wordt toegelaten",
-		"POSITION": "U bent {position, selectordinal, other {#e}} in de rij",
 		"SUBTITLE": "De host weet dat u er bent. U neemt deel zodra u wordt toegelaten.",
 		"RECONNECTING": "Opnieuw verbinden… U behoudt uw plaats als u binnen een minuut terug bent.",
 		"WAITED": "{minutes, plural, one {Wacht al # min} other {Wacht al # min}}",
 		"NOT_STARTED": "De meeting is nog niet begonnen",
 		"PREVIEW_PRIVATE": "Niemand in de meeting kan u al zien of horen",
-		"LEAVE": "Wachtruimte verlaten",
+		"LEAVE": "Stoppen met wachten",
 		"ADMITTED": "U bent toegelaten. Deelnemen aan de meeting",
 		"ASK_AGAIN": "Opnieuw vragen om deel te nemen",
 		"REJECTED_TITLE": "U bent niet toegelaten",
 		"REJECTED_MESSAGE": "Uw verzoek om deel te nemen is niet geaccepteerd. U kunt het opnieuw vragen.",
-		"LEFT_TITLE": "U heeft de wachtruimte verlaten",
+		"LEFT_TITLE": "U wacht niet meer",
 		"LEFT_MESSAGE": "U heeft niet deelgenomen aan de meeting. Uw verzoek is ingetrokken.",
 		"EXPIRED_TITLE": "U bent uw plaats kwijt",
-		"EXPIRED_MESSAGE": "U was te lang weg of u heeft vanaf een andere plek gevraagd om deel te nemen. Als u het opnieuw vraagt, staat u achteraan in de rij.",
+		"EXPIRED_MESSAGE": "U was te lang weg of u heeft vanaf een andere plek gevraagd om deel te nemen. U kunt het opnieuw vragen.",
 		"ENDED_TITLE": "De meeting is beëindigd",
 		"ENDED_MESSAGE": "De meeting is beëindigd voordat u werd toegelaten. Als u het opnieuw vraagt, wacht u op de volgende.",
-		"FULL_TITLE": "De wachtruimte is vol",
-		"FULL_MESSAGE": "Er wachten op dit moment te veel mensen om deel te nemen aan deze meeting. Probeer het over een paar minuten opnieuw.",
+		"FULL_TITLE": "Er wachten te veel mensen",
+		"FULL_MESSAGE": "Op dit moment kan niemand anders vragen om deel te nemen aan deze vergadering. Probeer het over een paar minuten opnieuw.",
 		"ADMIN": {
 			"TITLE": "Wacht op toegang",
 			"PLACES_LEFT": "{count, plural, =0 {Geen plaatsen meer} one {Nog # plaats} other {Nog # plaatsen}}",
@@ -295,7 +294,7 @@
 			"DENY": "Weigeren",
 			"ADMIT_NAMED": "{name} toelaten",
 			"DENY_NAMED": "{name} weigeren",
-			"ADMIT_COUNT": "{count, plural, other {# toelaten}}",
+			"ADMIT_ALL": "Iedereen toelaten",
 			"DENY_ALL": "Iedereen weigeren",
 			"DENY_ALL_TITLE": "Iedereen die wacht weigeren?",
 			"DENY_ALL_MESSAGE": "Iedereen die wacht op toegang ziet dat hij niet is toegelaten. Ze kunnen opnieuw vragen om deel te nemen.",
@@ -306,7 +305,9 @@
 			"WANTS_TO_JOIN": "Wil deelnemen",
 			"VIEW": "Bekijken",
 			"GONE_TITLE": "{name} is al weg",
-			"GONE_MESSAGE": "Deze deelnemer is niet gevonden in de wachtkamer."
+			"GONE_MESSAGE": "Deze deelnemer wacht niet meer om deel te nemen.",
+			"NOT_ENOUGH_PLACES_TITLE": "Niet iedereen past",
+			"NOT_ENOUGH_PLACES_MESSAGE": "Er wachten meer mensen dan er plaatsen vrij zijn. Niemand is toegelaten."
 		}
 	},
 	"SHARE_ACCESS": {

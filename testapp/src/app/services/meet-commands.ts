@@ -4,7 +4,7 @@ import {
 	EmbeddedEventPayloadFor,
 	MeetBroadcastStartOptions,
 	MeetBroadcastStopOptions,
-	MeetParticipantWaitingDecisionOptions,
+	MeetWaitingParticipantDecisionOptions,
 	MeetParticipantModerationAction,
 	MeetParticipantMuteOptions,
 	MeetReaction
@@ -39,7 +39,7 @@ export class MeetCommandsService {
 	private readonly log = inject(EventLogService);
 	private readonly broadcastRoster = inject(BroadcastRosterService);
 
-	/** Participant addressed by `participantKick()`, `participantUpdateRole()` and `participantMute()`. */
+	/** Participant addressed by `participantKick()`, `participantUpdateRole()`, `participantMute()`, `waitingParticipantAdmit()` and `waitingParticipantReject()`. */
 	readonly participantIdentity = signal('');
 	/** Devices the two moderation-mute commands turn off; any combination is a valid request. */
 	readonly muteAudio = signal(true);
@@ -47,15 +47,6 @@ export class MeetCommandsService {
 	readonly muteScreenShare = signal(false);
 	/** Explicit `active` for the media toggles. `''` toggles instead. */
 	readonly mediaActive = signal<TriState>('');
-	/** Identities `participantWaitingAdmit()` and `participantWaitingReject()` name, comma separated; empty omits `participantIdentities`, so everyone waiting. */
-	readonly waitingRoomIdentities = signal('');
-	readonly waitingRoomOptions = computed<MeetParticipantWaitingDecisionOptions>(() => {
-		const participantIdentities = this.waitingRoomIdentities()
-			.split(',')
-			.map((identity) => identity.trim())
-			.filter(Boolean);
-		return participantIdentities.length ? { participantIdentities } : {};
-	});
 	/** Whether `broadcastStart()` names its room destinations; off, `destinationIds` is omitted. */
 	readonly broadcastPickDestinations = signal(false);
 	/** Room destinations `broadcastStart()` names when picking them; none picked sends `[]`. */
@@ -247,24 +238,48 @@ export class MeetCommandsService {
 		this.log.command('participantHandLowerAll', '()');
 	}
 
-	// ── Waiting room ────────────────────────────────────────────────────────
+	// ── Waiting participants ────────────────────────────────────────────────
 
-	participantWaitingAdmit(): void {
-		const options = this.waitingRoomOptions();
+	waitingParticipantAdmit(): void {
+		const participantIdentity = this.requireIdentity('waitingParticipantAdmit');
+
+		if (!participantIdentity) return;
+
+		const options: MeetWaitingParticipantDecisionOptions = { participantIdentity };
 		this.dispatch(
-			() => this.iframeHost.participantWaitingAdmit(options),
-			(element) => element.participantWaitingAdmit(options)
+			() => this.iframeHost.waitingParticipantAdmit(options),
+			(element) => element.waitingParticipantAdmit(options)
 		);
-		this.log.command('participantWaitingAdmit', optionsArgs(options));
+		this.log.command('waitingParticipantAdmit', optionsArgs(options));
 	}
 
-	participantWaitingReject(): void {
-		const options = this.waitingRoomOptions();
+	waitingParticipantAdmitAll(): void {
 		this.dispatch(
-			() => this.iframeHost.participantWaitingReject(options),
-			(element) => element.participantWaitingReject(options)
+			() => this.iframeHost.waitingParticipantAdmitAll(),
+			(element) => element.waitingParticipantAdmitAll()
 		);
-		this.log.command('participantWaitingReject', optionsArgs(options));
+		this.log.command('waitingParticipantAdmitAll', '()');
+	}
+
+	waitingParticipantReject(): void {
+		const participantIdentity = this.requireIdentity('waitingParticipantReject');
+
+		if (!participantIdentity) return;
+
+		const options: MeetWaitingParticipantDecisionOptions = { participantIdentity };
+		this.dispatch(
+			() => this.iframeHost.waitingParticipantReject(options),
+			(element) => element.waitingParticipantReject(options)
+		);
+		this.log.command('waitingParticipantReject', optionsArgs(options));
+	}
+
+	waitingParticipantRejectAll(): void {
+		this.dispatch(
+			() => this.iframeHost.waitingParticipantRejectAll(),
+			(element) => element.waitingParticipantRejectAll()
+		);
+		this.log.command('waitingParticipantRejectAll', '()');
 	}
 
 	// ── Reactions ───────────────────────────────────────────────────────────

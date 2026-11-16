@@ -118,7 +118,7 @@
         "RECORDINGS": "Opnames",
         "BROADCAST": "Live-uitzending",
         "CHAT": "Chat",
-        "WAITING_ROOM": "Wachtkamer"
+        "LOCKED_ROOM": "Vergrendelde kamer"
       },
       "ITEMS": {
         "meetingJoin": {
@@ -209,11 +209,11 @@
           "LABEL": "Schrijven",
           "DESCRIPTION": "Chatberichten versturen toestaan. Vereist \"Lezen\""
         },
-        "waitingRoomBypass": {
-          "LABEL": "Zonder wachten deelnemen",
-          "DESCRIPTION": "Deelnemen aan een kamer met wachtkamer toestaan zonder op toelating te wachten"
+        "accessBypassLock": {
+          "LABEL": "Deelnemen aan een vergrendelde kamer",
+          "DESCRIPTION": "Deelnemen aan een vergrendelde kamer toestaan zonder op toelating te wachten"
         },
-        "waitingRoomAdmin": {
+        "waitingParticipantAdmin": {
           "LABEL": "Deelnemers toelaten",
           "DESCRIPTION": "Wachtende deelnemers toelaten of weigeren toestaan"
         }

@@ -118,7 +118,7 @@
         "RECORDINGS": "Enregistrements",
         "BROADCAST": "Diffusion en direct",
         "CHAT": "Chat",
-        "WAITING_ROOM": "Salle d'attente"
+        "LOCKED_ROOM": "Salle verrouillée"
       },
       "ITEMS": {
         "meetingJoin": {
@@ -209,11 +209,11 @@
           "LABEL": "Écrire",
           "DESCRIPTION": "Autoriser à envoyer des messages dans le chat. Nécessite « Lire »"
         },
-        "waitingRoomBypass": {
-          "LABEL": "Rejoindre sans attendre",
-          "DESCRIPTION": "Autoriser à rejoindre une salle avec salle d'attente sans attendre d'être admis"
+        "accessBypassLock": {
+          "LABEL": "Rejoindre une salle verrouillée",
+          "DESCRIPTION": "Autoriser à rejoindre une salle verrouillée sans attendre d'être admis"
         },
-        "waitingRoomAdmin": {
+        "waitingParticipantAdmin": {
           "LABEL": "Admettre des participants",
           "DESCRIPTION": "Autoriser à admettre ou à refuser les participants en attente"
         }

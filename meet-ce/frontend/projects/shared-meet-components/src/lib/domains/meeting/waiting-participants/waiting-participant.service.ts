@@ -4,12 +4,12 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { fromEvent } from 'rxjs';
 import {
 	EmbeddedEventName,
-	MEET_WAITING_ROOM_STATE_MESSAGE,
+	MEET_WAITING_PARTICIPANT_STATE_MESSAGE,
 	MeetEventOrigin,
-	MeetWaitingRoomReason,
-	MeetWaitingRoomState,
-	MeetWaitingRoomStatus,
-	MeetWaitingRoomTicketResponse
+	MeetWaitingParticipantReason,
+	MeetWaitingParticipantState,
+	MeetWaitingParticipantStatus,
+	MeetWaitingTicketResponse
 } from '@openvidu-meet/typings';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import { HttpService } from '../../../shared/services/http.service';
@@ -19,7 +19,7 @@ import { SessionStorageService } from '../../../shared/services/session-storage.
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
 import { EmbeddedEventBusService } from '../../embedded/services/embedded-event-bus.service';
 import { ACCESS_DENIED_STATUSES } from '../../room-members/services/room-member-context.service';
-import { isWaitingRoomWaitEnded, isWaitingRoomFull } from '../../room-members/utils/room-member-token-failure.utils';
+import { isWaitEnded, isWaitingListFull } from '../../room-members/utils/room-member-token-failure.utils';
 import { MeetingConnectionError } from '../openvidu-components/models/meeting-view-state.model';
 import { LocalMediaService } from '../openvidu-components/services/local-media/local-media.service';
 import { MeetingPhaseService } from '../openvidu-components/services/meeting-phase/meeting-phase.service';
@@ -28,7 +28,7 @@ import { MeetingContextService } from '../services/meeting-context.service';
 import { WebSocketService, WebSocketStopReason } from '../services/websocket.service';
 
 /** How a wait ended without the participant being let in, as the screen that follows tells it. */
-export type WaitingRoomOutcome = 'rejected' | 'left' | 'expired' | 'meeting_ended' | 'full';
+export type WaitingParticipantOutcome = 'rejected' | 'left' | 'expired' | 'meeting_ended' | 'full';
 
 /** The client gives up this long after the last message of the wait's connection: the server's minute. */
 const GIVE_UP_AFTER_MS = 60_000;
@@ -38,21 +38,21 @@ const FAILING_REQUEST_RETRY_DELAY_MS = 3_000;
 const RATE_LIMIT_DEFAULT_RESET_MS = 10_000;
 
 /** How a wait ended: its status and, when the meeting knows it, who caused it. */
-type WaitingRoomEnd = Pick<MeetWaitingRoomState, 'status' | 'origin' | 'reason'>;
+type WaitEnd = Pick<MeetWaitingParticipantState, 'status' | 'origin' | 'reason'>;
 
 /** What the host is told of a state of the wait. */
-type Reported = Pick<MeetWaitingRoomState, 'status' | 'queuePosition' | 'origin' | 'reason'>;
+type Reported = Pick<MeetWaitingParticipantState, 'status' | 'origin' | 'reason'>;
 
-/** One participant's way through the waiting room, from asking to join until they connect or the wait ends. */
+/** One participant's wait to be let in, from asking to join until they connect or the wait ends. */
 interface Entry {
 	request: JoinRequest;
 	resolve: (token: string) => void;
 	reject: (error: unknown) => void;
-	ticket?: MeetWaitingRoomTicketResponse;
+	ticket?: MeetWaitingTicketResponse;
 	tokenRequestInFlight?: boolean;
-	endedWhileRequesting?: WaitingRoomEnd;
-	waitingWhileRequesting?: MeetWaitingRoomState;
-	lastReported?: string;
+	endedWhileRequesting?: WaitEnd;
+	waitingWhileRequesting?: MeetWaitingParticipantState;
+	lastReported?: MeetWaitingParticipantStatus;
 }
 
 /**
@@ -60,7 +60,7 @@ interface Entry {
  * connection, follows the states the server sends and, once let in, asks for the token to join with.
  */
 @Service()
-export class WaitingRoomService {
+export class WaitingParticipantService {
 	private readonly joinToken = inject(JoinTokenService);
 	private readonly webSocket = inject(WebSocketService);
 	private readonly meetingPhase = inject(MeetingPhaseService);
@@ -70,26 +70,23 @@ export class WaitingRoomService {
 	private readonly runtimeConfig = inject(RuntimeConfigService);
 	private readonly sessionStorage = inject(SessionStorageService);
 	private readonly eventBus = inject(EmbeddedEventBusService);
-	private readonly log = inject(LoggerService).get('OpenVidu Meet - WaitingRoomService');
+	private readonly log = inject(LoggerService).get('OpenVidu Meet - WaitingParticipantService');
 
 	private entry?: Entry;
 
-	private readonly _status = signal<MeetWaitingRoomStatus.WAITING | MeetWaitingRoomStatus.ADMITTED | undefined>(
-		undefined
-	);
-	private readonly _queuePosition = signal<number | undefined>(undefined);
+	private readonly _status = signal<
+		MeetWaitingParticipantStatus.WAITING | MeetWaitingParticipantStatus.ADMITTED | undefined
+	>(undefined);
 	private readonly _knockedAt = signal<number | undefined>(undefined);
 	private readonly _meetingActive = signal<boolean | undefined>(undefined);
 	private readonly _message = signal<string | undefined>(undefined);
 	private readonly _heard = signal(false);
-	private readonly _outcome = signal<WaitingRoomOutcome | undefined>(undefined);
+	private readonly _outcome = signal<WaitingParticipantOutcome | undefined>(undefined);
 	private readonly _hasWaited = signal(false);
 
 	/** `waiting` or `admitted` while the participant waits; undefined otherwise. */
 	readonly status = this._status.asReadonly();
 	readonly isWaiting = computed(() => this._status() !== undefined);
-	/** Place in line, from 1. */
-	readonly queuePosition = this._queuePosition.asReadonly();
 	/** When the participant asked to join, in this device's time. */
 	readonly knockedAt = this._knockedAt.asReadonly();
 	/** Whether a meeting runs in the room; undefined until the server could tell. */
@@ -103,7 +100,7 @@ export class WaitingRoomService {
 
 	constructor() {
 		this.webSocket
-			.messages$<MeetWaitingRoomState>(MEET_WAITING_ROOM_STATE_MESSAGE)
+			.messages$<MeetWaitingParticipantState>(MEET_WAITING_PARTICIPANT_STATE_MESSAGE)
 			.pipe(takeUntilDestroyed())
 			.subscribe((state) => this.onState(state));
 
@@ -135,7 +132,7 @@ export class WaitingRoomService {
 		return !!this.pendingWait();
 	}
 
-	/** Leaves the waiting room: tells the server even while the connection is down, and disconnects. */
+	/** Stops waiting: tells the server even while the connection is down, and disconnects. */
 	leave(): void {
 		const entry = this.entry;
 
@@ -143,7 +140,7 @@ export class WaitingRoomService {
 
 		this.sendLeave(entry.ticket);
 		this.finish(entry);
-		this.report(entry, { status: MeetWaitingRoomStatus.LEFT, origin: MeetEventOrigin.PARTICIPANT });
+		this.report(entry, { status: MeetWaitingParticipantStatus.LEFT, origin: MeetEventOrigin.PARTICIPANT });
 		this.show('left');
 	}
 
@@ -170,19 +167,19 @@ export class WaitingRoomService {
 
 		if (!ticket) return;
 
-		this.sendLeave(ticket, MeetWaitingRoomReason.PAGE_CLOSED);
-		this.sessionStorage.setWaitingRoomTicket(this.meetingContext.roomId() ?? '');
+		this.sendLeave(ticket, MeetWaitingParticipantReason.PAGE_CLOSED);
+		this.sessionStorage.setWaitingTicket(this.meetingContext.roomId() ?? '');
 	}
 
 	/** Not through HttpService: its XHR has no keepalive, and its room member header would force a preflight. */
-	private sendLeave(ticket: MeetWaitingRoomTicketResponse, reason?: MeetWaitingRoomReason.PAGE_CLOSED): void {
+	private sendLeave(ticket: MeetWaitingTicketResponse, reason?: MeetWaitingParticipantReason.PAGE_CLOSED): void {
 		const roomId = encodeURIComponent(this.meetingContext.roomId() ?? '');
-		const query = `waitingRoomTicket=${encodeURIComponent(ticket.waitingRoomTicket)}${reason ? `&reason=${reason}` : ''}`;
+		const query = `waitingTicket=${encodeURIComponent(ticket.waitingTicket)}${reason ? `&reason=${reason}` : ''}`;
 		const url = this.runtimeConfig.resolveUrl(
-			`${HttpService.INTERNAL_API_PATH_PREFIX}/meetings/${roomId}/waiting-room/leave?${query}`
+			`${HttpService.INTERNAL_API_PATH_PREFIX}/meetings/${roomId}/waiting-participants/leave?${query}`
 		);
 		fetch(url, { method: 'POST', keepalive: true }).catch((error) =>
-			this.log.w('The request to leave the waiting room failed:', error)
+			this.log.w('The request to stop waiting failed:', error)
 		);
 	}
 
@@ -192,7 +189,7 @@ export class WaitingRoomService {
 		try {
 			answer = await this.requestAnswer(entry);
 		} catch (error) {
-			if (this.entry !== entry || !isWaitingRoomFull(error)) throw error;
+			if (this.entry !== entry || !isWaitingListFull(error)) throw error;
 
 			this.finish(entry);
 			this.show('full');
@@ -217,37 +214,36 @@ export class WaitingRoomService {
 
 		if (ticket) {
 			try {
-				return await this.joinToken.requestWithTicket(entry.request, ticket.waitingRoomTicket);
+				return await this.joinToken.requestWithTicket(entry.request, ticket.waitingTicket);
 			} catch (error) {
 				this.log.d('The wait left by the reload cannot be continued:', error);
 			}
 		}
 
-		this.sessionStorage.removeWaitingRoomTicket();
+		this.sessionStorage.removeWaitingTicket();
 		return this.joinToken.request(entry.request);
 	}
 
-	private pendingWait(): { ticket?: MeetWaitingRoomTicketResponse } | null {
-		return this.sessionStorage.getWaitingRoomWait(this.meetingContext.roomId() ?? '');
+	private pendingWait(): { ticket?: MeetWaitingTicketResponse } | null {
+		return this.sessionStorage.getStoredWait(this.meetingContext.roomId() ?? '');
 	}
 
-	private wait(entry: Entry, ticket: MeetWaitingRoomTicketResponse): void {
+	private wait(entry: Entry, ticket: MeetWaitingTicketResponse): void {
 		entry.ticket = ticket;
-		this.sessionStorage.setWaitingRoomTicket(this.meetingContext.roomId() ?? '', ticket);
-		this._status.set(MeetWaitingRoomStatus.WAITING);
-		this._queuePosition.set(undefined);
+		this.sessionStorage.setWaitingTicket(this.meetingContext.roomId() ?? '', ticket);
+		this._status.set(MeetWaitingParticipantStatus.WAITING);
 		this._knockedAt.set(Date.now());
 		this._meetingActive.set(undefined);
 		this._message.set(undefined);
 		this._heard.set(false);
 		this.meetingPhase.set('waiting');
 		this.webSocket.connect(
-			{ name: 'waitingRoomTicket', value: ticket.waitingRoomTicket },
+			{ name: 'waitingTicket', value: ticket.waitingTicket },
 			{ giveUpAfterMs: GIVE_UP_AFTER_MS }
 		);
 	}
 
-	private onState(state: MeetWaitingRoomState): void {
+	private onState(state: MeetWaitingParticipantState): void {
 		const entry = this.entry;
 
 		if (!entry?.ticket) return;
@@ -260,7 +256,10 @@ export class WaitingRoomService {
 			this._message.set(state.message);
 		}
 
-		if (state.status !== MeetWaitingRoomStatus.WAITING && state.status !== MeetWaitingRoomStatus.ADMITTED) {
+		if (
+			state.status !== MeetWaitingParticipantStatus.WAITING &&
+			state.status !== MeetWaitingParticipantStatus.ADMITTED
+		) {
 			if (entry.tokenRequestInFlight) {
 				entry.endedWhileRequesting ??= { status: state.status, origin: state.origin, reason: state.reason };
 			} else {
@@ -271,26 +270,24 @@ export class WaitingRoomService {
 		}
 
 		if (entry.tokenRequestInFlight) {
-			if (state.status === MeetWaitingRoomStatus.WAITING) entry.waitingWhileRequesting = state;
+			if (state.status === MeetWaitingParticipantStatus.WAITING) entry.waitingWhileRequesting = state;
 
 			return;
 		}
 
 		this._status.set(state.status);
 
-		if (state.status === MeetWaitingRoomStatus.ADMITTED) {
+		if (state.status === MeetWaitingParticipantStatus.ADMITTED) {
 			this.report(entry, { status: state.status, origin: state.origin, reason: state.reason });
 			void this.requestToken(entry);
 			return;
 		}
 
-		this._queuePosition.set(state.queuePosition);
-
 		if (state.waitedSeconds !== undefined) {
 			this._knockedAt.set(Date.now() - state.waitedSeconds * 1000);
 		}
 
-		this.report(entry, { status: state.status, queuePosition: state.queuePosition });
+		this.report(entry, { status: state.status });
 	}
 
 	/** Asks for the token with the ticket, one request at a time; only its answer decides. */
@@ -307,7 +304,7 @@ export class WaitingRoomService {
 			let answer: JoinAnswer;
 
 			try {
-				answer = await this.joinToken.requestWithTicket(entry.request, entry.ticket!.waitingRoomTicket);
+				answer = await this.joinToken.requestWithTicket(entry.request, entry.ticket!.waitingTicket);
 			} catch (error) {
 				if (this.entry !== entry) return;
 
@@ -344,9 +341,9 @@ export class WaitingRoomService {
 
 			if (entry.endedWhileRequesting) return this.end(entry, entry.endedWhileRequesting);
 
-			const backInLine = entry.waitingWhileRequesting ?? { status: MeetWaitingRoomStatus.WAITING };
+			const stillWaiting = entry.waitingWhileRequesting ?? { status: MeetWaitingParticipantStatus.WAITING };
 			entry.waitingWhileRequesting = undefined;
-			return this.onState(backInLine);
+			return this.onState(stillWaiting);
 		}
 	}
 
@@ -369,9 +366,9 @@ export class WaitingRoomService {
 
 		if (entry.endedWhileRequesting) return this.end(entry, entry.endedWhileRequesting);
 
-		if (isWaitingRoomWaitEnded(error)) {
-			const endedAs: MeetWaitingRoomStatus | undefined = (error as HttpErrorResponse).error?.status;
-			return this.end(entry, { status: endedAs ?? MeetWaitingRoomStatus.EXPIRED });
+		if (isWaitEnded(error)) {
+			const endedAs: MeetWaitingParticipantStatus | undefined = (error as HttpErrorResponse).error?.status;
+			return this.end(entry, { status: endedAs ?? MeetWaitingParticipantStatus.EXPIRED });
 		}
 
 		this.finish(entry);
@@ -391,18 +388,18 @@ export class WaitingRoomService {
 
 		if (reason === 'gave_up' && !this._heard()) {
 			console.error(
-				`[OpenVidu Meet] The waiting room could not connect to ${this.webSocket.endpoint()}. ` +
+				`[OpenVidu Meet] The wait to be let in could not connect to ${this.webSocket.endpoint()}. ` +
 					'A proxy or network between this browser and OpenVidu Meet may be blocking WebSocket connections.'
 			);
 			this.finish(entry);
-			entry.reject(new MeetingConnectionError('The waiting room could not connect'));
+			entry.reject(new MeetingConnectionError('The wait to be let in could not connect'));
 			return;
 		}
 
 		const expired = {
-			status: MeetWaitingRoomStatus.EXPIRED,
+			status: MeetWaitingParticipantStatus.EXPIRED,
 			origin: MeetEventOrigin.SYSTEM,
-			reason: MeetWaitingRoomReason.CONNECTION_LOST
+			reason: MeetWaitingParticipantReason.CONNECTION_LOST
 		};
 
 		if (entry.tokenRequestInFlight) {
@@ -413,25 +410,25 @@ export class WaitingRoomService {
 	}
 
 	/** Ends the wait with the status the server reported or the client concluded, and shows its screen. */
-	private end(entry: Entry, ended: WaitingRoomEnd): void {
+	private end(entry: Entry, ended: WaitEnd): void {
 		const { status } = ended;
 		this.finish(entry);
 
 		// A 409 after an admission means its answer was lost: the place is, too.
-		if (status === MeetWaitingRoomStatus.ADMITTED) {
-			this.report(entry, { status: MeetWaitingRoomStatus.EXPIRED, origin: MeetEventOrigin.SYSTEM });
+		if (status === MeetWaitingParticipantStatus.ADMITTED) {
+			this.report(entry, { status: MeetWaitingParticipantStatus.EXPIRED, origin: MeetEventOrigin.SYSTEM });
 		} else {
 			this.report(entry, ended);
 		}
 
 		switch (status) {
-			case MeetWaitingRoomStatus.ROOM_CLOSED:
+			case MeetWaitingParticipantStatus.ROOM_CLOSED:
 				void this.navigation.redirectToErrorPage(NavigationErrorReason.CLOSED_ROOM, true);
 				break;
-			case MeetWaitingRoomStatus.REJECTED:
+			case MeetWaitingParticipantStatus.REJECTED:
 				this.show('rejected');
 				break;
-			case MeetWaitingRoomStatus.MEETING_ENDED:
+			case MeetWaitingParticipantStatus.MEETING_ENDED:
 				this.show('meeting_ended');
 				break;
 			default:
@@ -452,12 +449,12 @@ export class WaitingRoomService {
 
 		if (entry.ticket) this.webSocket.disconnect();
 
-		this.sessionStorage.removeWaitingRoomTicket();
+		this.sessionStorage.removeWaitingTicket();
 
 		this._status.set(undefined);
 	}
 
-	private show(outcome: WaitingRoomOutcome): void {
+	private show(outcome: WaitingParticipantOutcome): void {
 		// The preview closes with the screen: device commands must not reopen it.
 		this.meetingPhase.set('disconnected');
 		this._hasWaited.set(true);
@@ -465,19 +462,16 @@ export class WaitingRoomService {
 	}
 
 	/** Tells the host each state shown, once, with the participant as the server answered when they asked. */
-	private report(entry: Entry, { status, queuePosition, origin, reason }: Reported): void {
-		const reported = `${status}:${queuePosition ?? ''}`;
+	private report(entry: Entry, { status, origin, reason }: Reported): void {
+		if (!entry.ticket || entry.lastReported === status || !this.runtimeConfig.isEmbeddedMode()) return;
 
-		if (!entry.ticket || entry.lastReported === reported || !this.runtimeConfig.isEmbeddedMode()) return;
-
-		entry.lastReported = reported;
+		entry.lastReported = status;
 		this.eventBus.emit({
-			event: EmbeddedEventName.PARTICIPANT_WAITING_CHANGED,
+			event: EmbeddedEventName.WAITING_PARTICIPANT_STATUS_CHANGED,
 			payload: {
 				roomId: this.meetingContext.roomId() ?? '',
 				participant: entry.ticket.participant,
 				status,
-				...(queuePosition !== undefined && { queuePosition }),
 				...(origin !== undefined && { origin }),
 				...(reason !== undefined && { reason })
 			}

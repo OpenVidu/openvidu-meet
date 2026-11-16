@@ -7,10 +7,10 @@ import { MeetingSettingsExtensionsComponent } from '../../customization/meeting-
 import { MeetingToolbarExtraButtonsComponent } from '../../customization/meeting-toolbar-extra-buttons/meeting-toolbar-extra-buttons.component';
 import { MeetingToolbarLeaveButtonComponent } from '../../customization/meeting-toolbar-leave-button/meeting-toolbar-leave-button.component';
 import { MeetingToolbarMoreOptionsMenuComponent } from '../../customization/meeting-toolbar-more-options-menu/meeting-toolbar-more-options-menu.component';
-import { WaitingRoomNoticeComponent } from '../../waiting-room/waiting-room-notice/waiting-room-notice.component';
-import { WaitingRoomPanelSectionComponent } from '../../waiting-room/waiting-room-panel-section/waiting-room-panel-section.component';
-import { WaitingRoomStatusChipComponent } from '../../waiting-room/waiting-room-status-chip/waiting-room-status-chip.component';
-import { MeetingWaitingRoomComponent } from '../../waiting-room/meeting-waiting-room/meeting-waiting-room.component';
+import { WaitingParticipantsNoticeComponent } from '../../waiting-participants/waiting-participants-notice/waiting-participants-notice.component';
+import { WaitingParticipantsPanelSectionComponent } from '../../waiting-participants/waiting-participants-panel-section/waiting-participants-panel-section.component';
+import { WaitingParticipantsStatusChipComponent } from '../../waiting-participants/waiting-participants-status-chip/waiting-participants-status-chip.component';
+import { MeetingWaitingScreensComponent } from '../../waiting-participants/meeting-waiting-screens/meeting-waiting-screens.component';
 import { MeetingComponent } from '../meeting/meeting.component';
 
 @Component({
@@ -25,10 +25,10 @@ import { MeetingComponent } from '../meeting/meeting.component';
 		MeetingCustomLayoutComponent,
 		MeetingToolbarMoreOptionsMenuComponent,
 		MeetingSettingsExtensionsComponent,
-		MeetingWaitingRoomComponent,
-		WaitingRoomPanelSectionComponent,
-		WaitingRoomStatusChipComponent,
-		WaitingRoomNoticeComponent
+		MeetingWaitingScreensComponent,
+		WaitingParticipantsPanelSectionComponent,
+		WaitingParticipantsStatusChipComponent,
+		WaitingParticipantsNoticeComponent
 	],
 	template: `
 		<ov-meeting>
@@ -40,10 +40,10 @@ import { MeetingComponent } from '../meeting/meeting.component';
 			<ov-meeting-participants-panel-actions />
 			<ov-meeting-settings-extensions />
 			<ov-meeting-custom-layout />
-			<ov-meeting-waiting-room />
-			<ov-waiting-room-panel-section />
-			<ov-waiting-room-status-chip />
-			<ov-waiting-room-notice />
+			<ov-meeting-waiting-screens />
+			<ov-waiting-participants-panel-section />
+			<ov-waiting-participants-status-chip />
+			<ov-waiting-participants-notice />
 		</ov-meeting>
 	`,
 	styles: ''

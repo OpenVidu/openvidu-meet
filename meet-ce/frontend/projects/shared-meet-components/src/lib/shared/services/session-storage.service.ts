@@ -1,5 +1,5 @@
 import { inject, Service } from '@angular/core';
-import type { MeetWaitingRoomTicketResponse } from '@openvidu-meet/typings';
+import type { MeetWaitingTicketResponse } from '@openvidu-meet/typings';
 import { SessionStorageKeys } from '../models/storage.model';
 import { BrowserStorageService } from './browser-storage.service';
 
@@ -133,8 +133,8 @@ export class SessionStorageService {
 	 * @param roomId The room the participant waits to join.
 	 * @param ticket The answer that handed the participant the ticket of their wait, if it is still on.
 	 */
-	public setWaitingRoomTicket(roomId: string, ticket?: MeetWaitingRoomTicketResponse): void {
-		this.storage.set(SessionStorageKeys.WAITING_ROOM_TICKET, { roomId, ticket }, 'session');
+	public setWaitingTicket(roomId: string, ticket?: MeetWaitingTicketResponse): void {
+		this.storage.set(SessionStorageKeys.WAITING_TICKET, { roomId, ticket }, 'session');
 	}
 
 	/**
@@ -143,28 +143,28 @@ export class SessionStorageService {
 	 * @param roomId The room being entered.
 	 * @returns The wait stored for that room, with its ticket while it is still on, or null when none was stored for it.
 	 */
-	public getWaitingRoomWait(roomId: string): { ticket?: MeetWaitingRoomTicketResponse } | null {
-		const stored = this.storage.get<{ roomId: string; ticket?: MeetWaitingRoomTicketResponse }>(
-			SessionStorageKeys.WAITING_ROOM_TICKET,
+	public getStoredWait(roomId: string): { ticket?: MeetWaitingTicketResponse } | null {
+		const stored = this.storage.get<{ roomId: string; ticket?: MeetWaitingTicketResponse }>(
+			SessionStorageKeys.WAITING_TICKET,
 			'session'
 		);
 		return stored?.roomId === roomId ? { ticket: stored.ticket } : null;
 	}
 
 	/**
-	 * Removes the stored waiting room ticket.
+	 * Removes the stored waiting ticket.
 	 */
-	public removeWaitingRoomTicket(): void {
-		this.storage.remove(SessionStorageKeys.WAITING_ROOM_TICKET, 'session');
+	public removeWaitingTicket(): void {
+		this.storage.remove(SessionStorageKeys.WAITING_TICKET, 'session');
 	}
 
 	/**
-	 * Clears all data related to the meeting, including room secret, redirect URL, E2EE data and waiting room ticket.
+	 * Clears all data related to the meeting, including room secret, redirect URL, E2EE data and waiting ticket.
 	 */
 	public clearMeetingData(): void {
 		this.removeRoomSecret();
 		this.removeRedirectUrl();
 		this.removeE2EEData();
-		this.removeWaitingRoomTicket();
+		this.removeWaitingTicket();
 	}
 }

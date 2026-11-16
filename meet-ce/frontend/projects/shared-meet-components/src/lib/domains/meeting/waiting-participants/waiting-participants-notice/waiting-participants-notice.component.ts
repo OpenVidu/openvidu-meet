@@ -6,7 +6,7 @@ import { NotificationService } from '../../../../shared/services/notification.se
 import { nameHiddenParticipants } from '../../openvidu-components/models/layout/smart-layout.model';
 import { PanelType } from '../../openvidu-components/models/panel.model';
 import { PanelService } from '../../openvidu-components/services/panel/panel.service';
-import { WaitingRoomAdminService, WaitingRoomWaiter } from '../waiting-room-admin.service';
+import { WaitingParticipantsAdminService, WaitingParticipantView } from '../waiting-participants-admin.service';
 
 /** The avatars the notification stacks, however many are waiting. */
 const MAX_AVATARS = 3;
@@ -18,24 +18,24 @@ const MAX_AVATARS = 3;
  * itself: the notification goes up in the meeting's notification stack.
  */
 @Component({
-	selector: 'ov-waiting-room-notice',
+	selector: 'ov-waiting-participants-notice',
 	template: ''
 })
-export class WaitingRoomNoticeComponent {
-	private readonly waitingRoomAdmin = inject(WaitingRoomAdminService);
+export class WaitingParticipantsNoticeComponent {
+	private readonly waitingAdmin = inject(WaitingParticipantsAdminService);
 	private readonly notificationService = inject(NotificationService);
 	private readonly panelService = inject(PanelService);
-	private readonly log = inject(LoggerService).get('OpenVidu Meet - WaitingRoomNotice');
+	private readonly log = inject(LoggerService).get('OpenVidu Meet - WaitingParticipantsNotice');
 
 	/** The identities the notification on screen announces, in arrival order. */
 	private announced: string[] = [];
 	private noticeId?: number;
 
 	constructor() {
-		this.waitingRoomAdmin.arrivals$.pipe(takeUntilDestroyed()).subscribe((arrived) => this.announce(arrived));
+		this.waitingAdmin.arrivals$.pipe(takeUntilDestroyed()).subscribe((arrived) => this.announce(arrived));
 
 		effect(() => {
-			const waiting = this.waitingRoomAdmin.waiting();
+			const waiting = this.waitingAdmin.waiting();
 			untracked(() => this.show(waiting));
 		});
 
@@ -46,20 +46,20 @@ export class WaitingRoomNoticeComponent {
 		inject(DestroyRef).onDestroy(() => this.dismiss());
 	}
 
-	private announce(arrived: WaitingRoomWaiter[]): void {
+	private announce(arrived: WaitingParticipantView[]): void {
 		if (this.panelService.isParticipantsPanelOpened()) return;
 
 		this.forgetIfClosed();
 		this.announced.push(...arrived.map(({ participant }) => participant.participantIdentity));
-		this.show(this.waitingRoomAdmin.waiting());
+		this.show(this.waitingAdmin.waiting());
 	}
 
-	/** Follows the line: whoever the notification announces and no longer waits drops out of it. */
-	private show(waiting: WaitingRoomWaiter[]): void {
+	/** Follows the waiting list: whoever the notification announces and no longer waits drops out of it. */
+	private show(waiting: WaitingParticipantView[]): void {
 		this.forgetIfClosed();
 		const waiters = this.announced
 			.map((identity) => waiting.find(({ participant }) => participant.participantIdentity === identity))
-			.filter((waiter): waiter is WaitingRoomWaiter => waiter !== undefined);
+			.filter((waiter): waiter is WaitingParticipantView => waiter !== undefined);
 
 		this.announced = waiters.map(({ participant }) => participant.participantIdentity);
 
@@ -74,40 +74,40 @@ export class WaitingRoomNoticeComponent {
 		}
 	}
 
-	private options(waiters: WaitingRoomWaiter[]): NotificationOptions {
-		const notice = { kind: 'waiting-room-knock', icon: 'hourglass_top' };
+	private options(waiters: WaitingParticipantView[]): NotificationOptions {
+		const notice = { kind: 'waiting-participant-knock', icon: 'hourglass_top' };
 		const avatars = waiters.slice(0, MAX_AVATARS).map(({ name, color }) => ({ name, color }));
 
 		if (waiters.length > 1) {
 			return {
 				...notice,
 				avatars,
-				title: { key: 'WAITING_ROOM.ADMIN.WAITING_COUNT', params: { count: waiters.length } },
+				title: { key: 'WAITING_PARTICIPANTS.ADMIN.WAITING_COUNT', params: { count: waiters.length } },
 				message: this.namesOf(waiters),
-				action: { label: { key: 'WAITING_ROOM.ADMIN.VIEW' }, run: () => this.openPanel() }
+				action: { label: { key: 'WAITING_PARTICIPANTS.ADMIN.VIEW' }, run: () => this.openPanel() }
 			};
 		}
 
 		const [{ name, participant }] = waiters;
-		const identities = [participant.participantIdentity];
+		const { participantIdentity } = participant;
 
 		return {
 			...notice,
 			avatars,
 			title: name,
-			message: { key: 'WAITING_ROOM.ADMIN.WANTS_TO_JOIN' },
+			message: { key: 'WAITING_PARTICIPANTS.ADMIN.WANTS_TO_JOIN' },
 			secondaryAction: {
-				label: { key: 'WAITING_ROOM.ADMIN.DENY' },
-				run: () => this.decide(this.waitingRoomAdmin.reject(identities))
+				label: { key: 'WAITING_PARTICIPANTS.ADMIN.DENY' },
+				run: () => this.decide(this.waitingAdmin.reject(participantIdentity))
 			},
 			action: {
-				label: { key: 'WAITING_ROOM.ADMIN.ADMIT' },
-				run: () => this.decide(this.waitingRoomAdmin.admit(identities))
+				label: { key: 'WAITING_PARTICIPANTS.ADMIN.ADMIT' },
+				run: () => this.decide(this.waitingAdmin.admit(participantIdentity))
 			}
 		};
 	}
 
-	private namesOf(waiters: WaitingRoomWaiter[]): NotificationText {
+	private namesOf(waiters: WaitingParticipantView[]): NotificationText {
 		const names = nameHiddenParticipants(
 			waiters.map(({ name }) => name),
 			waiters.length
@@ -119,7 +119,7 @@ export class WaitingRoomNoticeComponent {
 	}
 
 	private decide(decision: Promise<unknown>): void {
-		decision.catch((error) => this.log.w('The waiting room decision was refused:', error));
+		decision.catch((error) => this.log.w('The decision on a waiting participant was refused:', error));
 	}
 
 	private openPanel(): void {

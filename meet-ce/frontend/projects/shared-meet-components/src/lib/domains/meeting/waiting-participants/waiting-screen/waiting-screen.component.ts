@@ -2,7 +2,7 @@ import { LiveAnnouncer } from '@angular/cdk/a11y';
 import { Component, computed, DestroyRef, effect, inject, OnInit, signal, untracked } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MeetWaitingRoomStatus } from '@openvidu-meet/typings';
+import { MeetWaitingParticipantStatus } from '@openvidu-meet/typings';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { LoggerService } from '../../../../shared/services/logger.service';
@@ -12,15 +12,13 @@ import { VideoElementComponent } from '../../openvidu-components/components/vide
 import { AvatarView } from '../../openvidu-components/models/avatar-view.model';
 import { MeetingUiConfigService } from '../../openvidu-components/services/config/meeting-ui-config.service';
 import { LocalMediaService } from '../../openvidu-components/services/local-media/local-media.service';
-import { WaitingRoomService } from '../waiting-room.service';
+import { WaitingParticipantService } from '../waiting-participant.service';
 
-/** Screen readers hear the place in line at most this often. */
-const POSITION_ANNOUNCEMENT_INTERVAL_MS = 10_000;
 const CLOCK_TICK_MS = 15_000;
 
 /**
- * What the participant sees while they wait to be let in: their place in line, how long they have
- * waited, the room's message and the preview of their camera and microphone, which they join with.
+ * What the participant sees while they wait to be let in: how long they have waited, the room's message
+ * and the preview of their camera and microphone, which they join with.
  */
 @Component({
 	selector: 'ov-waiting-screen',
@@ -36,17 +34,16 @@ const CLOCK_TICK_MS = 15_000;
 	styleUrl: './waiting-screen.component.scss'
 })
 export class WaitingScreenComponent implements OnInit {
-	private readonly waitingRoom = inject(WaitingRoomService);
+	private readonly waitingParticipant = inject(WaitingParticipantService);
 	private readonly localMedia = inject(LocalMediaService);
 	private readonly uiConfig = inject(MeetingUiConfigService);
 	private readonly liveAnnouncer = inject(LiveAnnouncer);
 	private readonly translateService = inject(TranslateService);
 	private readonly log = inject(LoggerService).get('OpenVidu Meet - WaitingScreenComponent');
 
-	protected readonly queuePosition = this.waitingRoom.queuePosition;
-	protected readonly meetingActive = this.waitingRoom.meetingActive;
-	protected readonly message = this.waitingRoom.message;
-	protected readonly isReconnecting = this.waitingRoom.isReconnecting;
+	protected readonly meetingActive = this.waitingParticipant.meetingActive;
+	protected readonly message = this.waitingParticipant.message;
+	protected readonly isReconnecting = this.waitingParticipant.isReconnecting;
 	protected readonly showCameraControls = this.uiConfig.showCameraControlsSignal;
 	protected readonly showMicrophoneControls = this.uiConfig.showMicrophoneControlsSignal;
 	protected readonly videoTrack = this.localMedia.camera.track;
@@ -61,29 +58,18 @@ export class WaitingScreenComponent implements OnInit {
 
 	private readonly now = signal(Date.now());
 	protected readonly minutesWaited = computed(() => {
-		const knockedAt = this.waitingRoom.knockedAt();
+		const knockedAt = this.waitingParticipant.knockedAt();
 		return knockedAt === undefined ? 0 : Math.floor((this.now() - knockedAt) / 60_000);
 	});
 
-	private lastPositionAnnouncedAt = 0;
-	private positionAnnouncement?: ReturnType<typeof setTimeout>;
-
 	constructor() {
 		const clock = setInterval(() => this.now.set(Date.now()), CLOCK_TICK_MS);
-		inject(DestroyRef).onDestroy(() => {
-			clearInterval(clock);
-			clearTimeout(this.positionAnnouncement);
-		});
+		inject(DestroyRef).onDestroy(() => clearInterval(clock));
+		this.announce('WAITING_PARTICIPANTS.TITLE', 'polite');
 
 		effect(() => {
-			const position = this.queuePosition();
-
-			if (position !== undefined) untracked(() => this.announcePosition(position));
-		});
-
-		effect(() => {
-			if (this.waitingRoom.status() === MeetWaitingRoomStatus.ADMITTED) {
-				untracked(() => this.announce('WAITING_ROOM.ADMITTED', 'assertive'));
+			if (this.waitingParticipant.status() === MeetWaitingParticipantStatus.ADMITTED) {
+				untracked(() => this.announce('WAITING_PARTICIPANTS.ADMITTED', 'assertive'));
 			}
 		});
 	}
@@ -99,29 +85,10 @@ export class WaitingScreenComponent implements OnInit {
 	}
 
 	protected leave(): void {
-		this.waitingRoom.leave();
+		this.waitingParticipant.leave();
 	}
 
-	/** The latest place is announced once the interval since the previous announcement has passed. */
-	private announcePosition(position: number): void {
-		clearTimeout(this.positionAnnouncement);
-
-		const announce = () => {
-			this.lastPositionAnnouncedAt = Date.now();
-			this.announce('WAITING_ROOM.POSITION', 'polite', position);
-		};
-
-		const delayMs = this.lastPositionAnnouncedAt + POSITION_ANNOUNCEMENT_INTERVAL_MS - Date.now();
-
-		if (delayMs <= 0) {
-			announce();
-		} else {
-			this.positionAnnouncement = setTimeout(announce, delayMs);
-		}
-	}
-
-	private announce(key: string, politeness: 'polite' | 'assertive', position?: number): void {
-		const text = this.translateService.translate(key, position === undefined ? undefined : { position });
-		this.liveAnnouncer.announce(text, politeness).catch(() => undefined);
+	private announce(key: string, politeness: 'polite' | 'assertive'): void {
+		this.liveAnnouncer.announce(this.translateService.translate(key), politeness).catch(() => undefined);
 	}
 }

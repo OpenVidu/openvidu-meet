@@ -4,7 +4,7 @@ import {
 	EmbeddedEventPayloadFor,
 	MeetBroadcastStartOptions,
 	MeetBroadcastStopOptions,
-	MeetParticipantWaitingDecisionOptions,
+	MeetWaitingParticipantDecisionOptions,
 	MeetParticipantModerationAction,
 	MeetParticipantMuteOptions,
 	MeetReaction
@@ -120,12 +120,20 @@ export function createOpenViduMeetElementClass(
 			this._run(EmbeddedCommandName.BROADCAST_STOP, (app) => app.broadcastStop(options));
 		}
 
-		participantWaitingAdmit(options?: MeetParticipantWaitingDecisionOptions): void {
-			this._run(EmbeddedCommandName.PARTICIPANT_WAITING_ADMIT, (app) => app.participantWaitingAdmit(options));
+		waitingParticipantAdmit(options: MeetWaitingParticipantDecisionOptions): void {
+			this._run(EmbeddedCommandName.WAITING_PARTICIPANT_ADMIT, (app) => app.waitingParticipantAdmit(options));
 		}
 
-		participantWaitingReject(options?: MeetParticipantWaitingDecisionOptions): void {
-			this._run(EmbeddedCommandName.PARTICIPANT_WAITING_REJECT, (app) => app.participantWaitingReject(options));
+		waitingParticipantAdmitAll(): void {
+			this._run(EmbeddedCommandName.WAITING_PARTICIPANT_ADMIT_ALL, (app) => app.waitingParticipantAdmitAll());
+		}
+
+		waitingParticipantReject(options: MeetWaitingParticipantDecisionOptions): void {
+			this._run(EmbeddedCommandName.WAITING_PARTICIPANT_REJECT, (app) => app.waitingParticipantReject(options));
+		}
+
+		waitingParticipantRejectAll(): void {
+			this._run(EmbeddedCommandName.WAITING_PARTICIPANT_REJECT_ALL, (app) => app.waitingParticipantRejectAll());
 		}
 
 		// ── Deprecated method aliases ────────────────────────────────────────

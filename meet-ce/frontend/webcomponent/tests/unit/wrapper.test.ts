@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals
 import type {
 	MeetBroadcastStartOptions,
 	MeetBroadcastStopOptions,
-	MeetParticipantWaitingDecisionOptions,
+	MeetWaitingParticipantDecisionOptions,
 	MeetParticipantMuteOptions
 } from '@openvidu-meet/typings';
 import { MeetParticipantModerationAction } from '@openvidu-meet/typings';
@@ -50,8 +50,10 @@ interface ComponentInstance {
 	participantReactionSend: jest.Mock;
 	broadcastStart: jest.Mock;
 	broadcastStop: jest.Mock;
-	participantWaitingAdmit: jest.Mock;
-	participantWaitingReject: jest.Mock;
+	waitingParticipantAdmit: jest.Mock;
+	waitingParticipantAdmitAll: jest.Mock;
+	waitingParticipantReject: jest.Mock;
+	waitingParticipantRejectAll: jest.Mock;
 }
 
 interface TestableElement extends FakeNgElementBase {
@@ -76,8 +78,10 @@ interface TestableElement extends FakeNgElementBase {
 	participantReactionSend(reaction: string): void;
 	broadcastStart(options?: MeetBroadcastStartOptions): void;
 	broadcastStop(options?: MeetBroadcastStopOptions): void;
-	participantWaitingAdmit(options?: MeetParticipantWaitingDecisionOptions): void;
-	participantWaitingReject(options?: MeetParticipantWaitingDecisionOptions): void;
+	waitingParticipantAdmit(options: MeetWaitingParticipantDecisionOptions): void;
+	waitingParticipantAdmitAll(): void;
+	waitingParticipantReject(options: MeetWaitingParticipantDecisionOptions): void;
+	waitingParticipantRejectAll(): void;
 	endMeeting(): void;
 	leaveRoom(): void;
 	kickParticipant(participantIdentity: string): void;
@@ -103,8 +107,10 @@ const componentInstance = (): ComponentInstance => ({
 	participantReactionSend: jest.fn(),
 	broadcastStart: jest.fn(),
 	broadcastStop: jest.fn(),
-	participantWaitingAdmit: jest.fn(),
-	participantWaitingReject: jest.fn()
+	waitingParticipantAdmit: jest.fn(),
+	waitingParticipantAdmitAll: jest.fn(),
+	waitingParticipantReject: jest.fn(),
+	waitingParticipantRejectAll: jest.fn()
 });
 
 const withComponent = (): [TestableElement, ComponentInstance] => {
@@ -286,7 +292,7 @@ describe('openvidu-meet custom element', () => {
 		// untouched: the element is a transport, it decides nothing.
 		const start: MeetBroadcastStartOptions = { destinationIds: ['dest-a'] };
 		const stop: MeetBroadcastStopOptions = { broadcastIds: ['bc1'] };
-		const decision: MeetParticipantWaitingDecisionOptions = { participantIdentities: ['zoe', 'ben'] };
+		const decision: MeetWaitingParticipantDecisionOptions = { participantIdentity: 'zoe' };
 		const commands: [keyof ComponentInstance, (el: TestableElement) => void, unknown[]][] = [
 			['meetingEnd', (el) => el.meetingEnd(), []],
 			['meetingLeave', (el) => el.meetingLeave(), []],
@@ -309,8 +315,10 @@ describe('openvidu-meet custom element', () => {
 			['participantReactionSend', (el) => el.participantReactionSend('thumbs_up'), ['thumbs_up']],
 			['broadcastStart', (el) => el.broadcastStart(start), [start]],
 			['broadcastStop', (el) => el.broadcastStop(stop), [stop]],
-			['participantWaitingAdmit', (el) => el.participantWaitingAdmit(decision), [decision]],
-			['participantWaitingReject', (el) => el.participantWaitingReject(), [undefined]]
+			['waitingParticipantAdmit', (el) => el.waitingParticipantAdmit(decision), [decision]],
+			['waitingParticipantAdmitAll', (el) => el.waitingParticipantAdmitAll(), []],
+			['waitingParticipantReject', (el) => el.waitingParticipantReject(decision), [decision]],
+			['waitingParticipantRejectAll', (el) => el.waitingParticipantRejectAll(), []]
 		];
 
 		it.each(commands)('%s() reaches the Angular component instance as it was called', (name, call, args) => {

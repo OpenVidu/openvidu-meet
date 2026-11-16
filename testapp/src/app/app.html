@@ -237,14 +237,14 @@
 								handleEmbeddedEvent('mediaScreenShareStatusChanged', $event)
 							"
 				(recordingStatusChanged)="handleEmbeddedEvent('recordingStatusChanged', $event)"
-				(participantKnocked)="handleEmbeddedEvent('participantKnocked', $event)"
+				(waitingParticipantKnocked)="handleEmbeddedEvent('waitingParticipantKnocked', $event)"
 				(participantHandChanged)="handleEmbeddedEvent('participantHandChanged', $event)"
 				(participantReactionSent)="handleEmbeddedEvent('participantReactionSent', $event)"
 				(broadcastStarted)="handleEmbeddedEvent('broadcastStarted', $event)"
 				(broadcastUpdated)="handleEmbeddedEvent('broadcastUpdated', $event)"
 				(broadcastEnded)="handleEmbeddedEvent('broadcastEnded', $event)"
-				(waitingRoomUpdated)="handleEmbeddedEvent('waitingRoomUpdated', $event)"
-				(participantWaitingChanged)="handleEmbeddedEvent('participantWaitingChanged', $event)"
+				(waitingParticipantListUpdated)="handleEmbeddedEvent('waitingParticipantListUpdated', $event)"
+				(waitingParticipantStatusChanged)="handleEmbeddedEvent('waitingParticipantStatusChanged', $event)"
 				data-testid="openvidu-meet"
 			></openvidu-meet>
 			} @case ('iframe') {
