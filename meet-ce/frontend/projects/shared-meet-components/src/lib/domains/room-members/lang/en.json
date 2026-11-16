@@ -145,11 +145,11 @@
           "LABEL": "Mute participant",
           "DESCRIPTION": "Allow turning off other participants' microphone, camera or screen share"
         },
-        "participantHandLower": {
+        "participantLowerHand": {
           "LABEL": "Lower hands",
           "DESCRIPTION": "Allow lowering other participants' raised hands, one at a time or all at once"
         },
-        "participantReactionSend": {
+        "participantSendReaction": {
           "LABEL": "Send reactions",
           "DESCRIPTION": "Allow sending reactions that everyone sees for a few seconds"
         },

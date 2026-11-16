@@ -38,14 +38,14 @@ describe('decodeToken', () => {
 		const permissions = permissionsOf(buildToken({ roomId: 'room-1', permissions: deprecatedPermissions }));
 
 		// A key the deprecated surface cannot name is completed, not granted: `meetingRead` takes
-		// the value of the `meetingJoin` that used to gate it, `participantReactionSend` its own
+		// the value of the `meetingJoin` that used to gate it, `participantSendReaction` its own
 		// `true` default, every other born-after-the-rename key its own `false` default.
 		const unaliased: readonly string[] = MEET_UNALIASED_PERMISSION_KEYS;
 
 		for (const key of MEET_PERMISSION_KEYS) {
 			expect(permissions[key])
 				.withContext(key)
-				.toBe(key === 'meetingRead' || key === 'participantReactionSend' || !unaliased.includes(key));
+				.toBe(key === 'meetingRead' || key === 'participantSendReaction' || !unaliased.includes(key));
 		}
 
 		for (const key of MEET_DEPRECATED_PERMISSION_KEYS) {

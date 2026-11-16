@@ -438,30 +438,30 @@ export const recordingStopCommand = async (page: Page): Promise<void> => {
 	await page.getByTestId('btn-recording-stop').click();
 };
 
-/** Clicks the testapp's `participantHandRaise()` button. */
-export const participantHandRaiseCommand = async (page: Page): Promise<void> => {
+/** Clicks the testapp's `participantRaiseHand()` button. */
+export const participantRaiseHandCommand = async (page: Page): Promise<void> => {
 	await showControlsPanel(page, 'commands');
-	await page.getByTestId('btn-participant-hand-raise').click();
+	await page.getByTestId('btn-participant-raise-hand').click();
 };
 
-/** Clicks the testapp's `participantHandLower()` button, naming `participantIdentity` or, left blank, the own hand. */
-export const participantHandLowerCommand = async (page: Page, participantIdentity = ''): Promise<void> => {
+/** Clicks the testapp's `participantLowerHand()` button, naming `participantIdentity` or, left blank, the own hand. */
+export const participantLowerHandCommand = async (page: Page, participantIdentity = ''): Promise<void> => {
 	await showControlsPanel(page, 'commands');
 	await fillParticipantIdentity(page, participantIdentity);
-	await page.getByTestId('btn-participant-hand-lower').click();
+	await page.getByTestId('btn-participant-lower-hand').click();
 };
 
-/** Clicks the testapp's `participantHandLowerAll()` button. */
-export const participantHandLowerAllCommand = async (page: Page): Promise<void> => {
+/** Clicks the testapp's `participantLowerAllHands()` button. */
+export const participantLowerAllHandsCommand = async (page: Page): Promise<void> => {
 	await showControlsPanel(page, 'commands');
-	await page.getByTestId('btn-participant-hand-lower-all').click();
+	await page.getByTestId('btn-participant-lower-all-hands').click();
 };
 
-/** Clicks the testapp's `participantReactionSend()` button of `reaction`. */
-export const participantReactionSendCommand = async (page: Page, reaction: MeetReaction): Promise<void> => {
+/** Clicks the testapp's `participantSendReaction()` button of `reaction`. */
+export const participantSendReactionCommand = async (page: Page, reaction: MeetReaction): Promise<void> => {
 	await showControlsPanel(page, 'commands');
 	await page
-		.getByTestId('btn-participant-reaction-send')
+		.getByTestId('btn-participant-send-reaction')
 		.and(page.locator(`[data-reaction="${reaction}"]`))
 		.click();
 };

@@ -451,7 +451,7 @@ describe('EmbeddedCommandService', () => {
 		it('raises the own hand without checking any permission', async () => {
 			hasPermission.and.returnValue(false);
 
-			await service.participantHandRaise();
+			await service.participantRaiseHand();
 
 			expect(hasPermission).not.toHaveBeenCalled();
 			expect(handService.raise).toHaveBeenCalledTimes(1);
@@ -460,61 +460,61 @@ describe('EmbeddedCommandService', () => {
 		it('lowers the own hand without checking any permission, naming nobody or oneself', async () => {
 			hasPermission.and.returnValue(false);
 
-			await service.participantHandLower();
-			await service.participantHandLower(IDENTITY);
+			await service.participantLowerHand();
+			await service.participantLowerHand(IDENTITY);
 
 			expect(hasPermission).not.toHaveBeenCalled();
 			expect(handService.lower).toHaveBeenCalledTimes(2);
 			expect(handService.lower).toHaveBeenCalledWith(IDENTITY);
 		});
 
-		it('gates lowering another participant hand on participantHandLower', async () => {
-			await service.participantHandLower('participant-2');
+		it('gates lowering another participant hand on participantLowerHand', async () => {
+			await service.participantLowerHand('participant-2');
 
-			expect(hasPermission).toHaveBeenCalledWith('participantHandLower');
+			expect(hasPermission).toHaveBeenCalledWith('participantLowerHand');
 			expect(handService.lower).toHaveBeenCalledOnceWith('participant-2');
 		});
 
-		it('rejects lowering another participant hand without participantHandLower', async () => {
+		it('rejects lowering another participant hand without participantLowerHand', async () => {
 			hasPermission.and.returnValue(false);
 
-			await service.participantHandLower('participant-2');
+			await service.participantLowerHand('participant-2');
 
 			expect(handService.lower).not.toHaveBeenCalled();
 		});
 
-		it('gates participantHandLowerAll on participantHandLower', async () => {
-			await service.participantHandLowerAll();
+		it('gates participantLowerAllHands on participantLowerHand', async () => {
+			await service.participantLowerAllHands();
 
-			expect(hasPermission).toHaveBeenCalledWith('participantHandLower');
+			expect(hasPermission).toHaveBeenCalledWith('participantLowerHand');
 			expect(handService.lowerAll).toHaveBeenCalledTimes(1);
 		});
 
 		it('rejects a hand command before the meeting is connected', async () => {
 			liveKitService.isSessionActive.set(false);
 
-			await service.participantHandRaise();
+			await service.participantRaiseHand();
 
 			expect(handService.raise).not.toHaveBeenCalled();
 		});
 
-		it('sends a reaction, gated on participantReactionSend', async () => {
-			await service.participantReactionSend(MeetReaction.THUMBS_UP);
+		it('sends a reaction, gated on participantSendReaction', async () => {
+			await service.participantSendReaction(MeetReaction.THUMBS_UP);
 
-			expect(hasPermission).toHaveBeenCalledWith('participantReactionSend');
+			expect(hasPermission).toHaveBeenCalledWith('participantSendReaction');
 			expect(reactionsService.send).toHaveBeenCalledOnceWith(MeetReaction.THUMBS_UP);
 		});
 
-		it('rejects a reaction without participantReactionSend', async () => {
+		it('rejects a reaction without participantSendReaction', async () => {
 			hasPermission.and.returnValue(false);
 
-			await service.participantReactionSend(MeetReaction.THUMBS_UP);
+			await service.participantSendReaction(MeetReaction.THUMBS_UP);
 
 			expect(reactionsService.send).not.toHaveBeenCalled();
 		});
 
 		it('rejects a reaction outside the ones the meeting offers', async () => {
-			await service.participantReactionSend('🎉' as MeetReaction);
+			await service.participantSendReaction('🎉' as MeetReaction);
 
 			expect(reactionsService.send).not.toHaveBeenCalled();
 		});

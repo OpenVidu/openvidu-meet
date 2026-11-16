@@ -145,11 +145,11 @@
           "LABEL": "Silenziare i partecipanti",
           "DESCRIPTION": "Consenti di disattivare microfono, videocamera o condivisione schermo degli altri partecipanti"
         },
-        "participantHandLower": {
+        "participantLowerHand": {
           "LABEL": "Abbassa le mani",
           "DESCRIPTION": "Consente di abbassare le mani alzate degli altri partecipanti, una alla volta o tutte insieme"
         },
-        "participantReactionSend": {
+        "participantSendReaction": {
           "LABEL": "Invia reazioni",
           "DESCRIPTION": "Consente di inviare reazioni che tutti vedono per qualche secondo"
         },

@@ -123,23 +123,23 @@ export class IframeHostService {
 		this.post({ command: EmbeddedCommandName.RECORDING_STOP });
 	}
 
-	participantHandRaise(): void {
-		this.post({ command: EmbeddedCommandName.PARTICIPANT_HAND_RAISE });
+	participantRaiseHand(): void {
+		this.post({ command: EmbeddedCommandName.PARTICIPANT_RAISE_HAND });
 	}
 
-	participantHandLower(participantIdentity?: string): void {
+	participantLowerHand(participantIdentity?: string): void {
 		this.post({
-			command: EmbeddedCommandName.PARTICIPANT_HAND_LOWER,
+			command: EmbeddedCommandName.PARTICIPANT_LOWER_HAND,
 			payload: participantIdentity === undefined ? undefined : { participantIdentity }
 		});
 	}
 
-	participantHandLowerAll(): void {
-		this.post({ command: EmbeddedCommandName.PARTICIPANT_HAND_LOWER_ALL });
+	participantLowerAllHands(): void {
+		this.post({ command: EmbeddedCommandName.PARTICIPANT_LOWER_ALL_HANDS });
 	}
 
-	participantReactionSend(reaction: MeetReaction): void {
-		this.post({ command: EmbeddedCommandName.PARTICIPANT_REACTION_SEND, payload: { reaction } });
+	participantSendReaction(reaction: MeetReaction): void {
+		this.post({ command: EmbeddedCommandName.PARTICIPANT_SEND_REACTION, payload: { reaction } });
 	}
 
 	waitingParticipantAdmit(options: MeetWaitingParticipantDecisionOptions): void {

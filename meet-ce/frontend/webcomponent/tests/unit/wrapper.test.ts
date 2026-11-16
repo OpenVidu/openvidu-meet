@@ -44,10 +44,10 @@ interface ComponentInstance {
 	mediaToggleScreenShare: jest.Mock;
 	recordingStart: jest.Mock;
 	recordingStop: jest.Mock;
-	participantHandRaise: jest.Mock;
-	participantHandLower: jest.Mock;
-	participantHandLowerAll: jest.Mock;
-	participantReactionSend: jest.Mock;
+	participantRaiseHand: jest.Mock;
+	participantLowerHand: jest.Mock;
+	participantLowerAllHands: jest.Mock;
+	participantSendReaction: jest.Mock;
 	broadcastStart: jest.Mock;
 	broadcastStop: jest.Mock;
 	broadcastStopAll: jest.Mock;
@@ -73,10 +73,10 @@ interface TestableElement extends FakeNgElementBase {
 	mediaToggleScreenShare(active?: boolean): void;
 	recordingStart(): void;
 	recordingStop(): void;
-	participantHandRaise(): void;
-	participantHandLower(participantIdentity?: string): void;
-	participantHandLowerAll(): void;
-	participantReactionSend(reaction: string): void;
+	participantRaiseHand(): void;
+	participantLowerHand(participantIdentity?: string): void;
+	participantLowerAllHands(): void;
+	participantSendReaction(reaction: string): void;
 	broadcastStart(options?: MeetBroadcastStartOptions): void;
 	broadcastStop(options: MeetBroadcastStopOptions): void;
 	broadcastStopAll(): void;
@@ -103,10 +103,10 @@ const componentInstance = (): ComponentInstance => ({
 	mediaToggleScreenShare: jest.fn(),
 	recordingStart: jest.fn(),
 	recordingStop: jest.fn(),
-	participantHandRaise: jest.fn(),
-	participantHandLower: jest.fn(),
-	participantHandLowerAll: jest.fn(),
-	participantReactionSend: jest.fn(),
+	participantRaiseHand: jest.fn(),
+	participantLowerHand: jest.fn(),
+	participantLowerAllHands: jest.fn(),
+	participantSendReaction: jest.fn(),
 	broadcastStart: jest.fn(),
 	broadcastStop: jest.fn(),
 	broadcastStopAll: jest.fn(),
@@ -312,10 +312,10 @@ describe('openvidu-meet custom element', () => {
 			['mediaToggleScreenShare', (el) => el.mediaToggleScreenShare(false), [false]],
 			['recordingStart', (el) => el.recordingStart(), []],
 			['recordingStop', (el) => el.recordingStop(), []],
-			['participantHandRaise', (el) => el.participantHandRaise(), []],
-			['participantHandLower', (el) => el.participantHandLower('participant-1'), ['participant-1']],
-			['participantHandLowerAll', (el) => el.participantHandLowerAll(), []],
-			['participantReactionSend', (el) => el.participantReactionSend('thumbs_up'), ['thumbs_up']],
+			['participantRaiseHand', (el) => el.participantRaiseHand(), []],
+			['participantLowerHand', (el) => el.participantLowerHand('participant-1'), ['participant-1']],
+			['participantLowerAllHands', (el) => el.participantLowerAllHands(), []],
+			['participantSendReaction', (el) => el.participantSendReaction('thumbs_up'), ['thumbs_up']],
 			['broadcastStart', (el) => el.broadcastStart(start), [start]],
 			['broadcastStop', (el) => el.broadcastStop(stop), [stop]],
 			['broadcastStopAll', (el) => el.broadcastStopAll(), []],

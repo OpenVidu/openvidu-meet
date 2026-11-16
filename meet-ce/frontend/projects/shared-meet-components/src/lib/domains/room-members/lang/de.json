@@ -145,11 +145,11 @@
           "LABEL": "Teilnehmer stummschalten",
           "DESCRIPTION": "Erlaubt das Ausschalten von Mikrofon, Kamera oder Bildschirmfreigabe anderer Teilnehmer"
         },
-        "participantHandLower": {
+        "participantLowerHand": {
           "LABEL": "Hände senken",
           "DESCRIPTION": "Erlaubt, die gehobenen Hände anderer Teilnehmender zu senken, einzeln oder alle auf einmal"
         },
-        "participantReactionSend": {
+        "participantSendReaction": {
           "LABEL": "Reaktionen senden",
           "DESCRIPTION": "Erlaubt, Reaktionen zu senden, die alle für einige Sekunden sehen"
         },

@@ -94,22 +94,22 @@ export function createOpenViduMeetElementClass(
 			this._run(EmbeddedCommandName.RECORDING_STOP, (app) => app.recordingStop());
 		}
 
-		participantHandRaise(): void {
-			this._run(EmbeddedCommandName.PARTICIPANT_HAND_RAISE, (app) => app.participantHandRaise());
+		participantRaiseHand(): void {
+			this._run(EmbeddedCommandName.PARTICIPANT_RAISE_HAND, (app) => app.participantRaiseHand());
 		}
 
-		participantHandLower(participantIdentity?: string): void {
-			this._run(EmbeddedCommandName.PARTICIPANT_HAND_LOWER, (app) =>
-				app.participantHandLower(participantIdentity)
+		participantLowerHand(participantIdentity?: string): void {
+			this._run(EmbeddedCommandName.PARTICIPANT_LOWER_HAND, (app) =>
+				app.participantLowerHand(participantIdentity)
 			);
 		}
 
-		participantHandLowerAll(): void {
-			this._run(EmbeddedCommandName.PARTICIPANT_HAND_LOWER_ALL, (app) => app.participantHandLowerAll());
+		participantLowerAllHands(): void {
+			this._run(EmbeddedCommandName.PARTICIPANT_LOWER_ALL_HANDS, (app) => app.participantLowerAllHands());
 		}
 
-		participantReactionSend(reaction: MeetReaction): void {
-			this._run(EmbeddedCommandName.PARTICIPANT_REACTION_SEND, (app) => app.participantReactionSend(reaction));
+		participantSendReaction(reaction: MeetReaction): void {
+			this._run(EmbeddedCommandName.PARTICIPANT_SEND_REACTION, (app) => app.participantSendReaction(reaction));
 		}
 
 		broadcastStart(options?: MeetBroadcastStartOptions): void {

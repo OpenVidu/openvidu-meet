@@ -52,10 +52,10 @@ describe('IframeBridgeService', () => {
 			'mediaToggleScreenShare',
 			'recordingStart',
 			'recordingStop',
-			'participantHandRaise',
-			'participantHandLower',
-			'participantHandLowerAll',
-			'participantReactionSend',
+			'participantRaiseHand',
+			'participantLowerHand',
+			'participantLowerAllHands',
+			'participantSendReaction',
 			'broadcastStart',
 			'broadcastStop',
 			'broadcastStopAll',
@@ -75,10 +75,10 @@ describe('IframeBridgeService', () => {
 		commandService.mediaToggleScreenShare.and.resolveTo();
 		commandService.recordingStart.and.resolveTo();
 		commandService.recordingStop.and.resolveTo();
-		commandService.participantHandRaise.and.resolveTo();
-		commandService.participantHandLower.and.resolveTo();
-		commandService.participantHandLowerAll.and.resolveTo();
-		commandService.participantReactionSend.and.resolveTo();
+		commandService.participantRaiseHand.and.resolveTo();
+		commandService.participantLowerHand.and.resolveTo();
+		commandService.participantLowerAllHands.and.resolveTo();
+		commandService.participantSendReaction.and.resolveTo();
 		commandService.broadcastStart.and.resolveTo();
 		commandService.broadcastStop.and.resolveTo();
 		commandService.broadcastStopAll.and.resolveTo();
@@ -562,60 +562,60 @@ describe('IframeBridgeService', () => {
 	});
 
 	describe('hand commands', () => {
-		it('forwards PARTICIPANT_HAND_RAISE', () => {
+		it('forwards PARTICIPANT_RAISE_HAND', () => {
 			startBridge();
 
-			postFromHost({ command: EmbeddedCommandName.PARTICIPANT_HAND_RAISE });
+			postFromHost({ command: EmbeddedCommandName.PARTICIPANT_RAISE_HAND });
 
-			expect(commandService.participantHandRaise).toHaveBeenCalledTimes(1);
+			expect(commandService.participantRaiseHand).toHaveBeenCalledTimes(1);
 		});
 
-		it('forwards PARTICIPANT_HAND_LOWER with the participant it names', () => {
+		it('forwards PARTICIPANT_LOWER_HAND with the participant it names', () => {
 			startBridge();
 
 			postFromHost({
-				command: EmbeddedCommandName.PARTICIPANT_HAND_LOWER,
+				command: EmbeddedCommandName.PARTICIPANT_LOWER_HAND,
 				payload: { participantIdentity: 'bob' }
 			});
 
-			expect(commandService.participantHandLower).toHaveBeenCalledOnceWith('bob');
+			expect(commandService.participantLowerHand).toHaveBeenCalledOnceWith('bob');
 		});
 
-		it('forwards PARTICIPANT_HAND_LOWER without payload as the own hand', () => {
+		it('forwards PARTICIPANT_LOWER_HAND without payload as the own hand', () => {
 			startBridge();
 
-			postFromHost({ command: EmbeddedCommandName.PARTICIPANT_HAND_LOWER });
+			postFromHost({ command: EmbeddedCommandName.PARTICIPANT_LOWER_HAND });
 
-			expect(commandService.participantHandLower).toHaveBeenCalledOnceWith(undefined);
+			expect(commandService.participantLowerHand).toHaveBeenCalledOnceWith(undefined);
 		});
 
-		it('forwards PARTICIPANT_HAND_LOWER_ALL', () => {
+		it('forwards PARTICIPANT_LOWER_ALL_HANDS', () => {
 			startBridge();
 
-			postFromHost({ command: EmbeddedCommandName.PARTICIPANT_HAND_LOWER_ALL });
+			postFromHost({ command: EmbeddedCommandName.PARTICIPANT_LOWER_ALL_HANDS });
 
-			expect(commandService.participantHandLowerAll).toHaveBeenCalledTimes(1);
+			expect(commandService.participantLowerAllHands).toHaveBeenCalledTimes(1);
 		});
 	});
 
 	describe('reaction commands', () => {
-		it('forwards PARTICIPANT_REACTION_SEND with its reaction', () => {
+		it('forwards PARTICIPANT_SEND_REACTION with its reaction', () => {
 			startBridge();
 
 			postFromHost({
-				command: EmbeddedCommandName.PARTICIPANT_REACTION_SEND,
+				command: EmbeddedCommandName.PARTICIPANT_SEND_REACTION,
 				payload: { reaction: MeetReaction.RED_HEART }
 			});
 
-			expect(commandService.participantReactionSend).toHaveBeenCalledOnceWith(MeetReaction.RED_HEART);
+			expect(commandService.participantSendReaction).toHaveBeenCalledOnceWith(MeetReaction.RED_HEART);
 		});
 
-		it('ignores PARTICIPANT_REACTION_SEND without a reaction', () => {
+		it('ignores PARTICIPANT_SEND_REACTION without a reaction', () => {
 			startBridge();
 
-			postFromHost({ command: EmbeddedCommandName.PARTICIPANT_REACTION_SEND });
+			postFromHost({ command: EmbeddedCommandName.PARTICIPANT_SEND_REACTION });
 
-			expect(commandService.participantReactionSend).not.toHaveBeenCalled();
+			expect(commandService.participantSendReaction).not.toHaveBeenCalled();
 		});
 	});
 
