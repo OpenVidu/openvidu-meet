@@ -1,7 +1,7 @@
 import type { ParticipantPermission } from '@livekit/protocol';
 import type {
 	LiveKitPermissions,
-	MeetWaitingRoomTicketResponse,
+	MeetWaitingTicketResponse,
 	MeetRoom,
 	MeetRoomField,
 	MeetRoomMember,
@@ -15,7 +15,7 @@ import type {
 } from '@openvidu-meet/typings';
 import {
 	MEET_PERMISSION_KEYS,
-	MeetWaitingRoomStatus,
+	MeetWaitingParticipantStatus,
 	MeetParticipantModerationAction,
 	MeetRoomMemberRole,
 	MeetRoomMemberType,
@@ -52,10 +52,10 @@ import {
 	errorRoomMemberNotFound,
 	errorUnauthorized,
 	errorUserNotFound,
-	errorWaitingRoomWaitEnded,
+	errorWaitEnded,
 	OpenViduMeetError
 } from '../models/error.model.js';
-import type { WaitingRoomWait } from '../models/waiting-room.model.js';
+import type { ParticipantWait } from '../models/waiting-participant.model.js';
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { UserRepository } from '../repositories/user.repository.js';
 import type {
@@ -67,8 +67,8 @@ import type {
 import { runConcurrently } from '../utils/concurrency.utils.js';
 import { FrontendEventService } from './frontend-event.service.js';
 import { LiveKitService } from './livekit.service.js';
-import { WaitingRoomAdmissionPolicy } from './waiting-room/waiting-room-admission.policy.js';
-import { WaitingRoomService } from './waiting-room/waiting-room.service.js';
+import { WaitingParticipantAdmissionPolicy } from './waiting-participants/waiting-participant-admission.policy.js';
+import { WaitingParticipantService } from './waiting-participants/waiting-participant.service.js';
 import { LoggerService } from './logger.service.js';
 import { MeetingService } from './meeting.service.js';
 import { MutexService } from './mutex.service.js';
@@ -89,7 +89,7 @@ interface ResolvedPermissionSource {
 }
 
 /** What a token request answers: a token, or the ticket of the wait of a participant who has to wait. */
-export type RoomMemberTokenAnswer = { token: string } | MeetWaitingRoomTicketResponse;
+export type RoomMemberTokenAnswer = { token: string } | MeetWaitingTicketResponse;
 
 const ROOM_TO_JOIN_FIELDS = [
 	'roomId',
@@ -97,6 +97,7 @@ const ROOM_TO_JOIN_FIELDS = [
 	'status',
 	'roles',
 	'config',
+	'access',
 	'rolesUpdatedAt'
 ] as const satisfies readonly MeetRoomField[];
 
@@ -123,8 +124,9 @@ export class RoomMemberService {
 		@inject(ParticipantTokenRevocationService)
 		protected participantTokenRevocationService: ParticipantTokenRevocationService,
 		@inject(MutexService) protected mutexService: MutexService,
-		@inject(WaitingRoomService) protected waitingRoomService: WaitingRoomService,
-		@inject(WaitingRoomAdmissionPolicy) protected waitingRoomAdmissionPolicy: WaitingRoomAdmissionPolicy
+		@inject(WaitingParticipantService) protected waitingParticipantService: WaitingParticipantService,
+		@inject(WaitingParticipantAdmissionPolicy)
+		protected waitingParticipantAdmissionPolicy: WaitingParticipantAdmissionPolicy
 	) {}
 
 	/**
@@ -389,12 +391,12 @@ export class RoomMemberService {
 	}
 
 	/**
-	 * Generates a room member token, or, for a participant who has to wait in the room's waiting room, the
+	 * Generates a room member token, or, for a participant who has to wait to join a locked room, the
 	 * ticket of their wait.
 	 *
 	 * @param roomId - The room identifier
 	 * @param tokenOptions - Options for token generation
-	 * @param previousToken - An optional existing token to regenerate from, ignored with a `waitingRoomTicket`
+	 * @param previousToken - An optional existing token to regenerate from, ignored with a `waitingTicket`
 	 * @returns A promise that resolves to the generated token or to the ticket of the wait
 	 */
 	async generateRoomMemberToken(
@@ -408,7 +410,7 @@ export class RoomMemberService {
 			participantName,
 			participantExternalId,
 			participantMetadata,
-			waitingRoomTicket
+			waitingTicket
 		} = tokenOptions;
 
 		const [secretSource, authenticatedSource, room] = await Promise.all([
@@ -446,8 +448,8 @@ export class RoomMemberService {
 
 		tokenMetadata.livekitUrl = MEET_ENV.LIVEKIT_URL;
 
-		if (waitingRoomTicket) {
-			return this.joinWithWaitingRoomTicket(roomId, waitingRoomTicket, tokenMetadata);
+		if (waitingTicket) {
+			return this.joinWithWaitingTicket(roomId, waitingTicket, tokenMetadata);
 		}
 
 		const boundName =
@@ -483,7 +485,7 @@ export class RoomMemberService {
 
 	/**
 	 * Answers a participant asking to join a meeting: a join token, or the ticket of a new wait when the
-	 * room's waiting room applies to them. A wait reserves, creates and counts nothing.
+	 * locked room makes them wait. A wait reserves, creates and counts nothing.
 	 *
 	 * @param roomId - The ID of the room
 	 * @param tokenMetadata - The metadata to include in the token
@@ -500,9 +502,9 @@ export class RoomMemberService {
 		const name = this.requireParticipantName(participantName);
 		const participantIdentity = this.createParticipantIdentity(tokenMetadata, name);
 
-		if (this.waitingRoomAdmissionPolicy.mustWait(room.config, tokenMetadata.permissions)) {
+		if (this.waitingParticipantAdmissionPolicy.mustWait(room.access.lock, tokenMetadata.permissions)) {
 			const { memberId, userId, externalId, metadata } = tokenMetadata;
-			return this.waitingRoomService.knock(room, {
+			return this.waitingParticipantService.knock(room, {
 				participantIdentity,
 				participantName: name,
 				externalId,
@@ -524,29 +526,29 @@ export class RoomMemberService {
 	 * @throws The `403` error when the request's credential resolves to another principal than the wait's,
 	 * the `409` wait ended error, and the usual errors of a join
 	 */
-	protected async joinWithWaitingRoomTicket(
+	protected async joinWithWaitingTicket(
 		roomId: string,
-		waitingRoomTicket: string,
+		waitingTicket: string,
 		tokenMetadata: MeetRoomMemberTokenMetadata
 	): Promise<RoomMemberTokenAnswer> {
-		const wait = await this.waitingRoomService.findWait(waitingRoomTicket);
-		const answer = this.waitingRoomAdmissionPolicy.answerTicket(wait, roomId, tokenMetadata);
+		const wait = await this.waitingParticipantService.findWait(waitingTicket);
+		const answer = this.waitingParticipantAdmissionPolicy.answerTicket(wait, roomId, tokenMetadata);
 
 		if (answer.kind === 'forbidden') throw errorInsufficientPermissions();
 
-		if (answer.kind === 'ended') throw errorWaitingRoomWaitEnded(answer.status);
+		if (answer.kind === 'ended') throw errorWaitEnded(answer.status);
 
 		const { participantIdentity, participantName, externalId, metadata } = wait!.participant;
 
-		if (answer.kind === 'waiting') return this.waitingRoomService.ticketOf(waitingRoomTicket, wait!.participant);
+		if (answer.kind === 'waiting') return this.waitingParticipantService.ticketOf(waitingTicket, wait!.participant);
 
 		Object.assign(tokenMetadata, { externalId, metadata });
 		const room = await this.getRoomToJoin(roomId);
 		this.assertCanJoin(room, tokenMetadata);
 
 		if (answer.kind === 'rejoin') {
-			if (this.waitingRoomAdmissionPolicy.mustWait(room.config, tokenMetadata.permissions)) {
-				throw errorWaitingRoomWaitEnded(MeetWaitingRoomStatus.ADMITTED);
+			if (this.waitingParticipantAdmissionPolicy.mustWait(room.access.lock, tokenMetadata.permissions)) {
+				throw errorWaitEnded(MeetWaitingParticipantStatus.ADMITTED);
 			}
 
 			await this.assertCapacity(room);
@@ -554,11 +556,11 @@ export class RoomMemberService {
 		}
 
 		if (await this.isMeetingFull(room)) {
-			const change = await this.waitingRoomService.returnToLine(wait!);
+			const change = await this.waitingParticipantService.returnToWaiting(wait!);
 
-			if (!('entry' in change)) throw errorWaitingRoomWaitEnded(change.status);
+			if (!('entry' in change)) throw errorWaitEnded(change.status);
 
-			return this.waitingRoomService.ticketOf(waitingRoomTicket, change.entry);
+			return this.waitingParticipantService.ticketOf(waitingTicket, change.entry);
 		}
 
 		return {
@@ -685,10 +687,10 @@ export class RoomMemberService {
 	 *
 	 * @throws The `409` wait ended error when the wait is no longer admitted or its admission was used
 	 */
-	protected async consumeAdmission(wait: WaitingRoomWait): Promise<void> {
-		const change = await this.waitingRoomService.consume(wait);
+	protected async consumeAdmission(wait: ParticipantWait): Promise<void> {
+		const change = await this.waitingParticipantService.consume(wait);
 
-		if (!('entry' in change)) throw errorWaitingRoomWaitEnded(change.status);
+		if (!('entry' in change)) throw errorWaitEnded(change.status);
 	}
 
 	protected mintJoinToken(

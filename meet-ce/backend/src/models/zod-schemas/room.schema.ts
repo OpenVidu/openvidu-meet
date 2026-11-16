@@ -2,8 +2,6 @@ import type {
 	MeetAppearanceConfig,
 	MeetChatConfig,
 	MeetE2EEConfig,
-	MeetWaitingRoomConfig,
-	MeetWaitingRoomConfigOptions,
 	MeetRaiseHandConfig,
 	MeetReactionsConfig,
 	MeetRecordingConfig,
@@ -13,6 +11,7 @@ import type {
 	MeetRoomConfigOptions,
 	MeetRoomExtraField,
 	MeetRoomField,
+	MeetRoomLockOptions,
 	MeetRoomOptions,
 	MeetRoomRolesConfig,
 	MeetRoomTheme,
@@ -107,18 +106,6 @@ const ReactionsConfigSchema: z.ZodType<MeetReactionsConfig> = z.object({
 	enabled: z.boolean()
 });
 
-const waitingRoomMessageSchema = z.string().max(500, 'Must not exceed 500 characters');
-
-const WaitingRoomConfigSchema: z.ZodType<MeetWaitingRoomConfig> = z.object({
-	enabled: z.boolean(),
-	message: waitingRoomMessageSchema.optional()
-});
-
-const WaitingRoomConfigUpdateSchema: z.ZodType<MeetWaitingRoomConfigOptions> = z.object({
-	enabled: z.boolean(),
-	message: waitingRoomMessageSchema.nullable().optional()
-});
-
 const ThemeModeSchema: z.ZodType<MeetRoomThemeMode> = z.enum(MeetRoomThemeMode);
 
 const hexColorSchema = z
@@ -164,8 +151,7 @@ const UpdateRoomConfigSchema: z.ZodType<MeetRoomConfigOptions> = z
 		e2ee: E2EEConfigSchema.optional(),
 		captions: CaptionsConfigSchema.optional(),
 		raiseHand: RaiseHandConfigSchema.optional(),
-		reactions: ReactionsConfigSchema.optional(),
-		waitingRoom: WaitingRoomConfigUpdateSchema.optional()
+		reactions: ReactionsConfigSchema.optional()
 		// appearance: AppearanceConfigSchema,
 	})
 	.transform((data: MeetRoomConfigOptions) => {
@@ -202,8 +188,7 @@ const CreateRoomConfigSchema: z.ZodType<MeetRoomConfigOptions> = z
 		e2ee: E2EEConfigSchema.optional().default(() => ({ enabled: false })),
 		captions: CaptionsConfigSchema.optional().default(() => ({ enabled: true })),
 		raiseHand: RaiseHandConfigSchema.optional().default(() => ({ enabled: true })),
-		reactions: ReactionsConfigSchema.optional().default(() => ({ enabled: true })),
-		waitingRoom: WaitingRoomConfigSchema.optional().default(() => ({ enabled: false }))
+		reactions: ReactionsConfigSchema.optional().default(() => ({ enabled: true }))
 		// appearance: AppearanceConfigSchema,
 	})
 	.transform((data) => {
@@ -252,6 +237,11 @@ const RoomRolesConfigSchema: z.ZodType<MeetRoomRolesConfig> = z.object({
 		.optional()
 });
 
+const RoomLockSchema: z.ZodType<MeetRoomLockOptions> = z.object({
+	enabled: z.boolean(),
+	message: z.string().max(500, 'Must not exceed 500 characters').nullable().optional()
+});
+
 const RoomAccessConfigSchema: z.ZodType<MeetRoomAccessConfig> = z.object({
 	anonymous: z
 		.object({
@@ -276,7 +266,8 @@ const RoomAccessConfigSchema: z.ZodType<MeetRoomAccessConfig> = z.object({
 		.object({
 			enabled: z.boolean()
 		})
-		.optional()
+		.optional(),
+	lock: RoomLockSchema.optional()
 });
 
 // The largest time value a Date can hold: ECMAScript caps it at 100 million days from the epoch
@@ -340,7 +331,6 @@ export const RoomOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 		captions: { enabled: true },
 		raiseHand: { enabled: true },
 		reactions: { enabled: true },
-		waitingRoom: { enabled: false },
 		initialAudioActive: true,
 		initialVideoActive: true
 	}),
@@ -351,7 +341,8 @@ export const RoomOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 			speaker: { enabled: true },
 			recording: { enabled: true }
 		},
-		user: { enabled: false }
+		user: { enabled: false },
+		lock: { enabled: false }
 	})
 	// maxParticipants: z
 	// 	.number()

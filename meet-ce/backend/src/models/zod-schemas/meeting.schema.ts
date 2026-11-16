@@ -1,9 +1,5 @@
-import type {
-	MeetParticipantWaitingDecisionOptions,
-	MeetParticipantHandOptions,
-	MeetParticipantReactionOptions
-} from '@openvidu-meet/typings';
-import { MeetParticipantModerationAction, MeetReaction, MeetWaitingRoomReason } from '@openvidu-meet/typings';
+import type { MeetParticipantHandOptions, MeetParticipantReactionOptions } from '@openvidu-meet/typings';
+import { MeetParticipantModerationAction, MeetReaction, MeetWaitingParticipantReason } from '@openvidu-meet/typings';
 import { z } from 'zod';
 import { INTERNAL_CONFIG } from '../../config/internal-config.js';
 
@@ -36,19 +32,31 @@ export const SendParticipantReactionReqSchema: z.ZodType<MeetParticipantReaction
 	reaction: z.enum(MeetReaction)
 });
 
-// Omitted means everyone waiting, so an empty list is refused instead of being read as everyone.
-export const WaitingRoomDecisionReqSchema: z.ZodType<MeetParticipantWaitingDecisionOptions> = z.object({
-	participantIdentities: z
-		.array(z.string().min(1))
-		.min(1, 'Must name at least one participant')
-		.max(INTERNAL_CONFIG.WAITING_ROOM_MAX_ENTRIES)
-		.refine((identities) => new Set(identities).size === identities.length, 'Must not repeat an identity')
-		.optional()
+export const WaitingTicketSchema = z.string().min(1).max(100);
+
+export const WaitingParticipantLeaveReqSchema = z.object({
+	waitingTicket: WaitingTicketSchema,
+	reason: z.literal(MeetWaitingParticipantReason.PAGE_CLOSED).optional()
 });
 
-export const WaitingRoomTicketSchema = z.string().min(1).max(100);
-
-export const WaitingRoomLeaveReqSchema = z.object({
-	waitingRoomTicket: WaitingRoomTicketSchema,
-	reason: z.literal(MeetWaitingRoomReason.PAGE_CLOSED).optional()
+export const BulkRejectWaitingParticipantsReqSchema = z.object({
+	participantIdentities: z.preprocess(
+		(arg) =>
+			typeof arg === 'string'
+				? Array.from(
+						new Set(
+							arg
+								.split(',')
+								.map((s) => s.trim())
+								.filter((s) => s !== '')
+						)
+					)
+				: [],
+		z
+			.array(z.string())
+			.min(1, { message: 'At least one participantIdentity is required' })
+			.max(INTERNAL_CONFIG.BULK_DELETE_MAX_ITEMS, {
+				message: `participantIdentities cannot exceed ${INTERNAL_CONFIG.BULK_DELETE_MAX_ITEMS} items`
+			})
+	)
 });

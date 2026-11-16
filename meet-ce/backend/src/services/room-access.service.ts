@@ -5,7 +5,7 @@ import { MeetRoomMemberHelper } from '../helpers/room-member.helper.js';
 import { errorRoomNotFound } from '../models/error.model.js';
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { RoomRepository } from '../repositories/room.repository.js';
-import { WaitingRoomAdmissionPolicy } from './waiting-room/waiting-room-admission.policy.js';
+import { WaitingParticipantAdmissionPolicy } from './waiting-participants/waiting-participant-admission.policy.js';
 import { RequestSessionService } from './request-session.service.js';
 
 /**
@@ -24,15 +24,16 @@ export class RoomAccessService {
 		@inject(RoomRepository) protected roomRepository: RoomRepository,
 		@inject(RoomMemberRepository) protected roomMemberRepository: RoomMemberRepository,
 		@inject(RequestSessionService) protected requestSessionService: RequestSessionService,
-		@inject(WaitingRoomAdmissionPolicy) protected waitingRoomAdmissionPolicy: WaitingRoomAdmissionPolicy
+		@inject(WaitingParticipantAdmissionPolicy)
+		protected waitingParticipantAdmissionPolicy: WaitingParticipantAdmissionPolicy
 	) {}
 
 	/**
 	 * Retrieves the permissions of the authenticated room member.
 	 *
 	 * - If the user is authenticated via room member token, their permissions are obtained from the token metadata,
-	 * narrowed by {@link WaitingRoomAdmissionPolicy.permissionsOf} for a token without participant identity in a room with
-	 * the waiting room on.
+	 * narrowed by {@link WaitingParticipantAdmissionPolicy.permissionsOf} for a token without participant identity in a locked
+	 * room.
 	 * - If the user is admin or the room owner, they have all permissions.
 	 * - If the user is a room member, their permissions are obtained from their room member info.
 	 * - If the user is authenticated but not a room member, permissions depend on whether user access is enabled
@@ -53,10 +54,10 @@ export class RoomAccessService {
 	}
 
 	/**
-	 * The permissions the authenticated room member was granted in the room, which the waiting room never
+	 * The permissions the authenticated room member was granted in the room, which locking the room never
 	 * narrows: what the anonymous links they may share are measured against, so a moderator shares the room's
 	 * links before joining as they do once joined, and a participant who waits never reads a link that lets
-	 * its holder skip the waiting room they lack.
+	 * its holder join without waiting when they cannot.
 	 *
 	 * @param roomId The ID of the room.
 	 * @throws The `404` room not found error when an authenticated user asks about a room that does not exist
@@ -166,14 +167,14 @@ export class RoomAccessService {
 	 */
 	protected async getRoomMemberTokenPermissions(roomId: string): Promise<MeetRoomMemberPermissions> {
 		const room =
-			this.requestSessionService.getRoom(roomId) ?? (await this.roomRepository.findByRoomId(roomId, ['config']));
+			this.requestSessionService.getRoom(roomId) ?? (await this.roomRepository.findByRoomId(roomId, ['access']));
 
 		if (!room) {
 			throw errorRoomNotFound(roomId);
 		}
 
-		return this.waitingRoomAdmissionPolicy.permissionsOf(
-			room.config,
+		return this.waitingParticipantAdmissionPolicy.permissionsOf(
+			room.access.lock,
 			this.requestSessionService.getRoomMemberPermissions()!,
 			this.requestSessionService.getParticipantIdentity()
 		);

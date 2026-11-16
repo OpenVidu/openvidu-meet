@@ -7,8 +7,8 @@
 
             Requires the `meetingRead` permission.
 
-            In a room with the waiting room on, a room member token acts on the meeting only if it carries a
-            participant identity, which only a join token does: one obtained without joining answers `403`. A
+            In a locked room, a room member token acts on the meeting only if it carries a participant
+            identity, which only a join token does: one obtained without joining answers `403`. A
             host application acting for itself uses the API key.
         tags:
             - OpenVidu Meet - Meetings
@@ -44,8 +44,8 @@
 
             This endpoint is idempotent. If the meeting is already ended, it will return a success response without any action.
 
-            In a room with the waiting room on, a room member token acts on the meeting only if it carries a
-            participant identity, which only a join token does: one obtained without joining answers `403`. A
+            In a locked room, a room member token acts on the meeting only if it carries a participant
+            identity, which only a join token does: one obtained without joining answers `403`. A
             host application acting for itself uses the API key.
         tags:
             - OpenVidu Meet - Meetings
@@ -82,8 +82,8 @@
 
             Requires the `meetingRead` permission.
 
-            In a room with the waiting room on, a room member token acts on the meeting only if it carries a
-            participant identity, which only a join token does: one obtained without joining answers `403`. A
+            In a locked room, a room member token acts on the meeting only if it carries a participant
+            identity, which only a join token does: one obtained without joining answers `403`. A
             host application acting for itself uses the API key.
         tags:
             - OpenVidu Meet - Meetings
@@ -124,8 +124,8 @@
             Requires the `participantMute` permission.
 
 
-            In a room with the waiting room on, a room member token acts on the meeting only if it carries a
-            participant identity, which only a join token does: one obtained without joining answers `403`. A
+            In a locked room, a room member token acts on the meeting only if it carries a participant
+            identity, which only a join token does: one obtained without joining answers `403`. A
             host application acting for itself uses the API key.
         tags:
             - OpenVidu Meet - Meetings
@@ -166,8 +166,8 @@
 
             Requires the `meetingRead` permission.
 
-            In a room with the waiting room on, a room member token acts on the meeting only if it carries a
-            participant identity, which only a join token does: one obtained without joining answers `403`. A
+            In a locked room, a room member token acts on the meeting only if it carries a participant
+            identity, which only a join token does: one obtained without joining answers `403`. A
             host application acting for itself uses the API key.
         tags:
             - OpenVidu Meet - Meetings
@@ -211,8 +211,8 @@
             Requires the `participantKick` permission.
 
 
-            In a room with the waiting room on, a room member token acts on the meeting only if it carries a
-            participant identity, which only a join token does: one obtained without joining answers `403`. A
+            In a locked room, a room member token acts on the meeting only if it carries a participant
+            identity, which only a join token does: one obtained without joining answers `403`. A
             host application acting for itself uses the API key.
         tags:
             - OpenVidu Meet - Meetings
@@ -252,8 +252,8 @@
             Requires the `participantMute` permission.
 
 
-            In a room with the waiting room on, a room member token acts on the meeting only if it carries a
-            participant identity, which only a join token does: one obtained without joining answers `403`. A
+            In a locked room, a room member token acts on the meeting only if it carries a participant
+            identity, which only a join token does: one obtained without joining answers `403`. A
             host application acting for itself uses the API key.
         tags:
             - OpenVidu Meet - Meetings
@@ -313,8 +313,8 @@
             stopped by hand during this meeting.
 
 
-            In a room with the waiting room on, a room member token acts on the meeting only if it carries a
-            participant identity, which only a join token does: one obtained without joining answers `403`. A
+            In a locked room, a room member token acts on the meeting only if it carries a participant
+            identity, which only a join token does: one obtained without joining answers `403`. A
             host application acting for itself uses the API key.
         tags:
             - OpenVidu Meet - Meetings
@@ -362,8 +362,8 @@
             Requires the `participantHandLower` permission.
 
 
-            In a room with the waiting room on, a room member token acts on the meeting only if it carries a
-            participant identity, which only a join token does: one obtained without joining answers `403`. A
+            In a locked room, a room member token acts on the meeting only if it carries a participant
+            identity, which only a join token does: one obtained without joining answers `403`. A
             host application acting for itself uses the API key.
         tags:
             - OpenVidu Meet - Meetings
@@ -413,8 +413,8 @@
             original `handRaiseDate`.
 
 
-            In a room with the waiting room on, a room member token acts on the meeting only if it carries a
-            participant identity, which only a join token does: one obtained without joining answers `403`. A
+            In a locked room, a room member token acts on the meeting only if it carries a participant
+            identity, which only a join token does: one obtained without joining answers `403`. A
             host application acting for itself uses the API key.
         tags:
             - OpenVidu Meet - Meetings
@@ -450,33 +450,29 @@
             '503':
                 $ref: '../shared/responses/errors/service-unavailable.yaml'
 
-/meetings/{roomId}/waiting-room:
+/meetings/{roomId}/waiting-participants:
     get:
-        operationId: participantWaitingList
-        summary: List the participants waiting to join
+        operationId: waitingParticipantList
+        summary: List waiting participants
         description: |
-            Lists the participants waiting to be admitted to the meeting of a room, in arrival order (`knockDate`,
-            then identity), and the free places of the meeting. A room only holds participants waiting when its
-            config has `waitingRoom.enabled`: with the waiting room off the list is empty.
+            Lists the participants waiting to be admitted to the meeting of a locked room, in no promised order. A
+            room only holds participants waiting when its config has `access.lock.enabled`: in an unlocked room the list is
+            empty. A list holds at most 100 participants.
 
             Unlike the other meeting operations, it answers whether or not a meeting is running: participants wait
             before the first one starts.
 
-            `availablePlaces` is the room's `maxParticipants` minus the participants connected and the participants
-            admitted until LiveKit reports them joined, a minute after their admission at most, never below 0, or
-            `null` when the room has no participant limit. A list holds at most 100 participants.
-
-            `externalId` and `metadata` of each [`MeetWaitingRoomParticipant`](#/schemas/MeetWaitingRoomParticipant) are as sent by
+            `externalId` and `metadata` of each [`MeetWaitingParticipant`](#/schemas/MeetWaitingParticipant) are as sent by
             the participant's client and never a proof of identity. A backend that admits on its own identifies a
             waiting participant by `type` and by the `participantIdentity` of a member or user, which the server derives
             from their personal link or account.
 
-            Requires the `waitingRoomAdmin` permission.
+            Requires the `waitingParticipantAdmin` permission.
 
-            In a room with the waiting room on, a room member token acts on the meeting only if it carries a
-            participant identity, which only a join token does: one obtained without joining answers `403`, so a
-            participant who waits cannot list the others, whatever their permissions. A host application acting for
-            itself uses the API key.
+            In a locked room, a room member token acts on the meeting only if it carries a participant identity, which
+            only a join token does: one obtained without joining answers `403`, so a participant who waits cannot
+            decide on anyone, themselves included, whatever their permissions. A host application acting for itself
+            uses the API key.
         tags:
             - OpenVidu Meet - Meetings
         security:
@@ -486,7 +482,7 @@
             - $ref: '../rooms/parameters/room-id-path.yaml'
         responses:
             '200':
-                $ref: './responses/success/get-waiting-room.yaml'
+                $ref: './responses/success/get-waiting-participants.yaml'
             '401':
                 $ref: '../shared/responses/errors/unauthorized.yaml'
             '403':
@@ -501,48 +497,26 @@
                 $ref: '../shared/responses/errors/internal-server.yaml'
             '503':
                 $ref: '../shared/responses/errors/service-unavailable.yaml'
-/meetings/{roomId}/waiting-room/admit:
-    post:
-        operationId: participantWaitingAdmit
-        summary: Admit waiting participants
+    delete:
+        operationId: bulkRejectWaitingParticipants
+        summary: Bulk reject waiting participants
         description: |
-            Admits waiting participants to the meeting of a room: each one's meeting asks for its join token and they
-            join with the identity they waited with. Admitting the first participant of a room with no meeting running
-            starts it, so, unlike the other meeting operations, it answers whether or not a meeting is running.
+            Rejects the waiting participants named, each one on its own as
+            [`waitingParticipantReject`](#/operations/waitingParticipantReject) does: one who does not wait, or any in
+            a room that is not locked, is listed as failed and the others are still rejected. Each one's meeting tells
+            them they were not let in, with the option to ask to join again. Unlike the other meeting operations, it
+            answers whether or not a meeting is running.
 
-            | `participantIdentities` | Participants admitted |
-            | ----------------------- | --------------------- |
-            | Omitted (an empty body or `{}`) | The first waiting, in arrival order, up to the free places |
-            | `["ana-a1b2c3", "ben_smith"]` | Exactly the ones listed, all or none |
+            It answers `200` when every participant named was rejected and `400` when any was not, listing them in
+            `failed`. Naming none, or more than 100, answers `422`. Each participant rejected is reported through the
+            [`waitingParticipantStatusChanged`](#/webhooks/waitingParticipantStatusChangedWebhook) webhook with the `rejected` status.
 
-            A decision on named participants applies to all of them or to none: it answers `404`, naming the first
-            identity that no longer waits, and admits nobody, or `409` with the free places in `availablePlaces` when
-            the participants named outnumber them, counting the participants admitted who have not joined yet, as
-            `availablePlaces` of [`participantWaitingList`](#/operations/participantWaitingList) does. An empty list
-            and a repeated identity are rejected with a `422`: an empty list is never read as everyone waiting.
+            Requires the `waitingParticipantAdmin` permission.
 
-            Admitting everyone waiting never answers `409` for the places: it admits the first waiting, in arrival
-            order, up to the free places and leaves the rest waiting, in their place.
-
-            The response lists the participants admitted, possibly none when everyone was asked for: nobody waits, no
-            place is free or the room's waiting room is off. With the waiting room off, a decision on named participants
-            answers `404`.
-
-            Decisions on the same waiting participant apply one at a time, whichever Meet replica receives them: the
-            first one applies and a later one naming them answers `404`, while a later one on everyone waiting leaves
-            them out. Two admissions for the last free place give one `200` and one `409`.
-
-            Each participant admitted is reported through the
-            [`participantWaitingChanged`](#/webhooks/participantWaitingChangedWebhook) webhook with the `admitted` status, and counts
-            as a taken place until LiveKit reports them in the meeting, a minute after their admission at most. An
-            admission that is not used within that minute ends as `expired`.
-
-            Requires the `waitingRoomAdmin` permission.
-
-            In a room with the waiting room on, a room member token acts on the meeting only if it carries a
-            participant identity, which only a join token does: one obtained without joining answers `403`, so a
-            participant who waits cannot admit anyone, themselves included, whatever their permissions. A host
-            application acting for itself uses the API key.
+            In a locked room, a room member token acts on the meeting only if it carries a participant identity, which
+            only a join token does: one obtained without joining answers `403`, so a participant who waits cannot
+            decide on anyone, themselves included, whatever their permissions. A host application acting for itself
+            uses the API key.
         tags:
             - OpenVidu Meet - Meetings
         security:
@@ -550,69 +524,48 @@
             - roomMemberTokenHeader: []
         parameters:
             - $ref: '../rooms/parameters/room-id-path.yaml'
-        requestBody:
-            $ref: './requests/waiting-room-decision.yaml'
+            - $ref: './parameters/participant-identities-query.yaml'
         responses:
             '200':
-                $ref: './responses/success/admit-waiting-room.yaml'
+                $ref: './responses/success/bulk-reject-waiting-participants.yaml'
             '400':
-                $ref: '../shared/responses/errors/malformed-body.yaml'
+                $ref: './responses/errors/bulk-reject-waiting-participants.yaml'
             '401':
                 $ref: '../shared/responses/errors/unauthorized.yaml'
             '403':
                 $ref: './responses/errors/forbidden-meeting-action.yaml'
             '404':
-                $ref: './responses/errors/waiting-room-not-found.yaml'
-            '409':
-                $ref: './responses/errors/waiting-room-no-free-places.yaml'
-            '413':
-                $ref: '../shared/responses/errors/payload-too-large.yaml'
+                $ref: '../rooms/responses/errors/room-not-found.yaml'
             '422':
-                $ref: './responses/errors/waiting-room-decision-invalid.yaml'
+                $ref: '../shared/responses/errors/validation.yaml'
             '429':
                 $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
             '503':
                 $ref: '../shared/responses/errors/service-unavailable.yaml'
-/meetings/{roomId}/waiting-room/reject:
+/meetings/{roomId}/waiting-participants/admit:
     post:
-        operationId: participantWaitingReject
-        summary: Reject waiting participants
+        operationId: waitingParticipantAdmitAll
+        summary: Admit waiting participants
         description: |
-            Rejects waiting participants of the meeting of a room: each one leaves the line and their meeting tells
-            them they were not let in, with the option to ask to join again, which starts a new wait at the end of the
-            line. Unlike the other meeting operations, it answers whether or not a meeting is running.
+            Admits everyone waiting to join the meeting of a room at that moment, all of them or nobody: when they
+            outnumber the free places of the meeting, counting the participants admitted who have not joined yet, it
+            admits nobody and answers `409` with `error` `not_enough_places`. Each one's meeting asks for its join
+            token and they join with the identity they waited with. Admitting into a room with no meeting running
+            starts it, so, unlike the other meeting operations, it answers whether or not a meeting is running.
 
-            | `participantIdentities` | Participants rejected |
-            | ----------------------- | --------------------- |
-            | Omitted (an empty body or `{}`) | Everyone waiting when the request runs |
-            | `["ana-a1b2c3", "ben_smith"]` | Exactly the ones listed, all or none |
+            It answers `200` also when nobody waits or the room is not locked, admitting nobody. Each participant
+            admitted is reported through the [`waitingParticipantStatusChanged`](#/webhooks/waitingParticipantStatusChangedWebhook) webhook with the `admitted` status, and counts as a taken place until
+            LiveKit reports them in the meeting, a minute after their admission at most. An admission that is not used
+            within that minute ends as `expired`.
 
-            A decision on named participants applies to all of them or to none: it answers `404`, naming the first
-            identity that no longer waits, and rejects nobody. An empty list and a repeated identity are rejected
-            with a `422`: an empty list is never read as everyone waiting.
+            Requires the `waitingParticipantAdmin` permission.
 
-            Rejecting everyone waiting rejects, in one step, everyone waiting at that moment, so it never fails because
-            the line changed after the caller looked at it; a participant who asks to join right after starts a new
-            wait and is not rejected.
-
-            The response lists the participants rejected, possibly none when everyone was asked for: nobody waits or
-            the room's waiting room is off. With the waiting room off, a decision on named participants answers
-            `404`.
-
-            Decisions on the same waiting participant apply one at a time, whichever Meet replica receives them: the
-            first one applies and a later one naming them answers `404`, while a later one on everyone waiting leaves
-            them out.
-
-            Each participant rejected is reported through the
-            [`participantWaitingChanged`](#/webhooks/participantWaitingChangedWebhook) webhook with the `rejected` status.
-
-            Requires the `waitingRoomAdmin` permission.
-
-            In a room with the waiting room on, a room member token acts on the meeting only if it carries a
-            participant identity, which only a join token does: one obtained without joining answers `403`. A host
-            application acting for itself uses the API key.
+            In a locked room, a room member token acts on the meeting only if it carries a participant identity, which
+            only a join token does: one obtained without joining answers `403`, so a participant who waits cannot
+            decide on anyone, themselves included, whatever their permissions. A host application acting for itself
+            uses the API key.
         tags:
             - OpenVidu Meet - Meetings
         security:
@@ -620,23 +573,156 @@
             - roomMemberTokenHeader: []
         parameters:
             - $ref: '../rooms/parameters/room-id-path.yaml'
-        requestBody:
-            $ref: './requests/waiting-room-decision.yaml'
         responses:
             '200':
-                $ref: './responses/success/reject-waiting-room.yaml'
-            '400':
-                $ref: '../shared/responses/errors/malformed-body.yaml'
+                $ref: './responses/success/admit-all-waiting-participants.yaml'
             '401':
                 $ref: '../shared/responses/errors/unauthorized.yaml'
             '403':
                 $ref: './responses/errors/forbidden-meeting-action.yaml'
             '404':
-                $ref: './responses/errors/waiting-room-not-found.yaml'
-            '413':
-                $ref: '../shared/responses/errors/payload-too-large.yaml'
+                $ref: '../rooms/responses/errors/room-not-found.yaml'
+            '409':
+                $ref: './responses/errors/not-enough-places.yaml'
             '422':
-                $ref: './responses/errors/waiting-room-decision-invalid.yaml'
+                $ref: '../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
+            '500':
+                $ref: '../shared/responses/errors/internal-server.yaml'
+            '503':
+                $ref: '../shared/responses/errors/service-unavailable.yaml'
+/meetings/{roomId}/waiting-participants/{participantIdentity}:
+    get:
+        operationId: waitingParticipantGet
+        summary: Get a waiting participant
+        description: |
+            Retrieves one participant while they wait to join the meeting of a room. It answers `404` with `error`
+            `participant_not_waiting` once they no longer wait: admitted, rejected, gone, or in a room that is not
+            locked. Unlike the other meeting operations, it answers whether or not a meeting is running.
+
+            Requires the `waitingParticipantAdmin` permission.
+
+            In a locked room, a room member token acts on the meeting only if it carries a participant identity, which
+            only a join token does: one obtained without joining answers `403`, so a participant who waits cannot
+            decide on anyone, themselves included, whatever their permissions. A host application acting for itself
+            uses the API key.
+        tags:
+            - OpenVidu Meet - Meetings
+        security:
+            - apiKeyHeader: []
+            - roomMemberTokenHeader: []
+        parameters:
+            - $ref: '../rooms/parameters/room-id-path.yaml'
+            - $ref: './parameters/participant-identity-path.yaml'
+        responses:
+            '200':
+                $ref: './responses/success/get-waiting-participant.yaml'
+            '401':
+                $ref: '../shared/responses/errors/unauthorized.yaml'
+            '403':
+                $ref: './responses/errors/forbidden-meeting-action.yaml'
+            '404':
+                $ref: './responses/errors/waiting-participant-not-found.yaml'
+            '422':
+                $ref: '../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
+            '500':
+                $ref: '../shared/responses/errors/internal-server.yaml'
+            '503':
+                $ref: '../shared/responses/errors/service-unavailable.yaml'
+    delete:
+        operationId: waitingParticipantReject
+        summary: Reject a waiting participant
+        description: |
+            Rejects a participant waiting to join the meeting of a room: their meeting tells them they were not let in,
+            with the option to ask to join again, which starts a new wait. It answers `404` with `error`
+            `participant_not_waiting` when they do not wait. Unlike the other meeting operations, it answers whether or
+            not a meeting is running.
+
+            Decisions on the same waiting participant apply one at a time, whichever Meet replica receives them: the
+            first one applies and a later one naming them answers `404`.
+
+            The participant rejected is reported through the [`waitingParticipantStatusChanged`](#/webhooks/waitingParticipantStatusChangedWebhook) webhook with the `rejected` status.
+
+            Requires the `waitingParticipantAdmin` permission.
+
+            In a locked room, a room member token acts on the meeting only if it carries a participant identity, which
+            only a join token does: one obtained without joining answers `403`, so a participant who waits cannot
+            decide on anyone, themselves included, whatever their permissions. A host application acting for itself
+            uses the API key.
+        tags:
+            - OpenVidu Meet - Meetings
+        security:
+            - apiKeyHeader: []
+            - roomMemberTokenHeader: []
+        parameters:
+            - $ref: '../rooms/parameters/room-id-path.yaml'
+            - $ref: './parameters/participant-identity-path.yaml'
+        responses:
+            '200':
+                $ref: './responses/success/reject-waiting-participant.yaml'
+            '401':
+                $ref: '../shared/responses/errors/unauthorized.yaml'
+            '403':
+                $ref: './responses/errors/forbidden-meeting-action.yaml'
+            '404':
+                $ref: './responses/errors/waiting-participant-not-found.yaml'
+            '422':
+                $ref: '../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
+            '500':
+                $ref: '../shared/responses/errors/internal-server.yaml'
+            '503':
+                $ref: '../shared/responses/errors/service-unavailable.yaml'
+/meetings/{roomId}/waiting-participants/{participantIdentity}/admit:
+    post:
+        operationId: waitingParticipantAdmit
+        summary: Admit a waiting participant
+        description: |
+            Admits a participant waiting to join the meeting of a room: their meeting asks for its join token and they
+            join with the identity they waited with. Admitting into a room with no meeting running starts it, so,
+            unlike the other meeting operations, it answers whether or not a meeting is running.
+
+            It answers `404` with `error` `participant_not_waiting` when they do not wait, and `409` with `error`
+            `not_enough_places` when no place of the meeting is free, counting the participants admitted who have not
+            joined yet. Decisions on the same waiting participant apply one at a time, whichever Meet replica receives
+            them: the first one applies and a later one naming them answers `404`. Two admissions for the last free
+            place give one `200` and one `409`.
+
+            The participant admitted is reported through the [`waitingParticipantStatusChanged`](#/webhooks/waitingParticipantStatusChangedWebhook) webhook with the `admitted` status, and counts
+            as a taken place until LiveKit reports them in the meeting, a minute after their admission at most. An
+            admission that is not used within that minute ends as `expired`.
+
+            Requires the `waitingParticipantAdmin` permission.
+
+            In a locked room, a room member token acts on the meeting only if it carries a participant identity, which
+            only a join token does: one obtained without joining answers `403`, so a participant who waits cannot
+            decide on anyone, themselves included, whatever their permissions. A host application acting for itself
+            uses the API key.
+        tags:
+            - OpenVidu Meet - Meetings
+        security:
+            - apiKeyHeader: []
+            - roomMemberTokenHeader: []
+        parameters:
+            - $ref: '../rooms/parameters/room-id-path.yaml'
+            - $ref: './parameters/participant-identity-path.yaml'
+        responses:
+            '200':
+                $ref: './responses/success/admit-waiting-participant.yaml'
+            '401':
+                $ref: '../shared/responses/errors/unauthorized.yaml'
+            '403':
+                $ref: './responses/errors/forbidden-meeting-action.yaml'
+            '404':
+                $ref: './responses/errors/waiting-participant-not-found.yaml'
+            '409':
+                $ref: './responses/errors/not-enough-places.yaml'
+            '422':
+                $ref: '../shared/responses/errors/validation.yaml'
             '429':
                 $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':

@@ -1,0 +1,47 @@
+description: >
+    **Mixed results**. Some participants named were rejected while others were not, because they were not waiting
+    (they left, were admitted or rejected meanwhile, or never waited).
+content:
+    application/json:
+        schema:
+            type: object
+            properties:
+                message:
+                    type: string
+                deleted:
+                    type: array
+                    items:
+                        type: string
+                    description: Identities of the participants rejected.
+                failed:
+                    type: array
+                    description: The participants named who were not rejected, with the reason.
+                    items:
+                        type: object
+                        properties:
+                            participantIdentity:
+                                type: string
+                                description: Identity of the participant not rejected.
+                                example: 'ana_lopez'
+                            error:
+                                type: string
+                                description: A message explaining why the participant was not rejected.
+                                example: "Participant 'ana_lopez' is not waiting in room 'room-123'"
+        examples:
+            partial_rejection:
+                summary: Some participants were rejected, others no longer waited
+                value:
+                    message: '1 waiting participant(s) could not be rejected'
+                    deleted:
+                        - 'ben_smith'
+                    failed:
+                        - participantIdentity: 'ana_lopez'
+                          error: "Participant 'ana_lopez' is not waiting in room 'room-123'"
+            no_rejection_performed:
+                summary: None of the participants named was waiting
+                value:
+                    message: '1 waiting participant(s) could not be rejected'
+                    deleted: []
+                    failed:
+                        - participantIdentity: 'ana_lopez'
+                          error: "Participant 'ana_lopez' is not waiting in room 'room-123'"

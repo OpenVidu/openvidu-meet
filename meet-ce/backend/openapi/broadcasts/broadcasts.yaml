@@ -23,8 +23,8 @@
             destination already streamed to, is rejected with a `409`, as is starting while the meeting has no
             participants.
 
-            In a room with the waiting room on, a room member token acts on the meeting only if it carries a
-            participant identity, which only a join token does: one obtained without joining answers `403`. A
+            In a locked room, a room member token acts on the meeting only if it carries a participant
+            identity, which only a join token does: one obtained without joining answers `403`. A
             host application acting for itself uses the API key.
         tags:
             - OpenVidu Meet - Broadcasts
@@ -69,8 +69,8 @@
 
             Requires the `meetingRead` permission.
 
-            In a room with the waiting room on, a room member token acts on the meeting only if it carries a
-            participant identity, which only a join token does: one obtained without joining answers `403`. A
+            In a locked room, a room member token acts on the meeting only if it carries a participant
+            identity, which only a join token does: one obtained without joining answers `403`. A
             host application acting for itself uses the API key.
         tags:
             - OpenVidu Meet - Broadcasts
@@ -122,9 +122,9 @@
             Either every broadcast listed stops or none does: a `broadcastId` that is not in progress in the
             room, including one of another room, answers `404`, and one already stopping `409`.
 
-            In a room with the waiting room on, a room member token acts on the meeting only if it carries a
-            participant identity, which only a join token does: one obtained without joining answers `403`. A
-            host application acting for itself uses the API key.
+            In a locked room, a room member token acts on the meeting only if it carries a participant identity,
+            which only a join token does: one obtained without joining answers `403`. A host application acting for
+            itself uses the API key.
         tags:
             - OpenVidu Meet - Broadcasts
         security:
@@ -168,8 +168,8 @@
 
             Requires the `meetingRead` permission in the broadcast's room.
 
-            In a room with the waiting room on, a room member token acts on the meeting only if it carries a
-            participant identity, which only a join token does: one obtained without joining answers `403`. A
+            In a locked room, a room member token acts on the meeting only if it carries a participant
+            identity, which only a join token does: one obtained without joining answers `403`. A
             host application acting for itself uses the API key.
         tags:
             - OpenVidu Meet - Broadcasts

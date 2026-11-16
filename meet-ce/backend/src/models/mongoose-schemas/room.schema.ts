@@ -211,23 +211,6 @@ const MeetReactionsConfigSchema = new Schema(
 );
 
 /**
- * Sub-schema for waiting room configuration.
- */
-const MeetWaitingRoomConfigSchema = new Schema(
-	{
-		enabled: {
-			type: Boolean,
-			required: true
-		},
-		message: {
-			type: String,
-			required: false
-		}
-	},
-	{ _id: false }
-);
-
-/**
  * Sub-schema for room theme configuration.
  */
 const MeetRoomThemeSchema = new Schema(
@@ -304,6 +287,23 @@ const MeetRoomRolesSchema = new Schema(
 );
 
 /**
+ * Sub-schema for the room lock.
+ */
+const MeetRoomLockSchema = new Schema(
+	{
+		enabled: {
+			type: Boolean,
+			required: true
+		},
+		message: {
+			type: String,
+			required: false
+		}
+	},
+	{ _id: false }
+);
+
+/**
  * Sub-schema for access configuration.
  */
 const MeetRoomAccessSchema = new Schema(
@@ -349,6 +349,10 @@ const MeetRoomAccessSchema = new Schema(
 				type: String,
 				required: true
 			}
+		},
+		lock: {
+			type: MeetRoomLockSchema,
+			required: true
 		}
 	},
 	{ _id: false }
@@ -405,10 +409,6 @@ const MeetRoomConfigSchema = new Schema(
 		},
 		reactions: {
 			type: MeetReactionsConfigSchema,
-			required: true
-		},
-		waitingRoom: {
-			type: MeetWaitingRoomConfigSchema,
 			required: true
 		}
 	},

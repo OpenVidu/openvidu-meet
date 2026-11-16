@@ -39,6 +39,8 @@ content:
                         user:
                             enabled: false
                             url: 'https://example.com/room/room-123'
+                        lock:
+                            enabled: false
                     status: open
                     rolesUpdatedAt: 1620000000000
                     meetingEndAction: none

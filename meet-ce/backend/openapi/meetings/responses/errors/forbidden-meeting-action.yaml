@@ -1,7 +1,7 @@
 description: >
-    Forbidden: the caller lacks the permission the operation requires. In a room with the waiting room on, that
+    Forbidden: the caller lacks the permission the operation requires. In a locked room, that
     includes a room member token without a participant identity, which a token obtained without joining is: it
-    acts on the meeting only once it is a join token, issued to a holder of `waitingRoomBypass` or to an admitted
+    acts on the meeting only once it is a join token, issued to a holder of `accessBypassLock` or to an admitted
     participant. A host application acting for itself uses the API key
 content:
     application/json:
@@ -9,7 +9,7 @@ content:
             $ref: '../../../shared/schemas/error.yaml'
         examples:
             insufficient_permissions:
-                summary: The role or the room permissions of the caller do not cover the operation, or the token was obtained without joining a room with the waiting room on
+                summary: The role or the room permissions of the caller do not cover the operation, or the token was obtained without joining a locked room
                 value:
                     error: Authorization Error
                     message: 'Insufficient permissions to access this resource'

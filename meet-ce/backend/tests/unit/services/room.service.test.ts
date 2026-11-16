@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import type { MeetRoom, MeetRoomConfig, MeetRoomConfigOptions } from '@openvidu-meet/typings';
+import type { MeetRoom, MeetRoomAccess, MeetRoomAccessConfig, MeetRoomConfig } from '@openvidu-meet/typings';
 import {
 	MeetingEndAction,
 	MeetRoomDeletionErrorCode,
@@ -28,7 +28,13 @@ describe('RoomService.getRequestRoomConfig and getRequestRoomName', () => {
 
 	const inRequestValidatedAgainst = <T>(roomId: string, read: () => Promise<T>) =>
 		requestSessionService.run(() => {
-			requestSessionService.setRoom({ roomId, roomName: 'Shared name', rolesUpdatedAt: 0, config: sharedConfig });
+			requestSessionService.setRoom({
+				roomId,
+				roomName: 'Shared name',
+				rolesUpdatedAt: 0,
+				config: sharedConfig,
+				access: {} as MeetRoomAccess
+			});
 			return read();
 		});
 
@@ -91,23 +97,23 @@ describe('RoomService.getRequestRoomConfig and getRequestRoomName', () => {
 	});
 });
 
-describe('RoomService.updateMeetRoomConfig (waiting room)', () => {
-	const storedConfig = {
-		broadcast: { enabled: false, destinations: [] },
-		waitingRoom: { enabled: true, message: 'Please wait' }
-	} as unknown as MeetRoomConfig;
+describe('RoomService.updateMeetRoomAccess (lock)', () => {
+	const storedAccess = {
+		anonymous: {},
+		user: { enabled: false },
+		lock: { enabled: true, message: 'Please wait' }
+	} as unknown as MeetRoomAccess;
 
-	const buildConfigService = (stored: MeetRoomConfig[], writesMatching: boolean[] = []) => {
-		const updateIdleRoomConfig = jest.fn(async (_roomId: string, config: MeetRoomConfig) =>
-			(writesMatching.shift() ?? true) ? { config } : null
+	const buildAccessService = (stored: MeetRoomAccess[], writesMatching: boolean[] = []) => {
+		const updateIdleRoomAccess = jest.fn(async (_roomId: string, access: MeetRoomAccess) =>
+			(writesMatching.shift() ?? true) ? { access } : null
 		);
 		const letEveryoneIn = jest.fn(async (_roomId: string) => {});
 		const roomService = new RoomService(
 			{ debug: () => {} } as unknown as LoggerService,
 			{
-				findByRoomId: async () => ({ config: stored.shift() ?? storedConfig, status: MeetRoomStatus.OPEN }),
-				findBroadcastDestinationUrls: async () => ({}),
-				updateIdleRoomConfig
+				findByRoomId: async () => ({ access: stored.shift() ?? storedAccess, status: MeetRoomStatus.OPEN }),
+				updateIdleRoomAccess
 			} as unknown as RoomRepository,
 			{} as never,
 			{} as never,
@@ -115,60 +121,58 @@ describe('RoomService.updateMeetRoomConfig (waiting room)', () => {
 			{} as never,
 			{ letEveryoneIn } as never
 		);
-		return { roomService, updateIdleRoomConfig, letEveryoneIn };
+		return { roomService, updateIdleRoomAccess, letEveryoneIn };
 	};
 
-	const updateWith = async (config: MeetRoomConfigOptions) => {
-		const { roomService, updateIdleRoomConfig } = buildConfigService([]);
+	const updateWith = async (access: MeetRoomAccessConfig) => {
+		const { roomService, updateIdleRoomAccess } = buildAccessService([]);
 
-		await roomService.updateMeetRoomConfig('room-1', config);
-		return updateIdleRoomConfig.mock.calls[0][1];
+		await roomService.updateMeetRoomAccess('room-1', access);
+		return updateIdleRoomAccess.mock.calls[0][1];
 	};
 
 	it('keeps the stored message when the update leaves it out', async () => {
-		expect((await updateWith({ waitingRoom: { enabled: true } })).waitingRoom).toEqual({
+		expect((await updateWith({ lock: { enabled: true } })).lock).toEqual({
 			enabled: true,
 			message: 'Please wait'
 		});
 	});
 
 	it('replaces the stored message with the one sent', async () => {
-		expect((await updateWith({ waitingRoom: { enabled: true, message: 'Soon' } })).waitingRoom.message).toBe(
-			'Soon'
-		);
+		expect((await updateWith({ lock: { enabled: true, message: 'Soon' } })).lock.message).toBe('Soon');
 	});
 
 	it('removes the stored message when the update sends null', async () => {
-		const { waitingRoom } = await updateWith({ waitingRoom: { enabled: true, message: null } });
+		const { lock } = await updateWith({ lock: { enabled: true, message: null } });
 
-		expect(waitingRoom.enabled).toBe(true);
-		expect(waitingRoom).toHaveProperty('message', undefined);
+		expect(lock.enabled).toBe(true);
+		expect(lock).toHaveProperty('message', undefined);
 	});
 
-	it('lets everyone waiting in when the update turns the waiting room off', async () => {
-		const { roomService, letEveryoneIn } = buildConfigService([]);
+	it('lets everyone waiting in when the update unlocks the room', async () => {
+		const { roomService, letEveryoneIn } = buildAccessService([]);
 
-		await roomService.updateMeetRoomConfig('room-1', { waitingRoom: { enabled: false } });
+		await roomService.updateMeetRoomAccess('room-1', { lock: { enabled: false } });
 
 		expect(letEveryoneIn).toHaveBeenCalledWith('room-1');
 	});
 
-	it('lets nobody in when the waiting room stays on, or was already off', async () => {
-		const offConfig = { ...storedConfig, waitingRoom: { enabled: false } } as MeetRoomConfig;
-		const { roomService, letEveryoneIn } = buildConfigService([storedConfig, offConfig]);
+	it('lets nobody in when the room stays locked, or was already unlocked', async () => {
+		const unlocked = { ...storedAccess, lock: { enabled: false } } as MeetRoomAccess;
+		const { roomService, letEveryoneIn } = buildAccessService([storedAccess, unlocked]);
 
-		await roomService.updateMeetRoomConfig('room-1', { waitingRoom: { enabled: true } });
-		await roomService.updateMeetRoomConfig('room-1', { waitingRoom: { enabled: false } });
+		await roomService.updateMeetRoomAccess('room-1', { lock: { enabled: true } });
+		await roomService.updateMeetRoomAccess('room-1', { lock: { enabled: false } });
 
 		expect(letEveryoneIn).not.toHaveBeenCalled();
 	});
 
-	it('reads the room again when the conditional write finds a meeting started or the waiting room switched', async () => {
-		const { roomService, updateIdleRoomConfig } = buildConfigService([], [false]);
+	it('reads the room again when the conditional write finds a meeting started', async () => {
+		const { roomService, updateIdleRoomAccess } = buildAccessService([], [false]);
 
-		await roomService.updateMeetRoomConfig('room-1', { waitingRoom: { enabled: true } });
+		await roomService.updateMeetRoomAccess('room-1', { lock: { enabled: true } });
 
-		expect(updateIdleRoomConfig).toHaveBeenCalledTimes(2);
+		expect(updateIdleRoomAccess).toHaveBeenCalledTimes(2);
 	});
 });
 

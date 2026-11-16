@@ -14,7 +14,8 @@ export const REQUEST_ROOM_FIELDS = [
 	'roomId',
 	'roomName',
 	'rolesUpdatedAt',
-	'config'
+	'config',
+	'access'
 ] as const satisfies readonly MeetRoomField[];
 
 /**

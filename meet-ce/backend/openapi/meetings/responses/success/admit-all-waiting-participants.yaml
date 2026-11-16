@@ -1,0 +1,10 @@
+description: >
+    Everyone waiting was admitted, or nobody was waiting.
+content:
+    application/json:
+        schema:
+            type: object
+            properties:
+                message:
+                    type: string
+                    example: Waiting participants admitted to room 'room-123'

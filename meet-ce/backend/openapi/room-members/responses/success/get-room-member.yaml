@@ -56,8 +56,8 @@ content:
                         participantMute: true
                         participantHandLower: true
                         participantReactionSend: true
-                        waitingRoomBypass: true
-                        waitingRoomAdmin: true
+                        accessBypassLock: true
+                        waitingParticipantAdmin: true
                         meetingEnd: false
                         mediaPublishVideo: true
                         mediaPublishAudio: true

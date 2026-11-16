@@ -1,13 +1,16 @@
-import type { MeetRoomDeletionErrorCode, MeetRoomMemberRole, MeetWaitingRoomStatus } from '@openvidu-meet/typings';
-import { MeetWaitingRoomErrorCode } from '@openvidu-meet/typings';
+import type {
+	MeetRoomDeletionErrorCode,
+	MeetRoomMemberRole,
+	MeetWaitingParticipantStatus
+} from '@openvidu-meet/typings';
+import { MeetWaitingParticipantErrorCode } from '@openvidu-meet/typings';
 import { DocumentNotFoundError } from './database.model.js';
 
 type StatusError = 400 | 401 | 402 | 403 | 404 | 409 | 413 | 415 | 416 | 422 | 500 | 503;
 /** Data a refusal carries in its body next to `error` and `message`, for a client to act on. */
 export interface OpenViduMeetErrorFields {
-	status?: MeetWaitingRoomStatus;
+	status?: MeetWaitingParticipantStatus;
 	participantIdentity?: string;
-	availablePlaces?: number;
 }
 
 export class OpenViduMeetError extends Error {
@@ -564,44 +567,41 @@ export const errorReactionSenderNotInMeeting = (participantIdentity: string, roo
 	);
 };
 
-// Waiting room errors
+// Waiting participant errors
 
-export const errorWaitingRoomParticipantNotWaiting = (
-	participantIdentity: string,
-	roomId: string
-): OpenViduMeetError => {
+export const errorParticipantNotWaiting = (participantIdentity: string, roomId: string): OpenViduMeetError => {
 	return new OpenViduMeetError(
-		MeetWaitingRoomErrorCode.PARTICIPANT_NOT_WAITING,
+		MeetWaitingParticipantErrorCode.PARTICIPANT_NOT_WAITING,
 		`Participant '${participantIdentity}' is not waiting in room '${roomId}'`,
 		404,
 		{ participantIdentity }
 	);
 };
 
-export const errorWaitingRoomNoFreePlaces = (
-	roomId: string,
-	participantCount: number,
-	availablePlaces: number
-): OpenViduMeetError => {
+export const errorNotEnoughPlaces = (roomId: string): OpenViduMeetError => {
 	return new OpenViduMeetError(
-		MeetWaitingRoomErrorCode.NOT_ENOUGH_PLACES,
-		`Room '${roomId}' has fewer free places (${availablePlaces}) than participants to admit (${participantCount})`,
-		409,
-		{ availablePlaces }
+		MeetWaitingParticipantErrorCode.NOT_ENOUGH_PLACES,
+		`The meeting of room '${roomId}' has fewer free places than participants to admit`,
+		409
 	);
 };
 
-export const errorWaitingRoomFull = (roomId: string): OpenViduMeetError => {
+export const errorWaitingListFull = (roomId: string): OpenViduMeetError => {
 	return new OpenViduMeetError(
-		MeetWaitingRoomErrorCode.WAITING_ROOM_FULL,
-		`The waiting room of room '${roomId}' is full`,
+		MeetWaitingParticipantErrorCode.WAITING_LIST_FULL,
+		`Room '${roomId}' already has as many waiting participants as it can hold`,
 		409
 	);
 };
 
 /** The wait of a ticket is over, or unknown; `status` tells how it ended when it is known. */
-export const errorWaitingRoomWaitEnded = (status?: MeetWaitingRoomStatus): OpenViduMeetError => {
-	return new OpenViduMeetError(MeetWaitingRoomErrorCode.WAIT_ENDED, 'The wait has ended', 409, status && { status });
+export const errorWaitEnded = (status?: MeetWaitingParticipantStatus): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		MeetWaitingParticipantErrorCode.WAIT_ENDED,
+		'The wait has ended',
+		409,
+		status && { status }
+	);
 };
 
 // AI Assistant errors

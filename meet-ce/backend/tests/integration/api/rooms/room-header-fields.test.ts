@@ -76,8 +76,7 @@ describe('Room Header Fields Tests', () => {
 				},
 				captions: { enabled: true },
 				raiseHand: { enabled: true },
-				reactions: { enabled: true },
-				waitingRoom: { enabled: false }
+				reactions: { enabled: true }
 			};
 
 			await createRoom({ roomName: 'header-extrafields-test', config: customConfig });
@@ -177,8 +176,7 @@ describe('Room Header Fields Tests', () => {
 				},
 				captions: { enabled: true },
 				raiseHand: { enabled: true },
-				reactions: { enabled: true },
-				waitingRoom: { enabled: false }
+				reactions: { enabled: true }
 			};
 
 			const createdRoom = await createRoom({

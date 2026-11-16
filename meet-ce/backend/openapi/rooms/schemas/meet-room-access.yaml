@@ -68,3 +68,20 @@ properties:
                 example: 'http://localhost:6080/room/room-123'
                 description: >
                     The URL for users to access the room.
+    lock:
+        type: object
+        description: >
+            Lock of the room. While it is on, a participant who asks to join the room waits until someone
+            holding `waitingParticipantAdmin` admits them, unless they hold `accessBypassLock`. Admins and the
+            room's owner hold every permission and join directly.
+        properties:
+            enabled:
+                type: boolean
+                example: false
+                description: >
+                    Whether the room is locked.
+            message:
+                type: string
+                example: 'The host will let you in shortly.'
+                description: >
+                    Message the waiting participants see while they wait. Left out when the room has none.

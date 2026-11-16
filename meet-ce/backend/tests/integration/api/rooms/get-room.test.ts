@@ -84,8 +84,7 @@ describe('Room API Tests', () => {
 					},
 					captions: { enabled: true },
 					raiseHand: { enabled: true },
-					reactions: { enabled: true },
-					waitingRoom: { enabled: false }
+					reactions: { enabled: true }
 				}
 			};
 			// Create a room with custom config
@@ -258,9 +257,9 @@ describe('Room API Tests', () => {
 			expect(anonymousLinksWithUrl(response.body)).toEqual(['moderator', 'recording']);
 		});
 
-		it('should return the links a token obtained without joining was granted, in a room with the waiting room', async () => {
+		it('should return the links a token obtained without joining was granted, in a locked room', async () => {
 			const { room, moderatorToken, speakerToken } = await tokensFor({
-				config: { waitingRoom: { enabled: true } },
+				access: { lock: { enabled: true } },
 				roles: { speaker: { permissions: { roomShareAccessLinks: true } } }
 			});
 

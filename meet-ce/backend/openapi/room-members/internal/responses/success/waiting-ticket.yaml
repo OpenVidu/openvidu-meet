@@ -1,0 +1,22 @@
+description: >
+    The participant has to wait to be admitted: the room is locked and the participant lacks
+    `accessBypassLock`. No token is issued, nothing is reserved and the meeting does not start. The same answer
+    comes back when the request carries the `waitingTicket` of a wait that is still waiting, with the same
+    ticket
+content:
+    application/json:
+        schema:
+            type: object
+            required:
+                - waitingTicket
+                - participant
+            properties:
+                waitingTicket:
+                    type: string
+                    example: 'q8d1u3Zr0m6ZxVwK9tHc2A'
+                    description: >
+                        The opaque credential of the wait. It opens only the realtime connection of that wait, the token
+                        request once admitted (as `waitingTicket` in its body) and the leave request, lasts as long as
+                        the wait and is never renewed. It gives no access to the meeting's media or API.
+                participant:
+                    $ref: '../../../../meetings/schemas/meet-waiting-participant.yaml'

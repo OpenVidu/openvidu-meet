@@ -30,8 +30,8 @@ webhooks/webhooks.yaml:
     - '#/participantLeft/post'
     - '#/participantRoleChanged/post'
     - '#/participantHandChanged/post'
-    - '#/participantKnocked/post'
-    - '#/participantWaitingChanged/post'
+    - '#/waitingParticipantKnocked/post'
+    - '#/waitingParticipantStatusChanged/post'
 config/schemas/global-security-config.yaml:
   struct:
     - '#/AuthenticationConfig'

@@ -46,11 +46,11 @@ import { BroadcastService } from '../services/broadcast.service.js';
 import { FrontendEventService } from '../services/frontend-event.service.js';
 import { LivekitWebhookService } from '../services/livekit-webhook.service.js';
 import { LiveKitService } from '../services/livekit.service.js';
-import { WaitingRoomAdmissionPolicy } from '../services/waiting-room/waiting-room-admission.policy.js';
-import { WaitingRoomRealtimeHandler } from '../services/waiting-room/waiting-room-realtime.handler.js';
-import { WaitingRoomStateService } from '../services/waiting-room/waiting-room-state.service.js';
-import { WaitingRoomSweepTask } from '../services/waiting-room/waiting-room-sweep.task.js';
-import { WaitingRoomService } from '../services/waiting-room/waiting-room.service.js';
+import { WaitingParticipantAdmissionPolicy } from '../services/waiting-participants/waiting-participant-admission.policy.js';
+import { WaitingParticipantRealtimeHandler } from '../services/waiting-participants/waiting-participant-realtime.handler.js';
+import { WaitingParticipantStateService } from '../services/waiting-participants/waiting-participant-state.service.js';
+import { WaitingParticipantSweepTask } from '../services/waiting-participants/waiting-participant-sweep.task.js';
+import { WaitingParticipantService } from '../services/waiting-participants/waiting-participant.service.js';
 import { MeetingDurationLimitService } from '../services/meeting-duration-limit.service.js';
 import { MeetingPresenceService } from '../services/meeting-presence.service.js';
 import { MeetingService } from '../services/meeting.service.js';
@@ -176,11 +176,11 @@ const domainModule = new ContainerModule(({ bind }) => {
 	bind(BroadcastScheduledTasksService).toSelf().inSingletonScope();
 	bind(AnalyticsService).toSelf().inSingletonScope();
 	bind(AiAssistantService).toSelf().inSingletonScope();
-	bind(WaitingRoomAdmissionPolicy).toSelf().inSingletonScope();
-	bind(WaitingRoomStateService).toSelf().inSingletonScope();
-	bind(WaitingRoomService).toSelf().inSingletonScope();
-	bind(WaitingRoomRealtimeHandler).toSelf().inSingletonScope();
-	bind(WaitingRoomSweepTask).toSelf().inSingletonScope();
+	bind(WaitingParticipantAdmissionPolicy).toSelf().inSingletonScope();
+	bind(WaitingParticipantStateService).toSelf().inSingletonScope();
+	bind(WaitingParticipantService).toSelf().inSingletonScope();
+	bind(WaitingParticipantRealtimeHandler).toSelf().inSingletonScope();
+	bind(WaitingParticipantSweepTask).toSelf().inSingletonScope();
 });
 
 /**
@@ -225,8 +225,8 @@ export const initializeEagerServices = async () => {
 	container.get(RoomScheduledTasksService);
 	container.get(MeetingDurationLimitService);
 	container.get(BroadcastScheduledTasksService);
-	container.get(WaitingRoomSweepTask);
+	container.get(WaitingParticipantSweepTask);
 
-	// Registers the waiting room's WebSocket connections before the server listens
-	container.get(WaitingRoomRealtimeHandler);
+	// Registers the WebSocket connections of the waiting participants before the server listens
+	container.get(WaitingParticipantRealtimeHandler);
 };

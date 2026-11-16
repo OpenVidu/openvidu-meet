@@ -2,8 +2,8 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, jest } from '@j
 import type { MeetRoom, MeetRoomMemberPermissions, MeetRoomRoles } from '@openvidu-meet/typings';
 import {
 	MEET_PERMISSION_KEYS,
-	MeetWaitingRoomParticipantType,
-	MeetWaitingRoomStatus,
+	MeetWaitingParticipantType,
+	MeetWaitingParticipantStatus,
 	MeetRoomMemberRole,
 	MeetRoomMemberUIBadge,
 	MeetRoomStatus,
@@ -17,13 +17,13 @@ import type { ParticipantMeetingMetadata } from '../../../src/helpers/participan
 import { MeetRoomMemberHelper } from '../../../src/helpers/room-member.helper.js';
 import { errorParticipantNotFound } from '../../../src/models/error.model.js';
 import type {
-	WaitingRoomEntry,
-	WaitingRoomReturnResult,
-	WaitingRoomTicketChange,
-	WaitingRoomWait
-} from '../../../src/models/waiting-room.model.js';
+	WaitingEntry,
+	WaitingReturnResult,
+	WaitingTicketChange,
+	ParticipantWait
+} from '../../../src/models/waiting-participant.model.js';
 import { RoomRepository } from '../../../src/repositories/room.repository.js';
-import { WaitingRoomAdmissionPolicy } from '../../../src/services/waiting-room/waiting-room-admission.policy.js';
+import { WaitingParticipantAdmissionPolicy } from '../../../src/services/waiting-participants/waiting-participant-admission.policy.js';
 import { MutexService } from '../../../src/services/mutex.service.js';
 import { ParticipantTokenRevocationService } from '../../../src/services/participant-token-revocation.service.js';
 import { RedisService } from '../../../src/services/redis.service.js';
@@ -465,10 +465,10 @@ describe('the participant metadata lock', () => {
 	});
 });
 
-// A participant the waiting room applies to gets a ticket, not a token, and the ticket is answered by the state
+// A participant a locked room makes wait gets a ticket, not a token, and the ticket is answered by the state
 // of its wait. Only an admission, used right before the token is minted, yields a token.
-describe('RoomMemberService.generateRoomMemberToken in a room with the waiting room on', () => {
-	const ROOM_ID = 'room-waiting-room';
+describe('RoomMemberService.generateRoomMemberToken in a locked room', () => {
+	const ROOM_ID = 'room-locked';
 	const TICKET = 'ticket-1';
 	const speaker: MeetRoomMemberPermissions = { ...none, meetingJoin: true };
 
@@ -481,21 +481,21 @@ describe('RoomMemberService.generateRoomMemberToken in a room with the waiting r
 	}
 
 	let steps: string[];
-	let waitingRoomEnabled: boolean;
+	let lockedEnabled: boolean;
 	let connected: number;
-	let wait: WaitingRoomWait | null;
-	let consumed: WaitingRoomTicketChange;
-	let returned: WaitingRoomReturnResult;
+	let wait: ParticipantWait | null;
+	let consumed: WaitingTicketChange;
+	let returned: WaitingReturnResult;
 	let memberService: JoinStepsRoomMemberService;
 
-	const entry = { waitId: 'wait-1', participantIdentity: 'ana-1' } as WaitingRoomEntry;
-	const waitOf = (status: MeetWaitingRoomStatus, ended = false, principal?: string): WaitingRoomWait => ({
+	const entry = { waitId: 'wait-1', participantIdentity: 'ana-1' } as WaitingEntry;
+	const waitOf = (status: MeetWaitingParticipantStatus, ended = false, principal?: string): ParticipantWait => ({
 		waitId: 'wait-1',
 		roomId: ROOM_ID,
 		participant: {
 			participantIdentity: 'ana-1',
 			participantName: 'Ana',
-			type: MeetWaitingRoomParticipantType.ANONYMOUS,
+			type: MeetWaitingParticipantType.ANONYMOUS,
 			externalId: 'ext-1',
 			knockDate: 1,
 			roomName: 'Room'
@@ -504,7 +504,7 @@ describe('RoomMemberService.generateRoomMemberToken in a room with the waiting r
 		status,
 		ended
 	});
-	const join = (options: { waitingRoomTicket?: string; participantName?: string } = {}, previousToken?: string) =>
+	const join = (options: { waitingTicket?: string; participantName?: string } = {}, previousToken?: string) =>
 		memberService.generateRoomMemberToken(
 			ROOM_ID,
 			{ secret: 'link', joinMeeting: true, participantName: 'Ana', ...options },
@@ -513,18 +513,18 @@ describe('RoomMemberService.generateRoomMemberToken in a room with the waiting r
 
 	beforeEach(() => {
 		steps = [];
-		waitingRoomEnabled = true;
+		lockedEnabled = true;
 		connected = 0;
 		wait = null;
 		consumed = { entry };
-		returned = { entry, line: { now: 0, from: 1, waiting: [] } };
+		returned = { entry, waitedSeconds: 0 };
 		const room = () => ({
 			roomId: ROOM_ID,
 			roomName: 'Room',
 			status: MeetRoomStatus.OPEN,
 			roles: { moderator: { permissions: MeetRoomMemberHelper.allPermissions() } },
+			access: { lock: { enabled: lockedEnabled } },
 			config: {
-				waitingRoom: { enabled: waitingRoomEnabled },
 				e2ee: { enabled: false },
 				chat: { enabled: true },
 				maxParticipants: 2
@@ -568,38 +568,38 @@ describe('RoomMemberService.generateRoomMemberToken in a room with the waiting r
 					knock: async (_room: object, request: { participantIdentity: string; memberId?: string }) => {
 						steps.push(`knock:${request.memberId ?? 'anonymous'}`);
 						return {
-							waitingRoomTicket: TICKET,
+							waitingTicket: TICKET,
 							participant: { participantIdentity: request.participantIdentity }
 						};
 					},
-					ticketOf: (waitingRoomTicket: string, participant: object) => ({ waitingRoomTicket, participant }),
+					ticketOf: (waitingTicket: string, participant: object) => ({ waitingTicket, participant }),
 					findWait: async () => wait,
 					consume: async () => {
 						steps.push('consume');
 						return consumed;
 					},
-					returnToLine: async () => {
+					returnToWaiting: async () => {
 						steps.push('return');
 						return returned;
 					}
 				},
-				new WaitingRoomAdmissionPolicy()
+				new WaitingParticipantAdmissionPolicy()
 			] as unknown as ConstructorParameters<typeof RoomMemberService>)
 		);
 	});
 
-	it('answers a ticket to a participant without waitingRoomBypass, reserving, creating and minting nothing', async () => {
+	it('answers a ticket to a participant without accessBypassLock, reserving, creating and minting nothing', async () => {
 		memberService.source = { memberId: 'guest-1', permissions: speaker };
 
 		await expect(join()).resolves.toEqual({
-			waitingRoomTicket: TICKET,
+			waitingTicket: TICKET,
 			participant: { participantIdentity: 'guest-1' }
 		});
 		expect(steps).toEqual(['knock:guest-1']);
 	});
 
-	it('gives a holder of waitingRoomBypass a join token at once', async () => {
-		memberService.source = { permissions: { ...speaker, waitingRoomBypass: true } };
+	it('gives a holder of accessBypassLock a join token at once', async () => {
+		memberService.source = { permissions: { ...speaker, accessBypassLock: true } };
 
 		await expect(join()).resolves.toEqual({ token: 'join-token' });
 		expect(steps).toEqual(['reserve:Ana', 'createRoom', expect.stringMatching(/^mint:ana-/)]);
@@ -614,95 +614,95 @@ describe('RoomMemberService.generateRoomMemberToken in a room with the waiting r
 	});
 
 	it('answers the same ticket while the wait goes on, ignoring a previous token', async () => {
-		wait = waitOf(MeetWaitingRoomStatus.WAITING);
+		wait = waitOf(MeetWaitingParticipantStatus.WAITING);
 
-		await expect(join({ waitingRoomTicket: TICKET }, 'previous-token')).resolves.toEqual({
-			waitingRoomTicket: TICKET,
+		await expect(join({ waitingTicket: TICKET }, 'previous-token')).resolves.toEqual({
+			waitingTicket: TICKET,
 			participant: expect.objectContaining({ participantIdentity: 'ana-1' })
 		});
 		expect(steps).toEqual([]);
 	});
 
 	it('joins an admitted participant with the identity of the wait, using the admission right before minting', async () => {
-		wait = waitOf(MeetWaitingRoomStatus.ADMITTED);
+		wait = waitOf(MeetWaitingParticipantStatus.ADMITTED);
 
-		await expect(join({ waitingRoomTicket: TICKET })).resolves.toEqual({ token: 'join-token' });
+		await expect(join({ waitingTicket: TICKET })).resolves.toEqual({ token: 'join-token' });
 		expect(steps).toEqual(['reserve:Ana', 'createRoom', 'consume', 'mint:ana-1']);
 	});
 
-	it('puts an admitted participant who finds the meeting full back in line', async () => {
-		wait = waitOf(MeetWaitingRoomStatus.ADMITTED);
+	it('puts an admitted participant who finds the meeting full wait again', async () => {
+		wait = waitOf(MeetWaitingParticipantStatus.ADMITTED);
 		connected = 2;
 
-		await expect(join({ waitingRoomTicket: TICKET })).resolves.toEqual({
-			waitingRoomTicket: TICKET,
+		await expect(join({ waitingTicket: TICKET })).resolves.toEqual({
+			waitingTicket: TICKET,
 			participant: expect.objectContaining({ participantIdentity: 'ana-1' })
 		});
 		expect(steps).toEqual(['return']);
 	});
 
 	it.each([
-		['the meeting is full and the wait ended before it went back in line', 2, 'return'],
+		['the meeting is full and the wait ended before it waited again', 2, 'return'],
 		['the wait ended before its admission was used', 0, 'consume']
 	])('answers 409 with the recorded status when %s', async (_case, connectedCount, step) => {
-		wait = waitOf(MeetWaitingRoomStatus.ADMITTED);
+		wait = waitOf(MeetWaitingParticipantStatus.ADMITTED);
 		connected = connectedCount;
-		returned = { status: MeetWaitingRoomStatus.LEFT };
-		consumed = { status: MeetWaitingRoomStatus.LEFT };
+		returned = { status: MeetWaitingParticipantStatus.LEFT };
+		consumed = { status: MeetWaitingParticipantStatus.LEFT };
 
-		await expect(join({ waitingRoomTicket: TICKET })).rejects.toMatchObject({
+		await expect(join({ waitingTicket: TICKET })).rejects.toMatchObject({
 			statusCode: 409,
-			fields: { status: MeetWaitingRoomStatus.LEFT }
+			fields: { status: MeetWaitingParticipantStatus.LEFT }
 		});
 		expect(steps).toContain(step);
 		expect(steps.filter((name) => name.startsWith('mint'))).toEqual([]);
 	});
 
 	it('answers the usual access error to an admitted participant who lost meetingJoin, leaving the wait as it is', async () => {
-		wait = waitOf(MeetWaitingRoomStatus.ADMITTED);
+		wait = waitOf(MeetWaitingParticipantStatus.ADMITTED);
 		memberService.source = { permissions: none };
 
-		await expect(join({ waitingRoomTicket: TICKET })).rejects.toMatchObject({ statusCode: 403 });
+		await expect(join({ waitingTicket: TICKET })).rejects.toMatchObject({ statusCode: 403 });
 		expect(steps).toEqual([]);
 	});
 
 	it('refuses a ticket presented with the credential of another principal', async () => {
-		wait = waitOf(MeetWaitingRoomStatus.ADMITTED, false, 'guest-1');
+		wait = waitOf(MeetWaitingParticipantStatus.ADMITTED, false, 'guest-1');
 		memberService.source = { memberId: 'guest-2', permissions: speaker };
 
-		await expect(join({ waitingRoomTicket: TICKET })).rejects.toMatchObject({ statusCode: 403 });
+		await expect(join({ waitingTicket: TICKET })).rejects.toMatchObject({ statusCode: 403 });
 		expect(steps).toEqual([]);
 	});
 
 	it.each([
-		['ended otherwise', waitOf(MeetWaitingRoomStatus.REJECTED, true), MeetWaitingRoomStatus.REJECTED],
+		['ended otherwise', waitOf(MeetWaitingParticipantStatus.REJECTED, true), MeetWaitingParticipantStatus.REJECTED],
 		['unknown', null, undefined],
-		['of another room', { ...waitOf(MeetWaitingRoomStatus.WAITING), roomId: 'other-room' }, undefined]
+		['of another room', { ...waitOf(MeetWaitingParticipantStatus.WAITING), roomId: 'other-room' }, undefined]
 	])('answers 409 to a ticket whose wait is %s, never starting a new one', async (_case, found, status) => {
 		wait = found;
 
-		const error = await join({ waitingRoomTicket: TICKET }).catch((refusal: unknown) => refusal);
+		const error = await join({ waitingTicket: TICKET }).catch((refusal: unknown) => refusal);
 
 		expect(error).toMatchObject({ statusCode: 409, message: 'The wait has ended' });
-		expect((error as { fields: { status?: MeetWaitingRoomStatus } }).fields.status).toBe(status);
+		expect((error as { fields: { status?: MeetWaitingParticipantStatus } }).fields.status).toBe(status);
 		expect(steps).toEqual([]);
 	});
 
 	it('answers 409 with status admitted to a wait already let in while the gate still applies', async () => {
-		wait = waitOf(MeetWaitingRoomStatus.ADMITTED, true);
+		wait = waitOf(MeetWaitingParticipantStatus.ADMITTED, true);
 
-		await expect(join({ waitingRoomTicket: TICKET })).rejects.toMatchObject({
+		await expect(join({ waitingTicket: TICKET })).rejects.toMatchObject({
 			statusCode: 409,
-			fields: { status: MeetWaitingRoomStatus.ADMITTED }
+			fields: { status: MeetWaitingParticipantStatus.ADMITTED }
 		});
 		expect(steps).toEqual([]);
 	});
 
-	it('joins a wait let in by turning the waiting room off as an ordinary join with its identity', async () => {
-		wait = waitOf(MeetWaitingRoomStatus.ADMITTED, true);
-		waitingRoomEnabled = false;
+	it('joins a wait let in by unlocking the room as an ordinary join with its identity', async () => {
+		wait = waitOf(MeetWaitingParticipantStatus.ADMITTED, true);
+		lockedEnabled = false;
 
-		await expect(join({ waitingRoomTicket: TICKET })).resolves.toEqual({ token: 'join-token' });
+		await expect(join({ waitingTicket: TICKET })).resolves.toEqual({ token: 'join-token' });
 		expect(steps).toEqual(['reserve:Ana', 'createRoom', 'mint:ana-1']);
 	});
 });

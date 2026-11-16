@@ -45,6 +45,8 @@ content:
                               user:
                                   enabled: false
                                   url: 'https://example.com/room/room-123'
+                              lock:
+                                  enabled: false
                           status: open
                           rolesUpdatedAt: 1620000000000
                           meetingEndAction: none
@@ -70,6 +72,8 @@ content:
                               user:
                                   enabled: true
                                   url: 'https://example.com/room/room-456'
+                              lock:
+                                  enabled: false
                           status: open
                           rolesUpdatedAt: 1620001000000
                           meetingEndAction: none
@@ -120,8 +124,6 @@ content:
                                   enabled: true
                               reactions:
                                   enabled: true
-                              waitingRoom:
-                                  enabled: false
                           roles:
                               moderator:
                                   permissions:
@@ -140,8 +142,8 @@ content:
                                       participantMute: true
                                       participantHandLower: true
                                       participantReactionSend: true
-                                      waitingRoomBypass: true
-                                      waitingRoomAdmin: true
+                                      accessBypassLock: true
+                                      waitingParticipantAdmin: true
                                       meetingEnd: true
                                       mediaPublishVideo: true
                                       mediaPublishAudio: true
@@ -166,8 +168,8 @@ content:
                                       participantMute: false
                                       participantHandLower: false
                                       participantReactionSend: true
-                                      waitingRoomBypass: false
-                                      waitingRoomAdmin: false
+                                      accessBypassLock: false
+                                      waitingParticipantAdmin: false
                                       meetingEnd: false
                                       mediaPublishVideo: true
                                       mediaPublishAudio: true
@@ -189,6 +191,8 @@ content:
                               user:
                                   enabled: false
                                   url: 'https://example.com/room/room-123'
+                              lock:
+                                  enabled: false
                           status: open
                           rolesUpdatedAt: 1620000000000
                           meetingEndAction: none
@@ -227,8 +231,6 @@ content:
                                   enabled: false
                               reactions:
                                   enabled: false
-                              waitingRoom:
-                                  enabled: false
                           roles:
                               moderator:
                                   permissions:
@@ -247,8 +249,8 @@ content:
                                       participantMute: true
                                       participantHandLower: true
                                       participantReactionSend: true
-                                      waitingRoomBypass: true
-                                      waitingRoomAdmin: true
+                                      accessBypassLock: true
+                                      waitingParticipantAdmin: true
                                       meetingEnd: true
                                       mediaPublishVideo: true
                                       mediaPublishAudio: true
@@ -273,8 +275,8 @@ content:
                                       participantMute: false
                                       participantHandLower: false
                                       participantReactionSend: true
-                                      waitingRoomBypass: false
-                                      waitingRoomAdmin: false
+                                      accessBypassLock: false
+                                      waitingParticipantAdmin: false
                                       meetingEnd: false
                                       mediaPublishVideo: true
                                       mediaPublishAudio: true
@@ -296,6 +298,8 @@ content:
                               user:
                                   enabled: true
                                   url: 'https://example.com/room/room-456'
+                              lock:
+                                  enabled: false
                           status: open
                           rolesUpdatedAt: 1620001000000
                           meetingEndAction: none
@@ -327,8 +331,6 @@ content:
                                   enabled: true
                               reactions:
                                   enabled: true
-                              waitingRoom:
-                                  enabled: false
                         - roomId: 'room-456'
                           config:
                               recording:
@@ -348,8 +350,6 @@ content:
                               raiseHand:
                                   enabled: false
                               reactions:
-                                  enabled: false
-                              waitingRoom:
                                   enabled: false
                     _extraFields:
                         - config

@@ -11,8 +11,8 @@
             `false` rejects every reaction with a `403`, and a room without a meeting running answers `404`.
 
 
-            In a room with the waiting room on, a room member token acts on the meeting only if it carries a
-            participant identity, which only a join token does: one obtained without joining answers `403`. A
+            In a locked room, a room member token acts on the meeting only if it carries a participant
+            identity, which only a join token does: one obtained without joining answers `403`. A
             host application acting for itself uses the API key.
         tags:
             - Internal API - Meetings
@@ -43,20 +43,20 @@
                 $ref: '../../shared/responses/errors/internal-server.yaml'
             '503':
                 $ref: '../../shared/responses/errors/service-unavailable.yaml'
-/meetings/{roomId}/waiting-room/leave:
+/meetings/{roomId}/waiting-participants/leave:
     post:
-        operationId: participantWaitingLeave
-        summary: Leave the waiting room
+        operationId: waitingParticipantLeave
+        summary: Stop waiting to join
         description: >
             Ends the wait of a participant at once, whether it is waiting or admitted and not yet used: the
-            participant no longer appears in [`participantWaitingList`](#/operations/participantWaitingList) and the
-            [`participantWaitingChanged`](#/webhooks/participantWaitingChangedWebhook) webhook reports `left`, or
-            `expired` with `reason` `page_closed`. The meeting client calls it when the participant presses "Leave
-            waiting room" or leaves with `meetingLeave`, also while its realtime connection is down, and with
+            participant no longer appears in `waitingParticipantList` and the
+            `waitingParticipantStatusChanged` webhook reports `left`, or
+            `expired` with `reason` `page_closed`. The meeting client calls it when the participant presses "Stop
+            waiting" or leaves with `meetingLeave`, also while its realtime connection is down, and with
             `reason` `page_closed` when their page closes, reloads or navigates away.
 
 
-            The `waitingRoomTicket` is the only credential and no header is sent, so a web component on another
+            The `waitingTicket` is the only credential and no header is sent, so a web component on another
             origin can send it while its page unloads without a CORS preflight. It has no body.
 
 
@@ -67,11 +67,11 @@
         security: []
         parameters:
             - $ref: '../../rooms/parameters/room-id-path.yaml'
-            - $ref: './parameters/waiting-room-ticket-query.yaml'
-            - $ref: './parameters/waiting-room-leave-reason-query.yaml'
+            - $ref: './parameters/waiting-ticket-query.yaml'
+            - $ref: './parameters/waiting-leave-reason-query.yaml'
         responses:
             '204':
-                $ref: './responses/success/waiting-room-leave.yaml'
+                $ref: './responses/success/waiting-participant-leave.yaml'
             '422':
                 $ref: '../../shared/responses/errors/validation.yaml'
             '429':

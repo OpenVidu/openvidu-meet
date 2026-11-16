@@ -1418,53 +1418,82 @@ export const getBroadcast = async (broadcastId: string, roomMemberToken?: string
 	return await asBroadcastCaller(request(app).get(`${broadcastsPath()}/${broadcastId}`), roomMemberToken);
 };
 
-// WAITING ROOM HELPERS
+// WAITING PARTICIPANT HELPERS
 
-const waitingRoomPath = (roomId: string, action = '') =>
-	getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/meetings/${roomId}/waiting-room${action}`);
+const waitingParticipantsPath = (roomId: string, path = '') =>
+	getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/meetings/${roomId}/waiting-participants${path}`);
 
-/** Calls a waiting room operation with the given room member token, or with the API key without one. */
-const asWaitingRoomAdmitter = (req: request.Test, roomMemberToken?: string) =>
+/** Calls a waiting participant operation with the given room member token, or with the API key without one. */
+const asAdmitter = (req: request.Test, roomMemberToken?: string) =>
 	roomMemberToken
 		? req.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken)
 		: req.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
 
-export const getWaitingRoom = async (roomId: string, roomMemberToken?: string): Promise<Response> => {
+export const getWaitingParticipants = async (roomId: string, roomMemberToken?: string): Promise<Response> => {
 	checkAppIsRunning();
-	return await asWaitingRoomAdmitter(request(app).get(waitingRoomPath(roomId)), roomMemberToken);
+	return await asAdmitter(request(app).get(waitingParticipantsPath(roomId)), roomMemberToken);
 };
 
-export const admitFromWaitingRoom = async (
+export const getWaitingParticipant = async (
 	roomId: string,
-	participantIdentities?: string[],
+	participantIdentity: string,
 	roomMemberToken?: string
 ): Promise<Response> => {
 	checkAppIsRunning();
-	return await asWaitingRoomAdmitter(request(app).post(waitingRoomPath(roomId, '/admit')), roomMemberToken).send(
-		participantIdentities ? { participantIdentities } : {}
+	return await asAdmitter(
+		request(app).get(waitingParticipantsPath(roomId, `/${participantIdentity}`)),
+		roomMemberToken
 	);
 };
 
-export const rejectFromWaitingRoom = async (
+export const admitWaitingParticipant = async (
 	roomId: string,
-	participantIdentities?: string[],
+	participantIdentity: string,
 	roomMemberToken?: string
 ): Promise<Response> => {
 	checkAppIsRunning();
-	return await asWaitingRoomAdmitter(request(app).post(waitingRoomPath(roomId, '/reject')), roomMemberToken).send(
-		participantIdentities ? { participantIdentities } : {}
+	return await asAdmitter(
+		request(app).post(waitingParticipantsPath(roomId, `/${participantIdentity}/admit`)),
+		roomMemberToken
 	);
 };
 
-export const leaveWaitingRoom = async (
+export const admitAllWaitingParticipants = async (roomId: string, roomMemberToken?: string): Promise<Response> => {
+	checkAppIsRunning();
+	return await asAdmitter(request(app).post(waitingParticipantsPath(roomId, '/admit')), roomMemberToken);
+};
+
+export const rejectWaitingParticipant = async (
 	roomId: string,
-	waitingRoomTicket: string,
-	reason?: string
+	participantIdentity: string,
+	roomMemberToken?: string
 ): Promise<Response> => {
+	checkAppIsRunning();
+	return await asAdmitter(
+		request(app).delete(waitingParticipantsPath(roomId, `/${participantIdentity}`)),
+		roomMemberToken
+	);
+};
+
+export const bulkRejectWaitingParticipants = async (
+	roomId: string,
+	participantIdentities: string[],
+	roomMemberToken?: string
+): Promise<Response> => {
+	checkAppIsRunning();
+	return await asAdmitter(
+		request(app)
+			.delete(waitingParticipantsPath(roomId))
+			.query({ participantIdentities: participantIdentities.join(',') }),
+		roomMemberToken
+	);
+};
+
+export const leaveWaiting = async (roomId: string, waitingTicket: string, reason?: string): Promise<Response> => {
 	checkAppIsRunning();
 	return await request(app)
-		.post(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}/waiting-room/leave`))
-		.query({ waitingRoomTicket, ...(reason && { reason }) })
+		.post(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}/waiting-participants/leave`))
+		.query({ waitingTicket, ...(reason && { reason }) })
 		.send();
 };
 
@@ -1473,6 +1502,6 @@ export const askToJoin = async (
 	roomId: string,
 	secret: string,
 	participantName = 'Waiter',
-	waitingRoomTicket?: string
+	waitingTicket?: string
 ): Promise<Response> =>
-	generateRoomMemberTokenRequest(roomId, { secret, joinMeeting: true, participantName, waitingRoomTicket });
+	generateRoomMemberTokenRequest(roomId, { secret, joinMeeting: true, participantName, waitingTicket });

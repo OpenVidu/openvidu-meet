@@ -154,8 +154,8 @@ const expectedCurrentModeratorPermissions = {
 	participantMute: false,
 	participantHandLower: true,
 	participantReactionSend: true,
-	waitingRoomBypass: true,
-	waitingRoomAdmin: true,
+	accessBypassLock: true,
+	waitingParticipantAdmin: true,
 	meetingEnd: true,
 	mediaPublishVideo: true,
 	mediaPublishAudio: true,
@@ -181,8 +181,8 @@ const expectedCurrentSpeakerPermissions = {
 	participantMute: false,
 	participantHandLower: false,
 	participantReactionSend: true,
-	waitingRoomBypass: false,
-	waitingRoomAdmin: false,
+	accessBypassLock: false,
+	waitingParticipantAdmin: false,
 	meetingEnd: false,
 	mediaPublishVideo: true,
 	mediaPublishAudio: true,
@@ -225,8 +225,7 @@ const expectMigratedRoomToCurrentVersion = (migratedRoom: Record<string, unknown
 				enabled: true
 			},
 			raiseHand: { enabled: true },
-			reactions: { enabled: true },
-			waitingRoom: { enabled: false }
+			reactions: { enabled: true }
 		},
 		roles: {
 			moderator: {
@@ -298,10 +297,20 @@ const buildLegacyRoomV7 = (roomId: string) => ({
 	},
 	roles: {
 		moderator: {
-			permissions: withoutPermissionsStartingWith(expectedCurrentModeratorPermissions, 'broadcast', 'waitingRoom')
+			permissions: withoutPermissionsStartingWith(
+				expectedCurrentModeratorPermissions,
+				'broadcast',
+				'accessBypassLock',
+				'waitingParticipantAdmin'
+			)
 		},
 		speaker: {
-			permissions: withoutPermissionsStartingWith(expectedCurrentSpeakerPermissions, 'broadcast', 'waitingRoom')
+			permissions: withoutPermissionsStartingWith(
+				expectedCurrentSpeakerPermissions,
+				'broadcast',
+				'accessBypassLock',
+				'waitingParticipantAdmin'
+			)
 		}
 	},
 	access: {
@@ -335,9 +344,19 @@ const buildLegacyRoomV9 = (roomId: string) => {
 		broadcastDestinationUrls: {},
 		roles: {
 			moderator: {
-				permissions: withoutPermissionsStartingWith(expectedCurrentModeratorPermissions, 'waitingRoom')
+				permissions: withoutPermissionsStartingWith(
+					expectedCurrentModeratorPermissions,
+					'accessBypassLock',
+					'waitingParticipantAdmin'
+				)
 			},
-			speaker: { permissions: withoutPermissionsStartingWith(expectedCurrentSpeakerPermissions, 'waitingRoom') }
+			speaker: {
+				permissions: withoutPermissionsStartingWith(
+					expectedCurrentSpeakerPermissions,
+					'accessBypassLock',
+					'waitingParticipantAdmin'
+				)
+			}
 		}
 	};
 };
@@ -524,20 +543,20 @@ describe('Room Schema Migrations', () => {
 			expect(migratedRoom.roles.moderator.permissions).toEqual({
 				...expectedCurrentModeratorPermissions,
 				participantHandLower: false,
-				waitingRoomBypass: false,
-				waitingRoomAdmin: false
+				accessBypassLock: false,
+				waitingParticipantAdmin: false
 			});
 			expect(migratedRoom.roles.speaker.permissions).toEqual(expectedCurrentSpeakerPermissions);
 		});
 
-		it('should transform room schema from v9 to v10 adding the waiting room, off, and granting its permissions to the moderator role', () => {
+		it('should transform room schema from v9 to v10 adding the lock, off, and granting its permissions to the moderator role', () => {
 			const migrationName = generateSchemaMigrationName(meetRoomCollectionName, 9, 10);
 			const transform = roomMigrations.get(migrationName);
 			expect(transform).toBeDefined();
 
 			const migratedRoom = transform!(buildLegacyRoomV9('room-v9') as unknown as MeetRoomDocument);
 
-			expect(migratedRoom.config.waitingRoom).toEqual({ enabled: false });
+			expect(migratedRoom.access.lock).toEqual({ enabled: false });
 			expect(migratedRoom.roles.moderator.permissions).toEqual(expectedCurrentModeratorPermissions);
 			expect(migratedRoom.roles.speaker.permissions).toEqual(expectedCurrentSpeakerPermissions);
 		});

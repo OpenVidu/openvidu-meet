@@ -85,7 +85,7 @@ conflicting pair, tokens normalized). The code rules behind it:
   migration **step of its own** that re-runs the permission normalization (`room` v4→v5 and
   `roomMember` v2→v3 for `participantMute`, v5→v6 / v3→v4 for `participantHandLower`, v6→v7 / v4→v5
   for `participantReactionSend`, v8→v9 / v5→v6 for the broadcast permissions, v9→v10 / v6→v7 for the
-  waiting room permissions): documents already at the previous version are up to date as far as the
+  locked room permissions): documents already at the previous version are up to date as far as the
   runner is concerned, so extending the previous step would never reach them.
 - Decoding a token normalizes old names through the same `MeetPermissionsSchema` the API uses.
 
@@ -142,13 +142,14 @@ what LiveKit's webhooks never told.
   socket) from `onOpen` and `onPong`, and recovers from a lost message on its own. Do not rely on
   `redisDisconnected` to detect an outage: ioredis retries forever and emits `end` only when it
   gives up, which it never does here.
-- **Waiting room** (`services/waiting-room/`): the line of waiting participants lives only in Redis and changes
-  only through the Lua scripts of `WaitingRoomStateService` (one file per change, each takes its time from Redis
-  `TIME` and sets a TTL on every wait that ends). `WaitingRoomService` is the one entry point and each use case
-  is one script followed by its notifications; it depends on a few low-level services only, because
-  `RoomService`, the meeting end, `MeetingDurationLimitService` and `LivekitWebhookService` call it and
-  `WaitingRoomAdmissionPolicy` holds the pure rules (the waiting gate, the permissions of a token without a
-  participant identity). A wait is identified by `sha256(ticket)`; the ticket itself is never stored or logged.
+- **Waiting participants** (`services/waiting-participants/`): the participants waiting to join a locked room live
+  only in Redis and change only through the Lua scripts of `WaitingParticipantStateService` (one file per change,
+  each takes its time from Redis `TIME` and sets a TTL on every wait that ends). `WaitingParticipantService` is the
+  one entry point and each use case is one script followed by its notifications; it depends on a few low-level
+  services only, because `RoomService`, the meeting end, `MeetingDurationLimitService` and `LivekitWebhookService`
+  call it and `WaitingParticipantAdmissionPolicy` holds the pure rules (the waiting gate, the permissions of a token
+  without a participant identity). A wait is identified by `sha256(ticket)`; the ticket itself is never stored or
+  logged.
 - **Scheduled tasks**: `TaskSchedulerService` + `*-scheduled-tasks.service.ts` (cron), plus
   `MeetingDurationLimitService`, which owns its sweep next to the per-meeting timers. Intervals,
   batch sizes and concurrency limits are all constants in `config/internal-config.ts`; reuse them

@@ -1,0 +1,9 @@
+description: The participant was rejected
+content:
+    application/json:
+        schema:
+            type: object
+            properties:
+                message:
+                    type: string
+                    example: Participant 'ana-a1b2c3' rejected from room 'room-123'

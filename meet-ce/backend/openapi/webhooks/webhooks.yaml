@@ -470,20 +470,20 @@ participantHandChanged:
             '200':
                 $ref: ./responses/success/webhook-success.yaml
 
-participantKnocked:
+waitingParticipantKnocked:
     post:
-        summary: Participant knocked
+        summary: Waiting participant knocked
         description: |
-            This webhook is triggered when a participant asks to join a room with the waiting room on and starts
+            This webhook is triggered when a participant asks to join a locked room and starts
             waiting to be admitted, once per wait. A participant who asks again starts a new wait and a new
-            webhook. The [`participantWaitingChanged`](#/webhooks/participantWaitingChangedWebhook) webhook reports each later
+            webhook. The [`waitingParticipantStatusChanged`](#/webhooks/waitingParticipantStatusChangedWebhook) webhook reports each later
             change of the wait.
 
             > It is sent when the participant asks, before their waiting screen connects: a participant who never
-            > connects it is removed from the line within about 20 seconds, which `participantWaitingChanged` reports as
+            > connects it stops waiting within about 20 seconds, which `waitingParticipantStatusChanged` reports as
             > `expired`.
             >
-            > The `participant` is a [`MeetWaitingRoomParticipant`](#/schemas/MeetWaitingRoomParticipant). Its `externalId` and
+            > The `participant` is a [`MeetWaitingParticipant`](#/schemas/MeetWaitingParticipant). Its `externalId` and
             > `metadata` are as sent by the participant's client and never a proof of identity: a backend that
             > admits on its own identifies a waiting participant by `type` and by the `participantIdentity` of a
             > member or user, which the server derives from their personal link or account.
@@ -491,7 +491,7 @@ participantKnocked:
             > Webhooks are not stored: one is lost if the Meet replica sending it stops, may be repeated by the
             > retries and is not ordered with the others. The `knockDate` of the participant and the
             > `creationDate` of the event order them.
-        operationId: participantKnockedWebhook
+        operationId: waitingParticipantKnockedWebhook
         parameters:
             - $ref: ./parameters/x-timestamp.yaml
             - $ref: ./parameters/x-signature.yaml
@@ -505,12 +505,12 @@ participantKnocked:
                             - $ref: ./schemas/webhook-base-event.yaml
                             - properties:
                                   event:
-                                      example: participantKnocked
+                                      example: waitingParticipantKnocked
                                   data:
-                                      $ref: ./schemas/meet-participant-knocked-event.yaml
+                                      $ref: ./schemas/meet-waiting-participant-knocked-event.yaml
                     example:
                         creationDate: 1620000000500
-                        event: participantKnocked
+                        event: waitingParticipantKnocked
                         data:
                             roomId: 'room-123'
                             roomName: 'room'
@@ -524,14 +524,14 @@ participantKnocked:
             '200':
                 $ref: ./responses/success/webhook-success.yaml
 
-participantWaitingChanged:
+waitingParticipantStatusChanged:
     post:
-        summary: Participant waiting changed
+        summary: Waiting participant status changed
         description: |
-            This webhook is triggered when a wait in the waiting room changes after the
-            [`participantKnocked`](#/webhooks/participantKnockedWebhook) webhook: the participant is admitted,
-            rejected, leaves, loses their place, returns to the line or the wait ends with the meeting or the
-            room. `status` says what happened and `origin` who caused it. A decision on everyone waiting sends one
+            This webhook is triggered when the wait of a participant to join a locked room changes after the
+            [`waitingParticipantKnocked`](#/webhooks/waitingParticipantKnockedWebhook) webhook: the participant is admitted,
+            rejected, leaves, loses their place, waits again or the wait ends with the meeting or the
+            room. `status` says what happened and `origin` who caused it. A decision on several participants sends one
             webhook per participant.
 
             > The time a participant waited is the `creationDate` of the event minus the `knockDate` of the
@@ -543,7 +543,7 @@ participantWaitingChanged:
             > Webhooks are not stored: one is lost if the Meet replica sending it stops, may be repeated by the
             > retries and is not ordered with the others. The `knockDate` of the participant and the
             > `creationDate` of the event order them.
-        operationId: participantWaitingChangedWebhook
+        operationId: waitingParticipantStatusChangedWebhook
         parameters:
             - $ref: ./parameters/x-timestamp.yaml
             - $ref: ./parameters/x-signature.yaml
@@ -557,12 +557,12 @@ participantWaitingChanged:
                             - $ref: ./schemas/webhook-base-event.yaml
                             - properties:
                                   event:
-                                      example: participantWaitingChanged
+                                      example: waitingParticipantStatusChanged
                                   data:
-                                      $ref: ./schemas/meet-participant-waiting-changed-event.yaml
+                                      $ref: ./schemas/meet-waiting-participant-status-changed-event.yaml
                     example:
                         creationDate: 1620000012000
-                        event: participantWaitingChanged
+                        event: waitingParticipantStatusChanged
                         data:
                             roomId: 'room-123'
                             roomName: 'room'

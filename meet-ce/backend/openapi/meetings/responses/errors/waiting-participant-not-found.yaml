@@ -1,0 +1,25 @@
+description: >
+    Room not found, or the participant does not wait: they left, were decided on by another request, expired, never
+    existed, or the room is not locked. Then `error` is `participant_not_waiting` and `participantIdentity` names them
+content:
+    application/json:
+        schema:
+            allOf:
+                - $ref: '../../../shared/schemas/error.yaml'
+                - type: object
+                  properties:
+                      participantIdentity:
+                          type: string
+                          description: The participant that does not wait, when `error` is `participant_not_waiting`.
+        examples:
+            participant_not_waiting:
+                summary: The participant does not wait
+                value:
+                    error: participant_not_waiting
+                    message: "Participant 'ana-a1b2c3' is not waiting in room 'room_123'"
+                    participantIdentity: 'ana-a1b2c3'
+            room_not_found:
+                summary: Room not found
+                value:
+                    error: 'Room Error'
+                    message: 'Room "room_123" does not exist'

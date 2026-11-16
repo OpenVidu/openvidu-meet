@@ -641,7 +641,7 @@ describe('LivekitWebhookService.handleParticipantJoined (a session that joined w
 	let liveParticipant: ParticipantInfo;
 	let deleteParticipant: jest.Mock<(roomId: string, identity: string) => Promise<void>>;
 	let webhookDispatcherService: { sendParticipantJoinedWebhook: jest.Mock; sendParticipantLeftWebhook: jest.Mock };
-	let waitingRoomService: { joined: jest.Mock<(roomId: string, identity: string) => Promise<void>> };
+	let waitingParticipantService: { joined: jest.Mock<(roomId: string, identity: string) => Promise<void>> };
 	let service: LivekitWebhookService;
 
 	const ISSUED_BEFORE_DEMOTION = {};
@@ -678,7 +678,7 @@ describe('LivekitWebhookService.handleParticipantJoined (a session that joined w
 		jest.spyOn(container.get(RoomRepository), 'findByRoomId').mockResolvedValue({ rolesUpdatedAt: 0 } as never);
 		deleteParticipant = jest.fn(async () => {});
 		webhookDispatcherService = { sendParticipantJoinedWebhook: jest.fn(), sendParticipantLeftWebhook: jest.fn() };
-		waitingRoomService = { joined: jest.fn(async () => {}) };
+		waitingParticipantService = { joined: jest.fn(async () => {}) };
 		const silent = () => {};
 
 		service = new LivekitWebhookService(
@@ -699,7 +699,7 @@ describe('LivekitWebhookService.handleParticipantJoined (a session that joined w
 				{ info: silent, warn: silent, debug: silent, verbose: silent, error: silent },
 				{ getBroadcasts: async () => [] },
 				{},
-				waitingRoomService
+				waitingParticipantService
 			] as unknown as ConstructorParameters<typeof LivekitWebhookService>)
 		);
 	});
@@ -758,24 +758,24 @@ describe('LivekitWebhookService.handleParticipantJoined (a session that joined w
 		expect(getParticipant).not.toHaveBeenCalled();
 	});
 
-	it('releases the waiting room place of the participant, also of a session it then removes', async () => {
+	it('releases the admission place of the participant, also of a session it then removes', async () => {
 		liveParticipant = session(ISSUED_BEFORE_DEMOTION);
 
 		await service.handleParticipantJoined(ROOM, liveParticipant);
 
-		expect(waitingRoomService.joined).toHaveBeenCalledWith(ROOM.name, IDENTITY);
-		expect(waitingRoomService.joined.mock.invocationCallOrder[0]).toBeLessThan(
+		expect(waitingParticipantService.joined).toHaveBeenCalledWith(ROOM.name, IDENTITY);
+		expect(waitingParticipantService.joined.mock.invocationCallOrder[0]).toBeLessThan(
 			deleteParticipant.mock.invocationCallOrder[0]
 		);
 	});
 
-	it('does not look for a waiting room place of a participant that is not a person', async () => {
+	it('does not look for an admission place of a participant that is not a person', async () => {
 		await service.handleParticipantJoined(ROOM, {
 			...session(),
 			kind: ParticipantInfo_Kind.AGENT
 		} as ParticipantInfo);
 
-		expect(waitingRoomService.joined).not.toHaveBeenCalled();
+		expect(waitingParticipantService.joined).not.toHaveBeenCalled();
 	});
 
 	it('leaves a session without Meet metadata alone', async () => {

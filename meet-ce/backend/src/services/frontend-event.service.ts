@@ -1,7 +1,8 @@
 import type {
 	MeetBroadcastInfo,
 	MeetBroadcastUpdatedPayload,
-	MeetWaitingRoomUpdatedPayload,
+	MeetWaitingParticipantListUpdatedPayload,
+	MeetWaitingParticipantStatusChangedSignalPayload,
 	MeetParticipantMediaMutedPayload,
 	MeetParticipantMuteOptions,
 	MeetParticipantPermissionsUpdatedPayload,
@@ -151,15 +152,29 @@ export class FrontendEventService {
 	 * Tells everyone in the meeting that the waiting list changed. Only the participants who may admit
 	 * fetch it, so the signal names nobody. A list changes also with no meeting running.
 	 */
-	async sendWaitingRoomUpdatedSignal(roomId: string): Promise<void> {
-		const signalPayload: MeetWaitingRoomUpdatedPayload = { roomId, timestamp: Date.now() };
+	async sendWaitingParticipantListUpdatedSignal(roomId: string): Promise<void> {
+		const signalPayload: MeetWaitingParticipantListUpdatedPayload = { roomId, timestamp: Date.now() };
 
 		await this.sendSignal(
 			roomId,
 			signalPayload,
-			{ topic: MeetSignalType.MEET_WAITING_ROOM_UPDATED },
+			{ topic: MeetSignalType.MEET_WAITING_PARTICIPANT_LIST_UPDATED },
 			{ onlyIfRoomExists: true }
 		);
+	}
+
+	/**
+	 * Tells the given participants, those in the meeting who may admit, how a wait changed. The payload names
+	 * the participant who waits, so the destinations are what keeps it from everyone else.
+	 */
+	async sendWaitingParticipantStatusChangedSignal(
+		participantIdentities: string[],
+		signalPayload: MeetWaitingParticipantStatusChangedSignalPayload
+	): Promise<void> {
+		await this.sendSignal(signalPayload.roomId, signalPayload, {
+			topic: MeetSignalType.MEET_WAITING_PARTICIPANT_STATUS_CHANGED,
+			destinationIdentities: participantIdentities
+		});
 	}
 
 	/**

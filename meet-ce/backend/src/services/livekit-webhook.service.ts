@@ -21,7 +21,7 @@ import { AiAssistantService } from './ai-assistant.service.js';
 import { BroadcastService } from './broadcast.service.js';
 import { FrontendEventService } from './frontend-event.service.js';
 import { LiveKitService } from './livekit.service.js';
-import { WaitingRoomService } from './waiting-room/waiting-room.service.js';
+import { WaitingParticipantService } from './waiting-participants/waiting-participant.service.js';
 import { LoggerService } from './logger.service.js';
 import { MeetingDurationLimitService } from './meeting-duration-limit.service.js';
 import { MeetingPresenceService } from './meeting-presence.service.js';
@@ -52,7 +52,7 @@ export class LivekitWebhookService {
 		@inject(LoggerService) protected logger: LoggerService,
 		@inject(BroadcastService) protected broadcastService: BroadcastService,
 		@inject(MeetingDurationLimitService) protected meetingDurationLimitService: MeetingDurationLimitService,
-		@inject(WaitingRoomService) protected waitingRoomService: WaitingRoomService
+		@inject(WaitingParticipantService) protected waitingParticipantService: WaitingParticipantService
 	) {
 		this.webhookReceiver = new WebhookReceiver(MEET_ENV.LIVEKIT_API_KEY, MEET_ENV.LIVEKIT_API_SECRET);
 	}
@@ -175,7 +175,7 @@ export class LivekitWebhookService {
 	async handleParticipantJoined(room: Room, participant: ParticipantInfo) {
 		if (!MeetParticipantHelper.isStandardParticipant(participant)) return;
 
-		await this.waitingRoomService.joined(room.name, participant.identity);
+		await this.waitingParticipantService.joined(room.name, participant.identity);
 
 		if (await this.removeSessionWithRevokedToken(room, participant)) return;
 
@@ -456,11 +456,11 @@ export class LivekitWebhookService {
 				tasks.push(
 					this.recordingService.deleteAllRoomRecordings(roomId),
 					this.roomMemberRepository.deleteAllByRoomId(roomId),
-					this.waitingRoomService.closeRoom(roomId)
+					this.waitingParticipantService.closeRoom(roomId)
 				);
 			} else if (endedRoom.status === MeetRoomStatus.CLOSED) {
 				this.logger.info(`Closed room '${roomId}' after its meeting finished`);
-				tasks.push(this.waitingRoomService.closeRoom(roomId));
+				tasks.push(this.waitingParticipantService.closeRoom(roomId));
 			}
 
 			const reason = await this.meetingDurationLimitService.getMeetingEndedReason(roomId, meetingId);

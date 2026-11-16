@@ -1,0 +1,9 @@
+name: participantIdentities
+in: query
+required: true
+description: >
+    Comma-separated list of the identities of the waiting participants to reject, at most 100 once repetitions are
+    removed.
+schema:
+    type: string
+example: 'ben_smith,guest-a1b2c3d4e5'

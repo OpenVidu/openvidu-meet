@@ -1,0 +1,30 @@
+description: Every participant named was rejected.
+content:
+    application/json:
+        schema:
+            type: object
+            properties:
+                message:
+                    type: string
+                deleted:
+                    type: array
+                    items:
+                        type: string
+                    description: Identities of the participants rejected.
+                failed:
+                    type: array
+                    description: Always present; empty when every participant named was rejected.
+                    items:
+                        type: object
+                        properties:
+                            participantIdentity:
+                                type: string
+                            error:
+                                type: string
+                                description: A message explaining why the participant was not rejected.
+        example:
+            message: 'All waiting participants rejected successfully'
+            deleted:
+                - 'ben_smith'
+                - 'guest-a1b2c3d4e5'
+            failed: []

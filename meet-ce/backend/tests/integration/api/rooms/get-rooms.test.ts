@@ -712,8 +712,7 @@ describe('Room API Tests', () => {
 				},
 				captions: { enabled: false },
 				raiseHand: { enabled: true },
-				reactions: { enabled: true },
-				waitingRoom: { enabled: false }
+				reactions: { enabled: true }
 			};
 
 			await createRoom({
@@ -762,8 +761,7 @@ describe('Room API Tests', () => {
 				},
 				captions: { enabled: true },
 				raiseHand: { enabled: true },
-				reactions: { enabled: true },
-				waitingRoom: { enabled: false }
+				reactions: { enabled: true }
 			};
 
 			const config2 = {
@@ -783,8 +781,7 @@ describe('Room API Tests', () => {
 				},
 				captions: { enabled: false },
 				raiseHand: { enabled: true },
-				reactions: { enabled: true },
-				waitingRoom: { enabled: false }
+				reactions: { enabled: true }
 			};
 
 			await Promise.all([

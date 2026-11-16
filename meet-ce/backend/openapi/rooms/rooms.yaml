@@ -246,12 +246,6 @@
             Updates the config of an OpenVidu Meet room with the specified room ID.
 
 
-            Turning `waitingRoom.enabled` on invalidates the room member tokens issued before: their holders get
-            a `401` and obtain a new one through their link, and then wait like any participant without
-            `waitingRoomBypass`. Sending `waitingRoom.message` as `null` removes the saved message. Like every config
-            change, the `waitingRoom` one is rejected with a `409` while the room has an active meeting.
-
-
             **Access token roles**: `admin`, `room_manager`.
         tags:
             - OpenVidu Meet - Rooms
@@ -388,7 +382,8 @@
             Updates the access configuration for the specified room.
 
             This allows you to enable or disable access for users and/or
-            for anonymous guests using a predefined role (moderator/speaker/recording).
+            for anonymous guests using a predefined role (moderator/speaker/recording),
+            and to lock or unlock the room (`lock`).
 
             Every room member token issued before the write stops being accepted (`401`),
             so its holder needs a new one.

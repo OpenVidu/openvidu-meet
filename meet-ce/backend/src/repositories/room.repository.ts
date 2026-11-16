@@ -1,6 +1,7 @@
 import type {
 	MeetExpiringRoom,
 	MeetRoom,
+	MeetRoomAccess,
 	MeetRoomConfig,
 	MeetRoomField,
 	ProjectedMeetRoom
@@ -84,37 +85,36 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	/**
 	 * Replaces the config of a room without an active meeting together with the real URL of each of its
 	 * broadcast destinations, which live outside the domain shape (see {@link findBroadcastDestinationUrls}),
-	 * atomically. Turning the waiting room on also sets `rolesUpdatedAt`, judged on the stored config by
-	 * the write itself, so the room member tokens issued before stop working.
+	 * atomically.
 	 *
 	 * @param roomId - The unique room identifier
 	 * @param config - The complete config to store
 	 * @param broadcastDestinationUrls - The real URL of each destination in `config.broadcast`
-	 * @returns The updated room with enriched URLs, or `null` if the room has an active meeting, does not
-	 * exist, or had its waiting room switched meanwhile
+	 * @returns The updated room with enriched URLs, or `null` if the room has an active meeting or does not exist
 	 */
-	async updateIdleRoomConfig(
+	updateIdleRoomConfig(
 		roomId: string,
 		config: MeetRoomConfig,
 		broadcastDestinationUrls: BroadcastDestinationUrls
 	): Promise<MeetRoom | null> {
-		const idleRoom = { roomId, status: { $ne: MeetRoomStatus.ACTIVE_MEETING } };
-		const update = { config, broadcastDestinationUrls };
-
-		if (!config.waitingRoom.enabled) {
-			return this.updatePartialOne(idleRoom, update, { throwIfNotFound: false });
-		}
-
-		const turnedOn = await this.updatePartialOne(
-			{ ...idleRoom, 'config.waitingRoom.enabled': { $ne: true } },
-			{ ...update, rolesUpdatedAt: Date.now() },
+		return this.updatePartialOne(
+			{ roomId, status: { $ne: MeetRoomStatus.ACTIVE_MEETING } },
+			{ config, broadcastDestinationUrls },
 			{ throwIfNotFound: false }
 		);
-		return (
-			turnedOn ??
-			this.updatePartialOne({ ...idleRoom, 'config.waitingRoom.enabled': true }, update, {
-				throwIfNotFound: false
-			})
+	}
+
+	/**
+	 * Replaces the access settings of a room without an active meeting and sets `rolesUpdatedAt`, so the
+	 * room member tokens issued before stop working.
+	 *
+	 * @returns The updated room with enriched URLs, or `null` if the room has an active meeting or does not exist
+	 */
+	updateIdleRoomAccess(roomId: string, access: MeetRoomAccess): Promise<MeetRoom | null> {
+		return this.updatePartialOne(
+			{ roomId, status: { $ne: MeetRoomStatus.ACTIVE_MEETING } },
+			{ access, rolesUpdatedAt: Date.now() },
+			{ throwIfNotFound: false }
 		);
 	}
 

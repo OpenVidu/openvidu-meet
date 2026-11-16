@@ -53,8 +53,7 @@ describe('Room API Tests', () => {
 					},
 					captions: { enabled: true },
 					raiseHand: { enabled: true },
-					reactions: { enabled: true },
-					waitingRoom: { enabled: false }
+					reactions: { enabled: true }
 				}
 			});
 
@@ -75,8 +74,7 @@ describe('Room API Tests', () => {
 				},
 				captions: { enabled: true },
 				raiseHand: { enabled: true },
-				reactions: { enabled: true },
-				waitingRoom: { enabled: false }
+				reactions: { enabled: true }
 			};
 			const updateResponse = await updateRoomConfig(createdRoom.roomId, updatedConfig);
 
@@ -185,8 +183,7 @@ describe('Room API Tests', () => {
 					},
 					captions: { enabled: true },
 					raiseHand: { enabled: true },
-					reactions: { enabled: true },
-					waitingRoom: { enabled: false }
+					reactions: { enabled: true }
 				}
 			});
 
@@ -224,7 +221,6 @@ describe('Room API Tests', () => {
 				captions: { enabled: true },
 				raiseHand: { enabled: true },
 				reactions: { enabled: true },
-				waitingRoom: { enabled: false },
 				initialAudioActive: true, // Creation default
 				initialVideoActive: true // Creation default
 			};
@@ -444,82 +440,14 @@ describe('Room API Tests', () => {
 				captions: { enabled: true },
 				raiseHand: { enabled: true },
 				reactions: { enabled: true },
-				waitingRoom: { enabled: false },
 				initialAudioActive: true, // Creation default
 				initialVideoActive: true // Creation default
 			};
 			expect(getResponse.body.config).toEqual(expectedConfig);
 		});
-
-		it('should turn the waiting room on and keep its message when the update leaves it out', async () => {
-			const createdRoom = await createRoom({
-				roomName: 'waiting-room-update',
-				config: { waitingRoom: { enabled: false, message: 'Please wait' } }
-			});
-
-			const turnedOn = await updateRoomConfig(createdRoom.roomId, { waitingRoom: { enabled: true } });
-			expect(turnedOn.status).toBe(200);
-			expect(turnedOn.body.waitingRoom).toEqual({ enabled: true, message: 'Please wait' });
-
-			const getResponse = await getRoom(createdRoom.roomId, undefined, 'config');
-			expect(getResponse.body.config.waitingRoom).toEqual({ enabled: true, message: 'Please wait' });
-		});
-
-		it('should replace the waiting room message and remove it when the update sends null', async () => {
-			const createdRoom = await createRoom({
-				roomName: 'waiting-room-message',
-				config: { waitingRoom: { enabled: true, message: 'Please wait' } }
-			});
-
-			const replaced = await updateRoomConfig(createdRoom.roomId, {
-				waitingRoom: { enabled: true, message: 'Soon' }
-			});
-			expect(replaced.status).toBe(200);
-			expect(replaced.body.waitingRoom).toEqual({ enabled: true, message: 'Soon' });
-
-			const removed = await updateRoomConfig(createdRoom.roomId, {
-				waitingRoom: { enabled: true, message: null }
-			});
-			expect(removed.status).toBe(200);
-			expect(removed.body.waitingRoom).toEqual({ enabled: true });
-
-			const getResponse = await getRoom(createdRoom.roomId, undefined, 'config');
-			expect(getResponse.body.config.waitingRoom).toEqual({ enabled: true });
-			expect(getResponse.body.config.waitingRoom).not.toHaveProperty('message');
-		});
-
-		it('should reject turning the waiting room on or off during an active meeting', async () => {
-			const roomData = await setupSingleRoom(true);
-
-			const turnOn = await updateRoomConfig(roomData.room.roomId, { waitingRoom: { enabled: true } });
-			expect(turnOn.status).toBe(409);
-			expect(turnOn.body.message).toContain(`Room '${roomData.room.roomId}' has an active meeting`);
-
-			const getResponse = await getRoom(roomData.room.roomId, undefined, 'config');
-			expect(getResponse.body.config.waitingRoom).toEqual({ enabled: false });
-		});
 	});
 
 	describe('Update Room Config Validation failures', () => {
-		it('should reject a waiting room without its switch or with a message over 500 characters', async () => {
-			const createdRoom = await createRoom({ roomName: 'waiting-room-validation' });
-
-			let response = await updateRoomConfig(createdRoom.roomId, {
-				waitingRoom: { message: 'Please wait' }
-			} as unknown as MeetRoomConfig);
-			expectValidationError(response, 'config.waitingRoom.enabled', 'Required');
-
-			response = await updateRoomConfig(createdRoom.roomId, {
-				waitingRoom: { enabled: true, message: 'a'.repeat(501) }
-			});
-			expectValidationError(response, 'config.waitingRoom.message', 'Must not exceed 500 characters');
-
-			response = await updateRoomConfig(createdRoom.roomId, {
-				waitingRoom: { enabled: true, message: 'a'.repeat(500) }
-			});
-			expect(response.status).toBe(200);
-		});
-
 		it('should fail when config has incorrect types', async () => {
 			const createdRoom = await createRoom({
 				roomName: 'type-test'

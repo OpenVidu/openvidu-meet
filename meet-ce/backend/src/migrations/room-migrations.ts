@@ -96,7 +96,7 @@ const roomMigrationV2ToV3Transform: SchemaTransform<MeetRoomDocument> = (room) =
 			enabled: false,
 			url: `/room/${room.roomId}`
 		}
-	};
+	} as MeetRoomDocument['access'];
 	room.rolesUpdatedAt = Date.now();
 
 	delete v2Room.moderatorUrl;
@@ -176,14 +176,14 @@ const roomMigrationV8ToV9Transform: SchemaTransform<MeetRoomDocument> = (room) =
 	return room;
 };
 
-// v10 adds the waiting room: its room config switch, off, and the `waitingRoomBypass` and `waitingRoomAdmin`
-// permissions, completed by the same normalization as the previous steps and then granted to the
-// moderator role, as a room created from this version on has them.
+// v10 adds the room lock: unlocked, and the `accessBypassLock` and `waitingParticipantAdmin` permissions,
+// completed by the same normalization as the previous steps and then granted to the moderator role, as a
+// room created from this version on has them.
 const roomMigrationV9ToV10Transform: SchemaTransform<MeetRoomDocument> = (room) => {
-	room.config.waitingRoom = { enabled: false };
+	room.access.lock = { enabled: false };
 	normalizeRolePermissionsTransform(room);
-	room.roles.moderator.permissions.waitingRoomBypass = true;
-	room.roles.moderator.permissions.waitingRoomAdmin = true;
+	room.roles.moderator.permissions.accessBypassLock = true;
+	room.roles.moderator.permissions.waitingParticipantAdmin = true;
 	return room;
 };
 

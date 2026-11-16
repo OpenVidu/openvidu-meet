@@ -1,0 +1,5 @@
+description: The participant, who waits
+content:
+    application/json:
+        schema:
+            $ref: '../../schemas/meet-waiting-participant.yaml'
