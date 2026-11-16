@@ -1,9 +1,11 @@
 ## MODIFIED Requirements
 
 ### Requirement: Command catalogue
+
 Meet SHALL accept exactly the commands `meetingLeave`, `meetingEnd`, `participantKick`, `participantMute`, `participantMuteAll`, `participantUpdateRole`, `participantHandRaise`, `participantHandLower`, `participantHandLowerAll`, `participantReactionSend`, `mediaToggleAudio`, `mediaToggleVideo`, `mediaToggleScreenShare`, `recordingStart`, `recordingStop`, `broadcastStart`, `broadcastStop`, `broadcastStopAll`, `waitingParticipantAdmit`, `waitingParticipantAdmitAll`, `waitingParticipantReject` and `waitingParticipantRejectAll`, and the deprecated `endMeeting`, `leaveRoom` and `kickParticipant`.
 
 #### Scenario: Owner of each command
+
 - **WHEN** a reviewer looks up what a command does
 - **THEN** `meetingLeave` is specified in `meeting-join`
 - **AND** `meetingEnd` in `meetings`
