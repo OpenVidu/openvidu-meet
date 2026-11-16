@@ -16,6 +16,8 @@
 - [x] 2b.1 Rename the permissions, commands and operationIds of raise hand and reactions, and `recordingLinkGet`, across typings, backend, OpenAPI, frontend, web component, testapp, tests, translation keys and `CHANGELOG.md` (the 3.10.0 entries of both features).
 - [x] 2b.2 Migrations room v10 to v11 and room member v7 to v8: every permission normalization of a stored document first carries `participantHandLower` and `participantReactionSend` over to their new names (`migrations/unreleased-permission-renames.ts`); unit tests for both steps.
 
+- [x] 2b.3 Rename every `operationId` to the charter (54), in the OpenAPI, the TSDoc and the 3.10.0 entries of `CHANGELOG.md` with their links; drop the frozen list and the bulk exception from the naming lint; register `user`, `auth`, `config`, `analytics` and `ai`, and remove the unused `hand` and `reaction`; update the charter in `meet-ce/typings/CLAUDE.md` and `meet-ce/backend/openapi/README.md`.
+
 ## 3. Room config
 
 - [x] 3.1 B2: `BroadcastConfigSchema` requires `enabled`, `MeetBroadcastConfigOptions` types it as required and `MeetBroadcastConfig` in the OpenAPI lists it in `required`; the tests that left the switch out now expect `422`.
@@ -23,8 +25,8 @@
 ## 4. Release surfaces
 
 - [x] 4.1 `CHANGELOG.md`: none; every change touches an unreleased feature.
-- [x] 4.2 openvidu.io `next`: regenerate the REST and embedded references, from this change on top of `stop-broadcast-by-id`, and rename the identifiers on the raise hand, reactions and permissions pages.
+- [ ] 4.2 openvidu.io `next`: regenerate the REST and embedded references, from this change on top of `stop-broadcast-by-id`, rename the identifiers on the raise hand, reactions and permissions pages, and every `#/operations/<id>` link.
 
 ## Workflow follow-up
 
-- After archive, update the Surfaces lines of the `raise-hand`, `reactions` and `permissions` Purposes with the new names.
+- After archive, update the Surfaces lines of every Purpose that names a renamed `operationId`, permission or command.

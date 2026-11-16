@@ -1,36 +1,193 @@
 ## MODIFIED Requirements
 
 ### Requirement: Partial config at creation
-The server SHALL fill every top-level field missing from the `config` of a `createRoom` request with its default, SHALL default `recording.layout` to `grid` and `recording.encoding` to `H264_720P_30` when the `recording` object sent omits them, and SHALL default `broadcast.destinations` to none, `broadcast.layout` to `grid` and `broadcast.encoding` to `H264_720P_30` when the `broadcast` object sent omits them.
+The server SHALL fill every top-level field missing from the `config` of a `roomCreate` request with its default, SHALL default `recording.layout` to `grid` and `recording.encoding` to `H264_720P_30` when the `recording` object sent omits them, and SHALL default `broadcast.destinations` to none, `broadcast.layout` to `grid` and `broadcast.encoding` to `H264_720P_30` when the `broadcast` object sent omits them.
 
 #### Scenario: One feature turned off at creation
-- **WHEN** `createRoom` is called with `config` `{ "chat": { "enabled": false } }`
+- **WHEN** `roomCreate` is called with `config` `{ "chat": { "enabled": false } }`
 - **THEN** the room has chat disabled and every other field at its default
 
 #### Scenario: Recording object without encoding
-- **WHEN** `createRoom` is called with `config.recording` `{ "enabled": true, "layout": "speaker" }`
+- **WHEN** `roomCreate` is called with `config.recording` `{ "enabled": true, "layout": "speaker" }`
 - **THEN** the room's recording layout is `speaker` and its encoding `H264_720P_30`
 
 #### Scenario: Broadcast object with destinations only
-- **WHEN** `createRoom` is called with `config.broadcast` holding `enabled` `true` and one destination
+- **WHEN** `roomCreate` is called with `config.broadcast` holding `enabled` `true` and one destination
 - **THEN** the room's broadcast layout is `grid` and its encoding `H264_720P_30`
 
 #### Scenario: Broadcast object without its switch
-- **WHEN** `createRoom` is called with `config.broadcast` `{ "layout": "speaker" }`
+- **WHEN** `roomCreate` is called with `config.broadcast` `{ "layout": "speaker" }`
 - **THEN** the server answers `422` naming `broadcast.enabled` and no room is created
 
 ### Requirement: Feature objects carry their switch
 Each feature object of a config (`chat`, `recording`, `broadcast`, `virtualBackground`, `e2ee`, `captions`, `raiseHand`, `reactions`) SHALL carry a boolean `enabled` whenever it is sent, at creation and on update; otherwise the server SHALL answer `422` naming the field and store nothing.
 
 #### Scenario: Missing switch
-- **WHEN** `updateRoomConfig` is called with `config` `{ "recording": { "layout": "speaker" } }`
+- **WHEN** `roomUpdateConfig` is called with `config` `{ "recording": { "layout": "speaker" } }`
 - **THEN** the server answers `422` naming `recording.enabled`
 
 #### Scenario: Switch of the wrong type
-- **WHEN** `createRoom` is called with `config.e2ee.enabled` set to the string `"true"`
+- **WHEN** `roomCreate` is called with `config.e2ee.enabled` set to the string `"true"`
 - **THEN** the server answers `422` and no room is created
 
 #### Scenario: Lock message sent in the config
 - **GIVEN** a locked room without a lock message
-- **WHEN** `updateRoomConfig` is called with `config` `{ "locked": { "message": "Please wait" } }`
-- **THEN** the room's lock is unchanged, because the lock is an access setting set with `updateRoomAccess` (see `room-access`)
+- **WHEN** `roomUpdateConfig` is called with `config` `{ "locked": { "message": "Please wait" } }`
+- **THEN** the room's lock is unchanged, because the lock is an access setting set with `roomUpdateAccess` (see `room-access`)
+
+### Requirement: Default config of a new room
+When `roomCreate` carries no `config`, the server SHALL give the room:
+- `chat`, `virtualBackground`, `captions`, `raiseHand` and `reactions` enabled;
+- `e2ee` disabled;
+- `recording` enabled with layout `grid`, encoding `H264_720P_30` and no `autoStart`;
+- `broadcast` disabled with no destinations, layout `grid` and encoding `H264_720P_30`;
+- `initialAudioActive` and `initialVideoActive` set to `true`;
+- neither `maxParticipants` nor `maxDurationMinutes`, which means no limit.
+
+#### Scenario: Room created without config
+- **WHEN** `roomCreate` is called without `config`
+- **THEN** `roomGetConfig` for the new room returns every feature enabled except `e2ee` and `broadcast`
+- **AND** `recording` has layout `grid`, encoding `H264_720P_30` and no `autoStart`
+- **AND** `broadcast` has no destinations, layout `grid` and encoding `H264_720P_30`
+- **AND** `initialAudioActive` and `initialVideoActive` are `true` and no meeting limit is set
+
+### Requirement: Meeting limit bounds
+The server SHALL accept as `maxParticipants` an integer from 1 to 30 or `null`, and as `maxDurationMinutes` an integer from 1 to 1440 or `null`, where `null` or an absent value means no limit, and SHALL answer `422` naming the field to any other value, storing nothing.
+
+#### Scenario: Bounds accepted
+- **WHEN** `roomUpdateConfig` is called with `maxParticipants` 30 and `maxDurationMinutes` 1440, or with `maxDurationMinutes` 1
+- **THEN** the server answers `200` and stores those values
+
+#### Scenario: Values out of range
+- **WHEN** `roomUpdateConfig` is called with `maxParticipants` 0 or 31, or with `maxDurationMinutes` 0, 1.5 or 1441
+- **THEN** the server answers `422` naming the field and the stored config is unchanged
+
+### Requirement: Initial media defaults
+The server SHALL accept only booleans as `initialAudioActive` and `initialVideoActive`, answering `422` to any other value, and SHALL store `true` for each one a `roomCreate` request leaves out.
+
+#### Scenario: Initial microphone off
+- **WHEN** `roomUpdateConfig` is called with `initialAudioActive` `false`
+- **THEN** the stored `initialAudioActive` is `false` and `initialVideoActive` keeps its value
+
+#### Scenario: Non-boolean value
+- **WHEN** `roomCreate` is called with `config.initialVideoActive` set to `"no"`
+- **THEN** the server answers `422`
+
+### Requirement: Recording encoding
+The server SHALL accept as `recording.encoding` either one of the encoding presets of the contract or an encoding object holding both a `video` and an `audio` part with every field the contract requires, each with a valid value, and SHALL answer `422` to anything else.
+
+#### Scenario: Preset
+- **WHEN** `roomCreate` is called with `config.recording.encoding` `H264_1080P_30`
+- **THEN** the room's recording encoding is `H264_1080P_30`
+
+#### Scenario: Video settings without audio
+- **WHEN** `roomUpdateConfig` is called with a `recording.encoding` object that has a complete `video` part and no `audio` part
+- **THEN** the server answers `422`
+
+#### Scenario: Unknown preset
+- **WHEN** `roomCreate` is called with `config.recording.encoding` `H264_4K_120`
+- **THEN** the server answers `422`
+
+### Requirement: Rules across fields judge the resulting config
+The server SHALL apply the rules that tie several config fields together (the recording auto-start reachable with `maxParticipants`, end-to-end encryption turning recording, live broadcast and live captions off, live broadcast needing a destination; specified in `recordings`, `live-broadcast` and `live-captions`) to the config that results from the request, the stored config merged with the update, so that they hold even when the fields involved arrive in different requests.
+
+#### Scenario: Unreachable auto-start split over two requests
+- **GIVEN** a room whose stored `maxParticipants` is 1
+- **WHEN** `roomUpdateConfig` sets only `recording.autoStart` to `when_second_participant_joins`
+- **THEN** the server answers `422` with error `Room Error` and the stored config is unchanged
+
+#### Scenario: Limit lifted in the same request
+- **GIVEN** a room whose stored `maxParticipants` is 1
+- **WHEN** `roomUpdateConfig` sets `maxParticipants` to `null` and `recording.autoStart` to `when_second_participant_joins`
+- **THEN** the server answers `200` with both values stored
+
+#### Scenario: Recording re-enabled on an encrypted room
+- **GIVEN** a room with `e2ee` enabled
+- **WHEN** `roomUpdateConfig` sets only `recording.enabled` to `true`
+- **THEN** the server answers `200` and `recording.enabled` stays `false`
+
+#### Scenario: Captions re-enabled on an encrypted room
+- **GIVEN** a room with `e2ee` enabled
+- **WHEN** `roomUpdateConfig` sets only `captions.enabled` to `true`
+- **THEN** the server answers `200` and `captions.enabled` stays `false`
+
+#### Scenario: Live broadcast enabled on a room without destinations
+- **GIVEN** a room with no saved broadcast destination
+- **WHEN** `roomUpdateConfig` sets only `broadcast.enabled` to `true`
+- **THEN** the server answers `422` with error `Broadcast Error` and the stored config is unchanged
+
+### Requirement: Reading the config
+The server SHALL return a room's config, as a plain config object, on `roomGetConfig` to an API key, to a room member token issued for that room and to a logged-in user allowed into the room (see `room-access`), SHALL answer `403` to any other caller and `404` for a room that does not exist. Room responses SHALL carry the same object only when the extra field `config` is requested (see `rooms`).
+
+#### Scenario: Participant reads the config of their room
+- **GIVEN** a room member token issued for room A
+- **WHEN** it is used to call `roomGetConfig` for room A
+- **THEN** the server answers `200` with the room's config
+
+#### Scenario: Token of another room
+- **GIVEN** a room member token issued for room A
+- **WHEN** it is used to call `roomGetConfig` for room B
+- **THEN** the server answers `403`
+
+#### Scenario: Unknown room
+- **WHEN** `roomGetConfig` is called for a room that does not exist
+- **THEN** the server answers `404`
+
+### Requirement: Updating the config
+The server SHALL apply `roomUpdateConfig` only for the callers allowed to manage the room (see `rooms`), SHALL require a `config` object in the body (`422` otherwise), SHALL answer `404` for a room that does not exist, and SHALL answer `200` with the complete config that results from the update.
+
+#### Scenario: Owner updates the config
+- **GIVEN** a `room_manager` user who owns an idle room
+- **WHEN** they call `roomUpdateConfig` with `config` `{ "chat": { "enabled": false } }`
+- **THEN** the server answers `200` with the whole config, chat disabled and every other field as before
+
+#### Scenario: Body without config
+- **WHEN** `roomUpdateConfig` is called with an empty body
+- **THEN** the server answers `422`
+
+#### Scenario: Not the owner
+- **GIVEN** a `room_manager` user who does not own the room
+- **WHEN** they call `roomUpdateConfig`
+- **THEN** the server answers `403`
+
+### Requirement: Updates merge with the stored config
+The server SHALL merge an update into the stored config: every field the update leaves out, at any depth, SHALL keep its stored value, and `null` SHALL lift `maxParticipants`, `maxDurationMinutes` or `recording.autoStart`. A `broadcast.destinations` list that is sent SHALL replace the stored list as a whole instead of merging with it (see `live-broadcast`).
+
+#### Scenario: Recording switched off keeps its settings
+- **GIVEN** a room whose recording uses layout `speaker`
+- **WHEN** `roomUpdateConfig` is called with `config` `{ "recording": { "enabled": false } }`
+- **THEN** the stored recording is disabled and keeps layout `speaker` and its encoding
+
+#### Scenario: Limit lifted with null
+- **GIVEN** a room with `maxDurationMinutes` 60 and `maxParticipants` 10
+- **WHEN** `roomUpdateConfig` is called with `maxDurationMinutes` `null`
+- **THEN** the stored `maxDurationMinutes` is `null` and `maxParticipants` stays 10
+
+#### Scenario: Auto-start turned off
+- **GIVEN** a room with `recording.autoStart` `when_first_participant_joins`
+- **WHEN** `roomUpdateConfig` is called with `recording` `{ "enabled": true, "autoStart": null }`
+- **THEN** the stored `recording.autoStart` is `null`
+
+#### Scenario: Destination list sent shorter
+- **GIVEN** a room with three broadcast destinations
+- **WHEN** `roomUpdateConfig` sends `broadcast.destinations` holding only the first one, with its `id`
+- **THEN** the stored list holds that destination alone
+
+#### Scenario: Lock message removal sent in the config
+- **GIVEN** a locked room with a lock message
+- **WHEN** `roomUpdateConfig` is called with `config` `{ "locked": { "enabled": true, "message": null } }`
+- **THEN** the room's lock keeps its message, because only `roomUpdateAccess` changes it (see `room-access`)
+
+### Requirement: Config fixed during a meeting
+The server SHALL answer `roomUpdateConfig` with `409` and error `Room Error`, changing nothing, while the room has an active meeting, so a meeting always runs with the config it started with and a change applies from the next meeting.
+
+#### Scenario: Update during a meeting
+- **GIVEN** a room with an active meeting
+- **WHEN** its owner calls `roomUpdateConfig`
+- **THEN** the server answers `409` and the stored config is unchanged
+
+#### Scenario: Update after the meeting
+- **GIVEN** the meeting of that room has ended
+- **WHEN** its owner calls `roomUpdateConfig` with chat disabled
+- **THEN** the server answers `200` and the next meeting in the room starts without chat
+
