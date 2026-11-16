@@ -21,6 +21,7 @@ const SUITES = {
 		'meet-ce/typings/**',
 		'pnpm-lock.yaml',
 		'meet.sh',
+		'scripts/verify.mjs',
 		'!**/*.md',
 		'!meet-ce/backend/nodemon*.json'
 	],
@@ -30,6 +31,7 @@ const SUITES = {
 		'!meet-ce/frontend/e2e/**',
 		'meet-ce/typings/**',
 		'meet.sh',
+		'scripts/verify.mjs',
 		'!**/*.md'
 	],
 	'wc-unit': [
@@ -40,6 +42,7 @@ const SUITES = {
 		'!meet-ce/frontend/projects/**/*.spec.ts',
 		'meet-ce/typings/**',
 		'meet.sh',
+		'scripts/verify.mjs',
 		'!**/*.md'
 	],
 	'backend-integration': [

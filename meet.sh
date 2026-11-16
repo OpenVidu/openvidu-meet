@@ -94,6 +94,21 @@ show_help() {
   echo -e "  ${BLUE}install${NC}"
   echo "    Install all dependencies (pnpm install)"
   echo
+  echo -e "  ${BLUE}doctor${NC}"
+  echo "    Check the local environment (dependencies, built bundles, Docker deployment, LAN IP), one line per check"
+  echo
+  echo -e "  ${BLUE}verify${NC}"
+  echo "    Tell whether the current change is ready: formatting, OpenSpec, OpenAPI and the unit suites it affects"
+  echo -e "    ${YELLOW}Options:${NC} --base <ref>   Diff against <ref> (default: merge base with origin/main)"
+  echo -e "             ${NC} --all          Every check, regardless of the diff"
+  echo -e "             ${NC} --only <ids>   Only these checks (format, openspec, openapi, static, backend-unit, frontend-unit, wc-unit)"
+  echo -e "             ${NC} --list         Print what would run and why"
+  echo -e "             ${NC} --fix          Format the files the format check would fail"
+  echo
+  echo -e "  ${BLUE}stack up|run|env|list|down <name>${NC}"
+  echo "    Isolated backend on the shared Docker deployment: its own port, Mongo database, Redis DB and S3 subbucket"
+  echo -e "    ${YELLOW}Usage:${NC} stack up <name> [--primary] | stack run <name> -- <command> | stack env <name> | stack list | stack down <name>"
+  echo
   echo -e "  ${BLUE}build${NC}"
   echo "    Build all project components (typings, frontend, backend, webcomponent)"
   echo
@@ -178,6 +193,10 @@ show_help() {
 
 # Install dependencies
 install_dependencies() {
+  if [ "$DEPENDENCIES_INSTALLED" = true ]; then
+    return 0
+  fi
+
   if [ "$SKIP_INSTALL" = true ]; then
     echo -e "${YELLOW}Skipping dependency installation (--skip-install flag)${NC}"
     return 0
@@ -185,7 +204,37 @@ install_dependencies() {
 
   check_pnpm
   echo -e "${BLUE}Installing dependencies...${NC}"
-  pnpm install --frozen-lockfile
+
+  if [ -f meet-pro/backend/package.json ] || [ -f meet-pro/frontend/package.json ]; then
+    install_with_meet_pro
+  else
+    pnpm install --frozen-lockfile
+  fi
+
+  DEPENDENCIES_INSTALLED=true
+}
+
+# The committed lockfile covers meet-ce only, so an install with meet-pro cloned can never be frozen.
+# It resolves meet-pro on top of the lockfile and puts the lockfile back, unless a meet-ce manifest
+# changed and the lockfile has to follow it.
+install_with_meet_pro() {
+  local committed_lockfile
+  local ce_dependencies_changed=false
+
+  git diff --quiet HEAD -- pnpm-lock.yaml pnpm-workspace.yaml package.json testapp/package.json \
+    ':(glob)meet-ce/**/package.json' 2>/dev/null || ce_dependencies_changed=true
+
+  committed_lockfile=$(mktemp)
+  cp pnpm-lock.yaml "$committed_lockfile"
+  pnpm install --no-frozen-lockfile
+
+  if [ "$ce_dependencies_changed" = false ]; then
+    cp "$committed_lockfile" pnpm-lock.yaml
+  elif ! cmp -s "$committed_lockfile" pnpm-lock.yaml; then
+    echo -e "${YELLOW}pnpm-lock.yaml now holds meet-pro entries: regenerate it in a checkout without meet-pro (a git worktree has none) before committing it.${NC}"
+  fi
+
+  rm -f "$committed_lockfile"
 }
 
 # Stamps the real git commit + build date into the backend's info.json (surfaced by GET
@@ -219,12 +268,22 @@ EOF
 
 # Build typings
 build_typings() {
+  if [ "$TYPINGS_BUILT" = true ]; then
+    return 0
+  fi
+
+  if [ "$SKIP_TYPINGS" = true ]; then
+    echo -e "${YELLOW}Skipping typings build (--skip-typings flag)${NC}"
+    return 0
+  fi
+
   echo -e "${BLUE}=====================================${NC}"
   echo -e "${BLUE}   Building Typings${NC}"
   echo -e "${BLUE}=====================================${NC}"
   echo
   install_dependencies
   pnpm run build:typings
+  TYPINGS_BUILT=true
   echo -e "${GREEN}✓ Typings built successfully!${NC}"
 }
 
@@ -510,7 +569,7 @@ start() {
   if [ "$SKIP_BUILD" != true ]; then
     echo -e "${BLUE}Building backend...${NC}"
     install_dependencies
-    pnpm run build:typings
+    build_typings
     stamp_backend_info
     pnpm run build:backend
   fi
@@ -825,6 +884,15 @@ main() {
     install)
       SKIP_INSTALL=false  # Force install even if flag was set
       install_dependencies
+      ;;
+    doctor)
+      node "$(dirname "$0")/scripts/dev/doctor.mjs" "$@"
+      ;;
+    stack)
+      node "$(dirname "$0")/scripts/dev/stack.mjs" "$@"
+      ;;
+    verify)
+      node "$(dirname "$0")/scripts/verify.mjs" "$@"
       ;;
     build)
       build_project
