@@ -1,5 +1,5 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, jest } from '@jest/globals';
-import type { MeetRoom } from '@openvidu-meet/typings';
+import type { MeetRoomAccess } from '@openvidu-meet/typings';
 import type { Express } from 'express';
 import request from 'supertest';
 import { container } from '../../../../src/config/dependency-injector.config.js';
@@ -16,7 +16,6 @@ import {
 	updateRoomAccessConfig
 } from '../../../helpers/request-helpers.js';
 
-const NOT_FOUND = { error: 'Not Found', message: 'The requested resource no longer exists' };
 const roomNotFound = (roomId: string) => ({ error: 'Room Error', message: `Room '${roomId}' does not exist` });
 
 describe('Room API Tests', () => {
@@ -60,11 +59,11 @@ describe('Room API Tests', () => {
 
 		it('answers 404, not 500, when it vanishes between the existence check and an access update', async () => {
 			const { roomId, access } = await createRoom({ roomName: 'vanishing-room' });
-			const updatePartial = roomRepository.updatePartial.bind(roomRepository);
-			jest.spyOn(roomRepository, 'updatePartial').mockImplementationOnce(
-				async (id: string, fields: Partial<MeetRoom>) => {
+			const updateIdleRoomAccess = roomRepository.updateIdleRoomAccess.bind(roomRepository);
+			jest.spyOn(roomRepository, 'updateIdleRoomAccess').mockImplementationOnce(
+				async (id: string, roomAccess: MeetRoomAccess) => {
 					await roomRepository.deleteIdleRoom(id);
-					return updatePartial(id, fields);
+					return updateIdleRoomAccess(id, roomAccess);
 				}
 			);
 
@@ -74,7 +73,7 @@ describe('Room API Tests', () => {
 			});
 
 			expect(response.status).toBe(404);
-			expect(response.body).toEqual(NOT_FOUND);
+			expect(response.body).toEqual(roomNotFound(roomId));
 		});
 
 		it('is reported as not found, not as an internal error, by a bulk deletion', async () => {
