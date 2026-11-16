@@ -2,9 +2,9 @@
 
 ## Purpose
 
-Room access decides who may enter a room and with which room role: the anonymous access links of the `moderator` and `speaker` roles and of the room's recordings, access for registered users, and the permission sets of the two room roles. Integrators manage it through the REST API, room managers through the console, and participants share it from the meeting.
+Room access decides who may enter a room and with which room role: the anonymous access links of the `moderator` and `speaker` roles and of the room's recordings, access for registered users, the room lock, and the permission sets of the two room roles. Integrators manage it through the REST API, room managers through the console, and participants share it from the meeting.
 
-Surfaces: REST API (`access` and `roles` of `createRoom`, `updateRoomAccess`, `updateRoomRoles`, the `access` field and the extra field `roles` of room responses; `meet-ce/backend/openapi/rooms/`), console (share dialog of the rooms pages; the wizard steps that edit access and roles are specified in `rooms`), meeting UI (share link on the join screen and in the meeting). Room members, their access links and room member tokens are specified in `room-members`; the permission catalogue, the default permissions of each room role and the admin and owner bypass in `permissions`; how a participant enters a meeting through a link in `meeting-join`; how access URLs are made absolute in `deployment`. Documented in openvidu.io `docs/meet/features/rooms/access.md`.
+Surfaces: REST API (`access` and `roles` of `createRoom`, `updateRoomAccess`, `updateRoomRoles`, the `access` field and the extra field `roles` of room responses; `meet-ce/backend/openapi/rooms/`), console (share dialog of the rooms pages; the wizard steps that edit access and roles are specified in `rooms`), meeting UI (share link on the join screen and in the meeting). Room members, their access links and room member tokens are specified in `room-members`; the permission catalogue, the default permissions of each room role and the admin and owner bypass in `permissions`; how a participant enters a meeting through a link in `meeting-join`; what the lock (`access.lock`) does in `locked-room`; how access URLs are made absolute in `deployment`. Documented in openvidu.io `docs/meet/features/rooms/access.md`.
 
 ## Requirements
 
@@ -23,16 +23,20 @@ The server SHALL give every room, when it is created, four access URLs that stay
 - **THEN** every access URL is the same as when the room was created
 
 ### Requirement: Default access settings
-The server SHALL create a room with the anonymous `moderator`, `speaker` and `recording` links enabled and user access disabled, except for each flag that the `access` object of `createRoom` sets.
+The server SHALL create a room with the anonymous `moderator`, `speaker` and `recording` links enabled, user access disabled and the room unlocked with no lock message (see `locked-room`), except for each setting that the `access` object of `createRoom` sets.
 
 #### Scenario: Defaults
 - **WHEN** `createRoom` is called without `access`
 - **THEN** `access.anonymous.moderator.enabled`, `access.anonymous.speaker.enabled` and `access.anonymous.recording.enabled` are `true`
-- **AND** `access.user.enabled` is `false`
+- **AND** `access.user.enabled` and `access.lock.enabled` are `false` and `access.lock` has no `message`
 
 #### Scenario: Anonymous moderator link disabled at creation
 - **WHEN** `createRoom` is called with `access.anonymous.moderator.enabled` `false`
-- **THEN** the room's anonymous moderator link is disabled and every other flag keeps its default
+- **THEN** the room's anonymous moderator link is disabled and every other setting keeps its default
+
+#### Scenario: Room created locked
+- **WHEN** `createRoom` is called with `access.lock` `{ "enabled": true, "message": "Please wait" }`
+- **THEN** the room is locked with that message and every other setting keeps its default
 
 ### Requirement: Anonymous role links
 A person entering a room through the anonymous `moderator` or `speaker` link SHALL need no account and SHALL get exactly the permissions the room currently defines for that role in `roles` (see `permissions` for the defaults), never more.
@@ -94,12 +98,12 @@ A logged-in user SHALL be let into a room, to read it, read its config or enter 
 - **THEN** they hold every permission, `recordingControl` included (see `permissions`)
 
 ### Requirement: Disclosure of the anonymous links
-In every room returned by `getRoom` and `getRooms`, the server SHALL include the URL of an anonymous link only when the caller holds `roomShareAccessLinks` in that room and every permission the link grants: the `moderator` role's for the moderator link, the `speaker` role's for the speaker link, and `recordingList`, `recordingPlay` and `recordingDownload` for the recordings link. It SHALL always include `access.user.url` and every `enabled` flag.
+In every room returned by `getRoom` and `getRooms`, the server SHALL include the URL of an anonymous link only when the caller holds `roomShareAccessLinks` in that room and every permission the link grants: the `moderator` role's for the moderator link, the `speaker` role's for the speaker link, and `recordingList`, `recordingPlay` and `recordingDownload` for the recordings link. It SHALL always include `access.user.url`, every `enabled` flag and `access.lock.message`.
 
 #### Scenario: Speaker without the permission
 - **GIVEN** a room whose `speaker` role lacks `roomShareAccessLinks`
 - **WHEN** a participant who entered through the speaker link calls `getRoom` with their room member token
-- **THEN** the room carries no `url` under `access.anonymous` but carries `access.user.url`
+- **THEN** the room carries no `url` under `access.anonymous` but carries `access.user.url` and `access.lock`
 
 #### Scenario: Moderator allowed to share
 - **GIVEN** a room with the default role permissions
@@ -161,17 +165,29 @@ After `updateRoomRoles`, the room's members SHALL follow the new role sets as `r
 - **THEN** that member's effective permissions no longer include `chatWrite`
 
 ### Requirement: Updating the room access
-`updateRoomAccess` SHALL be applied only for the callers allowed to manage the room (see `rooms`), SHALL merge the given `enabled` flags into the stored access settings and answer `200` with the room's complete `access`, URLs included, and SHALL answer `409` while the room has an active meeting, `404` for a room that does not exist and `422` when `access` is missing or a flag is not a boolean. Room member tokens issued before the update stop being accepted (see `authentication`).
+`updateRoomAccess` SHALL be applied only for the callers allowed to manage the room (see `rooms`), SHALL merge the given settings into the stored ones and answer `200` with the room's complete `access`, URLs included. It SHALL answer `409` while the room has an active meeting, decided by the write itself so a meeting that starts meanwhile keeps the stored settings, and `404` for a room that does not exist. Room member tokens issued before the update stop being accepted (see `authentication`).
 
 #### Scenario: Enable user access
 - **GIVEN** an idle room with user access disabled
 - **WHEN** its owner calls `updateRoomAccess` with `access.user.enabled` `true`
-- **THEN** the server answers `200` with `access.user.enabled` `true` and the anonymous flags unchanged
+- **THEN** the server answers `200` with `access.user.enabled` `true` and the anonymous flags and the lock unchanged
 
 #### Scenario: Access update during a meeting
 - **GIVEN** a room with an active meeting
 - **WHEN** its owner calls `updateRoomAccess`
 - **THEN** the server answers `409` and the access settings are unchanged
+
+### Requirement: Shape of an access update
+`updateRoomAccess` SHALL answer `422` when `access` is missing, a flag is not a boolean, `access.lock` is sent without its `enabled` switch or `access.lock.message` is longer than 500 characters. `access.lock.message` set to `null` SHALL remove the stored message.
+
+#### Scenario: Lock message without its switch
+- **WHEN** `updateRoomAccess` is called with `access` `{ "lock": { "message": "Please wait" } }`
+- **THEN** the server answers `422` naming `lock.enabled`
+
+#### Scenario: Lock message removed
+- **GIVEN** a locked room with a lock message
+- **WHEN** `updateRoomAccess` is called with `access.lock` `{ "enabled": true, "message": null }`
+- **THEN** the room stays locked and `access.lock` has no message
 
 ### Requirement: Sharing links from the console
 The console SHALL offer sharing a room's links on the Rooms and room detail pages only when the server returned the URL of its anonymous speaker or moderator link, and never for a closed room. It SHALL offer the user access link and each anonymous link whose URL was returned, selectable while enabled. Next to a disabled link, and next to the user access link while user access is disabled, a user who manages the room SHALL get a shortcut to the Room Access step of the wizard.
