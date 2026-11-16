@@ -31,7 +31,7 @@ context: |
 
   Documentation. The user documentation lives in the openvidu.io repository (sibling checkout
   `../openvidu.io`, branch `next`, edited in place without a worktree). Each spec's Purpose names
-  the openvidu.io pages that document it. `CHANGELOG.md` follows the rules of the root `CLAUDE.md`.
+  the openvidu.io pages that document it. `CHANGELOG.md` follows `.claude/rules/changelog.md`.
 
 rules:
   proposal:
@@ -50,7 +50,7 @@ rules:
     - Follow the domain `CLAUDE.md` of every package the design touches.
   tasks:
     - Each group lands, with its code, the tests and contract updates its work calls for (OpenAPI, typings TSDoc, the embedded API contract test).
-    - End with a group named "Release surfaces" holding the `CHANGELOG.md` line (or why none applies under the root `CLAUDE.md` rules) and one task per openvidu.io page to update on `next`, regenerating the embedded API reference when the embedded API changes.
+    - End with a group named "Release surfaces" holding the `CHANGELOG.md` line (or why none applies under `.claude/rules/changelog.md`) and one task per openvidu.io page to update on `next`, regenerating the embedded API reference when the embedded API changes.
 
 operations:
   apply:
@@ -59,4 +59,4 @@ operations:
       - Backend integration tests and Playwright suites need the OpenVidu local deployment; report them as not run when it is not available.
   archive:
     guidance:
-      - Archive inside the pull request that implements the change, once every task is done, and run `npx openspec validate --all --strict` afterwards.
+      - Archive inside the pull request that implements the change, once every task is done, and run `./meet.sh verify --only openspec --all` afterwards.
