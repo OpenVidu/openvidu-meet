@@ -106,7 +106,7 @@ jobs:
           version: 11.28.9
       - &install-safe-chain
         name: Install safe-chain
-        uses: OpenVidu/actions/install-safe-chain@b4ecef6892b666b42fe037bc66b696ac9807f205 # v1.0.26
+        uses: OpenVidu/actions/install-safe-chain@000cbf6a8b545a5588f11028f71fe18a54c18579 # v1.0.27
 
       - name: Install dependencies
         run: ./meet.sh install
@@ -227,7 +227,7 @@ jobs:
 
       - &start-local-deployment
         name: Setup OpenVidu Local Deployment
-        uses: OpenVidu/actions/start-openvidu-local-deployment@b4ecef6892b666b42fe037bc66b696ac9807f205 # v1.0.26
+        uses: OpenVidu/actions/start-openvidu-local-deployment@000cbf6a8b545a5588f11028f71fe18a54c18579 # v1.0.27
         with:
           ref-openvidu-local-deployment: development
           pre_startup_commands: |
@@ -241,7 +241,7 @@ jobs:
             chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh
 
       - name: Setup OpenVidu Meet
-        uses: OpenVidu/actions/start-openvidu-meet@b4ecef6892b666b42fe037bc66b696ac9807f205 # v1.0.26
+        uses: OpenVidu/actions/start-openvidu-meet@000cbf6a8b545a5588f11028f71fe18a54c18579 # v1.0.27
 
       - name: Run tests
         run: pnpm run test:integration-backend-${{ matrix.shard }}
@@ -315,7 +315,7 @@ jobs:
           fi
 
       - name: Setup OpenVidu Local Deployment
-        uses: OpenVidu/actions/start-openvidu-local-deployment@b4ecef6892b666b42fe037bc66b696ac9807f205 # v1.0.26
+        uses: OpenVidu/actions/start-openvidu-local-deployment@000cbf6a8b545a5588f11028f71fe18a54c18579 # v1.0.27
         with:
           ref-openvidu-local-deployment: development
           pre_startup_commands: |
@@ -349,7 +349,7 @@ jobs:
             chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh
 
       - name: Setup OpenVidu Meet
-        uses: OpenVidu/actions/start-openvidu-meet@b4ecef6892b666b42fe037bc66b696ac9807f205 # v1.0.26
+        uses: OpenVidu/actions/start-openvidu-meet@000cbf6a8b545a5588f11028f71fe18a54c18579 # v1.0.27
         env: &storage-env
           MEET_BLOB_STORAGE_MODE: ${{ matrix.storage-provider }}
           # ABS variables
@@ -409,7 +409,7 @@ jobs:
       - *start-local-deployment
 
       - name: Build and Start OpenVidu Meet
-        uses: OpenVidu/actions/start-openvidu-meet@b4ecef6892b666b42fe037bc66b696ac9807f205 # v1.0.26
+        uses: OpenVidu/actions/start-openvidu-meet@000cbf6a8b545a5588f11028f71fe18a54c18579 # v1.0.27
 
       # Playwright only transpiles, so this is the sole type-check the e2e suites ever get
       # (same hole test:types closes for the backend's tests/**).
@@ -495,13 +495,13 @@ jobs:
       - *start-local-deployment
 
       - name: Build and Start OpenVidu Meet
-        uses: OpenVidu/actions/start-openvidu-meet@b4ecef6892b666b42fe037bc66b696ac9807f205 # v1.0.26
+        uses: OpenVidu/actions/start-openvidu-meet@000cbf6a8b545a5588f11028f71fe18a54c18579 # v1.0.27
         env:
           MEET_INITIAL_WEBHOOK_ENABLED: true
           MEET_INITIAL_WEBHOOK_URL: 'http://localhost:5080/webhook'
 
       - name: Start OpenVidu Meet Testapp
-        uses: OpenVidu/actions/start-openvidu-meet-testapp@b4ecef6892b666b42fe037bc66b696ac9807f205 # v1.0.26
+        uses: OpenVidu/actions/start-openvidu-meet-testapp@000cbf6a8b545a5588f11028f71fe18a54c18579 # v1.0.27
         with:
           skip_install: 'true'
           skip_checkout: 'true'
