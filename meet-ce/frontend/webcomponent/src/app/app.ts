@@ -375,8 +375,12 @@ export class App {
 		return this.commandService.broadcastStart(options);
 	}
 
-	broadcastStop(options?: MeetBroadcastStopOptions): Promise<void> {
+	broadcastStop(options: MeetBroadcastStopOptions): Promise<void> {
 		return this.commandService.broadcastStop(options);
+	}
+
+	broadcastStopAll(): Promise<void> {
+		return this.commandService.broadcastStopAll();
 	}
 
 	waitingParticipantAdmit(options: MeetWaitingParticipantDecisionOptions): Promise<void> {

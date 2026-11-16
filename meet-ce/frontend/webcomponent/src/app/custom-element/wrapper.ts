@@ -116,8 +116,12 @@ export function createOpenViduMeetElementClass(
 			this._run(EmbeddedCommandName.BROADCAST_START, (app) => app.broadcastStart(options));
 		}
 
-		broadcastStop(options?: MeetBroadcastStopOptions): void {
+		broadcastStop(options: MeetBroadcastStopOptions): void {
 			this._run(EmbeddedCommandName.BROADCAST_STOP, (app) => app.broadcastStop(options));
+		}
+
+		broadcastStopAll(): void {
+			this._run(EmbeddedCommandName.BROADCAST_STOP_ALL, (app) => app.broadcastStopAll());
 		}
 
 		waitingParticipantAdmit(options: MeetWaitingParticipantDecisionOptions): void {

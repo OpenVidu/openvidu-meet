@@ -231,17 +231,30 @@ export class EmbeddedCommandService {
 		});
 	}
 
-	async broadcastStop(options: MeetBroadcastStopOptions = {}): Promise<void> {
+	async broadcastStop({ broadcastId }: MeetBroadcastStopOptions): Promise<void> {
 		await this.run(EmbeddedCommandName.BROADCAST_STOP, 'broadcastControl', async () => {
+			const roomId = this.meetingContextService.roomId();
+
+			if (!roomId || !broadcastId) {
+				this.log.w('broadcastStop() called without a broadcast id');
+				return;
+			}
+
+			await this.broadcastService.request({ action: 'stop', roomId, broadcastId });
+		});
+	}
+
+	async broadcastStopAll(): Promise<void> {
+		await this.run(EmbeddedCommandName.BROADCAST_STOP_ALL, 'broadcastControl', async () => {
 			const roomId = this.meetingContextService.roomId();
 			const running = this.broadcastState.inProgress().filter(({ status }) => isBroadcastRunning(status));
 
 			if (!roomId || (running.length === 0 && !this.broadcastState.isStartPending())) {
-				this.log.w('broadcastStop() called but no broadcast is running or starting');
+				this.log.w('broadcastStopAll() called but no broadcast is running or starting');
 				return;
 			}
 
-			await this.broadcastService.request({ ...options, action: 'stop', roomId });
+			await this.broadcastService.request({ action: 'stop', roomId });
 		});
 	}
 

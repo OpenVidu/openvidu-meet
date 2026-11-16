@@ -373,7 +373,7 @@ export class BroadcastActivityComponent {
 	}
 
 	stopRow(row: DestinationRow): void {
-		if (row.broadcast) this.emitRequest({ action: 'stop', broadcastIds: [row.broadcast.broadcastId] });
+		if (row.broadcast) this.emitRequest({ action: 'stop', broadcastId: row.broadcast.broadcastId });
 	}
 
 	/** Clears the failures and goes live again to the chosen destinations. */

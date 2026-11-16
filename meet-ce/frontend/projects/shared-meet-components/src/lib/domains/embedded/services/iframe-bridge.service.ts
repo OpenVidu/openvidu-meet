@@ -305,10 +305,20 @@ export class IframeBridgeService {
 
 			case EmbeddedCommandName.BROADCAST_STOP: {
 				const payload = 'payload' in message ? message.payload : undefined;
-				const broadcastIds = payload && 'broadcastIds' in payload ? payload.broadcastIds : undefined;
-				await commandService.broadcastStop({ broadcastIds });
+				const broadcastId = payload && 'broadcastId' in payload ? payload.broadcastId : undefined;
+
+				if (!broadcastId) {
+					this.log.e('broadcastStop command received without a broadcastId');
+					return;
+				}
+
+				await commandService.broadcastStop({ broadcastId });
 				break;
 			}
+
+			case EmbeddedCommandName.BROADCAST_STOP_ALL:
+				await commandService.broadcastStopAll();
+				break;
 
 			case EmbeddedCommandName.WAITING_PARTICIPANT_ADMIT: {
 				const participantIdentity = this.extractWaitingParticipantIdentity(command, message);

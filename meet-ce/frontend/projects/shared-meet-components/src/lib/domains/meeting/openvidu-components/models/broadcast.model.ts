@@ -12,14 +12,14 @@ export interface MeetingDestination extends BroadcastDestinationDraft {
 /**
  * What the live broadcast activity asks of the meeting: the one output it emits, narrowed on
  * `action`. A meeting runs one broadcast per destination, so a request names the destinations to
- * start streaming to, or the broadcasts to stop; without `destinationIds` a start streams to every
- * room destination not streamed to yet, and without `broadcastIds` a stop ends every running
+ * start streaming to, or the broadcast to stop; without `destinationIds` a start streams to every
+ * room destination not streamed to yet, and without `broadcastId` a stop ends every running
  * broadcast. The panel never calls the API itself, the meeting
  * page answers each request.
  */
 export type BroadcastRequestedEvent =
 	| ({ action: 'start'; roomId: string } & MeetBroadcastStartOptions)
-	| { action: 'stop'; roomId: string; broadcastIds?: string[] };
+	| { action: 'stop'; roomId: string; broadcastId?: string };
 
 /** A request the local participant made of the broadcasts that the server refused, with the reason it gave. */
 export interface BroadcastRequestRefusal {
@@ -40,7 +40,7 @@ export const startsMeetingDestination = (request: BroadcastRequestedEvent, url: 
 
 /** Whether the request stops the broadcast: it names it, or names none and so stops every running one. */
 export const stopsBroadcast = (request: BroadcastRequestedEvent, broadcastId: string): boolean =>
-	request.action === 'stop' && (!request.broadcastIds || request.broadcastIds.includes(broadcastId));
+	request.action === 'stop' && (!request.broadcastId || request.broadcastId === broadcastId);
 
 /** The meeting's broadcasts as the activity shows them: what the row says and offers depends on the phase alone. */
 export type BroadcastPhase = 'idle' | 'starting' | 'live' | 'ending' | 'failed';

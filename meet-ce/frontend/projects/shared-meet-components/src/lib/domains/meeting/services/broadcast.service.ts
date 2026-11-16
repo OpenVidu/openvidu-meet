@@ -1,7 +1,7 @@
 import { inject, Service } from '@angular/core';
-import { MeetBroadcastInfo, MeetBroadcastStartOptions, MeetBroadcastStopOptions } from '@openvidu-meet/typings';
+import { MeetBroadcastBulkStopResponse, MeetBroadcastInfo, MeetBroadcastStartOptions } from '@openvidu-meet/typings';
 import { HttpService } from '../../../shared/services/http.service';
-import { BroadcastRequestedEvent, BroadcastStateService } from '../openvidu-components';
+import { BroadcastRequestedEvent, BroadcastStateService, isBroadcastRunning } from '../openvidu-components';
 
 const errorMessageOf = (error: unknown): string | undefined => {
 	const message = (error as { error?: { message?: unknown } } | undefined)?.error?.message;
@@ -16,6 +16,7 @@ export class BroadcastService {
 	private readonly httpService = inject(HttpService);
 	private readonly broadcastState = inject(BroadcastStateService);
 	private readonly broadcastsPath = `${HttpService.API_PATH_PREFIX}/broadcasts`;
+	private startInFlight?: Promise<MeetBroadcastInfo[]>;
 
 	/**
 	 * Sends what the local participant asks of the broadcasts, from the activity or from the host
@@ -28,10 +29,16 @@ export class BroadcastService {
 		try {
 			if (request.action === 'start') {
 				const { roomId, destinationIds, destinations } = request;
-				const broadcasts = await this.startBroadcasts(roomId, { destinationIds, destinations });
+				const start = this.startBroadcasts(roomId, { destinationIds, destinations });
+				this.startInFlight = start;
+				const broadcasts = await start.finally(() => {
+					if (this.startInFlight === start) this.startInFlight = undefined;
+				});
 				this.broadcastState.recordOwnBroadcasts(destinations ?? [], broadcasts);
+			} else if (request.broadcastId) {
+				await this.stopBroadcast(request.broadcastId);
 			} else {
-				await this.stopBroadcasts(request.roomId, { broadcastIds: request.broadcastIds });
+				await this.stopEveryBroadcast();
 			}
 
 			this.broadcastState.requestSucceeded(request);
@@ -56,11 +63,25 @@ export class BroadcastService {
 		return broadcasts;
 	}
 
-	async stopBroadcasts(roomId: string, options: MeetBroadcastStopOptions = {}): Promise<MeetBroadcastInfo[]> {
-		const { broadcasts } = await this.httpService.postRequest<{ broadcasts: MeetBroadcastInfo[] }>(
-			`${this.broadcastsPath}/stop`,
-			{ roomId, ...options }
+	async stopBroadcast(broadcastId: string): Promise<MeetBroadcastInfo> {
+		return this.httpService.deleteRequest<MeetBroadcastInfo>(
+			`${this.broadcastsPath}/${encodeURIComponent(broadcastId)}`
 		);
-		return broadcasts;
+	}
+
+	async bulkStopBroadcasts(broadcastIds: string[]): Promise<MeetBroadcastBulkStopResponse> {
+		const query = broadcastIds.map(encodeURIComponent).join(',');
+		return this.httpService.deleteRequest<MeetBroadcastBulkStopResponse>(
+			`${this.broadcastsPath}?broadcastIds=${query}`
+		);
+	}
+
+	/** Stops the running broadcasts, those of a start still being answered included. */
+	private async stopEveryBroadcast(): Promise<void> {
+		const started = (await this.startInFlight?.catch(() => [])) ?? [];
+		const running = this.broadcastState.inProgress().filter(({ status }) => isBroadcastRunning(status));
+		const broadcastIds = new Set([...running, ...started].map(({ broadcastId }) => broadcastId));
+
+		if (broadcastIds.size > 0) await this.bulkStopBroadcasts([...broadcastIds]);
 	}
 }

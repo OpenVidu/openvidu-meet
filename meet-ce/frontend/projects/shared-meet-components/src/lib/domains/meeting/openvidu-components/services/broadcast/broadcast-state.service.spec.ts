@@ -244,7 +244,7 @@ describe('BroadcastStateService', () => {
 
 	it('answers each request on its own: one answered leaves the others pending and the refusal of another standing', () => {
 		const start = { action: 'start' as const, roomId: 'room1', destinationIds: ['dest-2'] };
-		const stop = { action: 'stop' as const, roomId: 'room1', broadcastIds: ['bc1'] };
+		const stop = { action: 'stop' as const, roomId: 'room1', broadcastId: 'bc1' };
 		service.requestStarted(start);
 		service.requestStarted(stop);
 
