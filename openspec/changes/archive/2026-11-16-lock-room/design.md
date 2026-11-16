@@ -7,10 +7,12 @@ The waiting room shipped to `main` in #219 and is unreleased (3.10.0). Its serve
 ## Goals / Non-Goals
 
 **Goals:**
+
 - One vocabulary: `access.lock` for the room setting and `accessBypassLock` for skipping it, `waitingParticipant*` for everything about a participant who waits (`waitingParticipantAdmin` included), on REST, webhooks, the embedded API, typings and internal code.
 - Remove what no longer has a product use (positions, arrival order, `availablePlaces`, named lists), and simplify the Redis model with it.
 
 **Non-Goals:**
+
 - No change to how a wait lives: the ticket, the realtime connection, the one-minute expiry, the `pagehide` leave, the admission that holds a place until LiveKit reports the join.
 - No deprecated aliases: nothing here was released.
 
@@ -24,15 +26,15 @@ The waiting room shipped to `main` in #219 and is unreleased (3.10.0). Its serve
 
 **REST shape.** The participant goes in the path, like `participantKick` and `stopRecording`; admitting everyone uses the collection, like `participantMuteAll`, and rejecting several names them in the query, like the bulk deletes:
 
-| Operation | Method and path under `/meetings/{roomId}` | Answer |
-|---|---|---|
-| `waitingParticipantList` | `GET /waiting-participants` | `{ participants }` |
-| `waitingParticipantGet` | `GET /waiting-participants/{participantIdentity}` | `MeetWaitingParticipant` |
-| `waitingParticipantAdmit` | `POST /waiting-participants/{participantIdentity}/admit` | `{ message }` |
-| `waitingParticipantAdmitAll` | `POST /waiting-participants/admit` | `{ message }` |
-| `waitingParticipantReject` | `DELETE /waiting-participants/{participantIdentity}` | `{ message }` |
-| `bulkRejectWaitingParticipants` | `DELETE /waiting-participants?participantIdentities=a,b` | `{ message, deleted, failed }` |
-| `waitingParticipantLeave` (internal) | `POST /waiting-participants/leave` | as today |
+| Operation                            | Method and path under `/meetings/{roomId}`               | Answer                         |
+| ------------------------------------ | -------------------------------------------------------- | ------------------------------ |
+| `waitingParticipantList`             | `GET /waiting-participants`                              | `{ participants }`             |
+| `waitingParticipantGet`              | `GET /waiting-participants/{participantIdentity}`        | `MeetWaitingParticipant`       |
+| `waitingParticipantAdmit`            | `POST /waiting-participants/{participantIdentity}/admit` | `{ message }`                  |
+| `waitingParticipantAdmitAll`         | `POST /waiting-participants/admit`                       | `{ message }`                  |
+| `waitingParticipantReject`           | `DELETE /waiting-participants/{participantIdentity}`     | `{ message }`                  |
+| `bulkRejectWaitingParticipants`      | `DELETE /waiting-participants?participantIdentities=a,b` | `{ message, deleted, failed }` |
+| `waitingParticipantLeave` (internal) | `POST /waiting-participants/leave`                       | as today                       |
 
 The operations on one participant and admitting everyone answer `{ message }`, as `participantKick`, `participantMute` and `participantMuteAll` do; who was admitted is told by the `waitingParticipantStatusChanged` webhooks. Rejecting everyone is the bulk rejection, which answers `{ message, deleted, failed }`. The bulk rejection takes the shape of `bulkDeleteRoomMembers`: at least one and at most `BULK_DELETE_MAX_ITEMS` (100) identities, trimmed and deduplicated, `422` otherwise; each one rejected on its own, `200` when all were and `400` with `failed` when any was not. A participant identity is never `admit` or `leave` (identities carry a random suffix), so the static segments never shadow a participant. Alternative considered: `DELETE /waiting-participants` with no identity rejecting everyone; rejected because every released `DELETE` on a collection requires explicit ids, so an empty query would have to mean "everyone" here and "nothing" everywhere else. Alternative considered: `POST /waiting-participants/reject` for symmetry with admit; rejected because `DELETE` matches `participantKick` and the bulk deletes. The id `bulkRejectWaitingParticipants` does not start with a module token, so the naming lint accepts `bulk` + verb + module plural, the shape of the released bulk deletes.
 
@@ -48,16 +50,16 @@ The operations on one participant and admitting everyone answer `{ message }`, a
 
 **Names.** The events say what changed: `waitingParticipantListUpdated` carries the list `waitingParticipantList` answers, and `waitingParticipantStatusChanged` the new `status` of one wait. Both start with the singular module token, so the naming charter needs no plural form.
 
-| Before (unreleased) | After |
-|---|---|
-| `config.waitingRoom`, `MeetWaitingRoomConfig` | `access.lock`, `MeetRoomLock` (`MeetRoomLockOptions` on requests) |
-| `waitingRoomBypass`, `waitingRoomAdmin` | `accessBypassLock`, `waitingParticipantAdmin` |
-| `MeetWaitingRoomParticipant`, `MeetWaitingRoomStatus`, `MeetWaitingRoomReason`, `MeetWaitingRoomErrorCode` | `MeetWaitingParticipant`, `MeetWaitingParticipantStatus`, `MeetWaitingParticipantReason`, `MeetWaitingParticipantErrorCode` |
-| `participantKnocked` (webhook and event) | `waitingParticipantKnocked` |
-| `participantWaitingChanged`, then `waitingParticipantChanged` (webhook and event) | `waitingParticipantStatusChanged` |
-| `waitingRoomUpdated`, then `waitingParticipantsUpdated` | `waitingParticipantListUpdated` |
-| `waiting_room_full`, `waiting_room_disabled` | `waiting_list_full`, `room_unlocked` |
-| `waitingRoomTicket`, `waitingRoom.state`, `meet_waiting_room_updated` (then `meet_waiting_participants_updated`) | `waitingTicket`, `waitingParticipant.state`, `meet_waiting_participant_list_updated` |
+| Before (unreleased)                                                                                              | After                                                                                                                       |
+| ---------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `config.waitingRoom`, `MeetWaitingRoomConfig`                                                                    | `access.lock`, `MeetRoomLock` (`MeetRoomLockOptions` on requests)                                                           |
+| `waitingRoomBypass`, `waitingRoomAdmin`                                                                          | `accessBypassLock`, `waitingParticipantAdmin`                                                                               |
+| `MeetWaitingRoomParticipant`, `MeetWaitingRoomStatus`, `MeetWaitingRoomReason`, `MeetWaitingRoomErrorCode`       | `MeetWaitingParticipant`, `MeetWaitingParticipantStatus`, `MeetWaitingParticipantReason`, `MeetWaitingParticipantErrorCode` |
+| `participantKnocked` (webhook and event)                                                                         | `waitingParticipantKnocked`                                                                                                 |
+| `participantWaitingChanged`, then `waitingParticipantChanged` (webhook and event)                                | `waitingParticipantStatusChanged`                                                                                           |
+| `waitingRoomUpdated`, then `waitingParticipantsUpdated`                                                          | `waitingParticipantListUpdated`                                                                                             |
+| `waiting_room_full`, `waiting_room_disabled`                                                                     | `waiting_list_full`, `room_unlocked`                                                                                        |
+| `waitingRoomTicket`, `waitingRoom.state`, `meet_waiting_room_updated` (then `meet_waiting_participants_updated`) | `waitingTicket`, `waitingParticipant.state`, `meet_waiting_participant_list_updated`                                        |
 
 Internal code follows: the backend `services/waiting-room/` becomes `services/waiting-participants/` (`WaitingParticipantService`, `WaitingParticipantAdmissionPolicy`, `WaitingParticipantRealtimeHandler`, `WaitingParticipantSweepTask`), the Redis key prefixes and the frontend `domains/meeting/waiting-room/` follow the same split, and the i18n keys move from `WAITING_ROOM.*` to `LOCKED_ROOM.*` (room setting) and `WAITING_PARTICIPANTS.*` (the wait). Redis entries of the old prefixes are not carried over: waits last minutes and a deploy restarts every replica (no mixed versions), so waits in flight at the deploy end and their participants ask again.
 
