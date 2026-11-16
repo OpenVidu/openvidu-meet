@@ -115,8 +115,8 @@ export interface MeetRoomMemberPermissions {
 	 */
 	participantReactionSend: boolean;
 	/**
-	 * Can join the meeting without waiting in a room whose waiting room is on. Without it, the
-	 * participant asks to join and waits until someone holding `waitingRoomAdmin` admits them.
+	 * Can join the meeting without waiting in a locked room (`access.lock`). Without it, the
+	 * participant asks to join and waits until someone holding `waitingParticipantAdmin` admits them.
 	 *
 	 * Introduced after the rename, so it has no deprecated `can*` spelling (see
 	 * {@link MEET_UNALIASED_PERMISSION_KEYS}). It is independent of every other permission: a request
@@ -125,11 +125,11 @@ export interface MeetRoomMemberPermissions {
 	 * (see {@link UNALIASED_PERMISSION_DEFAULTS}). A room or member stored before 3.10.0 is migrated
 	 * with it granted to the moderator role and denied to the speaker role.
 	 */
-	waitingRoomBypass: boolean;
+	accessBypassLock: boolean;
 	/**
-	 * Can list the participants waiting to join and admit or reject them. Independent of
-	 * `waitingRoomBypass`: a holder of `waitingRoomAdmin` without `waitingRoomBypass` waits like anyone else and can
-	 * admit others only once admitted.
+	 * Can list the participants waiting to join a locked room and admit or reject them. Independent
+	 * of `accessBypassLock`: a holder without it waits like anyone else and can admit others only once
+	 * admitted.
 	 *
 	 * Introduced after the rename, so it has no deprecated `can*` spelling (see
 	 * {@link MEET_UNALIASED_PERMISSION_KEYS}). It is independent of every other permission: a request
@@ -138,7 +138,7 @@ export interface MeetRoomMemberPermissions {
 	 * (see {@link UNALIASED_PERMISSION_DEFAULTS}). A room or member stored before 3.10.0 is migrated
 	 * with it granted to the moderator role and denied to the speaker role.
 	 */
-	waitingRoomAdmin: boolean;
+	waitingParticipantAdmin: boolean;
 	/**
 	 * Can end the meeting for all participants.
 	 */
@@ -315,9 +315,9 @@ export const MEET_PERMISSION_ALIASES = {
  *   moderation capability no earlier permission decided.
  * - `participantReactionSend` ← `true`: reacting is taking part, like raising one's own hand, not
  *   a power over others, and the room config `reactions.enabled` is what turns it off for everyone.
- * - `waitingRoomBypass`, `waitingRoomAdmin` ← `false`: skipping the waiting room and deciding who enters are
+ * - `accessBypassLock`, `waitingParticipantAdmin` ← `false`: joining a locked room without waiting and deciding who enters are
  *   powers no deployment decided on before 3.10.0, and a completed set never opens a room that
- *   turns the waiting room on.
+ *   locks the room.
  * - `broadcastControl`, `broadcastEdit` ← `false`: streaming
  *   a meeting to the outside is a new power that no deployment decided on before 3.10.0. Deliberately
  *   not derived from `recordingControl`: keeping a copy and publishing live are different powers.
@@ -327,8 +327,8 @@ const UNALIASED_PERMISSION_DEFAULTS = {
 	participantMute: false,
 	participantHandLower: false,
 	participantReactionSend: true,
-	waitingRoomBypass: false,
-	waitingRoomAdmin: false,
+	accessBypassLock: false,
+	waitingParticipantAdmin: false,
 	broadcastControl: false,
 	broadcastEdit: false
 } as const satisfies Readonly<

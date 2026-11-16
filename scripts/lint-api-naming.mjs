@@ -11,7 +11,9 @@
  *      registered module token. The deprecated 3.8.0 aliases are exempt, derived from the alias
  *      maps so the exemption list shrinks to nothing when the aliases are removed in 3.12.0.
  *   3. Every OpenAPI `operationId` starts with a registered module token, except the frozen
- *      pre-charter list below (aligned in the next major, when SDK method names may break).
+ *      pre-charter list below (aligned in the next major, when SDK method names may break) and a
+ *      bulk operation, named `bulk` + verb + the plural of a module token like the released bulk
+ *      deletes (`bulkRejectWaitingParticipants`).
  *   4. Every top-level REST path segment of both specs belongs to `MEET_API_REST_GROUPS` — live
  *      meeting features go under `/meetings/{roomId}`, not new top-level groups, unless addressed
  *      by their own id like a recording (`/broadcasts`).
@@ -88,6 +90,11 @@ const PRE_CHARTER_OPERATION_IDS = new Set([
 	'startRecording',
 	'stopRecording'
 ]);
+
+const isBulkOperationId = (operationId, modules) => {
+	const match = /^bulk[A-Z][a-z]+([A-Z][A-Za-z]*)s$/.exec(operationId);
+	return !!match && modules.includes(match[1][0].toLowerCase() + match[1].slice(1));
+};
 
 const errors = [];
 const fail = (message) => errors.push(message);
@@ -167,7 +174,11 @@ for (const file of yamlFiles) {
 		const operationId = match[1];
 		operationIdCount++;
 
-		if (!PRE_CHARTER_OPERATION_IDS.has(operationId) && !meetApiModuleOf(operationId)) {
+		if (
+			!PRE_CHARTER_OPERATION_IDS.has(operationId) &&
+			!meetApiModuleOf(operationId) &&
+			!isBulkOperationId(operationId, MEET_API_MODULES)
+		) {
 			fail(
 				`operationId '${operationId}' (${file.slice(repoRoot.length + 1)}) does not start with a ` +
 					`registered module token — new operations are named moduleAction from day one`

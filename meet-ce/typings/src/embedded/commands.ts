@@ -1,6 +1,6 @@
 import { MeetReaction } from '../reaction.js';
 import { MeetBroadcastStartOptions, MeetBroadcastStopOptions } from '../request/broadcast-request.js';
-import { MeetParticipantMuteOptions, MeetParticipantWaitingDecisionOptions } from '../request/meeting-request.js';
+import { MeetParticipantMuteOptions, MeetWaitingParticipantDecisionOptions } from '../request/meeting-request.js';
 import { MeetParticipantModerationAction } from '../request/room-member-request.js';
 
 /**
@@ -63,20 +63,25 @@ export enum EmbeddedCommandName {
 	 */
 	PARTICIPANT_HAND_LOWER_ALL = 'participantHandLowerAll',
 	/**
-	 * Admits the waiting participants named by `participantIdentities`, one or several, all or none of
-	 * them, or everyone waiting when it is omitted, in which case the first in line up to the free
-	 * places are admitted and the rest keep their place. An empty `participantIdentities` is refused.
-	 * @permission waitingRoomAdmin
+	 * Admits the waiting participant named by `participantIdentity`, when a place of the meeting is free.
+	 * @permission waitingParticipantAdmin
 	 */
-	PARTICIPANT_WAITING_ADMIT = 'participantWaitingAdmit',
+	WAITING_PARTICIPANT_ADMIT = 'waitingParticipantAdmit',
 	/**
-	 * Rejects the waiting participants named by `participantIdentities`, one or several, all or none
-	 * of them, or everyone waiting when it is omitted, in which case everyone waiting when the command
-	 * runs is rejected. An empty `participantIdentities` is refused. A rejected participant may ask to
-	 * join again.
-	 * @permission waitingRoomAdmin
+	 * Admits everyone waiting, all of them or nobody when they outnumber the free places of the meeting.
+	 * @permission waitingParticipantAdmin
 	 */
-	PARTICIPANT_WAITING_REJECT = 'participantWaitingReject',
+	WAITING_PARTICIPANT_ADMIT_ALL = 'waitingParticipantAdmitAll',
+	/**
+	 * Rejects the waiting participant named by `participantIdentity`, who may ask to join again.
+	 * @permission waitingParticipantAdmin
+	 */
+	WAITING_PARTICIPANT_REJECT = 'waitingParticipantReject',
+	/**
+	 * Rejects every participant waiting to join the locked room. A rejected participant may ask to join again.
+	 * @permission waitingParticipantAdmin
+	 */
+	WAITING_PARTICIPANT_REJECT_ALL = 'waitingParticipantRejectAll',
 	/**
 	 * Sends a reaction from the local participant, which every participant sees for a few seconds and
 	 * is notified of through the `participantReactionSent` event.
@@ -203,15 +208,23 @@ export interface EmbeddedCommandPayloads {
 	 */
 	[EmbeddedCommandName.PARTICIPANT_HAND_LOWER_ALL]: void;
 	/**
-	 * Payload for the {@link EmbeddedCommandName.PARTICIPANT_WAITING_ADMIT} command. When `participantIdentities` is
-	 * omitted, everyone waiting, up to the free places. See {@link MeetParticipantWaitingDecisionOptions}.
+	 * Payload for the {@link EmbeddedCommandName.WAITING_PARTICIPANT_ADMIT} command. See
+	 * {@link MeetWaitingParticipantDecisionOptions}.
 	 */
-	[EmbeddedCommandName.PARTICIPANT_WAITING_ADMIT]: MeetParticipantWaitingDecisionOptions;
+	[EmbeddedCommandName.WAITING_PARTICIPANT_ADMIT]: MeetWaitingParticipantDecisionOptions;
 	/**
-	 * Payload for the {@link EmbeddedCommandName.PARTICIPANT_WAITING_REJECT} command. When `participantIdentities` is
-	 * omitted, everyone waiting. See {@link MeetParticipantWaitingDecisionOptions}.
+	 * Payload for the {@link EmbeddedCommandName.WAITING_PARTICIPANT_ADMIT_ALL} command.
 	 */
-	[EmbeddedCommandName.PARTICIPANT_WAITING_REJECT]: MeetParticipantWaitingDecisionOptions;
+	[EmbeddedCommandName.WAITING_PARTICIPANT_ADMIT_ALL]: void;
+	/**
+	 * Payload for the {@link EmbeddedCommandName.WAITING_PARTICIPANT_REJECT} command. See
+	 * {@link MeetWaitingParticipantDecisionOptions}.
+	 */
+	[EmbeddedCommandName.WAITING_PARTICIPANT_REJECT]: MeetWaitingParticipantDecisionOptions;
+	/**
+	 * Payload for the {@link EmbeddedCommandName.WAITING_PARTICIPANT_REJECT_ALL} command.
+	 */
+	[EmbeddedCommandName.WAITING_PARTICIPANT_REJECT_ALL]: void;
 	/**
 	 * Payload for the {@link EmbeddedCommandName.PARTICIPANT_REACTION_SEND} command.
 	 * `reaction` is one of the reactions in {@link MeetReaction}.
@@ -401,25 +414,39 @@ export interface EmbeddedParticipantHandLowerAllCommand {
 }
 
 /**
- * Command message for {@link EmbeddedCommandName.PARTICIPANT_WAITING_ADMIT}: the command name plus its optional
- * payload (omitted payload or `participantIdentities` = everyone waiting), derived from
- * {@link EmbeddedCommandPayloadFor}.
+ * Command message for {@link EmbeddedCommandName.WAITING_PARTICIPANT_ADMIT}: the command name plus its payload,
+ * derived from {@link EmbeddedCommandPayloadFor}.
  * @category Communication
  */
-export interface EmbeddedParticipantWaitingAdmitCommand {
-	command: EmbeddedCommandName.PARTICIPANT_WAITING_ADMIT;
-	payload?: EmbeddedCommandPayloadFor<EmbeddedCommandName.PARTICIPANT_WAITING_ADMIT>;
+export interface EmbeddedWaitingParticipantAdmitCommand {
+	command: EmbeddedCommandName.WAITING_PARTICIPANT_ADMIT;
+	payload: EmbeddedCommandPayloadFor<EmbeddedCommandName.WAITING_PARTICIPANT_ADMIT>;
 }
 
 /**
- * Command message for {@link EmbeddedCommandName.PARTICIPANT_WAITING_REJECT}: the command name plus its optional
- * payload (omitted payload or `participantIdentities` = everyone waiting), derived from
- * {@link EmbeddedCommandPayloadFor}.
+ * Command message for {@link EmbeddedCommandName.WAITING_PARTICIPANT_ADMIT_ALL}.
  * @category Communication
  */
-export interface EmbeddedParticipantWaitingRejectCommand {
-	command: EmbeddedCommandName.PARTICIPANT_WAITING_REJECT;
-	payload?: EmbeddedCommandPayloadFor<EmbeddedCommandName.PARTICIPANT_WAITING_REJECT>;
+export interface EmbeddedWaitingParticipantAdmitAllCommand {
+	command: EmbeddedCommandName.WAITING_PARTICIPANT_ADMIT_ALL;
+}
+
+/**
+ * Command message for {@link EmbeddedCommandName.WAITING_PARTICIPANT_REJECT}: the command name plus its payload,
+ * derived from {@link EmbeddedCommandPayloadFor}.
+ * @category Communication
+ */
+export interface EmbeddedWaitingParticipantRejectCommand {
+	command: EmbeddedCommandName.WAITING_PARTICIPANT_REJECT;
+	payload: EmbeddedCommandPayloadFor<EmbeddedCommandName.WAITING_PARTICIPANT_REJECT>;
+}
+
+/**
+ * Command message for {@link EmbeddedCommandName.WAITING_PARTICIPANT_REJECT_ALL}.
+ * @category Communication
+ */
+export interface EmbeddedWaitingParticipantRejectAllCommand {
+	command: EmbeddedCommandName.WAITING_PARTICIPANT_REJECT_ALL;
 }
 
 /**
@@ -541,8 +568,10 @@ export type EmbeddedCommand =
 	| EmbeddedParticipantHandRaiseCommand
 	| EmbeddedParticipantHandLowerCommand
 	| EmbeddedParticipantHandLowerAllCommand
-	| EmbeddedParticipantWaitingAdmitCommand
-	| EmbeddedParticipantWaitingRejectCommand
+	| EmbeddedWaitingParticipantAdmitCommand
+	| EmbeddedWaitingParticipantAdmitAllCommand
+	| EmbeddedWaitingParticipantRejectCommand
+	| EmbeddedWaitingParticipantRejectAllCommand
 	| EmbeddedParticipantReactionSendCommand
 	| EmbeddedMediaToggleAudioCommand
 	| EmbeddedMediaToggleVideoCommand

@@ -2,6 +2,7 @@ import { MeetBroadcastInfo } from './database/broadcast.entity.js';
 import { MeetRecordingInfo } from './database/recording.entity.js';
 import { MeetReaction } from './reaction.js';
 import { MeetParticipantMuteOptions } from './request/meeting-request.js';
+import type { MeetWaitingParticipantStatusChangedPayload } from './webhook.js';
 
 /**
  * Interface representing a signal emitted by OpenVidu Meet to notify clients about real-time updates in the meeting.
@@ -18,7 +19,9 @@ export enum MeetSignalType {
 	/** Emitted to everyone in the meeting when a participant sends a reaction */
 	MEET_PARTICIPANT_REACTION_SENT = 'meet_participant_reaction_sent',
 	/** Emitted to everyone in the meeting when the list of participants waiting to join changes */
-	MEET_WAITING_ROOM_UPDATED = 'meet_waiting_room_updated'
+	MEET_WAITING_PARTICIPANT_LIST_UPDATED = 'meet_waiting_participant_list_updated',
+	/** Emitted to the participants in the meeting who hold `waitingParticipantAdmin` when a wait changes after the knock */
+	MEET_WAITING_PARTICIPANT_STATUS_CHANGED = 'meet_waiting_participant_status_changed'
 }
 
 /**
@@ -95,12 +98,24 @@ export interface MeetParticipantReactionSentPayload {
 }
 
 /**
- * Payload for MEET_WAITING_ROOM_UPDATED signal. It only says that the list of waiting participants
+ * Payload for MEET_WAITING_PARTICIPANT_LIST_UPDATED signal. It only says that the list of waiting participants
  * changed: the participants who may admit them fetch the list, and the others ignore the signal.
  */
-export interface MeetWaitingRoomUpdatedPayload {
+export interface MeetWaitingParticipantListUpdatedPayload {
 	/** ID of the room whose waiting list changed */
 	roomId: string;
+	/** Timestamp in milliseconds when the change occurred */
+	timestamp: number;
+}
+
+/**
+ * Payload for MEET_WAITING_PARTICIPANT_STATUS_CHANGED signal: the change the
+ * {@link MeetWaitingParticipantStatusChangedPayload} webhook reports, without the room name.
+ */
+export interface MeetWaitingParticipantStatusChangedSignalPayload extends Omit<
+	MeetWaitingParticipantStatusChangedPayload,
+	'roomName'
+> {
 	/** Timestamp in milliseconds when the change occurred */
 	timestamp: number;
 }
@@ -109,8 +124,8 @@ export interface MeetWaitingRoomUpdatedPayload {
  * Union type representing the payload of a MeetSignal.
  * It can be either a {@link MeetRecordingUpdatedPayload}, {@link MeetBroadcastUpdatedPayload},
  * {@link MeetParticipantPermissionsUpdatedPayload}, {@link MeetParticipantMediaMutedPayload},
- * {@link MeetParticipantReactionSentPayload} or {@link MeetWaitingRoomUpdatedPayload}, depending on the
- * signal type.
+ * {@link MeetParticipantReactionSentPayload}, {@link MeetWaitingParticipantListUpdatedPayload} or
+ * {@link MeetWaitingParticipantStatusChangedSignalPayload}, depending on the signal type.
  */
 export type MeetSignalPayload =
 	| MeetRecordingUpdatedPayload
@@ -118,4 +133,5 @@ export type MeetSignalPayload =
 	| MeetParticipantPermissionsUpdatedPayload
 	| MeetParticipantMediaMutedPayload
 	| MeetParticipantReactionSentPayload
-	| MeetWaitingRoomUpdatedPayload;
+	| MeetWaitingParticipantListUpdatedPayload
+	| MeetWaitingParticipantStatusChangedSignalPayload;

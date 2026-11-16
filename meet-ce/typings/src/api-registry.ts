@@ -1,7 +1,8 @@
 /**
  * Canonical module registry of the Meet API naming scheme (`moduleAction` / `moduleEvent` /
  * `moduleAbility`). Every public identifier — permission keys, embedding commands and events,
- * webhook event types and new `operationId`s — starts with exactly one of these tokens, and the
+ * webhook event types and new `operationId`s — starts with exactly one of these tokens (a bulk
+ * `operationId` names it after `bulk` and a verb, in the plural: `bulkRejectWaitingParticipants`), and the
  * registry is the **enforcement point**: `scripts/lint-api-naming.mjs` (wired into
  * `./meet.sh lint-backend`, so it gates CI) fails when an identifier doesn't resolve to a
  * registered module. The naming charter itself lives in this package's `CLAUDE.md` and in
@@ -10,7 +11,8 @@
  * Rules for the tokens (charter §"Module"):
  *
  * - A **singular, single-word** lowerCamelCase noun (`embedded`, named after the embedded mode, is
- *   the one adjective; `waitingRoom`, the name the feature has everywhere, is the one compound). A
+ *   the one adjective; `waitingParticipant`, a participant who waits to be let into a locked room, is
+ *   the one compound). A
  *   concept that would need two words is not a module — fold it into the closest existing one and
  *   put the extra word in the action/ability (virtual background → `media` as
  *   `mediaChangeVirtualBackground`, not a `virtualBackground` module).
@@ -22,7 +24,7 @@
  *   about that element, not about the meeting, its participants or their media, starts with it.
  *
  * The list covers the implemented modules and the ones the API studies already commit to
- * (`waitingRoom`, `hand`, `breakout`, `notes`, `whiteboard`, `file`, `reaction`, `broadcast`), so a
+ * (`waitingParticipant`, `hand`, `breakout`, `notes`, `whiteboard`, `file`, `reaction`, `broadcast`), so a
  * future feature lands with its naming already decided.
  */
 export const MEET_API_MODULES = [
@@ -33,7 +35,8 @@ export const MEET_API_MODULES = [
 	'recording',
 	'embedded',
 	'broadcast',
-	'waitingRoom',
+	'access',
+	'waitingParticipant',
 	'chat',
 	'file',
 	'reaction',
@@ -77,6 +80,8 @@ export const MEET_API_REST_GROUPS = [
  * (`meetingJoin` → `meeting`), so a bare token or an accidental prefix (`mediation…`) never
  * matches; when tokens could overlap, the longest one wins.
  */
+const startsWithUppercase = (rest: string): boolean => rest[0] >= 'A' && rest[0] <= 'Z';
+
 export const meetApiModuleOf = (identifier: string): MeetApiModule | undefined => {
 	let match: MeetApiModule | undefined = undefined;
 
@@ -84,8 +89,7 @@ export const meetApiModuleOf = (identifier: string): MeetApiModule | undefined =
 		if (
 			identifier.length > moduleToken.length &&
 			identifier.startsWith(moduleToken) &&
-			identifier[moduleToken.length] >= 'A' &&
-			identifier[moduleToken.length] <= 'Z' &&
+			startsWithUppercase(identifier.slice(moduleToken.length)) &&
 			(!match || moduleToken.length > match.length)
 		) {
 			match = moduleToken;
