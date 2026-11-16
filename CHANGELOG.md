@@ -64,11 +64,11 @@ with no replacement.
   recording has, read them and stop one or several, in a room whose `config.broadcast.enabled` is `true` (`false` by
   default). Starting and stopping use the new [`broadcastControl`][3.10-permissions] permission and streaming to a
   destination the room does not have uses `broadcastEdit`, both granted to the moderator role of rooms created from
-  this release on, and reading them uses `meetingRead`. The embedded API
-  gets the `broadcastStart` and `broadcastStop` commands and the `broadcastStarted`, `broadcastUpdated` and
-  `broadcastEnded` events, the webhooks [`broadcastStarted`][3.10-broadcast-started],
-  [`broadcastUpdated`][3.10-broadcast-updated] and [`broadcastEnded`][3.10-broadcast-ended] report the same, and
-  the [meeting info][3.10-meetings] carries `broadcastActive`.
+  this release on, and reading them uses `meetingRead`. The embedded API gets the `broadcastStart`, `broadcastStop`
+  and `broadcastStopAll` commands and the `broadcastStarted`, `broadcastUpdated` and `broadcastEnded` events, the
+  webhooks [`broadcastStarted`][3.10-broadcast-started], [`broadcastUpdated`][3.10-broadcast-updated] and
+  [`broadcastEnded`][3.10-broadcast-ended] report the same, and the [meeting info][3.10-meetings] carries
+  `broadcastActive`.
 - Rooms save the destinations a broadcast streams to by default, and the layout and encoding it streams
   with, in [`config.broadcast`][3.10-room-config].
   Every response replaces the stream key of a destination URL with `********`, and a redacted URL sent back
