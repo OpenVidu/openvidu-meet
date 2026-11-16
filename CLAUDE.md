@@ -65,7 +65,8 @@ here. Two of them shape most designs:
 
 The CLI is a root devDependency, so run it as **`npx openspec`** (the generated skills write a bare
 `openspec`; it is the same command): `npx openspec list --specs`, `npx openspec show <capability>
---type spec`, `npx openspec validate --all --strict`. `.claude/skills/openspec-*/` and
+--type spec`. `./meet.sh verify --only openspec --all` validates them: the accepted specs for
+structure, the open changes with `--strict`. `.claude/skills/openspec-*/` and
 `.claude/commands/opsx/` are generated: after bumping `@fission-ai/openspec`, regenerate them with
 `npx openspec update` instead of editing them.
 
@@ -78,7 +79,8 @@ committed in place, without a worktree. Each spec's `## Purpose` names the pages
 - Feature pages: `docs/meet/` (features, embedded tutorials and reference, deployment).
 - Embedded API reference: when `meet-ce/typings/src/embedded/` changes, regenerate it with
   `./meet.sh build-webcomponent-doc ../openvidu.io/shared/meet` (writes
-  `shared/meet/webcomponent/{attributes,commands,events}.md`).
+  `shared/meet/webcomponent/{attributes,commands,events}.md`; without a target directory it lands in
+  the git-ignored `docs/webcomponent/`).
 - REST API reference: when the public OpenAPI changes, regenerate it with
   `./meet.sh build-rest-api-doc ../openvidu.io/docs/meet/embedded/reference/api.html`.
 - Release notes (`docs/meet/releases.md`) are written on release day, not by each change.
@@ -98,7 +100,10 @@ committed in place, without a worktree. Each spec's `## Purpose` names the pages
   with one lockfile across CE and PRO, so a version mismatch on a shared dependency silently installs
   two copies side by side instead of erroring, which can break TypeScript structural typing (hit this
   with `@aws-sdk/client-s3`/`@smithy/*`). When bumping a shared dependency in CE, also bump the
-  matching one in PRO to the same version.
+  matching one in PRO to the same version: `node scripts/dev/pro-deps.mjs` lists the mismatches and
+  `--fix` writes CE's versions into meet-pro. The committed lockfile covers meet-ce only, so with
+  meet-pro cloned `./meet.sh install` resolves it on top and leaves the lockfile as committed; a
+  dependency change regenerates the lockfile in a checkout without meet-pro (a git worktree has none).
 
 ## Build order (non-negotiable)
 
@@ -114,6 +119,9 @@ ordering). `./meet.sh help` lists all commands.
 
 ```bash
 ./meet.sh install                 # pnpm install for the whole workspace
+./meet.sh doctor                  # local environment check: one line per check, with its fix
+./meet.sh verify                  # is this change ready: static checks + the unit suites it affects
+./meet.sh stack up <name>         # isolated backend on the shared Docker deployment
 ./meet.sh dev                     # all watchers (typings, backend, frontend, API docs)
 ./meet.sh dev --testapp           # + testapp on :5080, webhook bridge on :5081, webcomponent bundle watcher
 ./meet.sh build                   # full build, correct order
@@ -121,37 +129,43 @@ ordering). `./meet.sh help` lists all commands.
 ./meet.sh start-testapp           # testapp only (:5080 + :5081), for the embedding e2e suites
 ```
 
-Tests (each domain's `CLAUDE.md` documents what they cover):
+Single suites (each domain's `CLAUDE.md` documents what they cover):
 
 ```bash
-./meet.sh test-unit-backend       # Jest
-./meet.sh test-unit-frontend      # Karma, shared-meet-components
-./meet.sh test-unit-webcomponent  # Jest
-./meet.sh test-e2e-frontend       # Playwright: spa project only
-./meet.sh test-e2e-webcomponent   # Playwright: webcomponent project only
-./meet.sh lint-backend            # ESLint, fails on any warning
-./meet.sh lint-frontend
-./meet.sh lint-webcomponent       # ESLint, webcomponent/src + webcomponent/tests only
+./meet.sh test-unit-{backend,frontend,webcomponent}   # Jest, Karma (shared-meet-components), Jest
+./meet.sh test-e2e-{frontend,webcomponent}            # Playwright: spa project, webcomponent project
+./meet.sh lint-{backend,frontend,webcomponent}        # ESLint, fails on any warning
 ```
 
-CI-friendly flags on any command: `--skip-install`, `--skip-typings`, `--skip-build`.
+Flags on any command: `--skip-install`, `--skip-typings` (typings already built), `--skip-build`.
 
-The app is served at <http://localhost:6080/meet> in dev (backend port `6080`, base path `/meet`).
+## Before calling a change done
 
-## Development mode mechanics
+- **`./meet.sh verify`** is the definition of done for everything that needs no infrastructure: Prettier
+  on the changed files, OpenSpec, the OpenAPI lint and the unit suites the diff affects (tests,
+  type-check and lint each). It picks the suites with `scripts/ci/changed-suites.mjs`, as CI does, and
+  the CI unit jobs run it too. One line per step; a failure prints its excerpt and the path of the full
+  log. `--fix` formats the changed files; never run Prettier over a directory, the repository is not
+  uniformly formatted. It lists the integration and e2e suites the diff selects and never runs them.
+- **`./meet.sh doctor`** tells in a second whether the OpenVidu local deployment those suites need is
+  usable (containers, LAN IP, built bundles, who holds :6080), with the fix for each problem. When it
+  is up, run them; when it is not, report them as not run instead of reporting a pass.
+- **`./meet.sh stack`** keeps test runs apart: several sessions share that deployment, so a test run
+  never uses the default Mongo database, Redis DB 0 or the `openvidu-meet` subbucket.
+  `stack up <name>` starts this checkout's backend on its own port, database, Redis DB and subbucket;
+  `stack run <name> -- <command>` runs a test command on them (after `up` when a meeting has to start:
+  only a listening backend receives LiveKit's webhooks); `stack down <name>` deletes them and
+  `stack list` shows who runs what. LiveKit posts its webhooks to :6080 and to the stack ports its
+  `livekit.yaml` lists; `doctor` shows them and how to add them.
 
-`./meet.sh dev` runs watchers under `concurrently` (typings, REST API docs, backend, frontend). The
-CE frontend compiles the library from source, so there is no library watcher; PRO adds one because
-it consumes the library's `dist`. Two details matter when things look stale:
+## Development mode
 
-- The typings watcher writes `meet-ce/typings/dist/typings-ready.flag`; every other watcher runs
-  behind `scripts/dev/watch-with-typings-guard.mjs`, which waits for that flag and restarts its
-  child when typings recompile. A typings compile error therefore stalls the other watchers by
-  design.
-- The frontend `ng build --watch` writes **directly into `meet-ce/backend/public/frontend`**, and
-  the webcomponent build deploys into `meet-ce/backend/public/webcomponent`. The backend serves
-  those directories. `public/` is git-ignored; a stale bundle there is the usual cause of "my change
-  isn't showing up"; rebuild rather than debugging the running app.
+`./meet.sh dev` runs the watchers (typings, REST API docs, backend, frontend). The frontend watcher
+writes **directly into `meet-ce/backend/public/frontend`** and the webcomponent build into
+`public/webcomponent`, which the backend serves and git ignores: a stale bundle there is the usual cause
+of "my change isn't showing up" (`./meet.sh doctor` reports it); rebuild rather than debugging the
+running app. A typings compile error stalls every other watcher by design. How the watchers are chained
+is in `.claude/rules/dev-mode.md`, which loads when you open `meet.sh` or `scripts/dev/`.
 
 ## Code style
 
@@ -177,82 +191,21 @@ it consumes the library's `dist`. Two details matter when things look stale:
 
 ## Changelog
 
-`CHANGELOG.md` at the root, newest release first. **Review it on every commit and every PR**: a
-change a user or an integrator can observe gets its line in the unreleased release in the same
-commit that makes it. Internal refactors, tests and build work do not.
+`CHANGELOG.md` at the root, newest release first. **Review it on every commit and every PR**: a change
+a user or an integrator can observe gets one line in the unreleased release, in the same commit that
+makes it. Internal refactors, tests, build work and documentation-only changes get none, and neither
+does a fix to a feature of the unreleased version itself (it belongs to that feature's entry). The
+sections, the grouping and the writing rules are in `.claude/rules/changelog.md`, which loads when you
+open `CHANGELOG.md`.
 
-**Documentation-only changes never get a line**, however visible the document is: correcting the
-OpenAPI, a TSDoc or a website page so it finally describes behaviour the server already had changes
-nothing a reader can observe in the product. The changelog records what the software does
-differently, not what we finally wrote down about it. The same goes for a fix to a feature of the
-unreleased version itself: there is no previous release it differs from, so it belongs to that
-feature's existing entry, not to a `Fixed` line of its own.
+## CI
 
-A release uses these sections, in this order, omitting the empty ones:
-
-`Upgrade notes` → `Breaking changes` → `Deprecated` → `Added` → `Improved` → `Fixed`
-
-`Added`, `Improved` and `Fixed` group their entries under `Integration`, `UI` and `Deployment`,
-defined once at the top of the file: the surfaces a host application is built against, what a
-person using Meet sees, and running the server.
-
-- **One line per change**, in the present tense. What changed, not why, not how it behaves, not
-  what the reader should do about it.
-- **One entry per feature, not per surface.** A capability that reaches the REST API and the
-  embedded API is one line naming both, never one line each: split entries dissolve a headline
-  feature into a list. A permission belongs in the entry that uses it, never in an entry of its
-  own, so the reader never meets a permission before the thing it gates.
-- **Order the entries of a subsection by feature**, so the list does not jump between unrelated
-  ones and never mentions something it explains later.
-- **No recommendations.** No `must`, no `should`, no second person. A remedy is stated as a fact:
-  "the unchanged object is accepted", never "echo the object back unchanged".
-- **No API reference.** Endpoint tables, payload fields, status semantics and enum meanings live
-  in `meet-ce/backend/openapi/` and in the typings TSDoc, which generate the published docs. Link
-  them instead of restating them.
-- **Name the identifiers that changed**: endpoints, configuration fields, commands, events,
-  permissions, enum values. That is what a reader searches for.
-- **Say what actually gates a capability**: the permission the server checks, not the role that
-  usually holds it. Check the route and the service before writing it.
-- **A fix says what was wrong and then what is true now**, in one or two sentences. No story of
-  the bug, no consequences, no rationale: that belongs in the commit message.
-- Tables only for mappings, such as a deprecated name to its replacement.
-
-Links to the REST API reference are markdown reference-style definitions collected at the end of
-the file, labelled with the release (`[3.9-meetings]`) because the published URL is version-pinned
-to `https://openvidu.io/<version>/meet/embedded/reference/api.html`. Anchors follow the convention
-the OpenAPI sources already use for their own cross-references: `#/operations/<operationId>`,
-`#/webhooks/<operationId>` and `#/schemas/<Schema>`.
-
-## Tests, CI and docs
-
-- One workflow, `Tests` (`.github/workflows/ci.yaml`), runs every test suite. Its `Select suites` job
-  picks the suites a change affects with `scripts/ci/changed-suites.mjs` (per-suite path patterns with
-  the semantics of GitHub `paths` filters). The unit suites (backend, frontend, webcomponent; tests and
-  lint) run first; backend integration and both e2e suites start only if none of them failed. It ends
-  in `All tests passed`, the only required status check of `main`: renaming, splitting or adding jobs
-  never touches the ruleset. Repeated steps are YAML anchors defined at their first use, so a version
-  is pinned in one place. Suites use Node `24.22.1` (same pin as `meet-ce/docker/Dockerfile`) and pnpm
-  `11.28.9`. Every job runs on GitHub-hosted `ubuntu-24.04` runners, free for this public repo (the
-  integration and e2e jobs start the OpenVidu local deployment there, faster than on the shared
-  self-hosted runners, which Meet no longer uses). pnpm is pinned by
-  `packageManager` in the root `package.json`, which the Docker build follows; `pnpm/action-setup`
-  fails if its `version` differs. Most suites watch `meet.sh` because CI calls it, so dev-mode logic
-  lives in `scripts/dev/dev.sh` (sourced only by `./meet.sh dev`), which no suite watches. Markdown and
-  `nodemon*.json` never select a suite.
-- CI runs on pull requests: a branch gets CI once it has a PR (a draft is enough) or by dispatching
-  `Tests` (input `suites`, `all` by default, or a comma-separated list). A push to `main` runs the suites it
-  affects, like a pull request, except that a change touching only the backend does not select the e2e
-  suites (the integration suite covers it), and the nightly (00:17 UTC) runs every suite, only when `main` moved
-  since the last green nightly. On a pull request or a push, recordings run on S3 only, unless the change
-  touches `meet-ce/backend/src/services/storage/` or the pull request carries the `ci:storage` label
-  (read when a run starts, so add it before pushing): GCS and ABS share one bucket each, which every
-  recordings job empties first. The nightly and dispatched runs use S3, GCS and ABS. Dependabot groups all
-  action bumps in one PR.
-- Backend integration tests and all Playwright suites need real infrastructure (LiveKit, MongoDB,
-  Redis, S3/MinIO). They are not runnable from a bare checkout: say so instead of reporting a pass.
-- `./meet.sh build-rest-api-doc` and `./meet.sh build-webcomponent-doc` generate the API references
-  (see "Documentation (openvidu.io)"); without a target directory the embedded one lands in the
-  git-ignored `docs/webcomponent/`.
+One workflow, `Tests` (`.github/workflows/ci.yaml`), ending in `All tests passed`, the only required
+check of `main`. It runs on pull requests (a draft is enough), on pushes to `main`, nightly and on
+dispatch, and only the suites a change affects: the static checks and the unit suites first, through
+`scripts/verify.mjs`, then backend integration and both e2e suites. Suite selection, storage
+providers, version pins and runners are in `.claude/rules/ci.md`, which loads when you open the
+workflow, `scripts/ci/` or `scripts/verify.mjs`.
 
 ## Repo-wide gotchas
 
