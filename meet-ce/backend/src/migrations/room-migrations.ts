@@ -6,7 +6,6 @@ import type { SchemaMigrationMap, SchemaTransform } from '../models/migration.mo
 import { generateSchemaMigrationName } from '../models/migration.model.js';
 import type { MeetRoomDocument } from '../models/mongoose-schemas/room.schema.js';
 import { meetRoomCollectionName } from '../models/mongoose-schemas/room.schema.js';
-import { renamePermissionsRenamedBeforeRelease } from './unreleased-permission-renames.js';
 
 const roomMigrationV1ToV2Name = generateSchemaMigrationName(meetRoomCollectionName, 1, 2);
 const roomMigrationV2ToV3Name = generateSchemaMigrationName(meetRoomCollectionName, 2, 3);
@@ -17,7 +16,6 @@ const roomMigrationV6ToV7Name = generateSchemaMigrationName(meetRoomCollectionNa
 const roomMigrationV7ToV8Name = generateSchemaMigrationName(meetRoomCollectionName, 7, 8);
 const roomMigrationV8ToV9Name = generateSchemaMigrationName(meetRoomCollectionName, 8, 9);
 const roomMigrationV9ToV10Name = generateSchemaMigrationName(meetRoomCollectionName, 9, 10);
-const roomMigrationV10ToV11Name = generateSchemaMigrationName(meetRoomCollectionName, 10, 11);
 
 const roomMigrationV1ToV2Transform: SchemaTransform<MeetRoomDocument> = (room) => {
 	room.config.captions = { enabled: true };
@@ -125,7 +123,6 @@ const normalizeRolePermissionsTransform: SchemaTransform<MeetRoomDocument> = (ro
 		const roleConfig = room.roles?.[role];
 
 		if (roleConfig?.permissions) {
-			renamePermissionsRenamedBeforeRelease(roleConfig.permissions);
 			roleConfig.permissions = normalizePermissions(roleConfig.permissions, {
 				complete: true
 			}) as MeetRoomMemberPermissions;
@@ -203,6 +200,5 @@ export const roomMigrations: SchemaMigrationMap<MeetRoomDocument> = new Map([
 	[roomMigrationV6ToV7Name, roomMigrationV6ToV7Transform],
 	[roomMigrationV7ToV8Name, roomMigrationV7ToV8Transform],
 	[roomMigrationV8ToV9Name, roomMigrationV8ToV9Transform],
-	[roomMigrationV9ToV10Name, roomMigrationV9ToV10Transform],
-	[roomMigrationV10ToV11Name, normalizeRolePermissionsTransform]
+	[roomMigrationV9ToV10Name, roomMigrationV9ToV10Transform]
 ]);

@@ -16,7 +16,7 @@
 ## 2b. Names (N1)
 
 - [x] 2b.1 Rename the permissions, commands and operationIds of raise hand and reactions, and `recordingLinkGet`, across typings, backend, OpenAPI, frontend, web component, testapp, tests, translation keys and `CHANGELOG.md` (the 3.10.0 entries of both features).
-- [x] 2b.2 Migrations room v10 to v11 and room member v7 to v8: every permission normalization of a stored document first carries `participantHandLower` and `participantReactionSend` over to their new names (`migrations/unreleased-permission-renames.ts`); unit tests for both steps.
+- [x] 2b.2 The unreleased migration steps that add the two permissions (room v5 to v6 and v6 to v7, room member v3 to v4) write them under their new names; no new step, as with the `lock-room` renames.
 
 - [x] 2b.3 Rename every `operationId` to the charter (54), in the OpenAPI, the TSDoc and the 3.10.0 entries of `CHANGELOG.md` with their links; drop the frozen list and the bulk exception from the naming lint; register `user`, `auth`, `config`, `analytics` and `ai`, and remove the unused `hand` and `reaction`; update the charter in `meet-ce/typings/CLAUDE.md` and `meet-ce/backend/openapi/README.md`.
 
