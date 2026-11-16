@@ -1,4 +1,6 @@
-description: The broadcasts started, one per destination
+description: >
+    The broadcasts started, one per destination. No `Location` header, since a start can create several: each
+    broadcast is at `/broadcasts/{broadcastId}`
 content:
     application/json:
         schema:

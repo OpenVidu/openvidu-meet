@@ -57,7 +57,7 @@
                 $ref: '../shared/responses/errors/egress-unavailable.yaml'
     get:
         operationId: broadcastList
-        summary: Get all broadcasts
+        summary: List the broadcasts of a meeting
         description: |
             Lists the broadcasts in progress in the live meeting of a room, one per destination. A broadcast
             leaves the list once it ends; the [`broadcastEnded`](#/webhooks/broadcastEndedWebhook) webhook

@@ -8,18 +8,18 @@ MeetWebhookEvent:
           properties:
               event:
                   enum:
+                      - meetingStarted
+                      - meetingEnded
+                      - participantJoined
+                      - participantLeft
+                      - participantRoleChanged
+                      - participantHandChanged
+                      - waitingParticipantKnocked
+                      - waitingParticipantStatusChanged
                       - recordingStarted
                       - recordingUpdated
                       - recordingEnded
                       - broadcastStarted
                       - broadcastUpdated
                       - broadcastEnded
-                      - meetingStarted
-                      - meetingEnded
-                      - participantJoined
-                      - participantLeft
-                      - waitingParticipantKnocked
-                      - participantRoleChanged
-                      - participantHandChanged
-                      - waitingParticipantStatusChanged
                   example: recordingStarted

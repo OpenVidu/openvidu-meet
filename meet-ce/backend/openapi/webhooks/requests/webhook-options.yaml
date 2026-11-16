@@ -26,9 +26,9 @@ content:
                             - meetingEnded
                             - participantJoined
                             - participantLeft
-                            - waitingParticipantKnocked
                             - participantRoleChanged
                             - participantHandChanged
+                            - waitingParticipantKnocked
                             - waitingParticipantStatusChanged
                             - recordingStarted
                             - recordingUpdated

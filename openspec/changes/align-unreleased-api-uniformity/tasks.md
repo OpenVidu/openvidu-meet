@@ -7,6 +7,8 @@
 - [x] 1.3 E1: `MeetBroadcastErrorCode` in the typings; the five broadcast `409` constructors answer its codes; `broadcast-conflict.yaml` and `broadcast-already-stopped.yaml` show one example per code, and the shared error schema says `error` may be a code.
 - [x] 1.4 E4: `broadcast-not-found.yaml` shows the `room_not_found` example next to the broadcast one.
 
+- [x] 1.5 Documentation findings: `broadcastStart` says why it sends no `Location` (U2), `broadcast-forbidden.yaml` shows the authorization example (E3), `participantUpdateHand` documents its `Hand Error` 403 in `forbidden-hand.yaml` and has its own permission line (E2, D1), `broadcastList` and `participantUpdateHand` get the summaries of their siblings (D1), and the three webhook event enums list the events in one order, grouped by module (N4).
+
 ## 2. Raise hand
 
 - [x] 2.1 B1: `MeetParticipantHandOptions.handRaised`, the zod schemas, the controller, the permission middleware, the meeting's moderation service and both OpenAPI request files; unit and integration tests updated.
