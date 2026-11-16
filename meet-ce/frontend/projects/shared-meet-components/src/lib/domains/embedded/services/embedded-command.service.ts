@@ -3,7 +3,7 @@ import {
 	EmbeddedCommandName,
 	MeetBroadcastStartOptions,
 	MeetBroadcastStopOptions,
-	MeetParticipantWaitingDecisionOptions,
+	MeetWaitingParticipantDecisionOptions,
 	MeetParticipantModerationAction,
 	MeetParticipantMuteOptions,
 	MeetReaction,
@@ -23,8 +23,8 @@ import { MeetingContextService } from '../../meeting/services/meeting-context.se
 import { MeetingHandService } from '../../meeting/services/meeting-hand.service';
 import { MeetingModerationService } from '../../meeting/services/meeting-moderation.service';
 import { MeetingReactionsService } from '../../meeting/services/meeting-reactions.service';
-import { WaitingRoomAdminService } from '../../meeting/waiting-room/waiting-room-admin.service';
-import { WaitingRoomService } from '../../meeting/waiting-room/waiting-room.service';
+import { WaitingParticipantsAdminService } from '../../meeting/waiting-participants/waiting-participants-admin.service';
+import { WaitingParticipantService } from '../../meeting/waiting-participants/waiting-participant.service';
 import { RecordingService } from '../../recordings/services/recording.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { LoggerService } from '../../../shared/services/logger.service';
@@ -58,8 +58,8 @@ export class EmbeddedCommandService {
 	private readonly reactionsService = inject(MeetingReactionsService);
 	private readonly broadcastService = inject(BroadcastService);
 	private readonly broadcastState = inject(BroadcastStateService);
-	private readonly waitingRoom = inject(WaitingRoomService);
-	private readonly waitingRoomAdmin = inject(WaitingRoomAdminService);
+	private readonly waitingParticipant = inject(WaitingParticipantService);
+	private readonly waitingAdmin = inject(WaitingParticipantsAdminService);
 	private readonly log = inject(LoggerService).get('EmbeddedCommandService');
 	private lastRecordingStart: Promise<void> | undefined;
 
@@ -78,8 +78,8 @@ export class EmbeddedCommandService {
 
 	async meetingLeave(): Promise<void> {
 		await this.run(EmbeddedCommandName.MEETING_LEAVE, null, async () => {
-			if (this.waitingRoom.isWaiting()) {
-				this.waitingRoom.leave();
+			if (this.waitingParticipant.isWaiting()) {
+				this.waitingParticipant.leave();
 			} else {
 				await this.meetingLiveKitService.disconnect();
 			}
@@ -245,15 +245,27 @@ export class EmbeddedCommandService {
 		});
 	}
 
-	async participantWaitingAdmit(options: MeetParticipantWaitingDecisionOptions = {}): Promise<void> {
-		await this.run(EmbeddedCommandName.PARTICIPANT_WAITING_ADMIT, 'waitingRoomAdmin', async () => {
-			await this.waitingRoomAdmin.admit(options.participantIdentities);
+	async waitingParticipantAdmit({ participantIdentity }: MeetWaitingParticipantDecisionOptions): Promise<void> {
+		await this.run(EmbeddedCommandName.WAITING_PARTICIPANT_ADMIT, 'waitingParticipantAdmin', async () => {
+			await this.waitingAdmin.admit(participantIdentity);
 		});
 	}
 
-	async participantWaitingReject(options: MeetParticipantWaitingDecisionOptions = {}): Promise<void> {
-		await this.run(EmbeddedCommandName.PARTICIPANT_WAITING_REJECT, 'waitingRoomAdmin', async () => {
-			await this.waitingRoomAdmin.reject(options.participantIdentities);
+	async waitingParticipantAdmitAll(): Promise<void> {
+		await this.run(EmbeddedCommandName.WAITING_PARTICIPANT_ADMIT_ALL, 'waitingParticipantAdmin', async () => {
+			await this.waitingAdmin.admitAll();
+		});
+	}
+
+	async waitingParticipantReject({ participantIdentity }: MeetWaitingParticipantDecisionOptions): Promise<void> {
+		await this.run(EmbeddedCommandName.WAITING_PARTICIPANT_REJECT, 'waitingParticipantAdmin', async () => {
+			await this.waitingAdmin.reject(participantIdentity);
+		});
+	}
+
+	async waitingParticipantRejectAll(): Promise<void> {
+		await this.run(EmbeddedCommandName.WAITING_PARTICIPANT_REJECT_ALL, 'waitingParticipantAdmin', async () => {
+			await this.waitingAdmin.rejectAll();
 		});
 	}
 
@@ -275,7 +287,7 @@ export class EmbeddedCommandService {
 		const allowed =
 			this.meetingLiveKitService.isSessionActive() ||
 			(PREVIEW_CAPABLE_COMMANDS.has(command) && this.meetingPhase.isPreviewing()) ||
-			(command === EmbeddedCommandName.MEETING_LEAVE && this.waitingRoom.isWaiting());
+			(command === EmbeddedCommandName.MEETING_LEAVE && this.waitingParticipant.isWaiting());
 
 		if (!allowed) {
 			this.log.w(`${command} rejected: not available in the current meeting phase`);

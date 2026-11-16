@@ -4,7 +4,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AssetsService } from '../../../../shared/services/assets.service';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { MeetingJoinService } from '../../services/meeting-join.service';
-import { WaitingRoomOutcome, WaitingRoomService } from '../waiting-room.service';
+import { WaitingParticipantOutcome, WaitingParticipantService } from '../waiting-participant.service';
 import { WaitingOutcomeComponent } from './waiting-outcome.component';
 
 describe('WaitingOutcomeComponent', () => {
@@ -12,7 +12,7 @@ describe('WaitingOutcomeComponent', () => {
 	let announce: jasmine.Spy;
 	let askAgain: jasmine.Spy;
 	let goBack: jasmine.Spy;
-	const outcome = signal<WaitingRoomOutcome | undefined>(undefined);
+	const outcome = signal<WaitingParticipantOutcome | undefined>(undefined);
 
 	beforeEach(() => {
 		announce = jasmine.createSpy('announce').and.resolveTo();
@@ -28,7 +28,7 @@ describe('WaitingOutcomeComponent', () => {
 					useValue: { translate: (key: string) => key, translationsLoaded: () => 0 }
 				},
 				{ provide: AssetsService, useValue: { logo: 'logo.webp' } },
-				{ provide: WaitingRoomService, useValue: { outcome, askAgain } },
+				{ provide: WaitingParticipantService, useValue: { outcome, askAgain } },
 				{
 					provide: MeetingJoinService,
 					useValue: { showBackButton: signal(true), backButtonText: signal('JOIN.BACK'), goBack }
@@ -41,7 +41,7 @@ describe('WaitingOutcomeComponent', () => {
 		fixture?.destroy();
 	});
 
-	async function show(how: WaitingRoomOutcome): Promise<HTMLElement> {
+	async function show(how: WaitingParticipantOutcome): Promise<HTMLElement> {
 		outcome.set(how);
 		fixture = TestBed.createComponent(WaitingOutcomeComponent);
 		document.body.appendChild(fixture.nativeElement);
@@ -57,9 +57,9 @@ describe('WaitingOutcomeComponent', () => {
 		const element = await show('rejected');
 		const heading = element.querySelector('h1')!;
 
-		expect(heading.textContent?.trim()).toBe('WAITING_ROOM.REJECTED_TITLE');
+		expect(heading.textContent?.trim()).toBe('WAITING_PARTICIPANTS.REJECTED_TITLE');
 		expect(document.activeElement).toBe(heading);
-		expect(announce).toHaveBeenCalledOnceWith('WAITING_ROOM.REJECTED_TITLE', 'assertive');
+		expect(announce).toHaveBeenCalledOnceWith('WAITING_PARTICIPANTS.REJECTED_TITLE', 'assertive');
 	});
 
 	it('lets a rejected participant ask again at once', async () => {
@@ -74,7 +74,7 @@ describe('WaitingOutcomeComponent', () => {
 	it('lets the participant ask again at once after losing the place', async () => {
 		const element = await show('expired');
 
-		expect(element.querySelector('h1')!.textContent?.trim()).toBe('WAITING_ROOM.EXPIRED_TITLE');
+		expect(element.querySelector('h1')!.textContent?.trim()).toBe('WAITING_PARTICIPANTS.EXPIRED_TITLE');
 		askAgainButton(element).click();
 
 		expect(askAgain).toHaveBeenCalledTimes(1);

@@ -58,8 +58,10 @@ describe('IframeBridgeService', () => {
 			'participantReactionSend',
 			'broadcastStart',
 			'broadcastStop',
-			'participantWaitingAdmit',
-			'participantWaitingReject'
+			'waitingParticipantAdmit',
+			'waitingParticipantAdmitAll',
+			'waitingParticipantReject',
+			'waitingParticipantRejectAll'
 		]);
 		commandService.meetingEnd.and.resolveTo();
 		commandService.meetingLeave.and.resolveTo();
@@ -78,8 +80,10 @@ describe('IframeBridgeService', () => {
 		commandService.participantReactionSend.and.resolveTo();
 		commandService.broadcastStart.and.resolveTo();
 		commandService.broadcastStop.and.resolveTo();
-		commandService.participantWaitingAdmit.and.resolveTo();
-		commandService.participantWaitingReject.and.resolveTo();
+		commandService.waitingParticipantAdmit.and.resolveTo();
+		commandService.waitingParticipantAdmitAll.and.resolveTo();
+		commandService.waitingParticipantReject.and.resolveTo();
+		commandService.waitingParticipantRejectAll.and.resolveTo();
 
 		TestBed.configureTestingModule({
 			providers: [
@@ -295,23 +299,26 @@ describe('IframeBridgeService', () => {
 			]);
 		});
 
-		it('forwards PARTICIPANT_WAITING_ADMIT and PARTICIPANT_WAITING_REJECT with the participants named, or none for everyone waiting', () => {
+		it('forwards the waiting participant commands, those on one participant only with its identity', () => {
 			startBridge();
 
 			postFromHost({
-				command: EmbeddedCommandName.PARTICIPANT_WAITING_ADMIT,
-				payload: { participantIdentities: ['zoe'] }
+				command: EmbeddedCommandName.WAITING_PARTICIPANT_ADMIT,
+				payload: { participantIdentity: 'zoe' }
 			});
-			postFromHost({ command: EmbeddedCommandName.PARTICIPANT_WAITING_ADMIT });
-			postFromHost({ command: EmbeddedCommandName.PARTICIPANT_WAITING_REJECT, payload: {} });
+			postFromHost({ command: EmbeddedCommandName.WAITING_PARTICIPANT_ADMIT });
+			postFromHost({ command: EmbeddedCommandName.WAITING_PARTICIPANT_REJECT, payload: {} });
+			postFromHost({
+				command: EmbeddedCommandName.WAITING_PARTICIPANT_REJECT,
+				payload: { participantIdentity: 'ana' }
+			});
+			postFromHost({ command: EmbeddedCommandName.WAITING_PARTICIPANT_ADMIT_ALL });
+			postFromHost({ command: EmbeddedCommandName.WAITING_PARTICIPANT_REJECT_ALL });
 
-			expect(commandService.participantWaitingAdmit.calls.allArgs()).toEqual([
-				[{ participantIdentities: ['zoe'] }],
-				[{ participantIdentities: undefined }]
-			]);
-			expect(commandService.participantWaitingReject).toHaveBeenCalledOnceWith({
-				participantIdentities: undefined
-			});
+			expect(commandService.waitingParticipantAdmit).toHaveBeenCalledOnceWith({ participantIdentity: 'zoe' });
+			expect(commandService.waitingParticipantReject).toHaveBeenCalledOnceWith({ participantIdentity: 'ana' });
+			expect(commandService.waitingParticipantAdmitAll).toHaveBeenCalledTimes(1);
+			expect(commandService.waitingParticipantRejectAll).toHaveBeenCalledTimes(1);
 		});
 
 		it('ignores malformed messages (no command)', () => {

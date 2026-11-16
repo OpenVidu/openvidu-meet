@@ -1,14 +1,14 @@
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MeetWaitingRoomParticipantType } from '@openvidu-meet/typings';
+import { MeetWaitingParticipantType } from '@openvidu-meet/typings';
 import { Subject } from 'rxjs';
 import { NotificationOptions, ShownNotification } from '../../../../shared/models/notification.model';
 import { LoggerService } from '../../../../shared/services/logger.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { PanelType } from '../../openvidu-components/models/panel.model';
 import { PanelService } from '../../openvidu-components/services/panel/panel.service';
-import { WaitingRoomAdminService, WaitingRoomWaiter } from '../waiting-room-admin.service';
-import { WaitingRoomNoticeComponent } from './waiting-room-notice.component';
+import { WaitingParticipantsAdminService, WaitingParticipantView } from '../waiting-participants-admin.service';
+import { WaitingParticipantsNoticeComponent } from './waiting-participants-notice.component';
 
 class LoggerServiceStub {
 	get() {
@@ -36,11 +36,11 @@ class NotificationServiceFake {
 	}
 }
 
-const waiter = (identity: string, name = identity): WaitingRoomWaiter => ({
+const waiter = (identity: string, name = identity): WaitingParticipantView => ({
 	participant: {
 		participantIdentity: identity,
 		participantName: name,
-		type: MeetWaitingRoomParticipantType.ANONYMOUS,
+		type: MeetWaitingParticipantType.ANONYMOUS,
 		knockDate: 0
 	},
 	name,
@@ -48,50 +48,50 @@ const waiter = (identity: string, name = identity): WaitingRoomWaiter => ({
 	color: 'hsl(40, 100%, 80%)'
 });
 
-describe('WaitingRoomNoticeComponent', () => {
-	let fixture: ComponentFixture<WaitingRoomNoticeComponent>;
+describe('WaitingParticipantsNoticeComponent', () => {
+	let fixture: ComponentFixture<WaitingParticipantsNoticeComponent>;
 	let notifications: NotificationServiceFake;
-	let waiting: ReturnType<typeof signal<WaitingRoomWaiter[]>>;
-	let arrivals: Subject<WaitingRoomWaiter[]>;
+	let waiting: ReturnType<typeof signal<WaitingParticipantView[]>>;
+	let arrivals: Subject<WaitingParticipantView[]>;
 	let panelOpen: ReturnType<typeof signal<boolean>>;
-	let waitingRoomAdmin: jasmine.SpyObj<WaitingRoomAdminService>;
+	let waitingAdmin: jasmine.SpyObj<WaitingParticipantsAdminService>;
 	let togglePanel: jasmine.Spy;
 
 	beforeEach(async () => {
-		waiting = signal<WaitingRoomWaiter[]>([]);
-		arrivals = new Subject<WaitingRoomWaiter[]>();
+		waiting = signal<WaitingParticipantView[]>([]);
+		arrivals = new Subject<WaitingParticipantView[]>();
 		panelOpen = signal(false);
 		togglePanel = jasmine.createSpy('togglePanel');
-		waitingRoomAdmin = jasmine.createSpyObj<WaitingRoomAdminService>(
-			'WaitingRoomAdminService',
+		waitingAdmin = jasmine.createSpyObj<WaitingParticipantsAdminService>(
+			'WaitingParticipantsAdminService',
 			['admit', 'reject'],
 			{
 				waiting,
 				arrivals$: arrivals.asObservable()
 			}
 		);
-		waitingRoomAdmin.admit.and.resolveTo([]);
-		waitingRoomAdmin.reject.and.resolveTo([]);
+		waitingAdmin.admit.and.resolveTo();
+		waitingAdmin.reject.and.resolveTo();
 
 		await TestBed.configureTestingModule({
-			imports: [WaitingRoomNoticeComponent],
+			imports: [WaitingParticipantsNoticeComponent],
 			providers: [
 				provideZonelessChangeDetection(),
 				{ provide: LoggerService, useClass: LoggerServiceStub },
-				{ provide: WaitingRoomAdminService, useValue: waitingRoomAdmin },
+				{ provide: WaitingParticipantsAdminService, useValue: waitingAdmin },
 				{ provide: PanelService, useValue: { isParticipantsPanelOpened: panelOpen, togglePanel } },
 				{ provide: NotificationService, useClass: NotificationServiceFake }
 			]
 		}).compileComponents();
 
 		notifications = TestBed.inject(NotificationService) as unknown as NotificationServiceFake;
-		fixture = TestBed.createComponent(WaitingRoomNoticeComponent);
+		fixture = TestBed.createComponent(WaitingParticipantsNoticeComponent);
 		fixture.detectChanges();
 		await fixture.whenStable();
 	});
 
-	/** The server's list as the service hands it over: the new line first, then who arrived in it. */
-	async function line(current: WaitingRoomWaiter[], arrived: WaitingRoomWaiter[] = []): Promise<void> {
+	/** The server's list as the service hands it over: the new list first, then who arrived in it. */
+	async function line(current: WaitingParticipantView[], arrived: WaitingParticipantView[] = []): Promise<void> {
 		waiting.set(current);
 
 		if (arrived.length > 0) arrivals.next(arrived);
@@ -109,13 +109,13 @@ describe('WaitingRoomNoticeComponent', () => {
 		expect(shown().length).toBe(1);
 		expect(notice.title).toBe('Zoe');
 		expect(notice.avatars).toEqual([{ name: 'Zoe', color: zoe.color }]);
-		expect(notice.message).toEqual({ key: 'WAITING_ROOM.ADMIN.WANTS_TO_JOIN' });
+		expect(notice.message).toEqual({ key: 'WAITING_PARTICIPANTS.ADMIN.WANTS_TO_JOIN' });
 
 		notice.secondaryAction!.run();
 		notice.action!.run();
 
-		expect(waitingRoomAdmin.reject).toHaveBeenCalledOnceWith(['zoe']);
-		expect(waitingRoomAdmin.admit).toHaveBeenCalledOnceWith(['zoe']);
+		expect(waitingAdmin.reject).toHaveBeenCalledOnceWith('zoe');
+		expect(waitingAdmin.admit).toHaveBeenCalledOnceWith('zoe');
 	});
 
 	it('stacks the avatars of three people at most', async () => {
@@ -133,7 +133,7 @@ describe('WaitingRoomNoticeComponent', () => {
 
 		const [notice] = shown();
 		expect(shown().length).toBe(1);
-		expect(notice.title).toEqual({ key: 'WAITING_ROOM.ADMIN.WAITING_COUNT', params: { count: 2 } });
+		expect(notice.title).toEqual({ key: 'WAITING_PARTICIPANTS.ADMIN.WAITING_COUNT', params: { count: 2 } });
 		expect(notice.message).toBe('ana, ben');
 		expect(notice.avatars?.map(({ name }) => name)).toEqual(['ana', 'ben']);
 		expect(notice.secondaryAction).toBeUndefined();
@@ -143,7 +143,7 @@ describe('WaitingRoomNoticeComponent', () => {
 		expect(togglePanel).toHaveBeenCalledOnceWith(PanelType.PARTICIPANTS);
 	});
 
-	it('follows the line, and goes once nobody it announces waits', async () => {
+	it('follows the waiting list, and goes once nobody it announces waits', async () => {
 		const ana = waiter('ana');
 		const ben = waiter('ben');
 		await line([ana, ben], [ana, ben]);

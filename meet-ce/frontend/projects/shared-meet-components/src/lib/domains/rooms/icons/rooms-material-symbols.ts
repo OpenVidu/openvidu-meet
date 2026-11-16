@@ -3,7 +3,7 @@ export const ROOMS_MATERIAL_SYMBOLS = [
 	'auto_delete',
 	'background_replace',
 	'close',
-	'hourglass_top',
+	'lock',
 	'record_voice_over',
 	'shield_person',
 	'verified_user',

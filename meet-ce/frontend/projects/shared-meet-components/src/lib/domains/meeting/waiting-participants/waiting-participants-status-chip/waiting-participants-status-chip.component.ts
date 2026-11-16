@@ -5,26 +5,26 @@ import { nameHiddenParticipants } from '../../openvidu-components/models/layout/
 import { PanelType } from '../../openvidu-components/models/panel.model';
 import { MeetingUiConfigService } from '../../openvidu-components/services/config/meeting-ui-config.service';
 import { PanelService } from '../../openvidu-components/services/panel/panel.service';
-import { WaitingRoomAdminService } from '../waiting-room-admin.service';
+import { WaitingParticipantsAdminService } from '../waiting-participants-admin.service';
 
 /**
  * The status rail's chip of those waiting to be let in, at its right end, shaped like the chip of the
  * people off the grid. It opens the participants panel, where they are admitted.
  */
 @Component({
-	selector: 'ov-waiting-room-status-chip',
+	selector: 'ov-waiting-participants-status-chip',
 	imports: [MatIconModule, TranslatePipe],
-	templateUrl: './waiting-room-status-chip.component.html',
-	styleUrl: './waiting-room-status-chip.component.scss'
+	templateUrl: './waiting-participants-status-chip.component.html',
+	styleUrl: './waiting-participants-status-chip.component.scss'
 })
-export class WaitingRoomStatusChipComponent {
-	private readonly waitingRoomAdmin = inject(WaitingRoomAdminService);
+export class WaitingParticipantsStatusChipComponent {
+	private readonly waitingAdmin = inject(WaitingParticipantsAdminService);
 	private readonly panelService = inject(PanelService);
 
-	protected readonly count = computed(() => this.waitingRoomAdmin.waiting().length);
+	protected readonly count = computed(() => this.waitingAdmin.waiting().length);
 	protected readonly waitingNames = computed(() =>
 		nameHiddenParticipants(
-			this.waitingRoomAdmin.waiting().map(({ name }) => name),
+			this.waitingAdmin.waiting().map(({ name }) => name),
 			this.count()
 		)
 	);

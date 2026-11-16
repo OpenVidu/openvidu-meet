@@ -266,27 +266,26 @@
 		"BACK_TO_ROOMS": "Back to Rooms",
 		"ASK_BUTTON": "Ask to join"
 	},
-	"WAITING_ROOM": {
+	"WAITING_PARTICIPANTS": {
 		"TITLE": "Waiting to be let in",
-		"POSITION": "You're {position, selectordinal, one {#st} two {#nd} few {#rd} other {#th}} in line",
 		"SUBTITLE": "The host knows you're here. You'll join as soon as they let you in.",
 		"RECONNECTING": "Reconnecting… You keep your place if you're back within a minute.",
 		"WAITED": "{minutes, plural, one {Waiting # min} other {Waiting # min}}",
 		"NOT_STARTED": "The meeting hasn't started yet",
 		"PREVIEW_PRIVATE": "Nobody in the meeting can see or hear you yet",
-		"LEAVE": "Leave waiting room",
+		"LEAVE": "Stop waiting",
 		"ADMITTED": "You've been let in. Joining the meeting",
 		"ASK_AGAIN": "Ask to join again",
 		"REJECTED_TITLE": "You weren't let in",
 		"REJECTED_MESSAGE": "Your request to join wasn't accepted. You can ask again.",
-		"LEFT_TITLE": "You left the waiting room",
+		"LEFT_TITLE": "You stopped waiting",
 		"LEFT_MESSAGE": "You didn't join the meeting. Your request was withdrawn.",
 		"EXPIRED_TITLE": "You lost your place",
-		"EXPIRED_MESSAGE": "You were away for too long, or you asked to join from somewhere else. If you ask again, you'll be at the end of the line.",
+		"EXPIRED_MESSAGE": "You were away for too long, or you asked to join from somewhere else. You can ask again.",
 		"ENDED_TITLE": "The meeting has ended",
 		"ENDED_MESSAGE": "It ended before you were let in. If you ask again, you'll wait for the next one.",
-		"FULL_TITLE": "The waiting room is full",
-		"FULL_MESSAGE": "Too many people are waiting to join this meeting right now. Try again in a few minutes.",
+		"FULL_TITLE": "Too many people are waiting",
+		"FULL_MESSAGE": "No one else can ask to join this meeting right now. Try again in a few minutes.",
 		"ADMIN": {
 			"TITLE": "Waiting to join",
 			"PLACES_LEFT": "{count, plural, =0 {No places left} one {# place left} other {# places left}}",
@@ -295,7 +294,7 @@
 			"DENY": "Deny",
 			"ADMIT_NAMED": "Admit {name}",
 			"DENY_NAMED": "Deny {name}",
-			"ADMIT_COUNT": "{count, plural, other {Admit #}}",
+			"ADMIT_ALL": "Admit all",
 			"DENY_ALL": "Deny all",
 			"DENY_ALL_TITLE": "Deny everyone waiting?",
 			"DENY_ALL_MESSAGE": "Everyone waiting to join will see that they weren't let in. They can ask to join again.",
@@ -306,7 +305,9 @@
 			"WANTS_TO_JOIN": "Wants to join",
 			"VIEW": "View",
 			"GONE_TITLE": "{name} already left",
-			"GONE_MESSAGE": "That participant could not be found in the waiting room."
+			"GONE_MESSAGE": "That participant is no longer waiting to join.",
+			"NOT_ENOUGH_PLACES_TITLE": "Not everyone fits",
+			"NOT_ENOUGH_PLACES_MESSAGE": "More people are waiting than there are free places. Nobody was admitted."
 		}
 	},
 	"SHARE_ACCESS": {

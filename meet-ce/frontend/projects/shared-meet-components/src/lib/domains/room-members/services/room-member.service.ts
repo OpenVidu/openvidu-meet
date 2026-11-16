@@ -1,6 +1,6 @@
 import { inject, Service } from '@angular/core';
 import {
-	MeetWaitingRoomTicketResponse,
+	MeetWaitingTicketResponse,
 	MeetRoomMember,
 	MeetRoomMemberField,
 	MeetRoomMemberFilters,
@@ -223,7 +223,7 @@ export class RoomMemberService {
 	}
 
 	/**
-	 * The same request for a participant joining a meeting, which a room with the waiting room on may
+	 * The same request for a participant joining a meeting, which a locked room may
 	 * answer with the ticket of a wait instead of a token.
 	 *
 	 * @param roomId - The unique identifier of the room
@@ -235,7 +235,7 @@ export class RoomMemberService {
 		roomId: string,
 		tokenOptions: MeetRoomMemberTokenOptions,
 		headers?: Record<string, string>
-	): Promise<{ token: string } | MeetWaitingRoomTicketResponse> {
+	): Promise<{ token: string } | MeetWaitingTicketResponse> {
 		const path = `${this.getRoomMemberApiPath(roomId, true)}/token`;
 		return this.httpService.postRequest(path, tokenOptions, headers);
 	}

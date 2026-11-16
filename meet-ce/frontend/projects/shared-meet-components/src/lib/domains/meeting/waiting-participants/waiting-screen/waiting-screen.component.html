@@ -6,19 +6,18 @@
 			</span>
 			<div class="status-text">
 				<h1 id="waiting-screen-title" class="title">
-					@if (queuePosition(); as position) {
-						{{ 'WAITING_ROOM.POSITION' | translate: { position } }}
-					} @else {
-						{{ 'WAITING_ROOM.TITLE' | translate }}
-					}
+					{{ 'WAITING_PARTICIPANTS.TITLE' | translate }}
 				</h1>
 				<p class="subtitle" id="waiting-screen-subtitle">
-					{{ (isReconnecting() ? 'WAITING_ROOM.RECONNECTING' : 'WAITING_ROOM.SUBTITLE') | translate }}
+					{{
+						(isReconnecting() ? 'WAITING_PARTICIPANTS.RECONNECTING' : 'WAITING_PARTICIPANTS.SUBTITLE')
+							| translate
+					}}
 				</p>
 				<p class="waited" id="waiting-screen-waited" aria-live="off">
 					@if (minutesWaited() >= 1) {
 						<mat-icon aria-hidden="true">schedule</mat-icon>
-						{{ 'WAITING_ROOM.WAITED' | translate: { minutes: minutesWaited() } }}
+						{{ 'WAITING_PARTICIPANTS.WAITED' | translate: { minutes: minutesWaited() } }}
 					}
 				</p>
 			</div>
@@ -27,7 +26,7 @@
 		@if (meetingActive() === false) {
 			<p class="notice" id="waiting-screen-not-started">
 				<mat-icon aria-hidden="true">event_busy</mat-icon>
-				<span>{{ 'WAITING_ROOM.NOT_STARTED' | translate }}</span>
+				<span>{{ 'WAITING_PARTICIPANTS.NOT_STARTED' | translate }}</span>
 			</p>
 		}
 
@@ -56,7 +55,7 @@
 		/>
 		<span class="private-badge">
 			<mat-icon aria-hidden="true">visibility_off</mat-icon>
-			{{ 'WAITING_ROOM.PREVIEW_PRIVATE' | translate }}
+			{{ 'WAITING_PARTICIPANTS.PREVIEW_PRIVATE' | translate }}
 		</span>
 		<div class="device-controls">
 			@if (showCameraControls()) {
@@ -68,8 +67,8 @@
 		</div>
 	</div>
 
-	<button mat-button class="leave-button" id="waiting-room-leave-button" (click)="leave()">
+	<button mat-button class="leave-button" id="waiting-screen-stop-button" (click)="leave()">
 		<mat-icon aria-hidden="true">logout</mat-icon>
-		{{ 'WAITING_ROOM.LEAVE' | translate }}
+		{{ 'WAITING_PARTICIPANTS.LEAVE' | translate }}
 	</button>
 </main>

@@ -90,11 +90,11 @@ describe('RoomWizardComponent.createRoomAdvance — B5/F7: a rejected submit des
 });
 
 /**
- * The waiting room message travels differently in the two requests: creating a room has no `null` to
+ * The locked room message travels differently in the two requests: creating a room has no `null` to
  * remove a message with, so a cleared one is left out, while updating one sends `null`, which is what
  * removes the stored message.
  */
-describe('RoomWizardComponent.createRoomAdvance (waiting room message)', () => {
+describe('RoomWizardComponent.createRoomAdvance (locked room message)', () => {
 	let component: RoomWizardComponent;
 	let wizardService: RoomWizardStateService;
 	let roomService: Record<'createRoom' | 'updateRoomConfig' | 'updateRoomAccess' | 'updateRoomRoles', jasmine.Spy>;
@@ -134,40 +134,28 @@ describe('RoomWizardComponent.createRoomAdvance (waiting room message)', () => {
 		wizardService = TestBed.inject(RoomWizardStateService);
 	});
 
-	it('creates a room with the waiting room on and its message', async () => {
+	it('creates a locked room with its message', async () => {
 		wizardService.initializeWizard(false);
 		wizardService.updateStepData({
-			config: { waitingRoom: { enabled: true, message: 'The host will let you in' } }
+			access: { lock: { enabled: true, message: 'The host will let you in' } }
 		});
 
 		await component.createRoomAdvance();
 
-		expect(roomService.createRoom.calls.mostRecent().args[0].config.waitingRoom).toEqual({
+		expect(roomService.createRoom.calls.mostRecent().args[0].access.lock).toEqual({
 			enabled: true,
 			message: 'The host will let you in'
 		});
 	});
 
-	it('creates a room without a message key when the message was cleared', async () => {
-		wizardService.initializeWizard(false);
-		wizardService.updateStepData({ config: { waitingRoom: { enabled: true, message: null } } });
-
-		await component.createRoomAdvance();
-
-		const { waitingRoom } = roomService.createRoom.calls.mostRecent().args[0].config;
-
-		expect(waitingRoom.enabled).toBeTrue();
-		expect(JSON.parse(JSON.stringify(waitingRoom))).toEqual({ enabled: true });
-	});
-
-	it('updates a room with message null when the message was cleared', async () => {
-		wizardService.initializeWizard(true, { config: { waitingRoom: { enabled: true, message: 'Welcome' } } });
+	it('updates the access of a room with message null when the message was cleared', async () => {
+		wizardService.initializeWizard(true, { access: { lock: { enabled: true, message: 'Welcome' } } });
 		component.roomId = 'room-1';
-		wizardService.updateStepData({ config: { waitingRoom: { enabled: true, message: null } } });
+		wizardService.updateStepData({ access: { lock: { enabled: true, message: null } } });
 
 		await component.createRoomAdvance();
 
-		expect(roomService.updateRoomConfig.calls.mostRecent().args[1].waitingRoom).toEqual({
+		expect(roomService.updateRoomAccess.calls.mostRecent().args[1].lock).toEqual({
 			enabled: true,
 			message: null
 		});

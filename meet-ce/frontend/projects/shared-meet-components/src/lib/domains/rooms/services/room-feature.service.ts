@@ -4,8 +4,8 @@ import {
 	MeetBroadcastConfig,
 	MeetRecordingConfig,
 	MeetRoomConfig,
-	MeetRoomMemberPermissions,
-	MeetWaitingRoomConfig
+	MeetRoomLock,
+	MeetRoomMemberPermissions
 } from '@openvidu-meet/typings';
 import type { InitialMediaState } from '../../meeting/openvidu-components';
 import { GlobalConfigService } from '../../../shared/services/global-config.service';
@@ -60,6 +60,7 @@ export class RoomFeatureService {
 
 	// Signals to handle reactive state
 	protected roomConfig = signal<MeetRoomConfig | undefined>(undefined);
+	protected lock = signal<MeetRoomLock | undefined>(undefined);
 	protected initialMediaRequest = signal<InitialMediaRequest>({});
 	permissions = this.roomMemberContextService.permissions;
 
@@ -87,10 +88,11 @@ export class RoomFeatureService {
 	/** The room's live broadcast configuration (its saved destinations), for the activity that offers them. */
 	public readonly broadcastConfig = computed<MeetBroadcastConfig | undefined>(() => this.roomConfig()?.broadcast);
 
-	/** The room's waiting room configuration, for the participants who let others in. */
-	public readonly waitingRoomConfig = computed<MeetWaitingRoomConfig | undefined>(
-		() => this.roomConfig()?.waitingRoom
-	);
+	/** The room's lock, for the participants who let others in. */
+	public readonly roomLock = this.lock.asReadonly();
+
+	/** The room's participant limit; `null` without one. */
+	public readonly maxParticipants = computed(() => this.roomConfig()?.maxParticipants ?? null);
 
 	/**
 	 * Loads global feature configuration once the service is ready for requests.
@@ -110,6 +112,10 @@ export class RoomFeatureService {
 	setRoomConfig(config: MeetRoomConfig): void {
 		this.log.d('Updating room config', config);
 		this.roomConfig.set(config);
+	}
+
+	setRoomLock(lock: MeetRoomLock): void {
+		this.lock.set(lock);
 	}
 
 	setInitialMediaRequest(request: InitialMediaRequest): void {
@@ -164,5 +170,6 @@ export class RoomFeatureService {
 	 */
 	reset(): void {
 		this.roomConfig.set(undefined);
+		this.lock.set(undefined);
 	}
 }

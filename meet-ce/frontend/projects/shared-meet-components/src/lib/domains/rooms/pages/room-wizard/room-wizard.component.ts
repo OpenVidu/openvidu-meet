@@ -148,7 +148,8 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 				},
 				user: {
 					enabled: access.user.enabled
-				}
+				},
+				lock: access.lock
 			};
 
 			if (this.existingRoomData) {
@@ -258,7 +259,7 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 				this.notificationService.showMessage(this.translateService.translate('ROOMS.ERRORS.ROOM_UPDATED'));
 			} else {
 				// Create new room
-				const { roomId, access } = await this.roomService.createRoom(this.forCreation(roomOptions), {
+				const { roomId, access } = await this.roomService.createRoom(roomOptions, {
 					fields: ['roomId', 'access']
 				});
 
@@ -302,16 +303,6 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 			clearTimeout(delayLoader);
 			this.isCreatingRoom.set(false);
 		}
-	}
-
-	/** A creation request has no `null` to remove a message with, so a cleared waiting room message is left out. */
-	private forCreation({ config, ...options }: MeetRoomOptions): MeetRoomOptions {
-		const waitingRoom = config?.waitingRoom && {
-			...config.waitingRoom,
-			message: config.waitingRoom.message ?? undefined
-		};
-
-		return { ...options, config: { ...config, waitingRoom } };
 	}
 
 	private async createPendingMembers(roomId: string, members: MeetRoomMemberOptions[]): Promise<void> {

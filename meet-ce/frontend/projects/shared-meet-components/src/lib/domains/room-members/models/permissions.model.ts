@@ -188,19 +188,19 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
 		]
 	},
 	{
-		label: 'ROOM_MEMBERS.PERMISSIONS.GROUPS.WAITING_ROOM',
-		icon: 'hourglass_top',
+		label: 'ROOM_MEMBERS.PERMISSIONS.GROUPS.LOCKED_ROOM',
+		icon: 'lock',
 		permissions: [
 			{
-				key: 'waitingRoomBypass',
-				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.waitingRoomBypass.LABEL',
-				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.waitingRoomBypass.DESCRIPTION',
+				key: 'accessBypassLock',
+				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.accessBypassLock.LABEL',
+				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.accessBypassLock.DESCRIPTION',
 				icon: 'fast_forward'
 			},
 			{
-				key: 'waitingRoomAdmin',
-				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.waitingRoomAdmin.LABEL',
-				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.waitingRoomAdmin.DESCRIPTION',
+				key: 'waitingParticipantAdmin',
+				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.waitingParticipantAdmin.LABEL',
+				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.waitingParticipantAdmin.DESCRIPTION',
 				icon: 'how_to_reg'
 			}
 		]

@@ -118,7 +118,7 @@
         "RECORDINGS": "Aufnahmen",
         "BROADCAST": "Live-Übertragung",
         "CHAT": "Chat",
-        "WAITING_ROOM": "Warteraum"
+        "LOCKED_ROOM": "Gesperrter Raum"
       },
       "ITEMS": {
         "meetingJoin": {
@@ -209,11 +209,11 @@
           "LABEL": "Schreiben",
           "DESCRIPTION": "Erlaubt das Senden von Chat-Nachrichten. Erfordert „Lesen“"
         },
-        "waitingRoomBypass": {
-          "LABEL": "Ohne Warten beitreten",
-          "DESCRIPTION": "Erlaubt, einem Raum mit Warteraum beizutreten, ohne auf die Zulassung zu warten"
+        "accessBypassLock": {
+          "LABEL": "Gesperrtem Raum beitreten",
+          "DESCRIPTION": "Erlaubt, einem gesperrten Raum beizutreten, ohne auf die Zulassung zu warten"
         },
-        "waitingRoomAdmin": {
+        "waitingParticipantAdmin": {
           "LABEL": "Teilnehmer zulassen",
           "DESCRIPTION": "Erlaubt, wartende Teilnehmer zuzulassen oder abzulehnen"
         }

@@ -39,7 +39,7 @@ import {
 	type EmbeddedEvent,
 	type MeetBroadcastStartOptions,
 	type MeetBroadcastStopOptions,
-	type MeetParticipantWaitingDecisionOptions,
+	type MeetWaitingParticipantDecisionOptions,
 	type MeetParticipantModerationAction,
 	type MeetParticipantMuteOptions,
 	type MeetReaction,
@@ -145,10 +145,12 @@ export class App {
 	readonly broadcastStarted = output<EmbeddedEventPayloadFor<EmbeddedEventName.BROADCAST_STARTED>>();
 	readonly broadcastUpdated = output<EmbeddedEventPayloadFor<EmbeddedEventName.BROADCAST_UPDATED>>();
 	readonly broadcastEnded = output<EmbeddedEventPayloadFor<EmbeddedEventName.BROADCAST_ENDED>>();
-	readonly participantKnocked = output<EmbeddedEventPayloadFor<EmbeddedEventName.PARTICIPANT_KNOCKED>>();
-	readonly waitingRoomUpdated = output<EmbeddedEventPayloadFor<EmbeddedEventName.WAITING_ROOM_UPDATED>>();
-	readonly participantWaitingChanged =
-		output<EmbeddedEventPayloadFor<EmbeddedEventName.PARTICIPANT_WAITING_CHANGED>>();
+	readonly waitingParticipantKnocked =
+		output<EmbeddedEventPayloadFor<EmbeddedEventName.WAITING_PARTICIPANT_KNOCKED>>();
+	readonly waitingParticipantListUpdated =
+		output<EmbeddedEventPayloadFor<EmbeddedEventName.WAITING_PARTICIPANT_LIST_UPDATED>>();
+	readonly waitingParticipantStatusChanged =
+		output<EmbeddedEventPayloadFor<EmbeddedEventName.WAITING_PARTICIPANT_STATUS_CHANGED>>();
 	readonly embeddedCloseRequested = output<void>();
 
 	/** @deprecated Renamed to `meetingJoined`. Removed in 3.12.0. Dispatched alongside it. */
@@ -377,12 +379,20 @@ export class App {
 		return this.commandService.broadcastStop(options);
 	}
 
-	participantWaitingAdmit(options?: MeetParticipantWaitingDecisionOptions): Promise<void> {
-		return this.commandService.participantWaitingAdmit(options);
+	waitingParticipantAdmit(options: MeetWaitingParticipantDecisionOptions): Promise<void> {
+		return this.commandService.waitingParticipantAdmit(options);
 	}
 
-	participantWaitingReject(options?: MeetParticipantWaitingDecisionOptions): Promise<void> {
-		return this.commandService.participantWaitingReject(options);
+	waitingParticipantAdmitAll(): Promise<void> {
+		return this.commandService.waitingParticipantAdmitAll();
+	}
+
+	waitingParticipantReject(options: MeetWaitingParticipantDecisionOptions): Promise<void> {
+		return this.commandService.waitingParticipantReject(options);
+	}
+
+	waitingParticipantRejectAll(): Promise<void> {
+		return this.commandService.waitingParticipantRejectAll();
 	}
 
 	// ── Internal ─────────────────────────────────────────────────────────────
@@ -448,14 +458,14 @@ export class App {
 			case EmbeddedEventName.BROADCAST_ENDED:
 				this.broadcastEnded.emit(payload);
 				break;
-			case EmbeddedEventName.PARTICIPANT_KNOCKED:
-				this.participantKnocked.emit(payload);
+			case EmbeddedEventName.WAITING_PARTICIPANT_KNOCKED:
+				this.waitingParticipantKnocked.emit(payload);
 				break;
-			case EmbeddedEventName.WAITING_ROOM_UPDATED:
-				this.waitingRoomUpdated.emit(payload);
+			case EmbeddedEventName.WAITING_PARTICIPANT_LIST_UPDATED:
+				this.waitingParticipantListUpdated.emit(payload);
 				break;
-			case EmbeddedEventName.PARTICIPANT_WAITING_CHANGED:
-				this.participantWaitingChanged.emit(payload);
+			case EmbeddedEventName.WAITING_PARTICIPANT_STATUS_CHANGED:
+				this.waitingParticipantStatusChanged.emit(payload);
 				break;
 		}
 	}

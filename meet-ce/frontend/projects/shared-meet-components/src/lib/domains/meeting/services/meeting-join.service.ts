@@ -1,6 +1,6 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
-import { MeetRoom, MeetRoomConfig, MeetRoomStatus } from '@openvidu-meet/typings';
+import { MeetRoom, MeetRoomStatus } from '@openvidu-meet/typings';
 import { LeaveRedirectService } from '../../../shared/services/leave-redirect.service';
 import { NavigationService } from '../../../shared/services/navigation.service';
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
@@ -54,11 +54,9 @@ export class MeetingJoinService {
 	readonly canJoinMeeting = computed(() => this.meetingContextService.meetingUI().showJoinMeeting);
 	/** Readonly signal for whether the room is closed */
 	readonly roomClosed = computed(() => this._room()?.status === MeetRoomStatus.CLOSED);
-	/** Whether submitting the join screen asks to be let in: the room has the waiting room on and the participant lacks `waitingRoomBypass`. */
+	/** Whether submitting the join screen asks to be let in: the room is locked and the participant lacks `accessBypassLock`. */
 	readonly asksToJoin = computed(
-		() =>
-			!!this._room()?.config?.waitingRoom?.enabled &&
-			!this.roomMemberContextService.hasPermission('waitingRoomBypass')
+		() => !!this._room()?.access?.lock?.enabled && !this.roomMemberContextService.hasPermission('accessBypassLock')
 	);
 	/** Readonly signal for whether E2EE is enabled in the room */
 	readonly hasRoomE2EEEnabled = computed(() => this._room()?.config?.e2ee?.enabled ?? false);
@@ -129,9 +127,9 @@ export class MeetingJoinService {
 	/**
 	 * Initializes the join screen state by fetching room data and configuring UI.
 	 *
-	 * @returns The config of the room, which the meeting of this entry starts with
+	 * @returns The config and the access of the room, which the meeting of this entry starts with
 	 */
-	async initialize(): Promise<MeetRoomConfig> {
+	async initialize(): Promise<Pick<MeetRoom, 'config' | 'access'>> {
 		try {
 			const roomId = this.meetingContextService.roomId();
 
@@ -152,7 +150,7 @@ export class MeetingJoinService {
 
 			const room = await this.withTimeout(
 				this.roomService.getRoom(roomId, {
-					fields: ['roomId', 'roomName', 'status', 'config'],
+					fields: ['roomId', 'roomName', 'status', 'config', 'access'],
 					extraFields: ['config']
 				}),
 				12000,
@@ -178,7 +176,7 @@ export class MeetingJoinService {
 				form.get('e2eeKey')?.updateValueAndValidity();
 			}
 
-			return room.config;
+			return room;
 		} catch (error) {
 			this.clearJoinState();
 			throw error;

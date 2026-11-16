@@ -1,4 +1,4 @@
-import { MeetWaitingRoomErrorCode } from '@openvidu-meet/typings';
+import { MeetWaitingParticipantErrorCode } from '@openvidu-meet/typings';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 
 /**
@@ -32,14 +32,14 @@ export function roomMemberTokenFailure(error: unknown): NavigationErrorReason {
 	}
 }
 
-/** Whether the request to join was refused because the waiting room holds as many participants as it can. */
-export function isWaitingRoomFull(error: unknown): boolean {
-	return describe(error).code === MeetWaitingRoomErrorCode.WAITING_ROOM_FULL;
+/** Whether the request to join was refused because the waiting list holds as many participants as it can. */
+export function isWaitingListFull(error: unknown): boolean {
+	return describe(error).code === MeetWaitingParticipantErrorCode.WAITING_LIST_FULL;
 }
 
 /** Whether the request to join with a ticket was refused because its wait is over or unknown. */
-export function isWaitingRoomWaitEnded(error: unknown): boolean {
-	return describe(error).code === MeetWaitingRoomErrorCode.WAIT_ENDED;
+export function isWaitEnded(error: unknown): boolean {
+	return describe(error).code === MeetWaitingParticipantErrorCode.WAIT_ENDED;
 }
 
 function describe(error: unknown): { status?: number; message: string; code?: string } {

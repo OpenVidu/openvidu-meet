@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { MeetWaitingRoomParticipantType } from '@openvidu-meet/typings';
+import { MeetWaitingParticipantType } from '@openvidu-meet/typings';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import { LoggerService } from '../../../shared/services/logger.service';
 import { NavigationService } from '../../../shared/services/navigation.service';
@@ -173,11 +173,11 @@ describe('RoomMemberContextService', () => {
 	/** A waiting ticket is the answer of a join only: it is never kept as the participant's token. */
 	describe('waiting ticket', () => {
 		const ticket = {
-			waitingRoomTicket: 'ticket-1',
+			waitingTicket: 'ticket-1',
 			participant: {
 				participantIdentity: 'ana-1',
 				participantName: 'Ana',
-				type: MeetWaitingRoomParticipantType.ANONYMOUS,
+				type: MeetWaitingParticipantType.ANONYMOUS,
 				knockDate: 1_800_000_000_000
 			}
 		};

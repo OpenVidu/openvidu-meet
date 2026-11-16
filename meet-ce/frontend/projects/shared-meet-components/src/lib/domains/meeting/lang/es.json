@@ -266,27 +266,26 @@
 		"BACK_TO_ROOMS": "Volver a las salas",
 		"ASK_BUTTON": "Pedir unirse"
 	},
-	"WAITING_ROOM": {
+	"WAITING_PARTICIPANTS": {
 		"TITLE": "Esperando a que te dejen entrar",
-		"POSITION": "Eres el {position, selectordinal, other {#.º}} de la fila",
 		"SUBTITLE": "El anfitrión sabe que estás aquí. Entrarás en cuanto te deje pasar.",
 		"RECONNECTING": "Reconectando… Conservas tu lugar si vuelves en menos de un minuto.",
 		"WAITED": "{minutes, plural, one {Esperando # min} other {Esperando # min}}",
 		"NOT_STARTED": "La reunión aún no ha empezado",
 		"PREVIEW_PRIVATE": "Nadie en la reunión puede verte ni oírte todavía",
-		"LEAVE": "Salir de la sala de espera",
+		"LEAVE": "Dejar de esperar",
 		"ADMITTED": "Te han dejado entrar. Uniéndote a la reunión",
 		"ASK_AGAIN": "Pedir unirse de nuevo",
 		"REJECTED_TITLE": "No te han dejado entrar",
 		"REJECTED_MESSAGE": "No se aceptó tu solicitud para unirte. Puedes volver a pedirlo.",
-		"LEFT_TITLE": "Has salido de la sala de espera",
+		"LEFT_TITLE": "Has dejado de esperar",
 		"LEFT_MESSAGE": "No te has unido a la reunión. Tu solicitud se ha retirado.",
 		"EXPIRED_TITLE": "Has perdido tu lugar",
-		"EXPIRED_MESSAGE": "Estuviste ausente demasiado tiempo o pediste unirte desde otro sitio. Si lo pides de nuevo, quedarás al final de la fila.",
+		"EXPIRED_MESSAGE": "Estuviste ausente demasiado tiempo o pediste unirte desde otro sitio. Puedes pedirlo de nuevo.",
 		"ENDED_TITLE": "La reunión ha terminado",
 		"ENDED_MESSAGE": "Terminó antes de que te dejaran entrar. Si lo pides de nuevo, esperarás a la siguiente.",
-		"FULL_TITLE": "La sala de espera está llena",
-		"FULL_MESSAGE": "Hay demasiadas personas esperando para unirse a esta reunión. Inténtalo de nuevo en unos minutos.",
+		"FULL_TITLE": "Hay demasiadas personas esperando",
+		"FULL_MESSAGE": "Ahora mismo nadie más puede pedir unirse a esta reunión. Inténtalo de nuevo en unos minutos.",
 		"ADMIN": {
 			"TITLE": "Esperando para entrar",
 			"PLACES_LEFT": "{count, plural, =0 {No quedan plazas} one {Queda # plaza} other {Quedan # plazas}}",
@@ -295,7 +294,7 @@
 			"DENY": "Denegar",
 			"ADMIT_NAMED": "Admitir a {name}",
 			"DENY_NAMED": "Denegar a {name}",
-			"ADMIT_COUNT": "{count, plural, other {Admitir #}}",
+			"ADMIT_ALL": "Admitir a todos",
 			"DENY_ALL": "Denegar a todos",
 			"DENY_ALL_TITLE": "¿Denegar a todos los que esperan?",
 			"DENY_ALL_MESSAGE": "Todos los que esperan para entrar verán que no les han dejado entrar. Pueden pedir unirse de nuevo.",
@@ -306,7 +305,9 @@
 			"WANTS_TO_JOIN": "Quiere unirse",
 			"VIEW": "Ver",
 			"GONE_TITLE": "{name} ya se había ido",
-			"GONE_MESSAGE": "No se ha encontrado a ese participante en la sala de espera."
+			"GONE_MESSAGE": "Ese participante ya no está esperando para entrar.",
+			"NOT_ENOUGH_PLACES_TITLE": "No caben todos",
+			"NOT_ENOUGH_PLACES_MESSAGE": "Hay más personas esperando que plazas libres. No se ha admitido a nadie."
 		}
 	},
 	"SHARE_ACCESS": {

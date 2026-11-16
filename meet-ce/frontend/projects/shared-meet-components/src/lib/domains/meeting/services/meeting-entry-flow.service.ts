@@ -9,7 +9,7 @@ import {
 	MeetingEntryOptions
 } from '../utils/meeting-entry-flow.utils';
 import { MeetingJoinService } from './meeting-join.service';
-import { WaitingRoomService } from '../waiting-room/waiting-room.service';
+import { WaitingParticipantService } from '../waiting-participants/waiting-participant.service';
 
 /**
  * Where the participant is on their way into the meeting:
@@ -25,7 +25,7 @@ export type MeetingEntryStep = 'preparing' | 'join' | 'meeting' | 'left' | 'erro
 @Injectable()
 export class MeetingEntryFlowService {
 	private readonly joinService = inject(MeetingJoinService);
-	private readonly waitingRoom = inject(WaitingRoomService);
+	private readonly waitingParticipant = inject(WaitingParticipantService);
 	private readonly roomFeatureService = inject(RoomFeatureService);
 	private readonly dialogService = inject(DialogService);
 	private readonly translateService = inject(TranslateService);
@@ -41,7 +41,9 @@ export class MeetingEntryFlowService {
 		this._step.set('preparing');
 
 		try {
-			this.roomFeatureService.setRoomConfig(await this.joinService.initialize());
+			const { config, access } = await this.joinService.initialize();
+			this.roomFeatureService.setRoomConfig(config);
+			this.roomFeatureService.setRoomLock(access.lock);
 		} catch (error) {
 			this.log.e('Error preparing the meeting:', error);
 			this._step.set('error');
@@ -54,7 +56,7 @@ export class MeetingEntryFlowService {
 			return;
 		}
 
-		const resumingWait = this.joinService.asksToJoin() && this.waitingRoom.hasPendingWait();
+		const resumingWait = this.joinService.asksToJoin() && this.waitingParticipant.hasPendingWait();
 
 		if (joinScreenNeeded(this._options(), this.joinService.joinScreenState(), resumingWait)) {
 			this._step.set('join');

@@ -118,7 +118,7 @@
         "RECORDINGS": "Recordings",
         "BROADCAST": "Live broadcast",
         "CHAT": "Chat",
-        "WAITING_ROOM": "Waiting room"
+        "LOCKED_ROOM": "Locked room"
       },
       "ITEMS": {
         "meetingJoin": {
@@ -209,11 +209,11 @@
           "LABEL": "Write",
           "DESCRIPTION": "Allow sending chat messages. Needs \"Read\""
         },
-        "waitingRoomBypass": {
-          "LABEL": "Join without waiting",
-          "DESCRIPTION": "Allow joining a room with a waiting room without waiting to be admitted"
+        "accessBypassLock": {
+          "LABEL": "Join a locked room",
+          "DESCRIPTION": "Allow joining a locked room without waiting to be admitted"
         },
-        "waitingRoomAdmin": {
+        "waitingParticipantAdmin": {
           "LABEL": "Admit participants",
           "DESCRIPTION": "Allow admitting or rejecting the participants waiting to join"
         }
