@@ -58,10 +58,8 @@ export enum EmbeddedEventName {
 	 */
 	WAITING_PARTICIPANT_LIST_UPDATED = 'waitingParticipantListUpdated',
 	/**
-	 * Event emitted when a wait to join a locked room changes status. The waiting participant receives it for their
-	 * own wait, starting with `waiting`; `meetingJoined` confirms an `admitted`, and no `meetingLeft` follows a wait.
-	 * The participants in the meeting holding `waitingParticipantAdmin` receive it for every wait of the room after
-	 * its knock, as the `waitingParticipantStatusChanged` webhook reports it.
+	 * Event emitted when a wait to join a locked room changes status: to the waiting participant for their own wait,
+	 * and to the participants in the meeting holding `waitingParticipantAdmin` for every wait of the room.
 	 */
 	WAITING_PARTICIPANT_STATUS_CHANGED = 'waitingParticipantStatusChanged',
 	/**
