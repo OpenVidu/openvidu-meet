@@ -80,6 +80,26 @@ export interface MeetRoomAccess {
 	 * Users access configuration for the room. See {@link MeetRoomUsers} for details.
 	 */
 	user: MeetRoomUsers;
+	/**
+	 * Lock of the room. See {@link MeetRoomLock} for details.
+	 */
+	lock: MeetRoomLock;
+}
+
+/**
+ * Lock of a room: while it is on, the participants without the `accessBypassLock` permission wait
+ * until someone holding `waitingParticipantAdmin` admits them.
+ */
+export interface MeetRoomLock {
+	/**
+	 * Indicates if the participants without `accessBypassLock` wait to be admitted.
+	 */
+	enabled: boolean;
+	/**
+	 * Message the waiting participants see while they wait, up to 500 characters. An update that
+	 * sends `null` removes it (see {@link MeetRoomLockOptions}).
+	 */
+	message?: string;
 }
 
 /**

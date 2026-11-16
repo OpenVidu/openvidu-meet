@@ -49,10 +49,10 @@ export interface MeetRoomMemberTokenOptions {
 	participantMetadata?: string;
 	/**
 	 * Ticket of the participant's wait, as the token request answered it (`202`) when the room has a
-	 * waiting room. Once the participant is admitted, the same request with the ticket answers the join
+	 * locked room. Once the participant is admitted, the same request with the ticket answers the join
 	 * token. Only accepted with `joinMeeting` true.
 	 */
-	waitingRoomTicket?: string;
+	waitingTicket?: string;
 }
 
 /**

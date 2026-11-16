@@ -77,8 +77,8 @@ every surface. `src/api-registry.ts` is the registry (`MEET_API_MODULES`, `MEET_
 token.
 
 - **Module token**: a singular, single-word lowerCamelCase noun (`embedded`, named after the
-  embedded mode, is the one adjective, and `waitingRoom`, the name the feature has in the UI, the
-  docs and the API, the one compound), registered exactly once, never a prefix of another token.
+  embedded mode, is the one adjective, and `waitingParticipant`, a participant who waits to be let
+  into a locked room, the one compound), registered exactly once, never a prefix of another token.
   Any other concept needing two words is not a module; fold it into the closest one and put the extra
   word in the action (`mediaChangeVirtualBackground`, not a `virtualBackground` module).
 - **Command** `moduleAction`: module first, then an imperative verb (`meetingLeave`,
@@ -95,15 +95,16 @@ token.
 - **REST**: live meeting state is a sub-resource of `/meetings/{roomId}`; only durable artifacts,
   egresses addressed by their own id like a recording (`/broadcasts`) and platform groups are
   top-level (see `MEET_API_REST_GROUPS`). Collections plural, singletons
-  singular. `operationId` = `moduleAction`.
+  singular. `operationId` = `moduleAction`, except a bulk operation over a module's collection, which
+  takes the shape of the released bulk deletes: `bulk` + verb + module plural (`bulkRejectWaitingParticipants`).
 - **Reserved words**: `broadcast` = RTMP only, `reaction` = emoji only, `message(s)` = chat only,
   `embedded` = the OpenVidu Meet element or iframe a host mounts (the meeting inside it is
   `meeting`). Every event about that element, not about the meeting, its participants or their
   media, starts with `embedded`, so a host finds all of them under one prefix.
 - **Known exceptions** the lint allows on purpose: the 3.8.0 deprecated aliases (derived from the
-  alias maps, gone in 3.12.0). What happens to a participant's wait is a
-  `participant` event (`participantKnocked`, `participantWaitingChanged`), with no `waitingRoom…` alias; only
-  the line itself is `waitingRoomUpdated`.
+  alias maps, gone in 3.12.0). A participant who waits to join a locked room
+  is a `waitingParticipant` (`waitingParticipantKnocked`, `waitingParticipantStatusChanged`,
+  `waitingParticipantAdmin`); the lock is a room access setting (`access.lock`, `accessBypassLock`).
 
 ## Change discipline
 

@@ -53,10 +53,10 @@ export enum MeetRoomMemberType {
 }
 
 /**
- * How a participant asked to join a room with a waiting room, derived by the server from the credential
+ * How a participant asked to join a locked room, derived by the server from the credential
  * of the request.
  */
-export enum MeetWaitingRoomParticipantType {
+export enum MeetWaitingParticipantType {
 	/** The participant asked with their own Meet user account */
 	USER = 'user',
 	/** The participant asked with the personal link of an identified guest */

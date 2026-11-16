@@ -1,6 +1,6 @@
-import { MeetBroadcastConfig, MeetWaitingRoomConfig, MeetRoomConfig } from '../database/room-config.js';
+import { MeetBroadcastConfig, MeetRoomConfig } from '../database/room-config.js';
 import { MeetRoomMemberPermissions } from '../database/room-member-permissions.js';
-import { MeetRoomAutoDeletionPolicy } from '../database/room.entity.js';
+import { MeetRoomAutoDeletionPolicy, MeetRoomLock } from '../database/room.entity.js';
 
 /**
  * Options for creating a room.
@@ -39,18 +39,10 @@ export interface MeetRoomOptions {
  * field is optional. Omitted, a field takes its default on creation and keeps its current value on
  * an update. See {@link MeetRoomConfig} for details.
  */
-export type MeetRoomConfigOptions = Partial<Omit<MeetRoomConfig, 'broadcast' | 'waitingRoom'>> & {
+export type MeetRoomConfigOptions = Partial<Omit<MeetRoomConfig, 'broadcast'>> & {
 	/** Live broadcast configuration. See {@link MeetBroadcastConfigOptions} for details. */
 	broadcast?: MeetBroadcastConfigOptions;
-	/** Waiting room configuration. See {@link MeetWaitingRoomConfigOptions} for details. */
-	waitingRoom?: MeetWaitingRoomConfigOptions;
 };
-
-/**
- * Waiting room configuration as a request sends it: on an update, a `message` of `null` removes the
- * saved one, which a room's config never returns as `null`. See {@link MeetWaitingRoomConfig} for details.
- */
-export type MeetWaitingRoomConfigOptions = Omit<MeetWaitingRoomConfig, 'message'> & { message?: string | null };
 
 /**
  * Live broadcast configuration as a request sends it. The switch and the destination list are
@@ -75,8 +67,7 @@ export interface MeetRoomRolesConfig {
 }
 
 /**
- * Access configuration for creating/updating a room.
- * Only includes enabled flags.
+ * Access configuration for creating/updating a room: the `enabled` flags and the lock.
  */
 export interface MeetRoomAccessConfig {
 	anonymous?: {
@@ -93,4 +84,12 @@ export interface MeetRoomAccessConfig {
 	user?: {
 		enabled: boolean;
 	};
+	/** Lock of the room. See {@link MeetRoomLockOptions} for details. */
+	lock?: MeetRoomLockOptions;
 }
+
+/**
+ * Lock of a room as a request sends it: on an update, a `message` of `null` removes the saved one,
+ * which a room never returns as `null`. See {@link MeetRoomLock} for details.
+ */
+export type MeetRoomLockOptions = Omit<MeetRoomLock, 'message'> & { message?: string | null };
