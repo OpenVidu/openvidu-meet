@@ -17,11 +17,11 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - Meet no longer starts with a `MEET_BLOB_STORAGE_MODE` other than `s3`, `gcs` or `abs`, which 3.9 took as `s3`.
 - A `SERVER_TRUST_PROXY` subnet in IPv4-mapped IPv6 notation with a prefix shorter than 96, such as
   `::ffff:10.0.0.0/8`, matches no IPv4 address, so the proxies it named are no longer trusted.
-- Existing rooms get raise hand and reactions turned on, and live broadcast and the waiting room turned off, with
-  `broadcastControl` and `broadcastEdit` granted to no role or member, and `waitingRoomBypass` and `waitingRoomAdmin`
-  granted to their moderator role.
+- Existing rooms get raise hand and reactions turned on, and live broadcast and the locked room turned off, with
+  `broadcastControl` and `broadcastEdit` granted to no role or member, and `accessBypassLock` and `waitingParticipantAdmin` granted
+  to their moderator role.
 - Webhooks registered without `events`, the one of `MEET_INITIAL_WEBHOOK_URL` included, also receive
-  `participantRoleChanged`, `participantHandChanged`, `participantKnocked`, `participantWaitingChanged`,
+  `participantRoleChanged`, `participantHandChanged`, `waitingParticipantKnocked`, `waitingParticipantStatusChanged`,
   `broadcastStarted`, `broadcastUpdated` and `broadcastEnded`.
 - Meet opens a WebSocket on its own path, `<base path>/internal-api/v1/ws`: a proxy or load balancer of the operator's
   own in front of Meet passes WebSocket upgrades on the Meet path and keeps idle connections open for more than 20
@@ -73,19 +73,22 @@ with no replacement.
   with, in [`config.broadcast`][3.10-room-config].
   Every response replaces the stream key of a destination URL with `********`, and a redacted URL sent back
   keeps the saved key.
-- Waiting room, on the REST API, the webhooks and the embedded API: in a room whose
-  [`config.waitingRoom`][3.10-room-config] has `enabled` set, participants without the new
-  [`waitingRoomBypass`][3.10-permissions] permission ask to join and wait until a holder of `waitingRoomAdmin` admits or
-  rejects them. [`participantWaitingList`][3.10-waiting-room-list],
-  [`participantWaitingAdmit`][3.10-waiting-room-admit] and
-  [`participantWaitingReject`][3.10-waiting-room-reject], and the embedded commands `participantWaitingAdmit` and
-  `participantWaitingReject`, are gated by `waitingRoomAdmin` and take the participants named or everyone waiting. The
-  webhooks [`participantKnocked`][3.10-participant-knocked] and
-  [`participantWaitingChanged`][3.10-participant-waiting-changed] and the embedded events `participantKnocked`,
-  `waitingRoomUpdated` and `participantWaitingChanged` report who waits and what became of each wait. In these rooms a room member token
-  acts on the meeting (reads, moderation, recording and broadcast control, admission) only if it carries a participant
-  identity, and turning the waiting room on invalidates the room member tokens issued before and updates
-  `rolesUpdatedAt`.
+- Locked rooms, on the REST API, the webhooks and the embedded API: in a room whose
+  [`access.lock`][3.10-room-access], set with `createRoom` and `updateRoomAccess`, has `enabled` set, participants
+  without the new
+  [`accessBypassLock`][3.10-permissions] permission ask to join and wait until a holder of `waitingParticipantAdmin` admits or rejects
+  them. [`waitingParticipantList`][3.10-waiting-participant-list], `waitingParticipantGet`,
+  [`waitingParticipantAdmit`][3.10-waiting-participant-admit], `waitingParticipantAdmitAll`,
+  [`waitingParticipantReject`][3.10-waiting-participant-reject] and
+  [`bulkRejectWaitingParticipants`][3.10-bulk-reject-waiting-participants], and the embedded commands
+  `waitingParticipantAdmit`, `waitingParticipantAdmitAll`, `waitingParticipantReject` and
+  `waitingParticipantRejectAll`, are gated by `waitingParticipantAdmin`. The webhooks
+  [`waitingParticipantKnocked`][3.10-waiting-participant-knocked] and
+  [`waitingParticipantStatusChanged`][3.10-waiting-participant-status-changed] and the embedded events
+  `waitingParticipantKnocked`, `waitingParticipantListUpdated` and `waitingParticipantStatusChanged` report who waits
+  and what became of each wait. In these rooms a room member token acts on the meeting (reads, moderation, recording and
+  broadcast control, admission) only if it carries a participant identity, and locking the room invalidates the room
+  member tokens issued before and updates `rolesUpdatedAt`.
 - User responses carry `isRootAdmin`, `true` for the `MEET_INITIAL_ADMIN_USER` account.
 
 #### UI
@@ -95,10 +98,10 @@ with no replacement.
   the status rail a `LIVE` chip with the time on air.
 - The device setup screen shows the microphone's live level in its microphone button, and its camera, microphone and
   background effects controls are split controls with a separate toggle and menu button.
-- The waiting room has a screen for the participant who asks to join (position in line, time waited, the room's message
-  and a camera preview) and an outcome screen for each way a wait ends, a Waiting to join section in the Participants
-  panel with Admit, Deny, Deny all and the free places, a chip in the status rail and a notification for the
-  participants who admit, and a Waiting room section in the room wizard.
+- Locked rooms have a waiting screen for the participant who asks to join (time waited, the room's message and a
+  camera preview) and an outcome screen for each way a wait ends, a Waiting to join section in the Participants panel
+  with Admit, Deny, Admit all, Deny all and the free places, a chip in the status rail and a notification for the
+  participants who admit, and a Locked room section in the room wizard.
 
 #### Deployment
 
@@ -543,12 +546,14 @@ registered on both receives it twice.
 [3.10-broadcasts]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/broadcastStart
 [3.10-permissions]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/schemas/MeetPermissions
 [3.10-room-config]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/schemas/MeetRoomConfig
+[3.10-room-access]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/schemas/MeetRoomAccess
 [3.10-meetings]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/meetingGet
 [3.10-broadcast-started]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/broadcastStartedWebhook
 [3.10-broadcast-updated]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/broadcastUpdatedWebhook
 [3.10-broadcast-ended]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/broadcastEndedWebhook
-[3.10-waiting-room-list]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/participantWaitingList
-[3.10-waiting-room-admit]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/participantWaitingAdmit
-[3.10-waiting-room-reject]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/participantWaitingReject
-[3.10-participant-knocked]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/participantKnockedWebhook
-[3.10-participant-waiting-changed]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/participantWaitingChangedWebhook
+[3.10-waiting-participant-list]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/waitingParticipantList
+[3.10-waiting-participant-admit]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/waitingParticipantAdmit
+[3.10-waiting-participant-reject]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/waitingParticipantReject
+[3.10-bulk-reject-waiting-participants]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/bulkRejectWaitingParticipants
+[3.10-waiting-participant-knocked]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/waitingParticipantKnockedWebhook
+[3.10-waiting-participant-status-changed]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/waitingParticipantStatusChangedWebhook
