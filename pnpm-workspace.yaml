@@ -38,6 +38,10 @@ shamefullyHoist: true
 nodeLinker: hoisted
 lockfile: true
 
+# `pnpm run` never installs on its own: with meet-pro cloned next to meet-ce the committed lockfile
+# (meet-ce only) always looks outdated, and the implicit install rewrote it on every script.
+verifyDepsBeforeRun: false
+
 # Trust the committed lockfile on frozen installs (pnpm >= 11.8.0).
 # Skips re-applying the minimumReleaseAge / trustPolicy verification to every
 # lockfile entry, so CI and Docker `pnpm install --frozen-lockfile` builds stay
