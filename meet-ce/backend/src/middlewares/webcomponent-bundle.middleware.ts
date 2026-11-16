@@ -1,4 +1,5 @@
 import type { Request, RequestHandler, Response } from 'express';
+import path from 'path';
 import {
 	getWebcomponentBundleEtag,
 	matchesIfNoneMatch,
@@ -34,5 +35,10 @@ export const serveWebcomponentBundle =
 			}
 		}
 
-		res.sendFile(bundlePath, { etag: false, cacheControl: false, lastModified: false });
+		res.sendFile(path.basename(bundlePath), {
+			root: path.dirname(bundlePath),
+			etag: false,
+			cacheControl: false,
+			lastModified: false
+		});
 	};
