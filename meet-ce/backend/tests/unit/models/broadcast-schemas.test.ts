@@ -35,6 +35,10 @@ describe('BroadcastConfigSchema', () => {
 		);
 	});
 
+	it('requires the switch, as every other feature object does', () => {
+		expect(issues(BroadcastConfigSchema.safeParse({ layout: 'speaker' }))).toEqual(['enabled: Required']);
+	});
+
 	it('accepts the recording encodings, as a preset or as options', () => {
 		const options = {
 			video: {
@@ -95,10 +99,6 @@ describe('BroadcastConfigSchema', () => {
 				'destinations.0.url: Destination url must be an rtmp:// or rtmps:// URL'
 			])
 		);
-	});
-
-	it('leaves the switch out when the request does, for the server to default or keep it', () => {
-		expect(BroadcastConfigSchema.parse({ layout: 'speaker' })).toEqual({ layout: 'speaker' });
 	});
 
 	it('rejects a URL the media server would refuse: no app, no stream key, or a trailing slash', () => {
@@ -259,9 +259,9 @@ describe('broadcast destinations', () => {
 	it('keeps a valid URL exactly as sent, only trimming the whitespace around it', () => {
 		const url = 'rtmps://live.example.com:443/app/key%2Fpart?token=abc/def live=1';
 
-		expect(BroadcastConfigSchema.parse({ destinations: [{ name: 'X', url: `  ${url}\n` }] })).toEqual({
-			destinations: [{ name: 'X', url }]
-		});
+		expect(
+			BroadcastConfigSchema.parse({ enabled: true, destinations: [{ name: 'X', url: `  ${url}\n` }] })
+		).toEqual({ enabled: true, destinations: [{ name: 'X', url }] });
 	});
 
 	it('accepts a URL of exactly 2048 characters and rejects one more', () => {
@@ -285,6 +285,7 @@ describe('broadcast destinations', () => {
 
 	it('trims the id of a saved destination and rejects an empty one', () => {
 		const parsed = BroadcastConfigSchema.parse({
+			enabled: true,
 			destinations: [{ id: ' d1 ', name: 'X', url: 'rtmp://mtx/live/k' }]
 		});
 

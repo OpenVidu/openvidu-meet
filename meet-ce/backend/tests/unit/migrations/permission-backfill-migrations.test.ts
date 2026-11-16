@@ -28,12 +28,14 @@ const roomV5ToV6 = roomMigrations.get(generateSchemaMigrationName(meetRoomCollec
 const roomV6ToV7 = roomMigrations.get(generateSchemaMigrationName(meetRoomCollectionName, 6, 7))!;
 const roomV8ToV9 = roomMigrations.get(generateSchemaMigrationName(meetRoomCollectionName, 8, 9))!;
 const roomV9ToV10 = roomMigrations.get(generateSchemaMigrationName(meetRoomCollectionName, 9, 10))!;
+const roomV10ToV11 = roomMigrations.get(generateSchemaMigrationName(meetRoomCollectionName, 10, 11))!;
 const roomMemberV1ToV2 = roomMemberMigrations.get(generateSchemaMigrationName(meetRoomMemberCollectionName, 1, 2))!;
 const roomMemberV2ToV3 = roomMemberMigrations.get(generateSchemaMigrationName(meetRoomMemberCollectionName, 2, 3))!;
 const roomMemberV3ToV4 = roomMemberMigrations.get(generateSchemaMigrationName(meetRoomMemberCollectionName, 3, 4))!;
 const roomMemberV4ToV5 = roomMemberMigrations.get(generateSchemaMigrationName(meetRoomMemberCollectionName, 4, 5))!;
 const roomMemberV5ToV6 = roomMemberMigrations.get(generateSchemaMigrationName(meetRoomMemberCollectionName, 5, 6))!;
 const roomMemberV6ToV7 = roomMemberMigrations.get(generateSchemaMigrationName(meetRoomMemberCollectionName, 6, 7))!;
+const roomMemberV7ToV8 = roomMemberMigrations.get(generateSchemaMigrationName(meetRoomMemberCollectionName, 7, 8))!;
 
 // A permission set as stored right before keys were added: every current key but those, granted.
 const currentPermissionsWithout = (...missingKeys: string[]) => {
@@ -106,11 +108,11 @@ describe('Room migration v4 → v5', () => {
 });
 
 describe('Room migration v5 → v6', () => {
-	it('should add the raise hand config and complete the roles with participantHandLower', () => {
+	it('should add the raise hand config and complete the roles with participantLowerHand', () => {
 		const document = {
 			...roomDocument(
-				currentPermissionsWithout('participantHandLower'),
-				currentPermissionsWithout('participantHandLower')
+				currentPermissionsWithout('participantLowerHand'),
+				currentPermissionsWithout('participantLowerHand')
 			),
 			config: { captions: { enabled: true } }
 		} as unknown as MeetRoomDocument;
@@ -120,17 +122,17 @@ describe('Room migration v5 → v6', () => {
 		expect(migrated.config).toEqual({ captions: { enabled: true }, raiseHand: { enabled: true } });
 		expect(Object.keys(migrated.roles.moderator.permissions).sort()).toEqual([...MEET_PERMISSION_KEYS].sort());
 		// An existing room ends up like one created from this version on: only the moderator role has it.
-		expect(migrated.roles.moderator.permissions.participantHandLower).toBe(true);
-		expect(migrated.roles.speaker.permissions.participantHandLower).toBe(false);
+		expect(migrated.roles.moderator.permissions.participantLowerHand).toBe(true);
+		expect(migrated.roles.speaker.permissions.participantLowerHand).toBe(false);
 	});
 });
 
 describe('Room migration v6 → v7', () => {
-	it('should add the reactions config and complete the roles with participantReactionSend', () => {
+	it('should add the reactions config and complete the roles with participantSendReaction', () => {
 		const document = {
 			...roomDocument(
-				currentPermissionsWithout('participantReactionSend'),
-				currentPermissionsWithout('participantReactionSend')
+				currentPermissionsWithout('participantSendReaction'),
+				currentPermissionsWithout('participantSendReaction')
 			),
 			config: { raiseHand: { enabled: true } }
 		} as unknown as MeetRoomDocument;
@@ -140,8 +142,8 @@ describe('Room migration v6 → v7', () => {
 		expect(migrated.config).toEqual({ raiseHand: { enabled: true }, reactions: { enabled: true } });
 		expect(Object.keys(migrated.roles.moderator.permissions).sort()).toEqual([...MEET_PERMISSION_KEYS].sort());
 		// Reacting is taking part, not moderating: every existing role keeps being able to.
-		expect(migrated.roles.moderator.permissions.participantReactionSend).toBe(true);
-		expect(migrated.roles.speaker.permissions.participantReactionSend).toBe(true);
+		expect(migrated.roles.moderator.permissions.participantSendReaction).toBe(true);
+		expect(migrated.roles.speaker.permissions.participantSendReaction).toBe(true);
 	});
 });
 
@@ -214,6 +216,42 @@ describe('Room migration v9 → v10', () => {
 	});
 });
 
+// The hand and reaction permissions as development builds of 3.10.0 stored them, before their rename.
+const withFirstNames = (lowerHand: boolean, sendReaction: boolean) => ({
+	...currentPermissionsWithout('participantLowerHand', 'participantSendReaction'),
+	participantHandLower: lowerHand,
+	participantReactionSend: sendReaction
+});
+
+describe('Room migration v10 → v11', () => {
+	it('should carry the hand and reaction permissions over from their first names', () => {
+		const migrated = roomV10ToV11(roomDocument(withFirstNames(true, true), withFirstNames(false, true)));
+
+		for (const role of ['moderator', 'speaker'] as const) {
+			expect(Object.keys(migrated.roles[role].permissions).sort()).toEqual([...MEET_PERMISSION_KEYS].sort());
+		}
+
+		expect(migrated.roles.moderator.permissions.participantLowerHand).toBe(true);
+		expect(migrated.roles.speaker.permissions.participantLowerHand).toBe(false);
+		expect(migrated.roles.speaker.permissions.participantSendReaction).toBe(true);
+	});
+});
+
+describe('Room member migration v7 → v8', () => {
+	it('should carry the hand and reaction permissions over from their first names, in the overlay too', () => {
+		const migrated = roomMemberV7ToV8({
+			memberId: 'member-123',
+			customPermissions: { participantHandLower: true },
+			effectivePermissions: withFirstNames(true, false)
+		} as unknown as MeetRoomMemberDocument);
+
+		expect(migrated.customPermissions).toStrictEqual({ participantLowerHand: true });
+		expect(Object.keys(migrated.effectivePermissions).sort()).toEqual([...MEET_PERMISSION_KEYS].sort());
+		expect(migrated.effectivePermissions.participantLowerHand).toBe(true);
+		expect(migrated.effectivePermissions.participantSendReaction).toBe(false);
+	});
+});
+
 describe('Room member migration v5 → v6', () => {
 	it('should complete effectivePermissions with the broadcast keys, denied', () => {
 		const permissions = Object.fromEntries(MEET_PERMISSION_KEYS.map((key) => [key, true]));
@@ -271,35 +309,35 @@ describe('Room member migration v3 → v4', () => {
 			memberId: 'member-123',
 			baseRole,
 			customPermissions: { participantMute: true },
-			effectivePermissions: currentPermissionsWithout('participantHandLower')
+			effectivePermissions: currentPermissionsWithout('participantLowerHand')
 		}) as unknown as MeetRoomMemberDocument;
 
-	it('should complete effectivePermissions with participantHandLower and leave the overlay alone', () => {
+	it('should complete effectivePermissions with participantLowerHand and leave the overlay alone', () => {
 		const migrated = roomMemberV3ToV4(roomMember('speaker'));
 
 		expect(Object.keys(migrated.effectivePermissions).sort()).toEqual([...MEET_PERMISSION_KEYS].sort());
-		expect(migrated.effectivePermissions.participantHandLower).toBe(false);
+		expect(migrated.effectivePermissions.participantLowerHand).toBe(false);
 		expect(migrated.customPermissions).toStrictEqual({ participantMute: true });
 	});
 
-	it('should grant participantHandLower to a member with the moderator role, as the migrated role does', () => {
+	it('should grant participantLowerHand to a member with the moderator role, as the migrated role does', () => {
 		const migrated = roomMemberV3ToV4(roomMember('moderator'));
 
-		expect(migrated.effectivePermissions.participantHandLower).toBe(true);
+		expect(migrated.effectivePermissions.participantLowerHand).toBe(true);
 		expect(migrated.customPermissions).toStrictEqual({ participantMute: true });
 	});
 });
 
 describe('Room member migration v4 → v5', () => {
-	it('should complete effectivePermissions with participantReactionSend and leave the overlay alone', () => {
+	it('should complete effectivePermissions with participantSendReaction and leave the overlay alone', () => {
 		const migrated = roomMemberV4ToV5({
 			memberId: 'member-123',
 			customPermissions: { chatWrite: false },
-			effectivePermissions: currentPermissionsWithout('participantReactionSend')
+			effectivePermissions: currentPermissionsWithout('participantSendReaction')
 		} as unknown as MeetRoomMemberDocument);
 
 		expect(Object.keys(migrated.effectivePermissions).sort()).toEqual([...MEET_PERMISSION_KEYS].sort());
-		expect(migrated.effectivePermissions.participantReactionSend).toBe(true);
+		expect(migrated.effectivePermissions.participantSendReaction).toBe(true);
 		expect(migrated.customPermissions).toStrictEqual({ chatWrite: false });
 	});
 });

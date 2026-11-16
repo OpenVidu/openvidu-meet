@@ -4,6 +4,7 @@ import type { SchemaMigrationMap, SchemaTransform } from '../models/migration.mo
 import { generateSchemaMigrationName } from '../models/migration.model.js';
 import type { MeetRoomMemberDocument } from '../models/mongoose-schemas/room-member.schema.js';
 import { meetRoomMemberCollectionName } from '../models/mongoose-schemas/room-member.schema.js';
+import { renamePermissionsRenamedBeforeRelease } from './unreleased-permission-renames.js';
 
 const roomMemberMigrationV1ToV2Name = generateSchemaMigrationName(meetRoomMemberCollectionName, 1, 2);
 const roomMemberMigrationV2ToV3Name = generateSchemaMigrationName(meetRoomMemberCollectionName, 2, 3);
@@ -11,6 +12,7 @@ const roomMemberMigrationV3ToV4Name = generateSchemaMigrationName(meetRoomMember
 const roomMemberMigrationV4ToV5Name = generateSchemaMigrationName(meetRoomMemberCollectionName, 4, 5);
 const roomMemberMigrationV5ToV6Name = generateSchemaMigrationName(meetRoomMemberCollectionName, 5, 6);
 const roomMemberMigrationV6ToV7Name = generateSchemaMigrationName(meetRoomMemberCollectionName, 6, 7);
+const roomMemberMigrationV7ToV8Name = generateSchemaMigrationName(meetRoomMemberCollectionName, 7, 8);
 
 // Brings customPermissions and effectivePermissions to the current key set through
 // normalizePermissions(), which does both halves of the job. It renames the deprecated `can*` spellings
@@ -26,6 +28,9 @@ const roomMemberMigrationV6ToV7Name = generateSchemaMigrationName(meetRoomMember
 // running it again instead of extending the previous one: a document already at the previous version
 // would otherwise never be completed with the new key.
 const normalizeMemberPermissionsTransform: SchemaTransform<MeetRoomMemberDocument> = (roomMember) => {
+	renamePermissionsRenamedBeforeRelease(roomMember.customPermissions);
+	renamePermissionsRenamedBeforeRelease(roomMember.effectivePermissions);
+
 	if (roomMember.customPermissions) {
 		const overlay = normalizePermissions(roomMember.customPermissions);
 
@@ -49,13 +54,13 @@ const normalizeMemberPermissionsTransform: SchemaTransform<MeetRoomMemberDocumen
 	return roomMember;
 };
 
-// v4 adds the `participantHandLower` permission: the normalization completes it, and a member with the
+// v4 adds the `participantLowerHand` permission: the normalization completes it, and a member with the
 // moderator role is then granted it, as the moderator role of every room is.
 const roomMemberMigrationV3ToV4Transform: SchemaTransform<MeetRoomMemberDocument> = (roomMember) => {
 	normalizeMemberPermissionsTransform(roomMember);
 
 	if (roomMember.baseRole === MeetRoomMemberRole.MODERATOR) {
-		roomMember.effectivePermissions.participantHandLower = true;
+		roomMember.effectivePermissions.participantLowerHand = true;
 	}
 
 	return roomMember;
@@ -84,5 +89,6 @@ export const roomMemberMigrations: SchemaMigrationMap<MeetRoomMemberDocument> = 
 	[roomMemberMigrationV3ToV4Name, roomMemberMigrationV3ToV4Transform],
 	[roomMemberMigrationV4ToV5Name, normalizeMemberPermissionsTransform],
 	[roomMemberMigrationV5ToV6Name, normalizeMemberPermissionsTransform],
-	[roomMemberMigrationV6ToV7Name, roomMemberMigrationV6ToV7Transform]
+	[roomMemberMigrationV6ToV7Name, roomMemberMigrationV6ToV7Transform],
+	[roomMemberMigrationV7ToV8Name, normalizeMemberPermissionsTransform]
 ]);

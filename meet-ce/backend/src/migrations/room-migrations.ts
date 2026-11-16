@@ -6,6 +6,7 @@ import type { SchemaMigrationMap, SchemaTransform } from '../models/migration.mo
 import { generateSchemaMigrationName } from '../models/migration.model.js';
 import type { MeetRoomDocument } from '../models/mongoose-schemas/room.schema.js';
 import { meetRoomCollectionName } from '../models/mongoose-schemas/room.schema.js';
+import { renamePermissionsRenamedBeforeRelease } from './unreleased-permission-renames.js';
 
 const roomMigrationV1ToV2Name = generateSchemaMigrationName(meetRoomCollectionName, 1, 2);
 const roomMigrationV2ToV3Name = generateSchemaMigrationName(meetRoomCollectionName, 2, 3);
@@ -16,6 +17,7 @@ const roomMigrationV6ToV7Name = generateSchemaMigrationName(meetRoomCollectionNa
 const roomMigrationV7ToV8Name = generateSchemaMigrationName(meetRoomCollectionName, 7, 8);
 const roomMigrationV8ToV9Name = generateSchemaMigrationName(meetRoomCollectionName, 8, 9);
 const roomMigrationV9ToV10Name = generateSchemaMigrationName(meetRoomCollectionName, 9, 10);
+const roomMigrationV10ToV11Name = generateSchemaMigrationName(meetRoomCollectionName, 10, 11);
 
 const roomMigrationV1ToV2Transform: SchemaTransform<MeetRoomDocument> = (room) => {
 	room.config.captions = { enabled: true };
@@ -123,6 +125,7 @@ const normalizeRolePermissionsTransform: SchemaTransform<MeetRoomDocument> = (ro
 		const roleConfig = room.roles?.[role];
 
 		if (roleConfig?.permissions) {
+			renamePermissionsRenamedBeforeRelease(roleConfig.permissions);
 			roleConfig.permissions = normalizePermissions(roleConfig.permissions, {
 				complete: true
 			}) as MeetRoomMemberPermissions;
@@ -133,18 +136,18 @@ const normalizeRolePermissionsTransform: SchemaTransform<MeetRoomDocument> = (ro
 };
 
 // v6 adds the raise hand feature: its room config toggle, on like every other feature's, and its
-// `participantHandLower` permission, completed by the same normalization as the previous steps and then
+// `participantLowerHand` permission, completed by the same normalization as the previous steps and then
 // granted to the moderator role, as a room created from this version on has it.
 const roomMigrationV5ToV6Transform: SchemaTransform<MeetRoomDocument> = (room) => {
 	room.config.raiseHand = { enabled: true };
 	normalizeRolePermissionsTransform(room);
-	room.roles.moderator.permissions.participantHandLower = true;
+	room.roles.moderator.permissions.participantLowerHand = true;
 
 	return room;
 };
 
 // v7 adds the reactions feature: its room config toggle, on like every other feature's, and its
-// `participantReactionSend` permission, completed by the same normalization as the previous steps.
+// `participantSendReaction` permission, completed by the same normalization as the previous steps.
 const roomMigrationV6ToV7Transform: SchemaTransform<MeetRoomDocument> = (room) => {
 	room.config.reactions = { enabled: true };
 	return normalizeRolePermissionsTransform(room);
@@ -200,5 +203,6 @@ export const roomMigrations: SchemaMigrationMap<MeetRoomDocument> = new Map([
 	[roomMigrationV6ToV7Name, roomMigrationV6ToV7Transform],
 	[roomMigrationV7ToV8Name, roomMigrationV7ToV8Transform],
 	[roomMigrationV8ToV9Name, roomMigrationV8ToV9Transform],
-	[roomMigrationV9ToV10Name, roomMigrationV9ToV10Transform]
+	[roomMigrationV9ToV10Name, roomMigrationV9ToV10Transform],
+	[roomMigrationV10ToV11Name, normalizeRolePermissionsTransform]
 ]);

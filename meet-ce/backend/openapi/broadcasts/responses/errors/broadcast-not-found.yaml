@@ -4,6 +4,14 @@ content:
     application/json:
         schema:
             $ref: '../../../shared/schemas/error.yaml'
-        example:
-            error: 'Broadcast Error'
-            message: "Broadcast 'room-123--Qm4tZ8vR1c' not found"
+        examples:
+            broadcast_not_found:
+                summary: No broadcast with that identifier is in progress
+                value:
+                    error: 'Broadcast Error'
+                    message: "Broadcast 'room-123--Qm4tZ8vR1c' not found"
+            room_not_found:
+                summary: Room not found
+                value:
+                    error: 'Room Error'
+                    message: "Room 'room-123' does not exist"

@@ -86,7 +86,7 @@ meetingRouter.put(
 	withAuth(apiKeyValidator, roomMemberTokenValidator),
 	withValidRoomId,
 	validateLowerAllHandsReq,
-	withRoomPermission('participantHandLower'),
+	withRoomPermission('participantLowerHand'),
 	meetingCtrl.lowerAllHands
 );
 meetingRouter.put(
@@ -155,7 +155,7 @@ internalMeetingRouter.post(
 	withAuth(roomMemberTokenValidator),
 	withValidRoomId,
 	validateSendParticipantReactionReq,
-	withRoomPermission('participantReactionSend'),
+	withRoomPermission('participantSendReaction'),
 	meetingCtrl.sendParticipantReaction
 );
 

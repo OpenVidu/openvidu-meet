@@ -1,11 +1,20 @@
 description: >
     Validation error: the body is invalid, or a destination cannot be streamed to (an empty
-    `destinationIds` with no `destinations`, a destination without a name or a URL or with any other
-    field, a URL without app and stream key, a redacted URL, or two destinations with the same stream key)
+    `destinationIds` with no `destinations`, a `destinationIds` entry the room does not have, a destination
+    without a name or a URL or with any other field, a URL without app and stream key, a redacted URL, or two
+    destinations with the same stream key)
 content:
     application/json:
         schema:
             $ref: '../../../shared/schemas/error.yaml'
-        example:
-            error: 'Broadcast Error'
-            message: "Duplicate destination: 'rtmp://a.rtmp.youtube.com/live2/********' has the stream key of another destination"
+        examples:
+            duplicate_destination:
+                summary: Two destinations with the same stream key
+                value:
+                    error: 'Broadcast Error'
+                    message: "Duplicate destination: 'rtmp://a.rtmp.youtube.com/live2/********' has the stream key of another destination"
+            unknown_destination:
+                summary: A destination the room does not have
+                value:
+                    error: 'Broadcast Error'
+                    message: "Destination 'kX9pL2mQ7a' is not one of the room's destinations"

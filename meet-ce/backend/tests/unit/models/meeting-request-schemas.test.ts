@@ -78,20 +78,20 @@ describe('MuteParticipantMediaReqSchema', () => {
 
 describe('hand schemas', () => {
 	it('UpdateParticipantHandReqSchema accepts raising and lowering', () => {
-		expect(UpdateParticipantHandReqSchema.parse({ raised: true })).toEqual({ raised: true });
-		expect(UpdateParticipantHandReqSchema.parse({ raised: false })).toEqual({ raised: false });
-		expect(issues(UpdateParticipantHandReqSchema, {})).toEqual(['raised: Required']);
-		expect(issues(UpdateParticipantHandReqSchema, { raised: 'true' })).toEqual([
-			'raised: Expected boolean, received string'
+		expect(UpdateParticipantHandReqSchema.parse({ handRaised: true })).toEqual({ handRaised: true });
+		expect(UpdateParticipantHandReqSchema.parse({ handRaised: false })).toEqual({ handRaised: false });
+		expect(issues(UpdateParticipantHandReqSchema, {})).toEqual(['handRaised: Required']);
+		expect(issues(UpdateParticipantHandReqSchema, { handRaised: 'true' })).toEqual([
+			'handRaised: Expected boolean, received string'
 		]);
 	});
 
 	it('LowerAllHandsReqSchema accepts only lowering', () => {
-		expect(LowerAllHandsReqSchema.parse({ raised: false })).toEqual({ raised: false });
-		expect(issues(LowerAllHandsReqSchema, { raised: true })).toEqual([
-			"raised: Invalid enum value. Expected 'false', received 'true'"
+		expect(LowerAllHandsReqSchema.parse({ handRaised: false })).toEqual({ handRaised: false });
+		expect(issues(LowerAllHandsReqSchema, { handRaised: true })).toEqual([
+			"handRaised: Invalid enum value. Expected 'false', received 'true'"
 		]);
-		expect(issues(LowerAllHandsReqSchema, {})).toEqual(['raised: Required']);
+		expect(issues(LowerAllHandsReqSchema, {})).toEqual(['handRaised: Required']);
 	});
 });
 

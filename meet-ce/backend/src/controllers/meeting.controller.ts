@@ -140,12 +140,12 @@ export const updateParticipantHand = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const meetingService = container.get(MeetingService);
 	const { roomId, participantIdentity } = req.params as Record<string, string>;
-	const { raised } = req.body as MeetParticipantHandOptions;
-	const action = raised ? 'raised' : 'lowered';
+	const { handRaised } = req.body as MeetParticipantHandOptions;
+	const action = handRaised ? 'raised' : 'lowered';
 
 	try {
 		logger.verbose(`Hand of participant '${participantIdentity}' in room '${roomId}' ${action}`);
-		await meetingService.updateParticipantHand(roomId, participantIdentity, raised);
+		await meetingService.updateParticipantHand(roomId, participantIdentity, handRaised);
 		res.status(200).json({
 			message: `Hand of participant '${participantIdentity}' ${action} in meeting in room '${roomId}'`
 		});

@@ -98,7 +98,7 @@ properties:
             may turn the device back on. Has no deprecated `can*` equivalent. A room created from 3.9.0 on
             grants it to the moderator role and denies it to the speaker role by default; a room or member
             that existed before 3.9.0 starts without it.
-    participantHandLower:
+    participantLowerHand:
         type: boolean
         example: false
         description: >
@@ -106,7 +106,7 @@ properties:
             one's own hand is never gated. Has no deprecated `can*` equivalent. A room created from 3.10.0 on
             grants it to the moderator role and denies it to the speaker role by default; a room or member
             that existed before 3.10.0 starts without it.
-    participantReactionSend:
+    participantSendReaction:
         type: boolean
         example: true
         description: >

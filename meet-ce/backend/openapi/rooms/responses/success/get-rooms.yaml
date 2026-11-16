@@ -140,8 +140,8 @@ content:
                                       participantPromote: true
                                       participantKick: true
                                       participantMute: true
-                                      participantHandLower: true
-                                      participantReactionSend: true
+                                      participantLowerHand: true
+                                      participantSendReaction: true
                                       accessBypassLock: true
                                       waitingParticipantAdmin: true
                                       meetingEnd: true
@@ -166,8 +166,8 @@ content:
                                       participantPromote: false
                                       participantKick: false
                                       participantMute: false
-                                      participantHandLower: false
-                                      participantReactionSend: true
+                                      participantLowerHand: false
+                                      participantSendReaction: true
                                       accessBypassLock: false
                                       waitingParticipantAdmin: false
                                       meetingEnd: false
@@ -247,8 +247,8 @@ content:
                                       participantPromote: false
                                       participantKick: true
                                       participantMute: true
-                                      participantHandLower: true
-                                      participantReactionSend: true
+                                      participantLowerHand: true
+                                      participantSendReaction: true
                                       accessBypassLock: true
                                       waitingParticipantAdmin: true
                                       meetingEnd: true
@@ -273,8 +273,8 @@ content:
                                       participantPromote: false
                                       participantKick: false
                                       participantMute: false
-                                      participantHandLower: false
-                                      participantReactionSend: true
+                                      participantLowerHand: false
+                                      participantSendReaction: true
                                       accessBypassLock: false
                                       waitingParticipantAdmin: false
                                       meetingEnd: false

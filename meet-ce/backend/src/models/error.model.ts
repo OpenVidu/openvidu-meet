@@ -3,7 +3,7 @@ import type {
 	MeetRoomMemberRole,
 	MeetWaitingParticipantStatus
 } from '@openvidu-meet/typings';
-import { MeetWaitingParticipantErrorCode } from '@openvidu-meet/typings';
+import { MeetBroadcastErrorCode, MeetWaitingParticipantErrorCode } from '@openvidu-meet/typings';
 import { DocumentNotFoundError } from './database.model.js';
 
 type StatusError = 400 | 401 | 402 | 403 | 404 | 409 | 413 | 415 | 416 | 422 | 500 | 503;
@@ -252,26 +252,34 @@ export const errorBroadcastNotFound = (broadcastId: string): OpenViduMeetError =
 
 export const errorBroadcastAlreadyStarted = (roomId: string): OpenViduMeetError => {
 	return new OpenViduMeetError(
-		'Broadcast Error',
+		MeetBroadcastErrorCode.ALREADY_BROADCASTING,
 		`Room '${roomId}' is already being broadcast to every one of its destinations`,
 		409
 	);
 };
 
-export const errorBroadcastAlreadyStopped = (broadcastId: string): OpenViduMeetError => {
-	return new OpenViduMeetError('Broadcast Error', `Broadcast '${broadcastId}' is already stopped`, 409);
+export const errorBroadcastStopInProgress = (broadcastId: string): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		MeetBroadcastErrorCode.BROADCAST_ENDING,
+		`Broadcast '${broadcastId}' is already being stopped`,
+		409
+	);
 };
 
 export const errorBroadcastUpdateInProgress = (roomId: string): OpenViduMeetError => {
 	return new OpenViduMeetError(
-		'Broadcast Error',
+		MeetBroadcastErrorCode.BROADCAST_BUSY,
 		`The broadcast of room '${roomId}' stayed busy with another change`,
 		409
 	);
 };
 
 export const errorBroadcastRoomHasNoParticipants = (roomId: string): OpenViduMeetError => {
-	return new OpenViduMeetError('Broadcast Error', `Room '${roomId}' has no participants to broadcast`, 409);
+	return new OpenViduMeetError(
+		MeetBroadcastErrorCode.NO_PARTICIPANTS,
+		`Room '${roomId}' has no participants to broadcast`,
+		409
+	);
 };
 
 export const errorBroadcastUnknownDestination = (destinationId: string): OpenViduMeetError => {
@@ -279,14 +287,6 @@ export const errorBroadcastUnknownDestination = (destinationId: string): OpenVid
 		'Broadcast Error',
 		`Destination '${destinationId}' is not one of the room's destinations`,
 		422
-	);
-};
-
-export const errorBroadcastStartUnknownDestination = (destinationId: string): OpenViduMeetError => {
-	return new OpenViduMeetError(
-		'Broadcast Error',
-		`Destination '${destinationId}' is not one of the room's destinations`,
-		400
 	);
 };
 
@@ -316,7 +316,7 @@ export const errorBroadcastDestinationNotAllowed = (redactedUrl: string): OpenVi
 
 export const errorBroadcastDestinationInUse = (redactedUrl: string): OpenViduMeetError => {
 	return new OpenViduMeetError(
-		'Broadcast Error',
+		MeetBroadcastErrorCode.DESTINATION_IN_USE,
 		`A destination with the stream key of '${redactedUrl}' is already being broadcast`,
 		409
 	);

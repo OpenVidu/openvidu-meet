@@ -317,7 +317,7 @@
                 $ref: '../shared/responses/errors/service-unavailable.yaml'
 /meetings/{roomId}/participants/hand:
     put:
-        operationId: participantHandLowerAll
+        operationId: participantLowerAllHands
         summary: Lower all hands
         description: >
             Lowers every raised hand in the current meeting as a moderator action: each affected
@@ -327,7 +327,7 @@
             Only `false` is accepted: nobody raises a hand but its owner.
 
 
-            Requires the `participantHandLower` permission.
+            Requires the `participantLowerHand` permission.
 
         tags:
             - OpenVidu Meet - Meetings
@@ -361,7 +361,7 @@
                 $ref: '../shared/responses/errors/service-unavailable.yaml'
 /meetings/{roomId}/participants/{participantIdentity}/hand:
     put:
-        operationId: participantHandUpdate
+        operationId: participantUpdateHand
         summary: Raise or lower hand
         description: >
             Raises or lowers the hand of a participant in the current meeting. The moment a hand goes
@@ -369,7 +369,7 @@
 
             A participant raises and lowers their own hand freely, through the room member token
             they joined with. Lowering another participant's hand is a moderator action that
-            requires the `participantHandLower` permission; raising someone else's hand is rejected
+            requires the `participantLowerHand` permission; raising someone else's hand is rejected
             with a `409`, whatever the caller holds. A room whose `raiseHand.enabled` config is `false`
             rejects a raise of the caller's own hand with a `403`.
 
