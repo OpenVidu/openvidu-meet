@@ -91,9 +91,11 @@ The embedded element SHALL move to a new target only when an attribute change al
 - **THEN** the element leaves room A's meeting and shows the join screen of room B
 
 ### Requirement: Command catalogue
-Meet SHALL accept exactly the commands `meetingLeave`, `meetingEnd`, `participantKick`, `participantMute`, `participantMuteAll`, `participantUpdateRole`, `participantHandRaise`, `participantHandLower`, `participantHandLowerAll`, `participantReactionSend`, `mediaToggleAudio`, `mediaToggleVideo`, `mediaToggleScreenShare`, `recordingStart`, `recordingStop`, `broadcastStart`, `broadcastStop`, `waitingParticipantAdmit`, `waitingParticipantAdmitAll`, `waitingParticipantReject` and `waitingParticipantRejectAll`, and the deprecated `endMeeting`, `leaveRoom` and `kickParticipant`.
+
+Meet SHALL accept exactly the commands `meetingLeave`, `meetingEnd`, `participantKick`, `participantMute`, `participantMuteAll`, `participantUpdateRole`, `participantHandRaise`, `participantHandLower`, `participantHandLowerAll`, `participantReactionSend`, `mediaToggleAudio`, `mediaToggleVideo`, `mediaToggleScreenShare`, `recordingStart`, `recordingStop`, `broadcastStart`, `broadcastStop`, `broadcastStopAll`, `waitingParticipantAdmit`, `waitingParticipantAdmitAll`, `waitingParticipantReject` and `waitingParticipantRejectAll`, and the deprecated `endMeeting`, `leaveRoom` and `kickParticipant`.
 
 #### Scenario: Owner of each command
+
 - **WHEN** a reviewer looks up what a command does
 - **THEN** `meetingLeave` is specified in `meeting-join`
 - **AND** `meetingEnd` in `meetings`
@@ -102,7 +104,7 @@ Meet SHALL accept exactly the commands `meetingLeave`, `meetingEnd`, `participan
 - **AND** `participantReactionSend` in `reactions`
 - **AND** `mediaToggleAudio`, `mediaToggleVideo` and `mediaToggleScreenShare` in `meeting-media`
 - **AND** `recordingStart` and `recordingStop` in `recordings`
-- **AND** `broadcastStart` and `broadcastStop` in `live-broadcast`
+- **AND** `broadcastStart`, `broadcastStop` and `broadcastStopAll` in `live-broadcast`
 - **AND** `waitingParticipantAdmit`, `waitingParticipantAdmitAll`, `waitingParticipantReject` and `waitingParticipantRejectAll` in `locked-room`
 - **AND** `endMeeting`, `leaveRoom` and `kickParticipant` in this capability, as aliases
 
