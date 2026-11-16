@@ -35,6 +35,8 @@ context: |
 
 rules:
   proposal:
+    - Open with a "Decisions" section listing the product decisions the change rests on (public names, the permission that gates it, what this version leaves out, how each failure is shown), each marked as decided by the user, with the date, or open. Write the specs, the design and the tasks only once none is open; ask the user instead of guessing.
+    - Keep a change to what one pull request can implement and review, at most 10 spec deltas. Split a larger feature into changes that each deliver something a person can observe, and name the ones that follow.
     - List in Impact every surface the change reaches (REST API, webhooks, embedded API, meeting UI, console UI, deployment configuration) and say whether a public contract changes additively, through a deprecated alias, or not at all.
     - List the openvidu.io pages that change, or state that none do.
     - When the change needs a CE extension seam for PRO, say so without describing the PRO feature.
@@ -45,10 +47,12 @@ rules:
     - Keep a feature's behavior on every surface (REST, webhook, embedded API, UI) in that feature's capability; `webhooks`, `embedded-api`, `permissions` and `deployment` hold only the rules shared by every feature.
     - Add a scenario with several Meet replicas whenever the behavior depends on coordination between them.
   design:
+    - Try a mechanism that is new to the codebase (a protocol, a state store, a coordination scheme) in a throwaway spike before writing the design, and state what the spike showed. Spike code is never merged.
     - Explain how the design behaves with several Meet replicas sharing MongoDB, Redis and storage.
     - A new or changed persisted field needs a forward-only migration, a bumped schema version and a refreshed MIGRATION_REV (see `meet-ce/backend/src/migrations/README.md`).
     - Follow the domain `CLAUDE.md` of every package the design touches.
   tasks:
+    - Size each group so that one agent can implement it and prove it with `./meet.sh verify`. The typings group comes first, because the backend and the frontend build on it.
     - Each group lands, with its code, the tests and contract updates its work calls for (OpenAPI, typings TSDoc, the embedded API contract test).
     - End with a group named "Release surfaces" holding the `CHANGELOG.md` line (or why none applies under `.claude/rules/changelog.md`) and one task per openvidu.io page to update on `next`, regenerating the embedded API reference when the embedded API changes.
 
@@ -56,7 +60,8 @@ operations:
   apply:
     guidance:
       - Read the `CLAUDE.md` of each package before editing it and respect the build order typings, backend, shared-meet-components, frontend, webcomponent.
-      - Backend integration tests and Playwright suites need the OpenVidu local deployment; report them as not run when it is not available.
+      - Backend integration tests and Playwright suites need the OpenVidu local deployment. `./meet.sh doctor` says whether it is usable and `./meet.sh stack` gives the run its own data; report them as not run only when it is not usable.
+      - A change is implemented when `./meet.sh verify` passes and every suite it lists as selected has run or is reported as not run.
   archive:
     guidance:
       - Archive inside the pull request that implements the change, once every task is done, and run `./meet.sh verify --only openspec --all` afterwards.

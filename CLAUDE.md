@@ -54,6 +54,16 @@ refactors, dependency bumps, tests and tooling do not need one:
    `openspec/specs/` and moves the change to `openspec/changes/archive/`, so `main` always carries
    specs that match its code. Reviewers read `proposal.md` and the delta specs before the code diff.
 
+Three rules keep a change from going back to the start:
+
+- **Decisions first.** The proposal opens with the product decisions it rests on (public names,
+  permissions, what this version leaves out, how failures show). Nothing else is written while one is
+  open: ask the user, do not guess.
+- **Small changes.** At most 10 spec deltas and one pull request. A larger feature is a series of
+  changes that each deliver something a person can observe.
+- **Two review rounds.** `spec-reviewer` reads the whole change once, then only what its findings
+  changed. After that only a blocker reopens it; the rest becomes tasks.
+
 The project context and the per-artifact rules every proposal follows (editions, deployment
 topologies, sources of truth, documentation) live in `openspec/config.yaml`; keep them there, not
 here. Two of them shape most designs:
@@ -157,6 +167,19 @@ Flags on any command: `--skip-install`, `--skip-typings` (typings already built)
   only a listening backend receives LiveKit's webhooks); `stack down <name>` deletes them and
   `stack list` shows who runs what. LiveKit posts its webhooks to :6080 and to the stack ports its
   `livekit.yaml` lists; `doctor` shows them and how to add them.
+
+## Agents
+
+`.claude/agents/` defines the agents for the recurring jobs: `backend-implementer`,
+`frontend-implementer`, `test-runner`, `spec-reviewer`, `change-reviewer`, `dependency-updater` and
+`docs-writer`. An agent reads this file and the rules, never the session's memory, so what it must know
+lives in the repository.
+
+- The main session writes the typings of a change first; backend and frontend groups then run side by
+  side. At most two agents at once unless the user asks for more.
+- Suites run through `test-runner`, so their logs stay out of the main conversation.
+- An agent's report is a claim, with its commands and exit codes: check it (`./meet.sh verify`, the
+  diff) before reporting the work as done. Agents do not commit; the main session does.
 
 ## Development mode
 
