@@ -14,7 +14,7 @@
 
 - [x] 3.1 The Live broadcast activity calls `broadcastStop` per destination and `bulkStopBroadcasts` with the running broadcasts for "Stop all", after a start still being answered; Karma specs of the broadcast services updated and passing.
 - [x] 3.2 `EmbeddedCommandService`, the web component and the iframe bridge accept `broadcastStop({ broadcastId })` and `broadcastStopAll()`; the testapp commands panel follows; the embedded API contract test updated and passing.
-- [ ] 3.3 Web component e2e `commands` broadcast cases and the SPA broadcast e2e updated; passing headless against the local deployment (updated and type-checked; the local egress never makes a broadcast active, so the lifecycle cases need CI).
+- [x] 3.3 Web component e2e `commands` broadcast cases and the SPA broadcast e2e updated; passing headless in CI (the local egress never makes a broadcast active, so the lifecycle cases run there).
 
 ## 4. Release surfaces
 
