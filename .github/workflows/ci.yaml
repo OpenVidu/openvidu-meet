@@ -36,6 +36,7 @@ jobs:
       frontend-e2e: ${{ steps.select.outputs.frontend-e2e }}
       wc-e2e: ${{ steps.select.outputs.wc-e2e }}
       storage: ${{ steps.select.outputs.storage }}
+      static-base: ${{ steps.select.outputs.static-base }}
     steps:
       - name: Checkout the merge commit and its base
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -44,7 +45,7 @@ jobs:
 
       # Pull requests and pushes to main run the suites their files affect (a push leaves the e2e suites
       # out when only the backend changed), and the nightly every suite when main moved since the last
-      # green nightly.
+      # green nightly. `static-base` is what the static checks diff against (`all` for every file, empty for none).
       - name: Select the suites the change affects
         id: select
         env:
@@ -57,12 +58,15 @@ jobs:
           case "$GITHUB_EVENT_NAME" in
             pull_request)
               git diff --name-only HEAD^1 HEAD | pick
+              echo 'static-base=HEAD^1' >> "$GITHUB_OUTPUT"
               ;;
             push)
               if git fetch --no-tags --depth=1 origin "$BEFORE"; then
                 git diff --name-only "$BEFORE" HEAD | pick --without-backend
+                echo "static-base=$BEFORE" >> "$GITHUB_OUTPUT"
               else
                 pick --all
+                echo 'static-base=all' >> "$GITHUB_OUTPUT"
               fi
               ;;
             schedule)
@@ -70,6 +74,7 @@ jobs:
                 --status success --limit 1 --json headSha --jq '.[0].headSha')
               if [ "$last" != "$GITHUB_SHA" ]; then
                 pick --all
+                echo 'static-base=all' >> "$GITHUB_OUTPUT"
               fi
               ;;
             workflow_dispatch)
@@ -78,6 +83,7 @@ jobs:
               else
                 pick --all --only "$SUITES"
               fi
+              echo 'static-base=all' >> "$GITHUB_OUTPUT"
               ;;
           esac
           cat "$GITHUB_OUTPUT"
@@ -111,11 +117,8 @@ jobs:
       - name: Install dependencies
         run: ./meet.sh install
 
-      - name: Build typings
-        run: ./meet.sh build-typings --skip-install
-
-      - name: Run tests
-        run: ./meet.sh test-unit-backend --skip-install
+      - name: Run backend unit suite
+        run: node scripts/verify.mjs --only backend-unit
         env:
           JEST_JUNIT_OUTPUT_DIR: './backend/reports/'
 
@@ -126,13 +129,14 @@ jobs:
         with:
           report_paths: '**/reports/junit.xml'
 
-      - name: Type-check tests
-        if: always()
-        run: pnpm --filter @openvidu-meet/backend run test:types
-
-      - name: Run ESLint
-        if: always()
-        run: ./meet.sh lint-backend --skip-install
+      - &upload-verify-logs
+        name: Upload verify logs
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: verify-logs-${{ github.job }}
+          path: test-results/verify/
+          retention-days: 2
 
   frontend-unit:
     name: Frontend unit
@@ -150,12 +154,10 @@ jobs:
       - name: Install dependencies
         run: ./meet.sh install
 
-      - name: Run frontend library unit tests
-        run: ./meet.sh test-unit-frontend --skip-install
+      - name: Run frontend unit suite
+        run: node scripts/verify.mjs --only frontend-unit
 
-      - name: Run ESLint
-        if: always()
-        run: ./meet.sh lint-frontend --skip-install
+      - *upload-verify-logs
 
   wc-unit:
     name: WebComponent unit
@@ -171,23 +173,43 @@ jobs:
       - name: Install dependencies
         run: ./meet.sh install
 
-      - name: Build typings
-        run: ./meet.sh build-typings --skip-install
+      # Builds typings and the bundle, type-checks the tests (ts-jest runs with isolatedModules, so that is the
+      # sole type-check they ever get), runs them and lints.
+      - name: Run webcomponent unit suite
+        run: node scripts/verify.mjs --only wc-unit
 
-      - name: Build webcomponent
-        run: ./meet.sh build-webcomponent --skip-install --skip-typings
+      - *upload-verify-logs
 
-      # ts-jest runs with isolatedModules (transpile-only), so this is the sole type-check the
-      # webcomponent test suites ever get (same hole test:types closes for the backend's tests/**).
-      - name: Type-check tests
-        run: pnpm --filter @openvidu-meet/webcomponent run test:types
+  static-checks:
+    name: Static checks
+    needs: changes
+    if: needs.changes.outputs.static-base != ''
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout the merge commit and its base
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+      - *setup-node
+      - *setup-pnpm
+      - *install-safe-chain
 
-      - name: Run tests
-        run: ./meet.sh test-unit-webcomponent --skip-install
+      - name: Install dependencies
+        run: ./meet.sh install
 
-      - name: Run ESLint
-        if: always()
-        run: ./meet.sh lint-webcomponent --skip-install
+      # Formatting, OpenSpec and OpenAPI, on the files the change touches (all of them at night and on dispatch).
+      - name: Run static checks
+        env:
+          BASE: ${{ needs.changes.outputs.static-base }}
+        run: |
+          if [ "$BASE" = 'all' ]; then
+            node scripts/verify.mjs --only static --all
+          else
+            git rev-parse --verify --quiet "$BASE^{commit}" || git fetch --no-tags --depth=1 origin "$BASE"
+            node scripts/verify.mjs --only static --base "$BASE"
+          fi
+
+      - *upload-verify-logs
 
   backend-integration:
     name: ${{ matrix.suite }}
@@ -548,7 +570,7 @@ jobs:
   # check behind.
   all-tests-passed:
     name: All tests passed
-    needs: [changes, backend-unit, frontend-unit, wc-unit, backend-integration, backend-recordings, frontend-e2e, wc-e2e]
+    needs: [changes, static-checks, backend-unit, frontend-unit, wc-unit, backend-integration, backend-recordings, frontend-e2e, wc-e2e]
     if: always()
     runs-on: ubuntu-24.04
     steps:
