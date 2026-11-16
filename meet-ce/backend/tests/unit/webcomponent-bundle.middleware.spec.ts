@@ -5,6 +5,7 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import request from 'supertest';
+import { staticAssetLimiter } from '../../src/middlewares/rate-limit.middleware.js';
 import { serveWebcomponentBundle } from '../../src/middlewares/webcomponent-bundle.middleware.js';
 
 /**
@@ -61,8 +62,8 @@ describe('webcomponent-bundle.middleware - serveWebcomponentBundle', () => {
 
 	const makeApp = (loaderPath: string, esmPath: string): express.Express => {
 		const app = express();
-		app.get('/v1/openvidu-meet.js', serveWebcomponentBundle(loaderPath));
-		app.get('/v1/openvidu-meet.esm.js', serveWebcomponentBundle(esmPath, '*'));
+		app.get('/v1/openvidu-meet.js', staticAssetLimiter, serveWebcomponentBundle(loaderPath));
+		app.get('/v1/openvidu-meet.esm.js', staticAssetLimiter, serveWebcomponentBundle(esmPath, '*'));
 
 		return app;
 	};
@@ -78,6 +79,17 @@ describe('webcomponent-bundle.middleware - serveWebcomponentBundle', () => {
 		expect(res.headers['etag']).toBe(`"${sha256(content)}"`);
 		expect(res.headers['cache-control']).toBe('no-cache');
 		expect(res.headers['content-type']).toContain('javascript');
+	});
+
+	it('serves the bundle when a directory of its path starts with a dot', async () => {
+		const content = '/* installed under a dot directory */';
+		const dotDir = path.join(dir, '.checkout');
+		fs.mkdirSync(dotDir);
+		const app = makeApp(deployBundle(content, path.join(dotDir, 'loader.js')), deployBundle('/* esm */'));
+
+		const res = await request(app).get('/v1/openvidu-meet.js').expect(200);
+
+		expect(res.text).toBe(content);
 	});
 
 	it('answers 304 with no body when the client already has the current bundle', async () => {
