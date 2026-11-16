@@ -152,8 +152,8 @@ Flags on any command: `--skip-install`, `--skip-typings` (typings already built)
 ## Before calling a change done
 
 - **`./meet.sh verify`** is the definition of done for everything that needs no infrastructure: Prettier
-  on the changed files, OpenSpec, the OpenAPI lint and the unit suites the diff affects (tests,
-  type-check and lint each). It picks the suites with `scripts/ci/changed-suites.mjs`, as CI does, and
+  on the changed files, OpenSpec, the OpenAPI lint, the frontmatter of `.claude/agents` and
+  `.claude/rules`, and the unit suites the diff affects (tests, type-check and lint each). It picks the suites with `scripts/ci/changed-suites.mjs`, as CI does, and
   the CI unit jobs run it too. One line per step; a failure prints its excerpt and the path of the full
   log. `--fix` formats the changed files; never run Prettier over a directory, the repository is not
   uniformly formatted. It lists the integration and e2e suites the diff selects and never runs them.
