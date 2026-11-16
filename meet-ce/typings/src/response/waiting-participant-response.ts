@@ -81,7 +81,7 @@ export interface MeetWaitingParticipantList {
 }
 
 /**
- * Answer of `bulkRejectWaitingParticipants`: `200` when all were rejected, `400` when any was not.
+ * Answer of `waitingParticipantBulkReject`: `200` when all were rejected, `400` when any was not.
  */
 export interface MeetWaitingParticipantBulkRejectResponse {
 	/** Summary of the outcome */

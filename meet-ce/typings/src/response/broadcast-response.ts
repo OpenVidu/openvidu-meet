@@ -26,7 +26,7 @@ export const MEET_BROADCAST_FIELDS = [
 export type MeetBroadcastField = (typeof MEET_BROADCAST_FIELDS)[number];
 
 /**
- * Answer of `bulkStopBroadcasts`: `200` when all were stopped, `400` when any was not.
+ * Answer of `broadcastBulkStop`: `200` when all were stopped, `400` when any was not.
  */
 export interface MeetBroadcastBulkStopResponse {
 	/** Summary of the outcome */

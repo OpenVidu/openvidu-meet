@@ -19,7 +19,7 @@ description: |
 
     Room roles merge key by key, so a request carries only the permissions it means to change and an omitted key
     keeps the value the role already had. A room member's `customPermissions` are instead replaced as a whole on
-    `updateRoomMember`, so an override the request leaves out falls back to the base role. No permission is ever
+    `roomUpdateMember`, so an override the request leaves out falls back to the base role. No permission is ever
     derived from another one.
 
     The examples in this reference show only the new keys; responses add the deprecated spellings next to

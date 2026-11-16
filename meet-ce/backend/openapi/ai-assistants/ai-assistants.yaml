@@ -1,6 +1,6 @@
 /ai/assistants:
     post:
-        operationId: createAiAssistant
+        operationId: aiCreateAssistant
         summary: Create AI assistant
         description: |
             Activates AI assistance.
@@ -35,7 +35,7 @@
 
 /ai/assistants/{assistantId}:
     delete:
-        operationId: cancelAiAssistant
+        operationId: aiCancelAssistant
         summary: Cancel AI assistant
         description: |
             Cancels AI assistant.
@@ -52,7 +52,7 @@
               schema:
                   type: string
                   minLength: 1
-              description: Identifier returned by `createAiAssistant`, informative only. The room's current captions assistant is the one acted on, whatever the identifier.
+              description: Identifier returned by `aiCreateAssistant`, informative only. The room's current captions assistant is the one acted on, whatever the identifier.
               example: asst_123
         responses:
             '200':

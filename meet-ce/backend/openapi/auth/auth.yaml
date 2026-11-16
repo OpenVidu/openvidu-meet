@@ -1,6 +1,6 @@
 /auth/login:
     post:
-        operationId: loginUser
+        operationId: authLogin
         summary: Login to OpenVidu Meet
         description: >
             Authenticates a user and returns an access and refresh token.
@@ -23,14 +23,14 @@
                 $ref: '../shared/responses/errors/internal-server.yaml'
 /auth/logout:
     post:
-        operationId: logoutUser
+        operationId: authLogout
         summary: Logout from OpenVidu Meet
         description: >
             Logs out the user. When the request carries a valid access token or refresh token, the login
             session it belongs to ends on every replica: every access and refresh token of that session is
             rejected from then on, while the user's other sessions stay valid. A login session is the tokens
-            one `loginUser` or `changeUserPassword` returns plus every token later obtained from them through
-            `refreshAccessToken`. Without a valid credential, the call still succeeds.
+            one `authLogin` or `userChangePassword` returns plus every token later obtained from them through
+            `authRefreshToken`. Without a valid credential, the call still succeeds.
         tags:
             - Internal API - Authentication
         security:
@@ -46,7 +46,7 @@
                 $ref: '../shared/responses/errors/internal-server.yaml'
 /auth/refresh:
     post:
-        operationId: refreshAccessToken
+        operationId: authRefreshToken
         summary: Refresh access token
         description: >
             Refreshes the access token using the refresh token. Unless `MEET_REFRESH_TOKEN_ROTATION_ENABLED` is

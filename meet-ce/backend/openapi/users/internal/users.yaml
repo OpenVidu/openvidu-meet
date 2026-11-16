@@ -1,6 +1,6 @@
 /users/me:
     get:
-        operationId: getMe
+        operationId: userGetMe
         summary: Get authenticated user
         description: >
             Retrieves the details of the authenticated user.
@@ -22,7 +22,7 @@
                 $ref: '../../shared/responses/errors/too-many-requests.yaml'
 /users/change-password:
     post:
-        operationId: changeUserPassword
+        operationId: userChangePassword
         summary: Change user password
         description: >
             Allows the authenticated user to change their password. Every access and refresh token issued to

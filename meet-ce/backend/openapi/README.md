@@ -60,11 +60,9 @@ charter"; registry: `meet-ce/typings/src/api-registry.ts`), enforced by
 `scripts/lint-api-naming.mjs` at the repo root — `./meet.sh lint-backend` runs it, so CI fails on a
 violation:
 
-- Every new `operationId` is `moduleAction` camelCase (`meetingEnd`, `participantKick`), starting
-  with a registered module token, or, for a bulk operation, `bulk` + verb + a module token's plural
-  (`bulkRejectWaitingParticipants`), as the released bulk deletes are named. The pre-charter operations (`createRoom`, `startRecording`, …)
-  are frozen in an allowlist inside the lint script — do not add to it; public `operationId`s
-  generate SDK method names and get renamed in the next major.
+- Every `operationId` is `moduleAction` camelCase, starting with a registered module token and with
+  the verb before the object (`meetingEnd`, `roomUpdateConfig`); a bulk operation puts `Bulk` before
+  the verb (`roomBulkDelete`). Renaming one changes the `#/operations/<id>` links of the docs only.
 - A new **top-level path segment** must be registered in `MEET_API_REST_GROUPS` first, and that is
   an API-design decision: live meeting features go under `/meetings/{roomId}`, only durable
   artifacts (`/rooms`, `/recordings`), egresses addressed by their own id like a recording
