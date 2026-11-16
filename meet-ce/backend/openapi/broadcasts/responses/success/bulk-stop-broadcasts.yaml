@@ -1,0 +1,30 @@
+description: Every broadcast named was stopped.
+content:
+    application/json:
+        schema:
+            type: object
+            properties:
+                message:
+                    type: string
+                deleted:
+                    type: array
+                    items:
+                        type: string
+                    description: IDs of the broadcasts stopped.
+                failed:
+                    type: array
+                    description: Always present; empty when every broadcast named was stopped.
+                    items:
+                        type: object
+                        properties:
+                            broadcastId:
+                                type: string
+                            error:
+                                type: string
+                                description: A message explaining why the broadcast was not stopped.
+        example:
+            message: 'All broadcasts stopped successfully'
+            deleted:
+                - 'room-123--Qm4tZ8vR1c'
+                - 'room-123--p7Rt4WqM2z'
+            failed: []

@@ -1,8 +1,8 @@
 import type {
+	MeetBroadcastBulkStopResponse,
 	MeetBroadcastField,
 	MeetBroadcastInfo,
-	MeetBroadcastStartOptions,
-	MeetBroadcastStopOptions
+	MeetBroadcastStartOptions
 } from '@openvidu-meet/typings';
 import type { Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
@@ -36,17 +36,44 @@ export const startBroadcasts = async (req: Request, res: Response) => {
 	}
 };
 
-export const stopBroadcasts = async (req: Request, res: Response) => {
+export const stopBroadcast = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const broadcastService = container.get(BroadcastService);
-	const { roomId, ...options } = req.body as MeetBroadcastStopOptions & { roomId: string };
+	const { broadcastId } = req.params as Record<string, string>;
 
 	try {
-		logger.info(`Stopping broadcasts in room '${roomId}'`);
-		const broadcasts = await broadcastService.stopBroadcasts(roomId, options);
-		return res.status(200).json(asList(res, broadcasts));
+		logger.info(`Stopping broadcast '${broadcastId}'`);
+		const broadcast = await broadcastService.stopBroadcast(BroadcastHelper.roomIdOf(broadcastId), broadcastId);
+		return res.status(200).json(withRequestedFields(res, broadcast));
 	} catch (error) {
-		handleError(res, error, `stopping broadcasts in room '${roomId}'`);
+		handleError(res, error, `stopping broadcast '${broadcastId}'`);
+	}
+};
+
+export const bulkStopBroadcasts = async (_req: Request, res: Response) => {
+	const logger = container.get(LoggerService);
+	const broadcastService = container.get(BroadcastService);
+	const { broadcastIds } = res.locals.validatedQuery as { broadcastIds: string[] };
+	const { processableIds, failed: refused } = res.locals.bulkValidation as {
+		processableIds: string[];
+		failed: MeetBroadcastBulkStopResponse['failed'];
+	};
+
+	try {
+		logger.info(`Stopping broadcasts ${String(broadcastIds)}`);
+		const { stopped, failed } = await broadcastService.bulkStopBroadcasts(processableIds);
+		const allFailed = [...refused, ...failed];
+		const response: MeetBroadcastBulkStopResponse = {
+			message:
+				allFailed.length === 0
+					? 'All broadcasts stopped successfully'
+					: `${allFailed.length} broadcast(s) could not be stopped`,
+			deleted: stopped,
+			failed: allFailed
+		};
+		return res.status(allFailed.length === 0 ? 200 : 400).json(response);
+	} catch (error) {
+		handleError(res, error, 'stopping broadcasts');
 	}
 };
 

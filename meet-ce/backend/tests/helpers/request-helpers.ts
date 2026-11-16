@@ -5,7 +5,6 @@ import {
 	MeetParticipantHandOptions,
 	MeetParticipantModerationAction,
 	MeetBroadcastStartOptions,
-	MeetBroadcastStopOptions,
 	MeetParticipantMuteOptions,
 	MeetParticipantReactionOptions,
 	MeetPermissionsInput,
@@ -1396,16 +1395,19 @@ export const startBroadcasts = async (
 	return await asBroadcastCaller(request(app).post(broadcastsPath()), roomMemberToken).send({ roomId, ...options });
 };
 
-export const stopBroadcasts = async (
-	roomId: string,
-	options: MeetBroadcastStopOptions = {},
-	roomMemberToken?: string
-): Promise<Response> => {
+export const stopBroadcast = async (broadcastId: string, roomMemberToken?: string): Promise<Response> => {
 	checkAppIsRunning();
-	return await asBroadcastCaller(request(app).post(`${broadcastsPath()}/stop`), roomMemberToken).send({
-		roomId,
-		...options
-	});
+	return await asBroadcastCaller(request(app).delete(`${broadcastsPath()}/${broadcastId}`), roomMemberToken);
+};
+
+export const bulkStopBroadcasts = async (broadcastIds: string[], roomMemberToken?: string): Promise<Response> => {
+	checkAppIsRunning();
+	return await asBroadcastCaller(
+		request(app)
+			.delete(broadcastsPath())
+			.query({ broadcastIds: broadcastIds.join(',') }),
+		roomMemberToken
+	);
 };
 
 export const getBroadcasts = async (roomId: string, roomMemberToken?: string): Promise<Response> => {
