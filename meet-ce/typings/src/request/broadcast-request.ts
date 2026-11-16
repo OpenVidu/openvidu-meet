@@ -28,10 +28,9 @@ export interface MeetBroadcastStartDestination {
 }
 
 /**
- * Payload of the `broadcastStop` embedded command, and body of `POST /broadcasts/stop` next to the
- * `roomId` of the meeting: the broadcasts to stop, one or several.
+ * Payload of the `broadcastStop` embedded command: the broadcast to stop.
  */
 export interface MeetBroadcastStopOptions {
-	/** Identifiers of the broadcasts to stop. Omitted, every broadcast of the meeting still running */
-	broadcastIds?: string[];
+	/** Identifier of the broadcast to stop */
+	broadcastId: string;
 }

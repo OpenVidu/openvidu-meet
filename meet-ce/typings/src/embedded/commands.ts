@@ -125,10 +125,15 @@ export enum EmbeddedCommandName {
 	 */
 	BROADCAST_START = 'broadcastStart',
 	/**
-	 * Stops the given live broadcasts of the meeting, or every running one when none is given.
+	 * Stops the live broadcast of the meeting named by `broadcastId`.
 	 * @permission broadcastControl
 	 */
 	BROADCAST_STOP = 'broadcastStop',
+	/**
+	 * Stops the live broadcasts of the current meeting that are running when it is called.
+	 * @permission broadcastControl
+	 */
+	BROADCAST_STOP_ALL = 'broadcastStopAll',
 	/**
 	 * Ends the current meeting for all participants.
 	 * @permission meetingEnd
@@ -267,10 +272,13 @@ export interface EmbeddedCommandPayloads {
 	 */
 	[EmbeddedCommandName.BROADCAST_START]: MeetBroadcastStartOptions;
 	/**
-	 * Payload for the {@link EmbeddedCommandName.BROADCAST_STOP} command. When `broadcastIds` is
-	 * omitted, every running broadcast. See {@link MeetBroadcastStopOptions}.
+	 * Payload for the {@link EmbeddedCommandName.BROADCAST_STOP} command. See {@link MeetBroadcastStopOptions}.
 	 */
 	[EmbeddedCommandName.BROADCAST_STOP]: MeetBroadcastStopOptions;
+	/**
+	 * Payload for the {@link EmbeddedCommandName.BROADCAST_STOP_ALL} command.
+	 */
+	[EmbeddedCommandName.BROADCAST_STOP_ALL]: void;
 	/**
 	 * Payload for the {@link EmbeddedCommandName.END_MEETING} command.
 	 * @deprecated Use {@link EmbeddedCommandName.MEETING_END}. Removed in 3.12.0.
@@ -549,7 +557,15 @@ export interface EmbeddedBroadcastStartCommand {
  */
 export interface EmbeddedBroadcastStopCommand {
 	command: EmbeddedCommandName.BROADCAST_STOP;
-	payload?: EmbeddedCommandPayloadFor<EmbeddedCommandName.BROADCAST_STOP>;
+	payload: EmbeddedCommandPayloadFor<EmbeddedCommandName.BROADCAST_STOP>;
+}
+
+/**
+ * Command message for {@link EmbeddedCommandName.BROADCAST_STOP_ALL}.
+ * @category Communication
+ */
+export interface EmbeddedBroadcastStopAllCommand {
+	command: EmbeddedCommandName.BROADCAST_STOP_ALL;
 }
 
 /**
@@ -580,6 +596,7 @@ export type EmbeddedCommand =
 	| EmbeddedRecordingStopCommand
 	| EmbeddedBroadcastStartCommand
 	| EmbeddedBroadcastStopCommand
+	| EmbeddedBroadcastStopAllCommand
 	| EmbeddedEndMeetingCommand
 	| EmbeddedLeaveRoomCommand
 	| EmbeddedKickParticipantCommand;
