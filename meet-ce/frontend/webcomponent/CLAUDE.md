@@ -78,8 +78,8 @@ element. The wrapper rejects them the same way while the Angular component does 
   no gating of its own beyond rejecting commands that arrive before the meeting page, so both
   transports accept and reject identically.
 - `broadcastStart({destinationIds?, destinations?})` runs one broadcast per destination asked for, or per
-  room destination not streamed to yet when `destinationIds` is omitted; `broadcastStop({broadcastIds?})`
-  ends the broadcasts given, or every running one. Both need `broadcastControl`.
+  room destination not streamed to yet when `destinationIds` is omitted; `broadcastStop({broadcastId})`
+  ends that broadcast and `broadcastStopAll()` every running one. All need `broadcastControl`.
 - No `.d.ts` is published; hosts declare the subset they use (see
   `testapp/src/app/openvidu-meet-element.ts`).
 - `src/main.wc.ts`: `bootstrapOpenViduMeet(tagName?)` creates the Angular application, flips

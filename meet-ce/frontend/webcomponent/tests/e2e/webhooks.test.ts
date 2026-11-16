@@ -22,7 +22,7 @@ import { startRecording, stopRecording } from '../helpers/recordings.helper';
 import {
 	askToJoin,
 	broadcastStartCommand,
-	broadcastStopCommand,
+	broadcastStopAllCommand,
 	endMeetingCommand,
 	expectWebhook,
 	joinedParticipantIdentity,
@@ -252,7 +252,7 @@ test.describe('Webhooks E2E Tests', () => {
 		);
 		expect((updatedWebhook.data as MeetBroadcastInfo).broadcastId).toBe(started.broadcastId);
 
-		await broadcastStopCommand(page);
+		await broadcastStopAllCommand(page);
 		await expectWebhook(page, MeetWebhookEventType.BROADCAST_ENDED, { timeout: 30_000 });
 
 		const endedWebhook = await getWebhookFromStorage(page, broadcastRoomId, MeetWebhookEventType.BROADCAST_ENDED);

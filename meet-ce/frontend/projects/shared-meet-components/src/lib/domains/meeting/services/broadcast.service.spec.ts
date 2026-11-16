@@ -22,18 +22,18 @@ describe('BroadcastService', () => {
 	let state: BroadcastStateService;
 	let httpService: jasmine.SpyObj<HttpService>;
 
-	const forMeeting = (broadcastId: string): MeetBroadcastInfo => ({
+	const forMeeting = (broadcastId: string, status = MeetBroadcastStatus.STARTING): MeetBroadcastInfo => ({
 		broadcastId,
 		roomId: 'room1',
 		roomName: 'Room 1',
-		status: MeetBroadcastStatus.STARTING,
+		status,
 		destination: { name: 'Backup', url: 'rtmp://media.example.com/live/********' },
 		layout: MeetRecordingLayout.GRID,
 		encoding: MeetRecordingEncodingPreset.H264_720P_30
 	});
 
 	beforeEach(() => {
-		httpService = jasmine.createSpyObj<HttpService>('HttpService', ['postRequest']);
+		httpService = jasmine.createSpyObj<HttpService>('HttpService', ['postRequest', 'deleteRequest']);
 
 		TestBed.configureTestingModule({
 			providers: [
@@ -68,16 +68,35 @@ describe('BroadcastService', () => {
 		expect(state.ownUrls().get('bc1')).toBe('rtmp://media.example.com/live/key');
 	});
 
-	it('stops the broadcasts asked for, or every running one', async () => {
-		httpService.postRequest.and.resolveTo({ broadcasts: [] });
+	it('stops the broadcast asked for by its id, or every running one by their ids', async () => {
+		httpService.deleteRequest.and.resolveTo({});
+		state.setBroadcast(forMeeting('room1--a', MeetBroadcastStatus.ACTIVE));
+		state.setBroadcast(forMeeting('room1--b', MeetBroadcastStatus.ENDING));
+		state.setBroadcast(forMeeting('room1--c', MeetBroadcastStatus.STARTING));
 
-		await service.request({ action: 'stop', roomId: 'room1', broadcastIds: ['bc1'] });
+		await service.request({ action: 'stop', roomId: 'room1', broadcastId: 'room1--a' });
 		await service.request({ action: 'stop', roomId: 'room1' });
 
-		expect(httpService.postRequest.calls.allArgs()).toEqual([
-			[`${BROADCASTS_PATH}/stop`, { roomId: 'room1', broadcastIds: ['bc1'] }],
-			[`${BROADCASTS_PATH}/stop`, { roomId: 'room1', broadcastIds: undefined }]
+		expect(httpService.deleteRequest.calls.allArgs()).toEqual([
+			[`${BROADCASTS_PATH}/room1--a`],
+			[`${BROADCASTS_PATH}?broadcastIds=room1--a,room1--c`]
 		]);
+	});
+
+	it('stops every broadcast with those of a start still being answered, and sends nothing when none runs', async () => {
+		let answer!: (body: { broadcasts: MeetBroadcastInfo[] }) => void;
+		httpService.postRequest.and.returnValue(new Promise((resolve) => (answer = resolve)));
+		httpService.deleteRequest.and.resolveTo({});
+
+		await service.request({ action: 'stop', roomId: 'room1' });
+		expect(httpService.deleteRequest).not.toHaveBeenCalled();
+
+		const start = service.request({ action: 'start', roomId: 'room1' });
+		const stop = service.request({ action: 'stop', roomId: 'room1' });
+		answer({ broadcasts: [forMeeting('room1--a')] });
+		await Promise.all([start, stop]);
+
+		expect(httpService.deleteRequest).toHaveBeenCalledOnceWith(`${BROADCASTS_PATH}?broadcastIds=room1--a`);
 	});
 
 	it('keeps a refusal with the reason the server gave, and throws it back', async () => {

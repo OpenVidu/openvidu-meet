@@ -365,7 +365,7 @@ describe('EmbeddedCommandService', () => {
 		it('rejects broadcastStop with no active session', async () => {
 			liveKitService.isSessionActive.set(false);
 
-			await service.broadcastStop();
+			await service.broadcastStop({ broadcastId: BROADCAST_ID });
 
 			expect(broadcastService.request).not.toHaveBeenCalled();
 		});
@@ -573,10 +573,11 @@ describe('EmbeddedCommandService', () => {
 			expect(broadcastService.request).not.toHaveBeenCalled();
 		});
 
-		it('gates broadcastStop on the same broadcastControl permission', async () => {
+		it('gates broadcastStop and broadcastStopAll on the same broadcastControl permission', async () => {
 			hasPermission.and.returnValue(false);
 
-			await service.broadcastStop();
+			await service.broadcastStop({ broadcastId: BROADCAST_ID });
+			await service.broadcastStopAll();
 
 			expect(hasPermission).toHaveBeenCalledWith('broadcastControl');
 			expect(broadcastService.request).not.toHaveBeenCalled();
@@ -628,24 +629,24 @@ describe('EmbeddedCommandService', () => {
 			expect(broadcastService.request).not.toHaveBeenCalled();
 		});
 
-		it('broadcastStop stops the broadcasts asked for, or by default every running one', async () => {
-			await service.broadcastStop({ broadcastIds: [BROADCAST_ID] });
-			await service.broadcastStop();
+		it('broadcastStop stops the broadcast asked for, and broadcastStopAll every running one', async () => {
+			await service.broadcastStop({ broadcastId: BROADCAST_ID });
+			await service.broadcastStopAll();
 
 			expect(broadcastService.request.calls.allArgs()).toEqual([
-				[{ action: 'stop', roomId: ROOM_ID, broadcastIds: [BROADCAST_ID] }],
+				[{ action: 'stop', roomId: ROOM_ID, broadcastId: BROADCAST_ID }],
 				[{ action: 'stop', roomId: ROOM_ID }]
 			]);
 		});
 
-		it('broadcastStop is rejected while no broadcast is running or starting', async () => {
+		it('broadcastStopAll is rejected while no broadcast is running or starting', async () => {
 			runningBroadcasts.set([]);
 
-			await service.broadcastStop();
+			await service.broadcastStopAll();
 			expect(broadcastService.request).not.toHaveBeenCalled();
 
 			startPending.set(true);
-			await service.broadcastStop();
+			await service.broadcastStopAll();
 			expect(broadcastService.request).toHaveBeenCalledOnceWith({ action: 'stop', roomId: ROOM_ID });
 		});
 

@@ -35,6 +35,7 @@ class FakeImpl extends HTMLElement {
 	participantReactionSend = jest.fn();
 	broadcastStart = jest.fn();
 	broadcastStop = jest.fn();
+	broadcastStopAll = jest.fn();
 	waitingParticipantAdmit = jest.fn();
 	waitingParticipantAdmitAll = jest.fn();
 	waitingParticipantReject = jest.fn();

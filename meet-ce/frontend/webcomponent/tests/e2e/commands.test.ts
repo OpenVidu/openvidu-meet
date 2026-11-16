@@ -31,8 +31,8 @@ import {
 	askToJoin,
 	broadcastStartCommand,
 	broadcastStartToCommand,
+	broadcastStopAllCommand,
 	broadcastStopCommand,
-	broadcastStopToCommand,
 	endMeetingCommand,
 	endMeetingLegacyCommand,
 	eventLocator,
@@ -974,12 +974,12 @@ for (const integration of INTEGRATIONS) {
 				await expectEvent(page, EmbeddedEventName.BROADCAST_STARTED);
 				await expect(meetLocator(page, integration, '#broadcast-tag')).toBeVisible({ timeout: 40_000 });
 
-				await broadcastStopCommand(page);
+				await broadcastStopAllCommand(page);
 				await expectEvent(page, EmbeddedEventName.BROADCAST_ENDED, { timeout: 30_000 });
 				await expect(meetLocator(page, integration, '#broadcast-tag')).toBeHidden();
 			});
 
-			test('should start and stop only the destinations and broadcasts the commands name', async ({ page }) => {
+			test('should start only the destinations named, and stop only the broadcast named', async ({ page }) => {
 				const destinations = [
 					{ name: 'Sink A', url: await createRtmpSink(`commands-a-${integration}`) },
 					{ name: 'Sink B', url: await createRtmpSink(`commands-b-${integration}`) }
@@ -996,11 +996,11 @@ for (const integration of INTEGRATIONS) {
 				const started = await expectEvent(page, EmbeddedEventName.BROADCAST_STARTED, { count: 2 });
 				await expect(started.nth(1)).toContainText('Sink A');
 
-				await broadcastStopToCommand(page, ['Sink B']);
+				await broadcastStopCommand(page, 'Sink B');
 				const ended = await expectEvent(page, EmbeddedEventName.BROADCAST_ENDED, { timeout: 30_000 });
 				await expect(ended).toContainText('Sink B');
 
-				await broadcastStopCommand(page);
+				await broadcastStopAllCommand(page);
 				await expectEvent(page, EmbeddedEventName.BROADCAST_ENDED, { count: 2, timeout: 30_000 });
 				await expect(ended.nth(1)).toContainText('Sink A');
 			});

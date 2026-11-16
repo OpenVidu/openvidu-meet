@@ -488,21 +488,17 @@ export const broadcastStartToCommand = async (page: Page, names: string[]): Prom
 	await page.getByTestId('btn-broadcast-start').click();
 };
 
-/** Clicks the testapp's `broadcastStop()` button, naming the running broadcasts picked, or none to stop them all. */
-export const broadcastStopCommand = async (page: Page): Promise<void> => {
+/** Clicks the testapp's `broadcastStop()` naming the broadcast to the destination called `name`. */
+export const broadcastStopCommand = async (page: Page, name: string): Promise<void> => {
 	await showControlsPanel(page, 'commands');
+	await page.getByTestId('btn-broadcast-stop-target').filter({ hasText: name }).click();
 	await page.getByTestId('btn-broadcast-stop').click();
 };
 
-/** Clicks the testapp's `broadcastStop()` naming in `broadcastIds` the broadcasts to the destinations called `names`. */
-export const broadcastStopToCommand = async (page: Page, names: string[]): Promise<void> => {
+/** Clicks the testapp's `broadcastStopAll()` button. */
+export const broadcastStopAllCommand = async (page: Page): Promise<void> => {
 	await showControlsPanel(page, 'commands');
-
-	for (const name of names) {
-		await page.getByTestId('btn-broadcast-stop-target').filter({ hasText: name }).click();
-	}
-
-	await page.getByTestId('btn-broadcast-stop').click();
+	await page.getByTestId('btn-broadcast-stop-all').click();
 };
 
 /** Clicks the testapp's `waitingParticipantAdmit()` button naming `participantIdentity` as the target participant. */

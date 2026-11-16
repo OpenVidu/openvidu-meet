@@ -35,7 +35,7 @@ import { openWebcomponentWithAttributes } from '../helpers/webcomponent-attribut
 import {
 	askToJoin,
 	broadcastStartCommand,
-	broadcastStopCommand,
+	broadcastStopAllCommand,
 	endMeetingCommand,
 	eventLocator,
 	eventPayloadField,
@@ -885,7 +885,7 @@ for (const integration of INTEGRATIONS) {
 				});
 				await expect(streaming.first()).toBeAttached({ timeout: 40_000 });
 
-				await broadcastStopCommand(page);
+				await broadcastStopAllCommand(page);
 
 				const ended = await expectEvent(page, EmbeddedEventName.BROADCAST_ENDED, { timeout: 30_000 });
 				await expect(ended).toContainText(`"status":"${MeetBroadcastStatus.COMPLETE}"`);

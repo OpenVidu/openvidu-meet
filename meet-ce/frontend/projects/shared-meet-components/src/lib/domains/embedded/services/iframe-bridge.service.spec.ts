@@ -58,6 +58,7 @@ describe('IframeBridgeService', () => {
 			'participantReactionSend',
 			'broadcastStart',
 			'broadcastStop',
+			'broadcastStopAll',
 			'waitingParticipantAdmit',
 			'waitingParticipantAdmitAll',
 			'waitingParticipantReject',
@@ -80,6 +81,7 @@ describe('IframeBridgeService', () => {
 		commandService.participantReactionSend.and.resolveTo();
 		commandService.broadcastStart.and.resolveTo();
 		commandService.broadcastStop.and.resolveTo();
+		commandService.broadcastStopAll.and.resolveTo();
 		commandService.waitingParticipantAdmit.and.resolveTo();
 		commandService.waitingParticipantAdmitAll.and.resolveTo();
 		commandService.waitingParticipantReject.and.resolveTo();
@@ -287,16 +289,15 @@ describe('IframeBridgeService', () => {
 			]);
 		});
 
-		it('forwards BROADCAST_STOP to the manager, with the broadcasts asked for', () => {
+		it('forwards BROADCAST_STOP with the broadcast asked for, and BROADCAST_STOP_ALL', () => {
 			startBridge();
 
 			postFromHost({ command: EmbeddedCommandName.BROADCAST_STOP });
-			postFromHost({ command: EmbeddedCommandName.BROADCAST_STOP, payload: { broadcastIds: ['bc1'] } });
+			postFromHost({ command: EmbeddedCommandName.BROADCAST_STOP, payload: { broadcastId: 'bc1' } });
+			postFromHost({ command: EmbeddedCommandName.BROADCAST_STOP_ALL });
 
-			expect(commandService.broadcastStop.calls.allArgs()).toEqual([
-				[{ broadcastIds: undefined }],
-				[{ broadcastIds: ['bc1'] }]
-			]);
+			expect(commandService.broadcastStop).toHaveBeenCalledOnceWith({ broadcastId: 'bc1' });
+			expect(commandService.broadcastStopAll).toHaveBeenCalledTimes(1);
 		});
 
 		it('forwards the waiting participant commands, those on one participant only with its identity', () => {

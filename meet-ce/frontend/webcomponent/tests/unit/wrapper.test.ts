@@ -50,6 +50,7 @@ interface ComponentInstance {
 	participantReactionSend: jest.Mock;
 	broadcastStart: jest.Mock;
 	broadcastStop: jest.Mock;
+	broadcastStopAll: jest.Mock;
 	waitingParticipantAdmit: jest.Mock;
 	waitingParticipantAdmitAll: jest.Mock;
 	waitingParticipantReject: jest.Mock;
@@ -77,7 +78,8 @@ interface TestableElement extends FakeNgElementBase {
 	participantHandLowerAll(): void;
 	participantReactionSend(reaction: string): void;
 	broadcastStart(options?: MeetBroadcastStartOptions): void;
-	broadcastStop(options?: MeetBroadcastStopOptions): void;
+	broadcastStop(options: MeetBroadcastStopOptions): void;
+	broadcastStopAll(): void;
 	waitingParticipantAdmit(options: MeetWaitingParticipantDecisionOptions): void;
 	waitingParticipantAdmitAll(): void;
 	waitingParticipantReject(options: MeetWaitingParticipantDecisionOptions): void;
@@ -107,6 +109,7 @@ const componentInstance = (): ComponentInstance => ({
 	participantReactionSend: jest.fn(),
 	broadcastStart: jest.fn(),
 	broadcastStop: jest.fn(),
+	broadcastStopAll: jest.fn(),
 	waitingParticipantAdmit: jest.fn(),
 	waitingParticipantAdmitAll: jest.fn(),
 	waitingParticipantReject: jest.fn(),
@@ -291,7 +294,7 @@ describe('openvidu-meet custom element', () => {
 		// Every command the element publishes, with the arguments the component must receive
 		// untouched: the element is a transport, it decides nothing.
 		const start: MeetBroadcastStartOptions = { destinationIds: ['dest-a'] };
-		const stop: MeetBroadcastStopOptions = { broadcastIds: ['bc1'] };
+		const stop: MeetBroadcastStopOptions = { broadcastId: 'bc1' };
 		const decision: MeetWaitingParticipantDecisionOptions = { participantIdentity: 'zoe' };
 		const commands: [keyof ComponentInstance, (el: TestableElement) => void, unknown[]][] = [
 			['meetingEnd', (el) => el.meetingEnd(), []],
@@ -315,6 +318,7 @@ describe('openvidu-meet custom element', () => {
 			['participantReactionSend', (el) => el.participantReactionSend('thumbs_up'), ['thumbs_up']],
 			['broadcastStart', (el) => el.broadcastStart(start), [start]],
 			['broadcastStop', (el) => el.broadcastStop(stop), [stop]],
+			['broadcastStopAll', (el) => el.broadcastStopAll(), []],
 			['waitingParticipantAdmit', (el) => el.waitingParticipantAdmit(decision), [decision]],
 			['waitingParticipantAdmitAll', (el) => el.waitingParticipantAdmitAll(), []],
 			['waitingParticipantReject', (el) => el.waitingParticipantReject(decision), [decision]],

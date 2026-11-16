@@ -54,23 +54,22 @@ export class MeetCommandsService {
 	/** A destination for this meeting only, sent in `destinations` when it has a URL. */
 	readonly broadcastExtraName = signal('');
 	readonly broadcastExtraUrl = signal('');
-	/** Running broadcasts `broadcastStop()` names; none picked omits `broadcastIds` and stops them all. */
-	private readonly broadcastStopPicks = signal<string[]>([]);
-	readonly broadcastStopIds = computed(() =>
-		this.broadcastStopPicks().filter((id) =>
-			this.broadcastRoster.broadcasts().some(({ broadcastId }) => broadcastId === id)
-		)
-	);
+	/** The running broadcast `broadcastStop()` names. */
+	private readonly broadcastStopPick = signal<string | undefined>(undefined);
+	readonly broadcastStopId = computed(() => {
+		const picked = this.broadcastStopPick();
+		return this.broadcastRoster.broadcasts().some(({ broadcastId }) => broadcastId === picked) ? picked : undefined;
+	});
+	readonly broadcastStopOptions = computed<Partial<MeetBroadcastStopOptions>>(() => {
+		const broadcastId = this.broadcastStopId();
+		return broadcastId ? { broadcastId } : {};
+	});
 	readonly broadcastStartOptions = computed<MeetBroadcastStartOptions>(() => {
 		const url = this.broadcastExtraUrl().trim();
 		return {
 			...(this.broadcastPickDestinations() && { destinationIds: this.broadcastDestinationIds() }),
 			...(url && { destinations: [{ name: this.broadcastExtraName().trim() || 'Testapp', url }] })
 		};
-	});
-	readonly broadcastStopOptions = computed<MeetBroadcastStopOptions>(() => {
-		const broadcastIds = this.broadcastStopIds();
-		return broadcastIds.length ? { broadcastIds } : {};
 	});
 	/** Whether an `on("joined")` handler is currently registered. */
 	readonly joinedListenerRegistered = signal(false);
@@ -298,8 +297,8 @@ export class MeetCommandsService {
 		this.broadcastDestinationIds.update((ids) => toggled(ids, destinationId));
 	}
 
-	toggleBroadcastStop(broadcastId: string): void {
-		this.broadcastStopPicks.set(toggled(this.broadcastStopIds(), broadcastId));
+	pickBroadcastStop(broadcastId: string): void {
+		this.broadcastStopPick.set(broadcastId);
 	}
 
 	broadcastStart(): void {
@@ -312,12 +311,27 @@ export class MeetCommandsService {
 	}
 
 	broadcastStop(): void {
-		const options = this.broadcastStopOptions();
+		const { broadcastId } = this.broadcastStopOptions();
+
+		if (!broadcastId) {
+			this.log.warning('broadcastStop', 'pick a running broadcast');
+			return;
+		}
+
+		const options = { broadcastId };
 		this.dispatch(
 			() => this.iframeHost.broadcastStop(options),
 			(element) => element.broadcastStop(options)
 		);
 		this.log.command('broadcastStop', optionsArgs(options));
+	}
+
+	broadcastStopAll(): void {
+		this.dispatch(
+			() => this.iframeHost.broadcastStopAll(),
+			(element) => element.broadcastStopAll()
+		);
+		this.log.command('broadcastStopAll', '()');
 	}
 
 	// ── Deprecated 3.8.0 spellings ──────────────────────────────────────────
