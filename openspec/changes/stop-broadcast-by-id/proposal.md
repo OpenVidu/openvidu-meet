@@ -15,9 +15,11 @@
 ## Capabilities
 
 ### New Capabilities
+
 None.
 
 ### Modified Capabilities
+
 - `live-broadcast`: stopping one broadcast by its identifier, stopping several by theirs, the responses and the embedded commands.
 - `embedded-api`: `broadcastStopAll` joins the command catalogue.
 
