@@ -861,7 +861,7 @@ test.describe('Participants E2E Tests', () => {
 				await speakerPage.keyboard.press('r');
 				await expectHandRaised(speakerPage, false);
 				await expectHandRaisedNotice(moderatorPage, false);
-				expect(handRequests).toEqual(['{"raised":true}', '{"raised":false}']);
+				expect(handRequests).toEqual(['{"handRaised":true}', '{"handRaised":false}']);
 			} finally {
 				await removeAllParticipants();
 			}
