@@ -47,26 +47,21 @@ export enum EmbeddedEventName {
 	 */
 	PARTICIPANT_ROLE_CHANGED = 'participantRoleChanged',
 	/**
-	 * Event emitted to the participants who hold `waitingParticipantAdmin` when a participant asks to join and
-	 * waits, as soon as they ask. Participants already waiting when the local participant joins, and a
-	 * participant waiting again after an admission that failed, are reported by `waitingParticipantListUpdated`, not by
-	 * this event.
+	 * Event emitted to the participants in the meeting holding `waitingParticipantAdmin` when a participant asks to
+	 * join a locked room. Those already waiting on joining, and those waiting again after a failed admission, come
+	 * only in `waitingParticipantListUpdated`.
 	 */
 	WAITING_PARTICIPANT_KNOCKED = 'waitingParticipantKnocked',
 	/**
-	 * Event emitted to the participants who hold `waitingParticipantAdmin`, in a locked room, when the list of waiting
-	 * participants changes, with the whole list. It is also emitted once on joining.
+	 * Event emitted to the participants in the meeting holding `waitingParticipantAdmin` with the whole waiting list
+	 * of a locked room: on joining, on gaining the permission, and on every change.
 	 */
 	WAITING_PARTICIPANT_LIST_UPDATED = 'waitingParticipantListUpdated',
 	/**
-	 * Event emitted when the state of a wait to join a locked room changes: `waiting`, `admitted`, `rejected`,
-	 * `left`, `expired`, `meeting_ended` and `room_closed`. The local participant receives it for their own wait
-	 * while they wait: the first `waiting` comes with the first state the meeting receives, so a participant whose
-	 * connection never receives one gets none; `admitted` is not the join: `meetingJoined` confirms it, or
-	 * `waiting` follows at once when the meeting is full by then; and no waiting event follows an access or
-	 * connection error: its screen and `embeddedCloseRequested` apply. The participants in the meeting who hold
-	 * `waitingParticipantAdmin` receive it for every wait of the room after its knock, whoever changed it, as the
-	 * `waitingParticipantStatusChanged` webhook reports it to the host's backend.
+	 * Event emitted when a wait to join a locked room changes status. The waiting participant receives it for their
+	 * own wait, starting with `waiting`; `meetingJoined` confirms an `admitted`, and no `meetingLeft` follows a wait.
+	 * The participants in the meeting holding `waitingParticipantAdmin` receive it for every wait of the room after
+	 * its knock, as the `waitingParticipantStatusChanged` webhook reports it.
 	 */
 	WAITING_PARTICIPANT_STATUS_CHANGED = 'waitingParticipantStatusChanged',
 	/**
@@ -248,27 +243,24 @@ export interface EmbeddedEventPayloads {
 		origin: MeetEventOrigin.PARTICIPANT | MeetEventOrigin.MODERATOR;
 	};
 	/**
-	 * Payload for the {@link EmbeddedEventName.WAITING_PARTICIPANT_KNOCKED} event. `participant` is who asks
-	 * to join (see {@link MeetWaitingParticipant}).
+	 * Payload for the {@link EmbeddedEventName.WAITING_PARTICIPANT_KNOCKED} event: the participant who asks to join.
 	 */
 	[EmbeddedEventName.WAITING_PARTICIPANT_KNOCKED]: {
 		roomId: string;
 		participant: MeetWaitingParticipant;
 	};
 	/**
-	 * Payload for the {@link EmbeddedEventName.WAITING_PARTICIPANT_LIST_UPDATED} event: `participants` are the participants
-	 * waiting, in no promised order (see {@link MeetWaitingParticipant}).
+	 * Payload for the {@link EmbeddedEventName.WAITING_PARTICIPANT_LIST_UPDATED} event: the participants waiting, in no
+	 * particular order.
 	 */
 	[EmbeddedEventName.WAITING_PARTICIPANT_LIST_UPDATED]: {
 		roomId: string;
 		participants: MeetWaitingParticipant[];
 	};
 	/**
-	 * Payload for the {@link EmbeddedEventName.WAITING_PARTICIPANT_STATUS_CHANGED} event. `participant` is who waits, with
-	 * the identity they will have in the meeting (see {@link MeetWaitingParticipant}), `status` the state of
-	 * the wait (see {@link MeetWaitingParticipantStatus}), `origin` who caused the change (see {@link MeetEventOrigin}): for
-	 * the participant who waits, absent while `status` is `waiting` and when their meeting could not learn it, and `reason` why, where
-	 * `status` and `origin` do not tell (see {@link MeetWaitingParticipantReason}).
+	 * Payload for the {@link EmbeddedEventName.WAITING_PARTICIPANT_STATUS_CHANGED} event: the participant who waits, the
+	 * new `status`, who caused it (`origin`, absent for `waiting` and when the waiting participant's meeting could not
+	 * learn it) and, where those do not tell, the `reason`.
 	 */
 	[EmbeddedEventName.WAITING_PARTICIPANT_STATUS_CHANGED]: {
 		roomId: string;

@@ -187,36 +187,34 @@ export interface MeetParticipantHandChangedPayload extends MeetParticipantJoined
 }
 
 /**
- * Payload for the {@link MeetWebhookEventType.WAITING_PARTICIPANT_KNOCKED} webhook event. Sent when the
- * participant asks, before their waiting screen connects. Webhooks are not stored, so one is lost if
- * the replica sending it stops, may be repeated by the retries and are not ordered between them:
- * `participant.knockDate` and the event's `creationDate` order them.
+ * Payload for the {@link MeetWebhookEventType.WAITING_PARTICIPANT_KNOCKED} webhook event, sent once per wait when
+ * the participant asks to join. Webhooks arrive in no guaranteed order: `participant.knockDate` and `creationDate`
+ * order them.
  */
 export interface MeetWaitingParticipantKnockedPayload {
 	/** Identifier of the room the participant asked to join */
 	roomId: string;
 	/** Name of the room the participant asked to join */
 	roomName: string;
-	/** The participant who waits. See {@link MeetWaitingParticipant} for details */
+	/** The participant who waits. See {@link MeetWaitingParticipant} */
 	participant: MeetWaitingParticipant;
 }
 
 /**
- * Payload for the {@link MeetWebhookEventType.WAITING_PARTICIPANT_STATUS_CHANGED} webhook event. Sent for every
- * change of a wait after the knock, one per participant also when a decision covers everyone waiting.
- * The time waited is `creationDate` of the event minus `participant.knockDate`.
+ * Payload for the {@link MeetWebhookEventType.WAITING_PARTICIPANT_STATUS_CHANGED} webhook event, sent for every
+ * change of a wait after the knock, one per participant. The time waited is `creationDate` minus
+ * `participant.knockDate`.
  */
 export interface MeetWaitingParticipantStatusChangedPayload extends MeetWaitingParticipantKnockedPayload {
-	/** What happened to the wait. See {@link MeetWaitingParticipantStatus} for details */
+	/** New status of the wait. See {@link MeetWaitingParticipantStatus} */
 	status: MeetWaitingParticipantStatus;
 	/**
-	 * Who caused the change: the participant for `left`; a moderator for a change made by someone
-	 * else's request, whatever the credential (a decision, an explicit end, closing or deleting the room,
-	 * unlocking the room); the system for the server's own rules (expiry, a return to waiting,
-	 * the duration limit)
+	 * Who caused the change: `participant` for `left`; `moderator` for a request by anyone else (a decision,
+	 * ending the meeting, closing the room, unlocking it); `system` for expiry, a return to waiting and the
+	 * duration limit
 	 */
 	origin: MeetEventOrigin;
-	/** Why the wait changed, where `status` and `origin` do not tell. See {@link MeetWaitingParticipantReason} for details */
+	/** Why the wait changed, where `status` and `origin` do not tell. See {@link MeetWaitingParticipantReason} */
 	reason?: MeetWaitingParticipantReason;
 }
 

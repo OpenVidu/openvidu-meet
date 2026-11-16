@@ -10,13 +10,12 @@ properties:
         type: string
         example: 'room-123'
         description: >
-            The unique identifier of the room the participant waited to join.
+            Identifier of the room.
     roomName:
         type: string
         example: 'room'
         description: >
-            The display name of the room the participant waited to join, as it was when they asked: it is
-            still reported when the room was deleted meanwhile.
+            Name of the room when the participant asked, kept if the room was deleted since.
     participant:
         $ref: ../../meetings/schemas/meet-waiting-participant.yaml
     status:
@@ -31,19 +30,15 @@ properties:
             - room_closed
         example: admitted
         description: |
-            What happened to the wait:
-            - `waiting`: an admitted participant waits again, with the `knockDate` they had, because the
-              meeting was full when their meeting asked for its join token.
-            - `admitted`: a holder of `waitingParticipantAdmin` let the participant in, or the room was unlocked.
-              It is not the join: the [`participantJoined`](#/webhooks/participantJoinedWebhook) webhook
-              confirms it. Using up an admission when the join token is issued sends no webhook.
-            - `rejected`: a holder of `waitingParticipantAdmin` rejected the participant.
-            - `left`: the participant stopped waiting, or asked to join again and so started a new wait.
-            - `expired`: the participant lost their place: their page closed, their meeting stopped being in touch
-              for a minute, or an admission was not used within a minute.
-            - `meeting_ended`: the meeting was ended explicitly, or reached its duration limit, while the
-              participant waited.
-            - `room_closed`: the room was closed or deleted while the participant waited.
+            New status of the wait:
+            - `waiting`: an admitted participant found the meeting full and waits again.
+            - `admitted`: admitted by a moderator or by unlocking the room. Not the join.
+            - `rejected`: rejected by a moderator.
+            - `left`: the participant stopped waiting, or asked again, which starts a new wait.
+            - `expired`: the participant lost their place (page closed, a minute out of touch, or an admission unused
+              for a minute).
+            - `meeting_ended`: the meeting was ended for everyone or reached its duration limit.
+            - `room_closed`: the room was closed or deleted.
     origin:
         type: string
         enum:
@@ -53,11 +48,9 @@ properties:
         example: moderator
         description: |
             Who caused the change:
-            - `participant`: the participant themselves, for `left`.
-            - `moderator`: a change made by someone else's request, whatever the credential (a decision on the
-              participant, an explicit end of the meeting, closing or deleting the room, unlocking
-              the room).
-            - `system`: the server's own rules: an expiry, waiting again after an admission, the duration limit.
+            - `participant`: the participant, for `left`.
+            - `moderator`: any other request (a decision, ending the meeting, closing the room, unlocking it).
+            - `system`: an expiry, a return to waiting, the duration limit.
     reason:
         type: string
         enum:
@@ -68,10 +61,9 @@ properties:
             - room_unlocked
         example: page_closed
         description: |
-            Why the wait changed, present only where `status` and `origin` do not tell:
-            - `replaced`: with `left`, the participant asked to join again, from another tab or device, which
-              started a new wait.
-            - `page_closed`: with `expired`, the participant's page closed, reloaded or navigated away.
-            - `connection_lost`: with `expired`, the participant's meeting was out of touch for a minute.
-            - `admission_unused`: with `expired`, the participant was admitted and did not join within a minute.
-            - `room_unlocked`: with `admitted`, the room was unlocked.
+            Why the wait changed, only where `status` and `origin` do not tell:
+            - `replaced` (`left`): the participant asked again from another tab or device.
+            - `page_closed` (`expired`): the page closed, reloaded or navigated away.
+            - `connection_lost` (`expired`): a minute out of touch.
+            - `admission_unused` (`expired`): admitted but not joined within a minute.
+            - `room_unlocked` (`admitted`): the room was unlocked.

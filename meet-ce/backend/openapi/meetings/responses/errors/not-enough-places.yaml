@@ -1,6 +1,6 @@
 description: >
-    Conflict: the participants to admit outnumber the free places of the meeting, counting the participants admitted
-    who have not joined yet; `error` is `not_enough_places`. Nobody is admitted
+    Conflict (`not_enough_places`): more participants to admit than free places, counting those admitted who have not
+    joined yet. Nobody is admitted
 content:
     application/json:
         schema:

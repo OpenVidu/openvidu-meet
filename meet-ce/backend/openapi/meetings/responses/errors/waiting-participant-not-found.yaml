@@ -1,6 +1,5 @@
 description: >
-    Room not found, or the participant does not wait: they left, were decided on by another request, expired, never
-    existed, or the room is not locked. Then `error` is `participant_not_waiting` and `participantIdentity` names them
+    Room not found, or the participant does not wait (`participant_not_waiting`, named in `participantIdentity`)
 content:
     application/json:
         schema:

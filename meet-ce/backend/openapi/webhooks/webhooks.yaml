@@ -474,23 +474,13 @@ waitingParticipantKnocked:
     post:
         summary: Waiting participant knocked
         description: |
-            This webhook is triggered when a participant asks to join a locked room and starts
-            waiting to be admitted, once per wait. A participant who asks again starts a new wait and a new
-            webhook. The [`waitingParticipantStatusChanged`](#/webhooks/waitingParticipantStatusChangedWebhook) webhook reports each later
-            change of the wait.
+            Triggered once per wait, when a participant asks to join a locked room. Asking again starts a new
+            wait. [`waitingParticipantStatusChanged`](#/webhooks/waitingParticipantStatusChangedWebhook) reports
+            every later change.
 
-            > It is sent when the participant asks, before their waiting screen connects: a participant who never
-            > connects it stops waiting within about 20 seconds, which `waitingParticipantStatusChanged` reports as
-            > `expired`.
-            >
-            > The `participant` is a [`MeetWaitingParticipant`](#/schemas/MeetWaitingParticipant). Its `externalId` and
-            > `metadata` are as sent by the participant's client and never a proof of identity: a backend that
-            > admits on its own identifies a waiting participant by `type` and by the `participantIdentity` of a
-            > member or user, which the server derives from their personal link or account.
-            >
-            > Webhooks are not stored: one is lost if the Meet replica sending it stops, may be repeated by the
-            > retries and is not ordered with the others. The `knockDate` of the participant and the
-            > `creationDate` of the event order them.
+            > Sent before the waiting screen connects: one that never connects ends as `expired` within about 20
+            > seconds. `externalId` and `metadata` of the
+            > [`MeetWaitingParticipant`](#/schemas/MeetWaitingParticipant) prove nothing.
         operationId: waitingParticipantKnockedWebhook
         parameters:
             - $ref: ./parameters/x-timestamp.yaml
@@ -528,21 +518,12 @@ waitingParticipantStatusChanged:
     post:
         summary: Waiting participant status changed
         description: |
-            This webhook is triggered when the wait of a participant to join a locked room changes after the
-            [`waitingParticipantKnocked`](#/webhooks/waitingParticipantKnockedWebhook) webhook: the participant is admitted,
-            rejected, leaves, loses their place, waits again or the wait ends with the meeting or the
-            room. `status` says what happened and `origin` who caused it. A decision on several participants sends one
-            webhook per participant.
+            Triggered on every change of a wait after
+            [`waitingParticipantKnocked`](#/webhooks/waitingParticipantKnockedWebhook), one per participant: `status`
+            says what happened, `origin` who caused it and `reason` why, where needed.
 
-            > The time a participant waited is the `creationDate` of the event minus the `knockDate` of the
-            > `participant`: a repeated delivery carries the same values.
-            >
-            > `admitted` is not the join: the [`participantJoined`](#/webhooks/participantJoinedWebhook) webhook
-            > confirms it, with the same `participantIdentity`.
-            >
-            > Webhooks are not stored: one is lost if the Meet replica sending it stops, may be repeated by the
-            > retries and is not ordered with the others. The `knockDate` of the participant and the
-            > `creationDate` of the event order them.
+            > `admitted` is not the join: [`participantJoined`](#/webhooks/participantJoinedWebhook) confirms it, with
+            > the same `participantIdentity`. The time waited is `creationDate` minus `participant.knockDate`.
         operationId: waitingParticipantStatusChangedWebhook
         parameters:
             - $ref: ./parameters/x-timestamp.yaml

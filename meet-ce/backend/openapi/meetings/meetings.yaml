@@ -6,10 +6,6 @@
             Retrieves the details of a live meeting.
 
             Requires the `meetingRead` permission.
-
-            In a locked room, a room member token acts on the meeting only if it carries a participant
-            identity, which only a join token does: one obtained without joining answers `403`. A
-            host application acting for itself uses the API key.
         tags:
             - OpenVidu Meet - Meetings
         security:
@@ -43,10 +39,6 @@
             Requires the `meetingEnd` permission.
 
             This endpoint is idempotent. If the meeting is already ended, it will return a success response without any action.
-
-            In a locked room, a room member token acts on the meeting only if it carries a participant
-            identity, which only a join token does: one obtained without joining answers `403`. A
-            host application acting for itself uses the API key.
         tags:
             - OpenVidu Meet - Meetings
         security:
@@ -81,10 +73,6 @@
             `metadata`), effective role, join date and current media state.
 
             Requires the `meetingRead` permission.
-
-            In a locked room, a room member token acts on the meeting only if it carries a participant
-            identity, which only a join token does: one obtained without joining answers `403`. A
-            host application acting for itself uses the API key.
         tags:
             - OpenVidu Meet - Meetings
         security:
@@ -123,10 +111,6 @@
 
             Requires the `participantMute` permission.
 
-
-            In a locked room, a room member token acts on the meeting only if it carries a participant
-            identity, which only a join token does: one obtained without joining answers `403`. A
-            host application acting for itself uses the API key.
         tags:
             - OpenVidu Meet - Meetings
         security:
@@ -165,10 +149,6 @@
             Retrieves the live snapshot of one participant in the meeting.
 
             Requires the `meetingRead` permission.
-
-            In a locked room, a room member token acts on the meeting only if it carries a participant
-            identity, which only a join token does: one obtained without joining answers `403`. A
-            host application acting for itself uses the API key.
         tags:
             - OpenVidu Meet - Meetings
         security:
@@ -210,10 +190,6 @@
 
             Requires the `participantKick` permission.
 
-
-            In a locked room, a room member token acts on the meeting only if it carries a participant
-            identity, which only a join token does: one obtained without joining answers `403`. A
-            host application acting for itself uses the API key.
         tags:
             - OpenVidu Meet - Meetings
         security:
@@ -251,10 +227,6 @@
 
             Requires the `participantMute` permission.
 
-
-            In a locked room, a room member token acts on the meeting only if it carries a participant
-            identity, which only a join token does: one obtained without joining answers `403`. A
-            host application acting for itself uses the API key.
         tags:
             - OpenVidu Meet - Meetings
         security:
@@ -312,10 +284,6 @@
             with it, the recording starts on its own once this request has returned, unless it was already
             stopped by hand during this meeting.
 
-
-            In a locked room, a room member token acts on the meeting only if it carries a participant
-            identity, which only a join token does: one obtained without joining answers `403`. A
-            host application acting for itself uses the API key.
         tags:
             - OpenVidu Meet - Meetings
         security:
@@ -361,10 +329,6 @@
 
             Requires the `participantHandLower` permission.
 
-
-            In a locked room, a room member token acts on the meeting only if it carries a participant
-            identity, which only a join token does: one obtained without joining answers `403`. A
-            host application acting for itself uses the API key.
         tags:
             - OpenVidu Meet - Meetings
         security:
@@ -412,10 +376,6 @@
             A hand already in the requested state is left as it is, so a repeated raise keeps its
             original `handRaiseDate`.
 
-
-            In a locked room, a room member token acts on the meeting only if it carries a participant
-            identity, which only a join token does: one obtained without joining answers `403`. A
-            host application acting for itself uses the API key.
         tags:
             - OpenVidu Meet - Meetings
         security:
@@ -455,24 +415,13 @@
         operationId: waitingParticipantList
         summary: List waiting participants
         description: |
-            Lists the participants waiting to be admitted to the meeting of a locked room, in no promised order. A
-            room only holds participants waiting when its config has `access.lock.enabled`: in an unlocked room the list is
-            empty. A list holds at most 100 participants.
+            Lists the participants waiting to join the room's meeting, in no particular order: at most 100, and none in an
+            unlocked room. Works whether or not a meeting is running.
 
-            Unlike the other meeting operations, it answers whether or not a meeting is running: participants wait
-            before the first one starts.
-
-            `externalId` and `metadata` of each [`MeetWaitingParticipant`](#/schemas/MeetWaitingParticipant) are as sent by
-            the participant's client and never a proof of identity. A backend that admits on its own identifies a
-            waiting participant by `type` and by the `participantIdentity` of a member or user, which the server derives
-            from their personal link or account.
+            `externalId` and `metadata` are as sent by the participant's client and prove nothing: to admit automatically,
+            rely on `type` and on the `participantIdentity` of a member or user.
 
             Requires the `waitingParticipantAdmin` permission.
-
-            In a locked room, a room member token acts on the meeting only if it carries a participant identity, which
-            only a join token does: one obtained without joining answers `403`, so a participant who waits cannot
-            decide on anyone, themselves included, whatever their permissions. A host application acting for itself
-            uses the API key.
         tags:
             - OpenVidu Meet - Meetings
         security:
@@ -502,21 +451,12 @@
         summary: Bulk reject waiting participants
         description: |
             Rejects the waiting participants named, each one on its own as
-            [`waitingParticipantReject`](#/operations/waitingParticipantReject) does: one who does not wait, or any in
-            a room that is not locked, is listed as failed and the others are still rejected. Each one's meeting tells
-            them they were not let in, with the option to ask to join again. Unlike the other meeting operations, it
-            answers whether or not a meeting is running.
+            [`waitingParticipantReject`](#/operations/waitingParticipantReject) does. Works whether or not a meeting is running.
 
-            It answers `200` when every participant named was rejected and `400` when any was not, listing them in
-            `failed`. Naming none, or more than 100, answers `422`. Each participant rejected is reported through the
-            [`waitingParticipantStatusChanged`](#/webhooks/waitingParticipantStatusChangedWebhook) webhook with the `rejected` status.
+            Answers `200` when all were rejected and `400` when any was not waiting, listing them in `failed`. Each rejection
+            sends a [`waitingParticipantStatusChanged`](#/webhooks/waitingParticipantStatusChangedWebhook) webhook.
 
             Requires the `waitingParticipantAdmin` permission.
-
-            In a locked room, a room member token acts on the meeting only if it carries a participant identity, which
-            only a join token does: one obtained without joining answers `403`, so a participant who waits cannot
-            decide on anyone, themselves included, whatever their permissions. A host application acting for itself
-            uses the API key.
         tags:
             - OpenVidu Meet - Meetings
         security:
@@ -549,23 +489,14 @@
         operationId: waitingParticipantAdmitAll
         summary: Admit waiting participants
         description: |
-            Admits everyone waiting to join the meeting of a room at that moment, all of them or nobody: when they
-            outnumber the free places of the meeting, counting the participants admitted who have not joined yet, it
-            admits nobody and answers `409` with `error` `not_enough_places`. Each one's meeting asks for its join
-            token and they join with the identity they waited with. Admitting into a room with no meeting running
-            starts it, so, unlike the other meeting operations, it answers whether or not a meeting is running.
+            Admits everyone waiting, or nobody when they outnumber the free places (`409` `not_enough_places`). Free places
+            count the participants admitted who have not joined yet. Answers `200` also when nobody waits. Works whether or
+            not a meeting is running; the first participant who joins starts it.
 
-            It answers `200` also when nobody waits or the room is not locked, admitting nobody. Each participant
-            admitted is reported through the [`waitingParticipantStatusChanged`](#/webhooks/waitingParticipantStatusChangedWebhook) webhook with the `admitted` status, and counts as a taken place until
-            LiveKit reports them in the meeting, a minute after their admission at most. An admission that is not used
-            within that minute ends as `expired`.
+            Each admission sends a [`waitingParticipantStatusChanged`](#/webhooks/waitingParticipantStatusChangedWebhook)
+            webhook and holds its place for a minute, until the participant joins; an unused one ends as `expired`.
 
             Requires the `waitingParticipantAdmin` permission.
-
-            In a locked room, a room member token acts on the meeting only if it carries a participant identity, which
-            only a join token does: one obtained without joining answers `403`, so a participant who waits cannot
-            decide on anyone, themselves included, whatever their permissions. A host application acting for itself
-            uses the API key.
         tags:
             - OpenVidu Meet - Meetings
         security:
@@ -597,16 +528,10 @@
         operationId: waitingParticipantGet
         summary: Get a waiting participant
         description: |
-            Retrieves one participant while they wait to join the meeting of a room. It answers `404` with `error`
-            `participant_not_waiting` once they no longer wait: admitted, rejected, gone, or in a room that is not
-            locked. Unlike the other meeting operations, it answers whether or not a meeting is running.
+            Retrieves a participant while they wait. Answers `404` `participant_not_waiting` once they no longer wait. Works
+            whether or not a meeting is running.
 
             Requires the `waitingParticipantAdmin` permission.
-
-            In a locked room, a room member token acts on the meeting only if it carries a participant identity, which
-            only a join token does: one obtained without joining answers `403`, so a participant who waits cannot
-            decide on anyone, themselves included, whatever their permissions. A host application acting for itself
-            uses the API key.
         tags:
             - OpenVidu Meet - Meetings
         security:
@@ -636,22 +561,13 @@
         operationId: waitingParticipantReject
         summary: Reject a waiting participant
         description: |
-            Rejects a participant waiting to join the meeting of a room: their meeting tells them they were not let in,
-            with the option to ask to join again, which starts a new wait. It answers `404` with `error`
-            `participant_not_waiting` when they do not wait. Unlike the other meeting operations, it answers whether or
-            not a meeting is running.
+            Rejects a waiting participant, who may ask to join again. Answers `404` `participant_not_waiting` when they do not
+            wait. Works whether or not a meeting is running, and sends a
+            [`waitingParticipantStatusChanged`](#/webhooks/waitingParticipantStatusChangedWebhook) webhook.
 
-            Decisions on the same waiting participant apply one at a time, whichever Meet replica receives them: the
-            first one applies and a later one naming them answers `404`.
-
-            The participant rejected is reported through the [`waitingParticipantStatusChanged`](#/webhooks/waitingParticipantStatusChangedWebhook) webhook with the `rejected` status.
+            Decisions on one participant apply once across all Meet replicas: a later one answers `404`.
 
             Requires the `waitingParticipantAdmin` permission.
-
-            In a locked room, a room member token acts on the meeting only if it carries a participant identity, which
-            only a join token does: one obtained without joining answers `403`, so a participant who waits cannot
-            decide on anyone, themselves included, whatever their permissions. A host application acting for itself
-            uses the API key.
         tags:
             - OpenVidu Meet - Meetings
         security:
@@ -682,26 +598,17 @@
         operationId: waitingParticipantAdmit
         summary: Admit a waiting participant
         description: |
-            Admits a participant waiting to join the meeting of a room: their meeting asks for its join token and they
-            join with the identity they waited with. Admitting into a room with no meeting running starts it, so,
-            unlike the other meeting operations, it answers whether or not a meeting is running.
+            Admits a waiting participant, who then joins with the identity they waited with. Answers `404`
+            `participant_not_waiting` when they do not wait, and `409` `not_enough_places` when no place is free, counting the
+            participants admitted who have not joined yet. Works whether or not a meeting is running; the first participant who
+            joins starts it.
 
-            It answers `404` with `error` `participant_not_waiting` when they do not wait, and `409` with `error`
-            `not_enough_places` when no place of the meeting is free, counting the participants admitted who have not
-            joined yet. Decisions on the same waiting participant apply one at a time, whichever Meet replica receives
-            them: the first one applies and a later one naming them answers `404`. Two admissions for the last free
+            The admission sends a [`waitingParticipantStatusChanged`](#/webhooks/waitingParticipantStatusChangedWebhook)
+            webhook and holds its place for a minute, until the participant joins; an unused one ends as `expired`. Decisions
+            on one participant apply once across all Meet replicas: a later one answers `404`, and two admissions for the last
             place give one `200` and one `409`.
 
-            The participant admitted is reported through the [`waitingParticipantStatusChanged`](#/webhooks/waitingParticipantStatusChangedWebhook) webhook with the `admitted` status, and counts
-            as a taken place until LiveKit reports them in the meeting, a minute after their admission at most. An
-            admission that is not used within that minute ends as `expired`.
-
             Requires the `waitingParticipantAdmin` permission.
-
-            In a locked room, a room member token acts on the meeting only if it carries a participant identity, which
-            only a join token does: one obtained without joining answers `403`, so a participant who waits cannot
-            decide on anyone, themselves included, whatever their permissions. A host application acting for itself
-            uses the API key.
         tags:
             - OpenVidu Meet - Meetings
         security:

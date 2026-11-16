@@ -383,7 +383,7 @@
 
             This allows you to enable or disable access for users and/or
             for anonymous guests using a predefined role (moderator/speaker/recording),
-            and to lock or unlock the room (`lock`).
+            and to lock or unlock the room (`lock`). Unlocking lets everyone waiting in.
 
             Every room member token issued before the write stops being accepted (`401`),
             so its holder needs a new one.

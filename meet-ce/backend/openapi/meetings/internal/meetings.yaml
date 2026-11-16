@@ -10,10 +10,6 @@
             Requires the `participantReactionSend` permission. A room whose `reactions.enabled` config is
             `false` rejects every reaction with a `403`, and a room without a meeting running answers `404`.
 
-
-            In a locked room, a room member token acts on the meeting only if it carries a participant
-            identity, which only a join token does: one obtained without joining answers `403`. A
-            host application acting for itself uses the API key.
         tags:
             - Internal API - Meetings
         security:

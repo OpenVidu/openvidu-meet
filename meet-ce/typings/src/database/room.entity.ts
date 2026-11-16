@@ -91,14 +91,9 @@ export interface MeetRoomAccess {
  * until someone holding `waitingParticipantAdmin` admits them.
  */
 export interface MeetRoomLock {
-	/**
-	 * Indicates if the participants without `accessBypassLock` wait to be admitted.
-	 */
+	/** Whether participants without `accessBypassLock` wait to be admitted */
 	enabled: boolean;
-	/**
-	 * Message the waiting participants see while they wait, up to 500 characters. An update that
-	 * sends `null` removes it (see {@link MeetRoomLockOptions}).
-	 */
+	/** Message shown to the waiting participants, up to 500 characters. See {@link MeetRoomLockOptions} to remove it */
 	message?: string;
 }
 

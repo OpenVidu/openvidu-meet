@@ -50,17 +50,13 @@ properties:
                 default: false
                 example: false
                 description: >
-                    Locks or unlocks the room. While it is locked, a participant who asks to join waits until
-                    someone holding `waitingParticipantAdmin` admits them, unless they hold `accessBypassLock`.
-                    Unlocking it lets everyone waiting in, each through the usual join checks.
+                    Locks or unlocks the room. Unlocking lets everyone waiting in.
             message:
                 type: [string, 'null']
                 maxLength: 500
                 example: 'The host will let you in shortly.'
                 description: >
-                    Message the waiting participants see while they wait, up to 500 characters; a longer one is
-                    rejected with a `422`. An omitted message keeps its current value; `null` removes it (a room
-                    never serves it as `null`: the field is left out).
+                    Message shown to the waiting participants. Omitted, it keeps its value; `null` removes it.
 description: |
     Configuration for room access.
 

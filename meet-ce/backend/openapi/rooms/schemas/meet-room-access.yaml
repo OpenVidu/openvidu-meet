@@ -71,9 +71,8 @@ properties:
     lock:
         type: object
         description: >
-            Lock of the room. While it is on, a participant who asks to join the room waits until someone
-            holding `waitingParticipantAdmin` admits them, unless they hold `accessBypassLock`. Admins and the
-            room's owner hold every permission and join directly.
+            Lock of the room: while enabled, participants without `accessBypassLock` wait until a holder of
+            `waitingParticipantAdmin` admits them.
         properties:
             enabled:
                 type: boolean
@@ -84,4 +83,4 @@ properties:
                 type: string
                 example: 'The host will let you in shortly.'
                 description: >
-                    Message the waiting participants see while they wait. Left out when the room has none.
+                    Message shown to the waiting participants. Absent when there is none.

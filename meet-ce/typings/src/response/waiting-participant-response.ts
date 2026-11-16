@@ -2,112 +2,93 @@ import { MeetWaitingParticipantType } from '../database/room-member.entity.js';
 import { MeetEventOrigin } from '../embedded/events.js';
 
 /**
- * How the wait of a participant to join a locked room stands or ended. It is the status the `waitingParticipantStatusChanged` webhook
- * and embedded event carry, and the one the waiting screen shows.
+ * Status of a wait to join a locked room, carried by the `waitingParticipantStatusChanged` webhook and embedded event.
  */
 export enum MeetWaitingParticipantStatus {
-	/**
-	 * The participant waits to be admitted. Both surfaces send it when an admitted participant waits again
-	 * because the meeting was full; the embedded event also sends it with the first state of the wait.
-	 */
+	/** Waiting. Sent when an admitted participant finds the meeting full, and by the embedded event on the first state of the wait */
 	WAITING = 'waiting',
-	/**
-	 * A moderator let the participant in, or the room was unlocked. It is not the join:
-	 * `meetingJoined` confirms it, or `waiting` follows when the meeting is full by then.
-	 */
+	/** Admitted by a moderator or by unlocking the room. Not the join: `meetingJoined` / `participantJoined` confirm it */
 	ADMITTED = 'admitted',
 	/** A moderator rejected the participant */
 	REJECTED = 'rejected',
-	/** The participant stopped waiting, or asked again and so started a new wait */
+	/** The participant stopped waiting, or asked again, which starts a new wait */
 	LEFT = 'left',
-	/**
-	 * The participant lost their place: their page closed, their meeting stopped being in touch for a minute,
-	 * or an admission was not used within a minute. The embedded event also reports it when the meeting gave
-	 * up reconnecting, no longer knew the wait, or lost the answer after an admission.
-	 */
+	/** The participant lost their place: page closed, a minute out of touch, or an admission unused for a minute */
 	EXPIRED = 'expired',
-	/** The meeting was ended explicitly, or reached its duration limit, while the participant waited */
+	/** The meeting was ended for everyone, or reached its duration limit */
 	MEETING_ENDED = 'meeting_ended',
-	/** The room was closed or deleted while the participant waited */
+	/** The room was closed or deleted */
 	ROOM_CLOSED = 'room_closed'
 }
 
 /**
- * Why a wait changed, where its status and origin alone do not tell. Carried as `reason` by the
- * `waitingParticipantStatusChanged` webhook and embedded event.
+ * Why a wait changed, where `status` and `origin` do not tell. Each value names the status it comes with.
  */
 export enum MeetWaitingParticipantReason {
-	/** `left`: the participant asked to join again, from another tab or device, which started a new wait */
+	/** `left`: the participant asked again from another tab or device */
 	REPLACED = 'replaced',
 	/** `expired`: the participant's page closed, reloaded or navigated away */
 	PAGE_CLOSED = 'page_closed',
-	/** `expired`: the participant's meeting was out of touch for a minute */
+	/** `expired`: the participant was out of touch for a minute */
 	CONNECTION_LOST = 'connection_lost',
 	/** `expired`: the participant was admitted and did not join within a minute */
 	ADMISSION_UNUSED = 'admission_unused',
-	/** `admitted`: the room was unlocked, which lets everyone waiting in */
+	/** `admitted`: the room was unlocked */
 	ROOM_UNLOCKED = 'room_unlocked'
 }
 
 /**
- * Value of `error` in the body of a refused request about waiting participants, as a code to tell the refusals apart.
+ * `error` code of a refused request about waiting participants.
  */
 export enum MeetWaitingParticipantErrorCode {
-	/** `404`: the participant named does not wait; the body names them in `participantIdentity` */
+	/** `404`: the participant does not wait; named in `participantIdentity` */
 	PARTICIPANT_NOT_WAITING = 'participant_not_waiting',
-	/** `409`: the meeting has fewer free places than participants to admit */
+	/** `409`: fewer free places than participants to admit */
 	NOT_ENOUGH_PLACES = 'not_enough_places',
-	/** `409`: the room already holds as many waiting participants as it can */
+	/** `409`: the room already has 100 participants waiting */
 	WAITING_LIST_FULL = 'waiting_list_full',
-	/** `409`: the wait of the ticket is over, or unknown; the body tells how it ended in `status` when known */
+	/** `409`: the wait of the ticket is over or unknown; `status` tells how it ended, when known */
 	WAIT_ENDED = 'wait_ended'
 }
 
 /**
- * A participant who waits to be admitted to a meeting.
+ * A participant waiting to join a locked room.
  */
 export interface MeetWaitingParticipant {
-	/** Identity the participant will have in the meeting, created when they asked to join */
+	/** Identity the participant will have in the meeting */
 	participantIdentity: string;
-	/** Name the participant gave. It is made unique among the meeting's participants only when they join */
+	/** Name the participant gave, made unique only when they join */
 	participantName: string;
-	/** How the participant asked, derived by the server. See {@link MeetWaitingParticipantType} for details */
+	/** How the participant asked to join, derived by the server. See {@link MeetWaitingParticipantType} */
 	type: MeetWaitingParticipantType;
 	/**
-	 * Application-defined identifier as sent by the participant's client (`participantExternalId` of the
-	 * token request). It is never a proof of identity: a backend that admits on its own identifies a
-	 * waiter by `type` and by the `participantIdentity` of a member or user, which the server derives from
-	 * their personal link or account.
+	 * `participantExternalId` as sent by the participant's client. Not a proof of identity: trust `type` and the
+	 * `participantIdentity` of a member or user instead.
 	 */
 	externalId?: string;
-	/**
-	 * Opaque application-defined payload as sent by the participant's client (`participantMetadata` of
-	 * the token request). It is never a proof of identity, like `externalId`.
-	 */
+	/** `participantMetadata` as sent by the participant's client. Not a proof of identity */
 	metadata?: string;
-	/** Timestamp in milliseconds since epoch when the participant asked to join. Waiting again after an admission keeps it */
+	/** When the participant asked to join, in milliseconds since epoch */
 	knockDate: number;
 }
 
 /**
- * The waiting participants, as `waitingParticipantList` answers and the `waitingParticipantListUpdated` embedded
- * event carries.
+ * The participants waiting, as `waitingParticipantList` answers.
  */
 export interface MeetWaitingParticipantList {
-	/** The participants waiting, in no promised order */
+	/** The participants waiting, in no particular order */
 	participants: MeetWaitingParticipant[];
 }
 
 /**
- * Answer of `bulkRejectWaitingParticipants`, with status `200` when every participant named was rejected
- * and `400` when any was not.
+ * Answer of `bulkRejectWaitingParticipants`: `200` when all were rejected, `400` when any was not.
  */
 export interface MeetWaitingParticipantBulkRejectResponse {
 	/** Summary of the outcome */
 	message: string;
 	/** Identities of the participants rejected */
 	deleted: string[];
-	/** The participants named who were not rejected because they were not waiting. Empty with status `200` */
+	/** The participants not rejected because they were not waiting */
 	failed: {
 		/** Identity of the participant not rejected */
 		participantIdentity: string;
@@ -120,28 +101,28 @@ export interface MeetWaitingParticipantBulkRejectResponse {
  * Answer of the internal token request when the participant has to wait.
  */
 export interface MeetWaitingTicketResponse {
-	/** Opaque credential of the wait: it opens the WebSocket connection of the wait, the token request once admitted and the leave request */
+	/** Opaque credential of the wait, for its WebSocket connection, the token request once admitted and the leave request */
 	waitingTicket: string;
-	/** The participant who waits, with the identity they will have in the meeting. See {@link MeetWaitingParticipant} for details */
+	/** The participant who waits. See {@link MeetWaitingParticipant} */
 	participant: MeetWaitingParticipant;
 }
 
 /**
- * Data of the `waitingParticipant.state` message the server sends to the waiting participant on its WebSocket
- * connection: on open, on every answered ping and on every change of the wait.
+ * Data of the `waitingParticipant.state` WebSocket message, sent to the waiting participant on open, on every
+ * answered ping and on every change of the wait.
  */
 export interface MeetWaitingParticipantState {
-	/** Status of the wait. A final one, any but `waiting` and `admitted`, ends the conversation */
+	/** Status of the wait. Any but `waiting` and `admitted` is final */
 	status: MeetWaitingParticipantStatus;
 	/** Who caused the change. Omitted while `status` is `waiting`. See {@link MeetEventOrigin} for details */
 	origin?: MeetEventOrigin;
-	/** Why the wait changed, where `status` and `origin` do not tell. See {@link MeetWaitingParticipantReason} for details */
+	/** Why the wait changed. See {@link MeetWaitingParticipantReason} */
 	reason?: MeetWaitingParticipantReason;
 	/** Seconds waited since the participant asked, while `status` is `waiting` */
 	waitedSeconds?: number;
 	/** Whether the room has an active meeting. Omitted when the server could not read the room */
 	meetingActive?: boolean;
-	/** The room's locked room message. Omitted when there is none or the server could not read the room */
+	/** The room's lock message. Omitted when there is none or the server could not read the room */
 	message?: string;
 }
 
