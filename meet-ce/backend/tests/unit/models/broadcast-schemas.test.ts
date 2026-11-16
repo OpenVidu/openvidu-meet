@@ -4,7 +4,7 @@ import {
 	BroadcastConfigSchema,
 	BroadcastFieldsQuerySchema,
 	BroadcastIdParamsSchema,
-	StopBroadcastsReqSchema,
+	BulkStopBroadcastsReqSchema,
 	GetBroadcastsQuerySchema,
 	StartBroadcastReqSchema
 } from '../../../src/models/zod-schemas/broadcast.schema.js';
@@ -127,18 +127,16 @@ describe('BroadcastConfigSchema', () => {
 	});
 });
 
-describe('StartBroadcastReqSchema and StopBroadcastsReqSchema', () => {
+describe('StartBroadcastReqSchema', () => {
 	const nothingToStream =
 		'destinationIds: At least one destination is required: destinationIds is empty and no destinations are given';
 
-	it('accept a body naming only the room, meaning every room destination not streamed to yet, or every running broadcast', () => {
+	it('accept a body naming only the room, meaning every room destination not streamed to yet', () => {
 		expect(StartBroadcastReqSchema.parse({ roomId })).toEqual({ roomId });
-		expect(StopBroadcastsReqSchema.parse({ roomId })).toEqual({ roomId });
 	});
 
 	it('require the room', () => {
 		expect(issues(StartBroadcastReqSchema.safeParse({}))).toEqual([expect.stringContaining('roomId')]);
-		expect(issues(StopBroadcastsReqSchema.safeParse({}))).toEqual([expect.stringContaining('roomId')]);
 	});
 
 	it('accept room destinations by id and destinations for the meeting by name and url', () => {
@@ -178,10 +176,6 @@ describe('StartBroadcastReqSchema and StopBroadcastsReqSchema', () => {
 		expect(StartBroadcastReqSchema.safeParse({ roomId, destinations: names.map(destination) }).success).toBe(true);
 		expect(StartBroadcastReqSchema.safeParse({ roomId, destinationIds: names }).success).toBe(true);
 		expect(StartBroadcastReqSchema.safeParse({ roomId, destinationIds: [' '] }).success).toBe(false);
-		expect(issues(StopBroadcastsReqSchema.safeParse({ roomId, broadcastIds: [] }))).toEqual([
-			'broadcastIds: At least one broadcast id is required'
-		]);
-		expect(StopBroadcastsReqSchema.safeParse({ roomId, broadcastIds: [''] }).success).toBe(false);
 	});
 });
 
@@ -304,12 +298,11 @@ describe('broadcast destinations', () => {
 describe('start and stop broadcast requests', () => {
 	it('sanitize the room id', () => {
 		expect(StartBroadcastReqSchema.parse({ roomId: 'ro om!1' })).toEqual({ roomId: 'room1' });
-		expect(StopBroadcastsReqSchema.parse({ roomId: 'ro om!1' })).toEqual({ roomId: 'room1' });
 		expect(GetBroadcastsQuerySchema.parse({ roomId: 'ro om!1' }).roomId).toBe('room1');
 	});
 
 	it('reject an empty room id, and one that sanitizes to nothing', () => {
-		for (const schema of [StartBroadcastReqSchema, StopBroadcastsReqSchema, GetBroadcastsQuerySchema]) {
+		for (const schema of [StartBroadcastReqSchema, GetBroadcastsQuerySchema]) {
 			expect(issues(schema.safeParse({ roomId: '' }))).toEqual([
 				'roomId: roomId is required and cannot be empty'
 			]);
@@ -350,11 +343,25 @@ describe('start and stop broadcast requests', () => {
 		]);
 	});
 
-	it('Stop trims the broadcast ids it is given and names the one that is malformed', () => {
-		expect(StopBroadcastsReqSchema.parse({ roomId, broadcastIds: [' room-1--abc '] }).broadcastIds).toEqual([
-			'room-1--abc'
+	it('Bulk stop takes a comma-separated list of broadcast ids, trimmed and without repetitions', () => {
+		expect(BulkStopBroadcastsReqSchema.parse({ broadcastIds: ' room-1--abc , room-2--def,room-1--abc,' })).toEqual({
+			broadcastIds: ['room-1--abc', 'room-2--def']
+		});
+	});
+
+	it('Bulk stop requires one broadcast id at least, at most 100, each naming its room', () => {
+		const tooMany = Array.from({ length: 101 }, (_, index) => `room-1--id${index}`).join(',');
+
+		expect(issues(BulkStopBroadcastsReqSchema.safeParse({}))).toEqual([
+			'broadcastIds: At least one broadcastId is required'
 		]);
-		expect(issues(StopBroadcastsReqSchema.safeParse({ roomId, broadcastIds: ['room-1--abc', 'abc'] }))).toEqual([
+		expect(issues(BulkStopBroadcastsReqSchema.safeParse({ broadcastIds: ' , ' }))).toEqual([
+			'broadcastIds: At least one broadcastId is required'
+		]);
+		expect(issues(BulkStopBroadcastsReqSchema.safeParse({ broadcastIds: tooMany }))).toEqual([
+			'broadcastIds: broadcastIds cannot exceed 100 items'
+		]);
+		expect(issues(BulkStopBroadcastsReqSchema.safeParse({ broadcastIds: 'room-1--abc,no-room' }))).toEqual([
 			'broadcastIds.1: Broadcast id must have the form {roomId}--{id}'
 		]);
 	});

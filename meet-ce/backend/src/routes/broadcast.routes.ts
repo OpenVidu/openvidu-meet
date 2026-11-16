@@ -6,6 +6,7 @@ import {
 	bodyRoomId,
 	broadcastRoomId,
 	queryRoomId,
+	withBroadcastControlOfEach,
 	withEditPermissionToStart,
 	withBroadcastEnabled
 } from '../middlewares/broadcast.middleware.js';
@@ -13,9 +14,9 @@ import { apiLimiter } from '../middlewares/rate-limit.middleware.js';
 import {
 	validateBroadcastFieldsReq,
 	validateBroadcastIdReq,
+	validateBulkStopBroadcastsReq,
 	validateGetBroadcastsReq,
-	validateStartBroadcastReq,
-	validateStopBroadcastsReq
+	validateStartBroadcastReq
 } from '../middlewares/request-validators/broadcast-validator.middleware.js';
 import { withRoomPermission } from '../middlewares/room.middleware.js';
 
@@ -45,13 +46,20 @@ broadcastRouter.get(
 	withRoomPermission('meetingRead', queryRoomId),
 	broadcastCtrl.getBroadcasts
 );
-broadcastRouter.post(
-	'/stop',
+broadcastRouter.delete(
+	'/',
 	withAuth(apiKeyValidator, roomMemberTokenValidator),
+	validateBulkStopBroadcastsReq,
+	withBroadcastControlOfEach,
+	broadcastCtrl.bulkStopBroadcasts
+);
+broadcastRouter.delete(
+	'/:broadcastId',
+	withAuth(apiKeyValidator, roomMemberTokenValidator),
+	validateBroadcastIdReq,
 	validateBroadcastFieldsReq,
-	validateStopBroadcastsReq,
-	withRoomPermission('broadcastControl', bodyRoomId),
-	broadcastCtrl.stopBroadcasts
+	withRoomPermission('broadcastControl', broadcastRoomId),
+	broadcastCtrl.stopBroadcast
 );
 broadcastRouter.get(
 	'/:broadcastId',

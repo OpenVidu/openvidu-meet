@@ -1,0 +1,19 @@
+description: The broadcast stopped, in its final state
+content:
+    application/json:
+        schema:
+            $ref: '../../schemas/meet-broadcast.yaml'
+        example:
+            broadcastId: 'room-123--Qm4tZ8vR1c'
+            roomId: 'room-123'
+            roomName: 'room'
+            status: 'complete'
+            destination:
+                id: 'kX9pL2mQ7a'
+                name: 'YouTube'
+                url: 'rtmp://a.rtmp.youtube.com/live2/********'
+            layout: 'grid'
+            encoding: 'H264_720P_30'
+            startDate: 1620000000000
+            endDate: 1620000003600
+            duration: 3.6

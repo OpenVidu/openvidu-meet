@@ -1,5 +1,5 @@
 description: >
-    Conflict: a broadcast asked for is already stopping
+    Conflict: the broadcast is already stopping
 content:
     application/json:
         schema:

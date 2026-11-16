@@ -46,7 +46,8 @@ import {
 	getRoomConfig,
 	startBroadcasts,
 	startTestServer,
-	stopBroadcasts,
+	bulkStopBroadcasts,
+	stopBroadcast,
 	updateRoomRoles
 } from '../../../helpers/request-helpers.js';
 import { setupSingleRoom, startWebhookServer, stopWebhookServer } from '../../../helpers/test-scenarios.js';
@@ -387,11 +388,9 @@ describe('Broadcasts API Tests', () => {
 			const unknownOnly = await asApiKey(request(app).get(`${broadcastPath}?fields=bogus`));
 			expect(unknownOnly.body).toMatchObject({ broadcastId, roomId, destination: { url: expect.any(String) } });
 
-			const stopped = await asApiKey(request(app).post(`${broadcastsPath}/stop`))
-				.set('X-Fields', 'status')
-				.send({ roomId, broadcastIds: [broadcastId] });
+			const stopped = await asApiKey(request(app).delete(broadcastPath)).set('X-Fields', 'status');
 			expect(stopped.status).toBe(200);
-			expect(stopped.body).toEqual({ broadcasts: [{ status: expect.stringMatching(/^(complete|aborted)$/) }] });
+			expect(stopped.body).toEqual({ status: expect.stringMatching(/^(complete|aborted)$/) });
 		});
 	});
 
@@ -403,11 +402,11 @@ describe('Broadcasts API Tests', () => {
 			expectValidationError(listed, 'roomId', 'Required');
 
 			expect((await getBroadcast('no-room-in-it')).status).toBe(422);
-			expect((await stopBroadcasts('unknown_room', { broadcastIds: ['no-room-in-it'] })).status).toBe(422);
+			expect((await stopBroadcast('no-room-in-it')).status).toBe(422);
+			expectValidationError(await bulkStopBroadcasts([]), 'broadcastIds', 'At least one broadcastId is required');
+			expect((await bulkStopBroadcasts(['no-room-in-it'])).status).toBe(422);
 			expect((await getBroadcast('unknown_room--Qm4tZ8vR1c')).status).toBe(404);
-			expect((await stopBroadcasts('unknown_room', { broadcastIds: ['unknown_room--Qm4tZ8vR1c'] })).status).toBe(
-				404
-			);
+			expect((await stopBroadcast('unknown_room--Qm4tZ8vR1c')).status).toBe(404);
 		});
 	});
 
@@ -487,37 +486,43 @@ describe('Broadcasts API Tests', () => {
 				'failed again and left the list'
 			);
 
-			const stopA = { broadcastIds: [broadcastA.broadcastId] };
-			const stoppedA = await stopBroadcasts(roomId, stopA, roomData.moderatorToken);
+			const stoppedA = await stopBroadcast(broadcastA.broadcastId, roomData.moderatorToken);
 			expect(stoppedA.status).toBe(200);
-			expect(stoppedA.body).toEqual({
-				broadcasts: [
-					expect.objectContaining({
+			expect(stoppedA.body).toEqual(
+				expect.objectContaining({
+					broadcastId: broadcastA.broadcastId,
+					status: MeetBroadcastStatus.COMPLETE,
+					startDate: active?.startDate,
+					endDate: expect.any(Number),
+					duration: expect.any(Number)
+				})
+			);
+			expectMeetError(
+				await stopBroadcast(broadcastA.broadcastId),
+				errorBroadcastNotFound(broadcastA.broadcastId)
+			);
+
+			const stoppedRest = await bulkStopBroadcasts([broadcastA.broadcastId, added.broadcastId]);
+			expect(stoppedRest.status).toBe(400);
+			expect(stoppedRest.body).toEqual({
+				message: '1 broadcast(s) could not be stopped',
+				deleted: [added.broadcastId],
+				failed: [
+					{
 						broadcastId: broadcastA.broadcastId,
-						status: MeetBroadcastStatus.COMPLETE,
-						startDate: active?.startDate,
-						endDate: expect.any(Number),
-						duration: expect.any(Number)
-					})
+						error: errorBroadcastNotFound(broadcastA.broadcastId).message
+					}
 				]
 			});
-			expectMeetError(await stopBroadcasts(roomId, stopA), errorBroadcastNotFound(broadcastA.broadcastId));
-
-			const stoppedRest = await stopBroadcasts(roomId);
-			expect(stoppedRest.status).toBe(200);
-			expect(stoppedRest.body.broadcasts.map(({ broadcastId }: MeetBroadcastInfo) => broadcastId)).toEqual([
-				added.broadcastId
-			]);
 
 			await waitForBroadcasts(roomId, (broadcasts) => broadcasts.length === 0, 'all ended');
 			await waitForNoActiveEgress(roomId, 30_000);
-			expect((await stopBroadcasts(roomId)).body).toEqual({ broadcasts: [] });
 
 			// Each broadcast is reported to the webhooks on its own, started first and ended last.
-			const broadcastIds = [broadcastA, broadcastB, retried, added].map(({ broadcastId }) => broadcastId);
+			const everyId = [broadcastA, broadcastB, retried, added].map(({ broadcastId }) => broadcastId);
 
 			for (let attempt = 0; attempt < 20; attempt++) {
-				if (broadcastIds.every((id) => webhooksOf(id).at(-1)?.startsWith('broadcastEnded'))) break;
+				if (everyId.every((id) => webhooksOf(id).at(-1)?.startsWith('broadcastEnded'))) break;
 
 				await new Promise((resolve) => setTimeout(resolve, 500));
 			}
@@ -570,17 +575,13 @@ describe('Broadcasts API Tests', () => {
 			const { roomId } = roomData.room;
 			const { broadcast } = await startOne(roomId, { destinationId: (await roomDestinationIds(roomData))[0] });
 
-			const stopIt = { broadcastIds: [broadcast.broadcastId] };
 			const otherRoom = await setupSingleRoom(false, 'OTHER_ROOM');
-			expectMeetError(
-				await stopBroadcasts(otherRoom.room.roomId, stopIt),
-				errorBroadcastNotFound(broadcast.broadcastId)
-			);
+			expect((await stopBroadcast(broadcast.broadcastId, otherRoom.moderatorToken)).status).toBe(403);
 
-			const stopped = await stopBroadcasts(roomId, stopIt);
+			const stopped = await stopBroadcast(broadcast.broadcastId);
 
 			expect(stopped.status).toBe(200);
-			const [aborted] = stopped.body.broadcasts;
+			const aborted = stopped.body;
 			expect(aborted).toMatchObject({ status: MeetBroadcastStatus.ABORTED });
 			expect(aborted.startDate).toBeUndefined();
 			expect(aborted.endDate).toBeUndefined();
@@ -592,9 +593,28 @@ describe('Broadcasts API Tests', () => {
 			const { broadcast } = await startOne(roomId, { destinationId: (await roomDestinationIds(roomData))[0] });
 
 			expectMeetError(
-				await stopBroadcasts(roomId, { broadcastIds: [broadcast.broadcastId] }, roomData.speakerToken),
+				await stopBroadcast(broadcast.broadcastId, roomData.speakerToken),
 				errorInsufficientPermissions()
 			);
+			const otherRoom = await setupSingleRoom(false, 'OTHER_ROOM');
+
+			for (const token of [roomData.speakerToken, otherRoom.moderatorToken]) {
+				const refused = await bulkStopBroadcasts([broadcast.broadcastId], token);
+				expect(refused.status).toBe(400);
+				expect(refused.body).toEqual({
+					message: '1 broadcast(s) could not be stopped',
+					deleted: [],
+					failed: [{ broadcastId: broadcast.broadcastId, error: errorInsufficientPermissions().message }]
+				});
+			}
+
+			const stopped = await bulkStopBroadcasts([broadcast.broadcastId], roomData.moderatorToken);
+			expect(stopped.status).toBe(200);
+			expect(stopped.body).toEqual({
+				message: 'All broadcasts stopped successfully',
+				deleted: [broadcast.broadcastId],
+				failed: []
+			});
 		});
 
 		it('should end the broadcasts when the meeting ends', async () => {

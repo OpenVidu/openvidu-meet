@@ -1,9 +1,4 @@
-import type {
-	MeetBroadcastDestination,
-	MeetBroadcastInfo,
-	MeetBroadcastStartOptions,
-	MeetBroadcastStopOptions
-} from '@openvidu-meet/typings';
+import type { MeetBroadcastDestination, MeetBroadcastInfo, MeetBroadcastStartOptions } from '@openvidu-meet/typings';
 import {
 	MeetBroadcastStatus,
 	MeetRecordingEncodingPreset,
@@ -26,7 +21,8 @@ import {
 	errorBroadcastAlreadyStopped,
 	errorBroadcastNotFound,
 	errorBroadcastRoomHasNoParticipants,
-	errorBroadcastUpdateInProgress
+	errorBroadcastUpdateInProgress,
+	OpenViduMeetError
 } from '../models/error.model.js';
 import { RoomRepository } from '../repositories/room.repository.js';
 import { BroadcastStateService } from './broadcast-state.service.js';
@@ -38,6 +34,11 @@ import { RoomService } from './room.service.js';
 import { WebhookDispatcherService } from './webhook-dispatcher.service.js';
 
 const LOCK_RETRY_DELAY_MS = 250;
+
+type BroadcastBulkStopResult = {
+	stopped: string[];
+	failed: { broadcastId: string; error: string }[];
+};
 
 /** The stream of a broadcast on the egress it was added to. */
 type StreamPlacement = Pick<BroadcastRecord, 'broadcastId' | 'egressId' | 'destination'>;
@@ -114,42 +115,49 @@ export class BroadcastService {
 	}
 
 	/**
-	 * Stops the given broadcasts, or every running one: the stream to each destination ends at
-	 * once, and the egress ends by itself with its last stream. LiveKit's answers settle the final
-	 * states. The broadcasts stopped before a failure are saved as stopped all the same.
+	 * Stops one running broadcast: the stream to its destination ends at once, and the egress ends by
+	 * itself with its last stream. LiveKit's answers settle the final state.
+	 *
+	 * @throws The `404` error when the broadcast is not in progress, or the `409` error when it is already ending
 	 */
-	async stopBroadcasts(roomId: string, { broadcastIds }: MeetBroadcastStopOptions): Promise<MeetBroadcastInfo[]> {
+	stopBroadcast(roomId: string, broadcastId: string): Promise<MeetBroadcastInfo> {
 		return this.withRequestLock(roomId, async () => {
 			const records = await this.broadcastState.find(roomId);
-			const targets = broadcastIds
-				? [...new Set(broadcastIds)].map((broadcastId) => this.findRunningRecord(records, broadcastId))
-				: records.filter(({ status }) => BroadcastHelper.isRunning(status));
-			let updated = records;
+			const target = this.findRunningRecord(records, broadcastId);
+			const egress =
+				(await this.livekitService.updateStream(target.egressId, [], [BroadcastHelper.taggedUrl(target)])) ??
+				(await this.livekitService.getEgress(roomId, target.egressId))[0];
+			const updated = egress ? this.withEgress(records, egress) : records;
+			const stopped = BroadcastHelper.withEnded(updated.find((record) => record.broadcastId === broadcastId)!);
 
-			try {
-				for (const target of targets) {
-					const egress =
-						(await this.livekitService.updateStream(
-							target.egressId,
-							[],
-							[BroadcastHelper.taggedUrl(target)]
-						)) ?? (await this.livekitService.getEgress(roomId, target.egressId))[0];
-
-					if (egress) updated = this.withEgress(updated, egress);
-
-					const latest = updated.find(({ broadcastId }) => broadcastId === target.broadcastId)!;
-					updated = BroadcastHelper.replace(updated, [BroadcastHelper.withEnded(latest)]);
-				}
-			} finally {
-				await this.saveAndNotify(roomId, records, updated);
-			}
-
-			const stoppedIds = new Set(targets.map(({ broadcastId }) => broadcastId));
-			this.logger.info(`Broadcasts '${[...stoppedIds].join("', '")}' stopped for room '${roomId}'`);
-			return updated
-				.filter(({ broadcastId }) => stoppedIds.has(broadcastId))
-				.map((record) => BroadcastHelper.toBroadcastInfo(record));
+			await this.saveAndNotify(roomId, records, BroadcastHelper.replace(updated, [stopped]));
+			this.logger.info(`Broadcast '${broadcastId}' stopped for room '${roomId}'`);
+			return BroadcastHelper.toBroadcastInfo(stopped);
 		});
+	}
+
+	/**
+	 * Stops each broadcast on its own, as {@link stopBroadcast} does, so one that cannot be stopped
+	 * fails alone. Answers the broadcasts stopped and those that failed.
+	 */
+	async bulkStopBroadcasts(broadcastIds: string[]): Promise<BroadcastBulkStopResult> {
+		const result: BroadcastBulkStopResult = { stopped: [], failed: [] };
+
+		for (const broadcastId of broadcastIds) {
+			try {
+				await this.stopBroadcast(BroadcastHelper.roomIdOf(broadcastId), broadcastId);
+				result.stopped.push(broadcastId);
+			} catch (error) {
+				if (error instanceof OpenViduMeetError) {
+					result.failed.push({ broadcastId, error: error.message });
+				} else {
+					this.logger.error(`Unexpected error stopping broadcast '${broadcastId}'`, error);
+					result.failed.push({ broadcastId, error: 'Unexpected error' });
+				}
+			}
+		}
+
+		return result;
 	}
 
 	/**

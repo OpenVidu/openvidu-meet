@@ -41,6 +41,7 @@ describe('Embedded command names', () => {
 				'recordingStop',
 				'broadcastStart',
 				'broadcastStop',
+				'broadcastStopAll',
 				'waitingParticipantAdmit',
 				'waitingParticipantAdmitAll',
 				'waitingParticipantReject',

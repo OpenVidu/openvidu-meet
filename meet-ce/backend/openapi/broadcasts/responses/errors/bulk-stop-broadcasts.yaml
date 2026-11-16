@@ -1,0 +1,47 @@
+description: >
+    **Mixed results**: some broadcasts named could not be stopped, for instance because they were not in progress,
+    were already stopping or belong to a room the caller has no `broadcastControl` permission in.
+content:
+    application/json:
+        schema:
+            type: object
+            properties:
+                message:
+                    type: string
+                deleted:
+                    type: array
+                    items:
+                        type: string
+                    description: IDs of the broadcasts stopped.
+                failed:
+                    type: array
+                    description: The broadcasts named that were not stopped, with the reason.
+                    items:
+                        type: object
+                        properties:
+                            broadcastId:
+                                type: string
+                                description: ID of the broadcast not stopped.
+                                example: 'room-123--p7Rt4WqM2z'
+                            error:
+                                type: string
+                                description: A message explaining why the broadcast was not stopped.
+                                example: "Broadcast 'room-123--p7Rt4WqM2z' not found"
+        examples:
+            partial_stop:
+                summary: Some broadcasts were stopped, others were not in progress
+                value:
+                    message: '1 broadcast(s) could not be stopped'
+                    deleted:
+                        - 'room-123--Qm4tZ8vR1c'
+                    failed:
+                        - broadcastId: 'room-123--p7Rt4WqM2z'
+                          error: "Broadcast 'room-123--p7Rt4WqM2z' not found"
+            no_stop_performed:
+                summary: None of the broadcasts named could be stopped
+                value:
+                    message: '1 broadcast(s) could not be stopped'
+                    deleted: []
+                    failed:
+                        - broadcastId: 'room-123--p7Rt4WqM2z'
+                          error: "Broadcast 'room-123--p7Rt4WqM2z' not found"

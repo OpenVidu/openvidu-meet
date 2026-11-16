@@ -2,8 +2,7 @@ import type {
 	MeetBroadcastConfigOptions,
 	MeetBroadcastDestination,
 	MeetBroadcastStartDestination,
-	MeetBroadcastStartOptions,
-	MeetBroadcastStopOptions
+	MeetBroadcastStartOptions
 } from '@openvidu-meet/typings';
 import {
 	isValidStreamUrl,
@@ -12,6 +11,7 @@ import {
 	MeetRecordingLayout
 } from '@openvidu-meet/typings';
 import { z } from 'zod';
+import { INTERNAL_CONFIG } from '../../config/internal-config.js';
 import { fieldListSchema } from './field-selection.schema.js';
 import { encodingValidator } from './recording-encoding.schema.js';
 import { nonEmptySanitizedRoomId } from './room-id.schema.js';
@@ -79,9 +79,26 @@ export const StartBroadcastReqSchema: z.ZodType<MeetBroadcastStartOptions & { ro
 		path: ['destinationIds']
 	});
 
-export const StopBroadcastsReqSchema: z.ZodType<MeetBroadcastStopOptions & { roomId: string }> = z.object({
-	roomId: nonEmptySanitizedRoomId('roomId'),
-	broadcastIds: z.array(broadcastIdSchema).min(1, 'At least one broadcast id is required').optional()
+export const BulkStopBroadcastsReqSchema = z.object({
+	broadcastIds: z.preprocess(
+		(arg) =>
+			typeof arg === 'string'
+				? Array.from(
+						new Set(
+							arg
+								.split(',')
+								.map((s) => s.trim())
+								.filter((s) => s !== '')
+						)
+					)
+				: [],
+		z
+			.array(broadcastIdSchema)
+			.min(1, { message: 'At least one broadcastId is required' })
+			.max(INTERNAL_CONFIG.BULK_DELETE_MAX_ITEMS, {
+				message: `broadcastIds cannot exceed ${INTERNAL_CONFIG.BULK_DELETE_MAX_ITEMS} items`
+			})
+	)
 });
 
 export const BroadcastIdParamsSchema = z.object({
