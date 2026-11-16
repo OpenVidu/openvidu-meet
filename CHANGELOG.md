@@ -52,12 +52,12 @@ with no replacement.
   demotes them back. Every promotion and demotion is reported as the
   [`participantRoleChanged`][3.10-participant-role-changed] webhook and as the embedded event of the same name to the
   affected participant.
-- Raise hand, in the meeting and through the REST API, the embedded commands `participantHandRaise`,
-  `participantHandLower` and `participantHandLowerAll` and the embedded event and webhook `participantHandChanged`,
-  with the `participantHandLower` permission to lower other participants' hands and the room config
+- Raise hand, in the meeting and through the REST API, the embedded commands `participantRaiseHand`,
+  `participantLowerHand` and `participantLowerAllHands` and the embedded event and webhook `participantHandChanged`,
+  with the `participantLowerHand` permission to lower other participants' hands and the room config
   `raiseHand.enabled` to turn it off.
-- Reactions, in the meeting and through the embedded command `participantReactionSend` and the embedded event
-  `participantReactionSent`, with the `participantReactionSend` permission to send them and the room config
+- Reactions, in the meeting and through the embedded command `participantSendReaction` and the embedded event
+  `participantReactionSent`, with the `participantSendReaction` permission to send them and the room config
   `reactions.enabled` to turn them off.
 - [Broadcasts API][3.10-broadcasts] under `/api/v1/broadcasts`: stream a live meeting to one or more RTMP
   destinations, one broadcast per destination, each with its own status and its own `broadcastId`, as a
