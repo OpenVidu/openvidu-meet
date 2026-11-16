@@ -44,8 +44,7 @@ export interface MeetParticipantReactionOptions {
 }
 
 /**
- * Payload of the `waitingParticipantAdmit` and `waitingParticipantReject` embedded commands: the waiting
- * participant to decide on.
+ * Payload of the `waitingParticipantAdmit` and `waitingParticipantReject` embedded commands.
  */
 export interface MeetWaitingParticipantDecisionOptions {
 	/** Identity of the waiting participant to admit or reject */

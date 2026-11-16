@@ -8,11 +8,11 @@ properties:
         type: string
         example: 'room-123'
         description: >
-            The unique identifier of the room the participant asked to join.
+            Identifier of the room.
     roomName:
         type: string
         example: 'room'
         description: >
-            The display name of the room the participant asked to join.
+            Name of the room.
     participant:
         $ref: ../../meetings/schemas/meet-waiting-participant.yaml

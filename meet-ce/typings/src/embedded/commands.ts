@@ -63,22 +63,22 @@ export enum EmbeddedCommandName {
 	 */
 	PARTICIPANT_HAND_LOWER_ALL = 'participantHandLowerAll',
 	/**
-	 * Admits the waiting participant named by `participantIdentity`, when a place of the meeting is free.
+	 * Admits the waiting participant `participantIdentity`, if a place is free.
 	 * @permission waitingParticipantAdmin
 	 */
 	WAITING_PARTICIPANT_ADMIT = 'waitingParticipantAdmit',
 	/**
-	 * Admits everyone waiting, all of them or nobody when they outnumber the free places of the meeting.
+	 * Admits everyone waiting, or nobody when they outnumber the free places.
 	 * @permission waitingParticipantAdmin
 	 */
 	WAITING_PARTICIPANT_ADMIT_ALL = 'waitingParticipantAdmitAll',
 	/**
-	 * Rejects the waiting participant named by `participantIdentity`, who may ask to join again.
+	 * Rejects the waiting participant `participantIdentity`, who may ask to join again.
 	 * @permission waitingParticipantAdmin
 	 */
 	WAITING_PARTICIPANT_REJECT = 'waitingParticipantReject',
 	/**
-	 * Rejects every participant waiting to join the locked room. A rejected participant may ask to join again.
+	 * Rejects everyone the meeting shows waiting. Those who stopped waiting meanwhile are not an error.
 	 * @permission waitingParticipantAdmin
 	 */
 	WAITING_PARTICIPANT_REJECT_ALL = 'waitingParticipantRejectAll',

@@ -115,28 +115,22 @@ export interface MeetRoomMemberPermissions {
 	 */
 	participantReactionSend: boolean;
 	/**
-	 * Can join the meeting without waiting in a locked room (`access.lock`). Without it, the
-	 * participant asks to join and waits until someone holding `waitingParticipantAdmin` admits them.
+	 * Can join a locked room (`access.lock`) without waiting to be admitted.
 	 *
 	 * Introduced after the rename, so it has no deprecated `can*` spelling (see
 	 * {@link MEET_UNALIASED_PERMISSION_KEYS}). It is independent of every other permission: a request
 	 * that omits it leaves it at whatever the role or the member already had. Only a set completed
-	 * from scratch, which is what a token issued before 3.10.0 goes through, starts it at `false`
-	 * (see {@link UNALIASED_PERMISSION_DEFAULTS}). A room or member stored before 3.10.0 is migrated
-	 * with it granted to the moderator role and denied to the speaker role.
+	 * from scratch, such as a token issued before 3.10.0, starts it at `false` (see
+	 * {@link UNALIASED_PERMISSION_DEFAULTS}). Rooms and members stored before 3.10.0 get it with the
+	 * moderator role.
 	 */
 	accessBypassLock: boolean;
 	/**
-	 * Can list the participants waiting to join a locked room and admit or reject them. Independent
-	 * of `accessBypassLock`: a holder without it waits like anyone else and can admit others only once
-	 * admitted.
+	 * Can list, admit and reject the participants waiting to join a locked room. A holder without
+	 * `accessBypassLock` waits like anyone else.
 	 *
-	 * Introduced after the rename, so it has no deprecated `can*` spelling (see
-	 * {@link MEET_UNALIASED_PERMISSION_KEYS}). It is independent of every other permission: a request
-	 * that omits it leaves it at whatever the role or the member already had. Only a set completed
-	 * from scratch, which is what a token issued before 3.10.0 goes through, starts it at `false`
-	 * (see {@link UNALIASED_PERMISSION_DEFAULTS}). A room or member stored before 3.10.0 is migrated
-	 * with it granted to the moderator role and denied to the speaker role.
+	 * Introduced after the rename, so it has no deprecated `can*` spelling; same completion rule as
+	 * `accessBypassLock`.
 	 */
 	waitingParticipantAdmin: boolean;
 	/**

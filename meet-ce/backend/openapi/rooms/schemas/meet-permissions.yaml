@@ -117,23 +117,16 @@ properties:
         type: boolean
         example: true
         description: >
-            Can join the meeting without waiting in a room whose access has `lock.enabled`. Without it, the
-            participant asks to join and waits until someone holding `waitingParticipantAdmin` admits them. Independent of
-            `waitingParticipantAdmin`: a holder of `waitingParticipantAdmin` who lacks it waits like anyone else. Has no deprecated `can*`
-            equivalent. A room created from 3.10.0 on grants it to the moderator role and denies it to the
-            speaker role by default; a room or member that existed before 3.10.0 gets it with the moderator role.
+            Can join a locked room (`access.lock.enabled`) without waiting to be admitted. Has no deprecated
+            `can*` equivalent. Granted to the moderator role by default, and with it to rooms and members that
+            existed before 3.10.0.
     waitingParticipantAdmin:
         type: boolean
         example: true
         description: >
-            Can list the participants waiting to join and admit or reject them
-            ([`waitingParticipantList`](#/operations/waitingParticipantList),
-            [`waitingParticipantGet`](#/operations/waitingParticipantGet),
-            [`waitingParticipantAdmit`](#/operations/waitingParticipantAdmit),
-            [`waitingParticipantAdmitAll`](#/operations/waitingParticipantAdmitAll),
-            [`waitingParticipantReject`](#/operations/waitingParticipantReject),
-            [`bulkRejectWaitingParticipants`](#/operations/bulkRejectWaitingParticipants)). Independent of
-            `accessBypassLock`. Has no deprecated `can*` equivalent. Same defaults and history as `accessBypassLock`.
+            Can list, admit and reject the participants waiting to join a locked room. A holder without
+            `accessBypassLock` waits like anyone else. Has no deprecated `can*` equivalent. Same defaults as
+            `accessBypassLock`.
     meetingEnd:
         type: boolean
         example: false

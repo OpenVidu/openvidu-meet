@@ -9,8 +9,7 @@ content:
                 participants:
                     type: array
                     description: >
-                        The participants waiting, in no promised order, at most 100. An admitted participant is not in
-                        the list. Empty when the room is not locked.
+                        The participants waiting, in no particular order, at most 100. Empty in an unlocked room.
                     items:
                         $ref: '../../schemas/meet-waiting-participant.yaml'
         example:

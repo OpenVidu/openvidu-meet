@@ -1,6 +1,5 @@
 description: >
-    **Mixed results**. Some participants named were rejected while others were not, because they were not waiting
-    (they left, were admitted or rejected meanwhile, or never waited).
+    **Mixed results**: some participants named were not waiting, so were not rejected.
 content:
     application/json:
         schema:
