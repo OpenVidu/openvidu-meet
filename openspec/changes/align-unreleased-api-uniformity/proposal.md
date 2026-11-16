@@ -19,9 +19,11 @@ An audit of the 3.10.0 REST API against the released 3.9.0 contract (`MEET-REST-
 ## Capabilities
 
 ### New Capabilities
+
 None.
 
 ### Modified Capabilities
+
 - `live-broadcast`: an unknown room destination in a start request answers `422`, and the conflicts of a start or a stop carry a code.
 - `raise-hand`: the hand requests carry `handRaised`, and its permission, commands and operationIds are renamed.
 - `reactions`: its permission, command and operationId are renamed.
