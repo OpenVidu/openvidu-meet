@@ -31,6 +31,14 @@ redis.call('DEL', KEYS[1])
 return 1
 `;
 
+const FIND_FREE_NUMBER_SCRIPT = `
+local number = 1
+while redis.call('EXISTS', ARGV[1] .. number) == 1 do
+	number = number + 1
+end
+return number
+`;
+
 @injectable()
 export class ParticipantNameService {
 	private readonly MAX_CONCURRENT_NAME_REQUESTS = INTERNAL_CONFIG.PARTICIPANT_MAX_CONCURRENT_NAME_REQUESTS;
@@ -218,7 +226,8 @@ export class ParticipantNameService {
 	}
 
 	/**
-	 * Finds the next available sequential number by checking existing participants.
+	 * Finds the lowest sequential number whose numbered name is not reserved, probing the candidate keys
+	 * one after another inside Redis.
 	 *
 	 * @private
 	 * @param roomId - The room identifier
@@ -226,29 +235,10 @@ export class ParticipantNameService {
 	 * @returns Promise<number> - The next available number
 	 */
 	private async findNextAvailableNumber(roomId: string, baseName: string): Promise<number> {
-		const participantsKey = `${RedisKeyName.ROOM_PARTICIPANTS}${roomId}`;
-		const pattern = `${participantsKey}:${baseName}_*`;
+		const prefix = `${RedisKeyName.ROOM_PARTICIPANTS}${roomId}:${baseName}_`;
 
 		try {
-			const existingKeys = await this.redisService.getKeys(pattern);
-			const usedNumbers = new Set<number>();
-
-			const prefix = `${participantsKey}:${baseName}_`;
-
-			for (const key of existingKeys) {
-				const suffix = key.slice(prefix.length);
-
-				if (/^\d+$/.test(suffix)) {
-					usedNumbers.add(parseInt(suffix, 10));
-				}
-			}
-
-			// Find the smallest available number starting from 1
-			let nextNumber = 1;
-
-			while (usedNumbers.has(nextNumber)) {
-				nextNumber++;
-			}
+			const nextNumber = (await this.redisService.runScript(FIND_FREE_NUMBER_SCRIPT, [], [prefix])) as number;
 
 			this.logger.verbose(`Generated new sequential number ${nextNumber} for '${baseName}' in room '${roomId}'`);
 			return nextNumber;

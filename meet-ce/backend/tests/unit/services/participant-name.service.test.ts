@@ -5,15 +5,27 @@ import { ParticipantNameService } from '../../../src/services/participant-name.s
 const noopLogger = { info: () => {}, warn: () => {}, debug: () => {}, error: () => {}, verbose: () => {} };
 
 /**
- * Redis for the name reservations: the reserve script takes a free name or one its identity already holds, and the
- * release script frees a name its identity holds. Keys are matched by prefix, as the SCAN patterns end in `*`.
+ * Redis for the name reservations: the reserve script takes a free name or one its identity already holds, the
+ * release script frees a name its identity holds, and the find script returns the lowest number whose name is free.
+ * Every script call is recorded in `scriptCalls`, every keyspace scan in `scans`.
  */
 class FakeRedis {
 	readonly names = new Map<string, string>();
+	readonly scriptCalls: string[] = [];
+	scans = 0;
 	failing = false;
 
 	async runScript(script: string, [key]: string[], [identity]: string[]): Promise<number> {
 		if (this.failing) throw new Error('Redis down');
+
+		if (script.includes("redis.call('EXISTS'")) {
+			this.scriptCalls.push('find');
+			let number = 1;
+
+			while (this.names.has(`${identity}${number}`)) number++;
+
+			return number;
+		}
 
 		const holder = this.names.get(key);
 
@@ -31,6 +43,8 @@ class FakeRedis {
 	}
 
 	async getKeys(pattern: string): Promise<string[]> {
+		this.scans++;
+
 		if (this.failing) throw new Error('Redis down');
 
 		const prefix = pattern.replace(/\*$/, '');
@@ -78,10 +92,37 @@ describe('ParticipantNameService', () => {
 		expect(await service.reserveUniqueName('room-1', 'Ana', 'p4')).toBe('Ana_1');
 	});
 
-	it('still reserves a numbered name when the taken names cannot be listed', async () => {
+	it('finds a numbered name without scanning the keyspace', async () => {
 		const { redis, service } = build();
 		await service.reserveUniqueName('room-1', 'Ana', 'p1');
-		redis.getKeys = async () => Promise.reject(new Error('Redis down'));
+		await service.reserveUniqueName('room-1', 'Ana', 'p2');
+		await service.reserveUniqueName('room-2', 'Ana', 'p3');
+
+		expect(await service.reserveUniqueName('room-1', 'Ana', 'p4')).toBe('Ana_2');
+		expect(await service.reserveUniqueName('room-2', 'ANA', 'p5')).toBe('ANA_1');
+		expect(redis.scans).toBe(0);
+		expect(redis.scriptCalls).toHaveLength(3);
+	});
+
+	it('hands every concurrent request for a name its own number', async () => {
+		const { service } = build();
+
+		const names = await Promise.all(
+			Array.from({ length: 8 }, (_, i) => service.reserveUniqueName('room-1', 'Ana', `p${i}`))
+		);
+
+		expect(new Set(names).size).toBe(8);
+		expect(names).toContain('Ana');
+	});
+
+	it('still reserves a numbered name when the free number cannot be looked up', async () => {
+		const { redis, service } = build();
+		await service.reserveUniqueName('room-1', 'Ana', 'p1');
+		const reserve = redis.runScript.bind(redis);
+		redis.runScript = async (script, keys, args) =>
+			script.includes("redis.call('EXISTS'")
+				? Promise.reject(new Error('Redis down'))
+				: reserve(script, keys, args);
 
 		expect(await service.reserveUniqueName('room-1', 'Ana', 'p2')).toMatch(/^Ana_\d{1,4}$/);
 	});
@@ -98,7 +139,9 @@ describe('ParticipantNameService', () => {
 	it('gives up after the requested name and 20 numbered ones cannot be reserved', async () => {
 		const { redis, service } = build();
 		let attempts = 0;
-		redis.runScript = async () => {
+		redis.runScript = async (script) => {
+			if (script.includes("redis.call('EXISTS'")) return 1;
+
 			attempts++;
 			return 0;
 		};
