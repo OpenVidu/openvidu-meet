@@ -32,3 +32,9 @@ paths:
   (read when a run starts, so add it before pushing): GCS and ABS share one bucket each, which every
   recordings job empties first. The nightly and dispatched runs use S3, GCS and ABS. Dependabot groups all
   action bumps in one PR.
+- CI always runs the whole suites it selects. `./meet.sh affected` (`scripts/dev/affected-tests.mjs`)
+  narrows the same selection to the tests worth running locally, from the map of areas in
+  `scripts/dev/test-areas.mjs`; `Static checks` fails when a spec file, an integration folder or an
+  OpenSpec capability is missing from that map. A change under `meet-ce/typings/src/embedded/` does not
+  select backend integration, because the backend uses nothing from that folder: a value both sides
+  need lives outside it (`leave-reason.ts`, `event-origin.ts`).

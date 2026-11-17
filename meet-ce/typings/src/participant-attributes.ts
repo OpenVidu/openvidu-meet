@@ -1,4 +1,4 @@
-import { MeetEventOrigin } from './embedded/events.js';
+import { MeetEventOrigin } from './event-origin.js';
 import type { MeetParticipantHandChangedPayload } from './webhook.js';
 
 /**

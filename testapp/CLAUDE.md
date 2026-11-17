@@ -8,10 +8,18 @@ by hand and to give the webcomponent e2e suites a host page. Product behavior is
 ## Running it
 
 `./meet.sh start-testapp` (or `./meet.sh dev --testapp`) serves it on `:5080`, next to a webhook
-bridge on `:5081` (`scripts/webhook-bridge.js`) that receives Meet webhooks and pushes them to the page
-over Socket.IO. `proxy.conf.js` forwards same-origin paths (bundle, API, `/webhook`, `/socket.io`) to
-the real services, overridable with `MEET_API_URL`, `MEET_API_KEY` and `MEET_WEBHOOK_BRIDGE_URL`. A
-static serve of `dist/` does not work: the dev server's proxy is part of the setup.
+bridge on `:5081` (`scripts/webhook-bridge.js`, port `TESTAPP_WEBHOOK_BRIDGE_PORT`) that receives Meet
+webhooks and pushes them to the page over Socket.IO. `proxy.conf.js` forwards same-origin paths
+(bundle, API, `/webhook`, `/socket.io`) to the real services, overridable with `MEET_API_URL`,
+`MEET_API_KEY` and `MEET_WEBHOOK_BRIDGE_URL`. A static serve of `dist/` does not work: the dev
+server's proxy is part of the setup.
+
+`./meet.sh stack up <name> --testapp` runs this checkout's testapp and bridge for one stack instead, on
+two free ports from `:5090` (recorded in the stack, shown by `stack list`), pointed at the stack's
+backend, and registers the stack's webhook to that testapp. Tests run against it through `stack run`,
+which exports `MEET_TESTAPP_URL` and registers that webhook again first, because the backend webhook
+integration tests leave the registry empty; `stack down` stops them. It serves with `--no-prebundle`, so the
+stale Vite cache below does not apply to it.
 
 The webhook events reach the page only if Meet has a webhook registered to
 `http://localhost:5080/webhook`. `MEET_INITIAL_WEBHOOK_ENABLED` and `MEET_INITIAL_WEBHOOK_URL` seed it

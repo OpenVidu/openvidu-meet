@@ -130,7 +130,15 @@ pnpm run test:e2e          # Playwright, project `webcomponent`
 
   Bring the environment up with `./meet.sh dev --testapp` from the repo root (or `./meet.sh dev` plus
   `./meet.sh start-testapp` in a second terminal). An `ERR_CONNECTION_REFUSED :5080` means the
-  environment isn't up, not a code failure.
+  environment isn't up, not a code failure. `./meet.sh doctor` says who holds `:5080`/`:5081`: a
+  testapp from another checkout there serves that checkout's code.
+
+  Isolated, without the default ports: `./meet.sh stack up <name> --testapp` starts a backend, a
+  testapp and its bridge of this checkout on ports of their own, with the stack's webhook pointed at
+  that testapp; then `./meet.sh stack run <name> -- ./meet.sh test-e2e-webcomponent --skip-install --
+  <specs>` (it exports `MEET_API_URL`, `MEET_TESTAPP_URL` and `MEET_WEBCOMPONENT_SRC`), and
+  `./meet.sh stack down <name>`. Outside CI the Playwright browser installs without `--with-deps`, so
+  no sudo is needed.
 
   CI splits the specs into three jobs (the `wc-e2e` matrix in `.github/workflows/ci.yaml`, each passing
   its files through `./meet.sh test-e2e-webcomponent -- <args>`); the last one runs every spec the others

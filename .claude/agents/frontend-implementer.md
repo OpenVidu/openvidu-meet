@@ -43,6 +43,10 @@ An OpenSpec change name with the task groups assigned to you, or a described fix
    `./meet.sh stack run <name> -- ./meet.sh test-e2e-frontend --skip-install -- <spec>`. Finish with
    `./meet.sh stack down <name>`. When `./meet.sh doctor` says the deployment is not usable, say that the
    running app was not checked.
+3. An end-to-end test you wrote or rewrote is run before you report it done, the same way; a webcomponent
+   one needs the testapp, which `./meet.sh stack up <name> --testapp` starts (then
+   `./meet.sh stack run <name> -- ./meet.sh test-e2e-webcomponent --skip-install -- <spec>`).
+   `./meet.sh affected` lists the tests your diff can break, with their commands.
 
 ## Report
 

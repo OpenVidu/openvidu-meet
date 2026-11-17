@@ -52,9 +52,7 @@ const SUITES = {
 		'meet-ce/backend/tests/helpers/**',
 		'meet-ce/backend/tests/interfaces/**',
 		'meet-ce/typings/**',
-		// The embedded API belongs to the frontend, except the leave reasons the webhooks carry.
 		'!meet-ce/typings/src/embedded/**',
-		'meet-ce/typings/src/embedded/events.ts',
 		'pnpm-lock.yaml',
 		'!**/*.md'
 	],

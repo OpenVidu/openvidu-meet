@@ -9,11 +9,14 @@ import {
 	DEFAULTS,
 	listBackends,
 	livekitConfigPath,
+	portListener,
 	probePort,
+	processCwd,
 	repoRoot,
 	run,
 	runningContainers,
 	STACK_WEBHOOK_PORTS,
+	TESTAPP_DEFAULT_PORTS,
 	webhookPorts
 } from './local-env.mjs';
 
@@ -444,6 +447,30 @@ const checkBackends = async () => {
 	return results;
 };
 
+const checkTestappPorts = () => {
+	const ownTestapp = pathOf('testapp');
+	const holders = TESTAPP_DEFAULT_PORTS.flatMap((port) => {
+		const listener = portListener(port);
+
+		return listener ? [{ port, pid: listener.pid, cwd: listener.pid && processCwd(listener.pid) }] : [];
+	});
+	const describe = ({ port, pid, cwd }) =>
+		pid
+			? `:${port} ${cwd === ownTestapp ? 'this checkout' : `from ${cwd}`} pid ${pid}`
+			: `:${port} held by a process of another user`;
+	const foreign = holders.filter(({ cwd }) => cwd !== ownTestapp);
+
+	if (holders.length === 0) return ok('testapp', `:${TESTAPP_DEFAULT_PORTS.join(' and :')} free`);
+
+	if (foreign.length === 0) return ok('testapp', holders.map(describe).join(', '));
+
+	return warn(
+		'testapp',
+		`${holders.map(describe).join(', ')}: a webcomponent e2e run on the default ports tests that testapp, not this checkout`,
+		`./meet.sh stack up <name> --testapp (its own ports), or stop that process if it is yours: kill ${foreign.map(({ pid }) => pid ?? '?').join(' ')}`
+	);
+};
+
 const checkWebhooks = (running) => {
 	const ports = webhookPorts();
 	const missing = STACK_WEBHOOK_PORTS.filter((port) => !ports.includes(port));
@@ -483,7 +510,8 @@ const main = async () => {
 		checkLocalDevDomain(running),
 		checkServicePorts(),
 		checkWebhooks(running),
-		checkBackends()
+		checkBackends(),
+		checkTestappPorts()
 	]);
 	const results = sections.flat();
 

@@ -29,6 +29,7 @@ tests work without a build. Real builds do not.
 | `src/response/` | REST response shapes and the generic query helpers: `field-projection`, `sort-pagination`, `extra-field`, `text-match`, per-entity `*-response` |
 | `src/embedded/` | The **public embedding API**: `attributes.ts`, `commands.ts`, `events.ts` |
 | `src/webhook.ts` | Outgoing webhook event types and payloads |
+| `src/leave-reason.ts`, `src/event-origin.ts` | Values the embedded events and the webhooks share (`LeftEventReason`, `MeetEventOrigin`). They live outside `embedded/` because nothing under `embedded/` may be used by the backend: CI does not run the backend integration suite for a change there |
 | `src/frontend-signal.ts` | Real-time signals pushed to clients over the LiveKit data channel (`MeetSignalType`) |
 | `src/livekit-permissions.ts` | Mirrored LiveKit enums (e.g. `TrackSource`) so consumers don't need the LiveKit SDK for types |
 | `src/analytics.ts`, `src/ai-assistant.ts` | Analytics and AI-assistant contracts |
