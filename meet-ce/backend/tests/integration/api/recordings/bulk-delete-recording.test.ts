@@ -1,4 +1,5 @@
 import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
+import { MeetRoomMemberRole } from '@openvidu-meet/typings';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
 import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
@@ -12,7 +13,12 @@ import {
 	stopRecording
 } from '../../../helpers/request-helpers.js';
 
-import { setupMultiRecordingsTestContext, setupSingleRoomWithRecording } from '../../../helpers/test-scenarios.js';
+import {
+	setupMultiRecordingsTestContext,
+	setupRoomMember,
+	setupSingleRoomWithRecording,
+	setupTestUsers
+} from '../../../helpers/test-scenarios.js';
 
 describe('Recording API Tests', () => {
 	beforeAll(async () => {
@@ -141,6 +147,36 @@ describe('Recording API Tests', () => {
 						recordingId: otherRecordingId,
 						error: expect.stringContaining('Insufficient permissions to access this resource')
 					}
+				]
+			});
+		});
+
+		it('should only delete recordings of the rooms a room manager may delete them in', async () => {
+			const { roomManager } = await setupTestUsers();
+			const roomData = await setupSingleRoomWithRecording(true);
+			await setupRoomMember(
+				roomData.room.roomId,
+				{ userId: roomManager.user.userId, baseRole: MeetRoomMemberRole.MODERATOR },
+				roomManager.accessToken
+			);
+			const otherRoomData = await setupSingleRoomWithRecording(true);
+			const recordingId = roomData.recordingId!;
+			const otherRecordingId = otherRoomData.recordingId!;
+			const missingId = 'non_existent--EG_000--1234';
+
+			const deleteResponse = await bulkDeleteRecordings(
+				[otherRecordingId, recordingId, missingId],
+				undefined,
+				roomManager.accessToken
+			);
+
+			expect(deleteResponse.status).toBe(400);
+			expect(deleteResponse.body).toEqual({
+				message: '2 recording(s) could not be deleted',
+				deleted: [recordingId],
+				failed: [
+					{ recordingId: otherRecordingId, error: 'Insufficient permissions to access this resource' },
+					{ recordingId: missingId, error: `Recording '${missingId}' not found` }
 				]
 			});
 		});

@@ -2,14 +2,12 @@ import type { MeetRoomMemberPermissions } from '@openvidu-meet/typings';
 import { MeetUserRole } from '@openvidu-meet/typings';
 import type { NextFunction, Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
-import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { RecordingHelper } from '../helpers/recording.helper.js';
 import {
 	errorAnonymousAccessDisabled,
 	errorInsufficientPermissions,
 	errorManualRecordingNotAllowed,
-	errorRecordingDisabled,
-	OpenViduMeetError
+	errorRecordingDisabled
 } from '../models/error.model.js';
 import { LoggerService } from '../services/logger.service.js';
 import { RecordingService } from '../services/recording.service.js';
@@ -17,7 +15,6 @@ import { RequestSessionService } from '../services/request-session.service.js';
 import { RoomAccessService } from '../services/room-access.service.js';
 import { RoomService } from '../services/room.service.js';
 import { RecordingQueryWithFields } from '../types/recording-projection.types.js';
-import { runConcurrently } from '../utils/concurrency.utils.js';
 import type { AuthValidator } from './auth.middleware.js';
 import {
 	accessTokenValidator,
@@ -260,13 +257,11 @@ export const authorizeRecordingControl = async (req: Request, res: Response, nex
 	}
 };
 
-type BulkRecordingFailed = { recordingId: string; error: string };
-
 /**
  * Helper function to validate access for multiple recordings in bulk.
  *
  * - Checks if the authenticated user has the specified permission for each recording ID.
- * - Populates res.locals with the list of processable recording IDs and any failures.
+ * - Populates res.locals with the accessible recordings and any failures.
  *
  * @param res - The Express response object.
  * @param permission - The permission to check for each recording (e.g., recordingDownload, recordingDelete).
@@ -275,47 +270,28 @@ const validateBulkRecordingAccess = async (
 	res: Response,
 	permission: keyof MeetRoomMemberPermissions
 ): Promise<void> => {
-	const recordingService = container.get(RecordingService);
 	const { recordingIds } = res.locals.validatedQuery as { recordingIds: string[] };
+	const { accessible, failed } = await container
+		.get(RecordingService)
+		.validateRecordingsAccess(recordingIds, permission);
 
-	const settledResults = await runConcurrently(
-		recordingIds,
-		async (
-			recordingId
-		): Promise<{ ok: true; recordingId: string } | { ok: false; failed: BulkRecordingFailed }> => {
-			try {
-				await recordingService.validateRecordingAccess(recordingId, permission, ['recordingId']);
-				return { ok: true, recordingId };
-			} catch (error) {
-				const message = error instanceof OpenViduMeetError ? error.message : 'Unexpected error';
-				return { ok: false, failed: { recordingId, error: message } };
-			}
-		},
-		{ concurrency: INTERNAL_CONFIG.CONCURRENCY_BULK_RETRIEVE_RECORDINGS }
-	);
-
-	const processableIds: string[] = [];
-	const failed: BulkRecordingFailed[] = [];
-
-	settledResults.forEach((result) => {
-		if (result.status === 'fulfilled') {
-			if (result.value.ok) {
-				processableIds.push(result.value.recordingId);
-			} else {
-				failed.push(result.value.failed);
-			}
-		}
-	});
-
-	res.locals.bulkValidation = { processableIds, failed };
+	res.locals.bulkRecordings = { accessible, failed };
 };
 
 export const validateBulkDeleteRecordingsAccess = async (_req: Request, res: Response, next: NextFunction) => {
-	await validateBulkRecordingAccess(res, 'recordingDelete');
-	return next();
+	try {
+		await validateBulkRecordingAccess(res, 'recordingDelete');
+		return next();
+	} catch (error) {
+		return handleError(res, error, 'checking recording permissions');
+	}
 };
 
 export const validateDownloadRecordingsAccess = async (_req: Request, res: Response, next: NextFunction) => {
-	await validateBulkRecordingAccess(res, 'recordingDownload');
-	return next();
+	try {
+		await validateBulkRecordingAccess(res, 'recordingDownload');
+		return next();
+	} catch (error) {
+		return handleError(res, error, 'checking recording permissions');
+	}
 };

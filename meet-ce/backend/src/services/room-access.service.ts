@@ -99,6 +99,37 @@ export class RoomAccessService {
 	}
 
 	/**
+	 * {@link getAuthenticatedRoomMemberPermissions} for each of the given rooms, with the rooms and the memberships of
+	 * the authenticated user in all of them read at once.
+	 *
+	 * @param roomIds The IDs of the rooms.
+	 * @returns The permissions in each room that exists; a room missing from the map does not exist.
+	 */
+	async getAuthenticatedRoomMemberPermissionsInRooms(
+		roomIds: readonly string[]
+	): Promise<Map<string, MeetRoomMemberPermissions>> {
+		const tokenRoomId = this.requestSessionService.getRoomIdFromMember();
+		const permissions = new Map<string, MeetRoomMemberPermissions>();
+		const otherRoomIds = roomIds.filter((roomId) => roomId !== tokenRoomId);
+
+		if (tokenRoomId && otherRoomIds.length < roomIds.length) {
+			permissions.set(tokenRoomId, await this.getRoomMemberTokenPermissions(tokenRoomId));
+		}
+
+		const user = this.userWithRoomDependentPermissions();
+
+		if (!user) {
+			otherRoomIds.forEach((roomId) => permissions.set(roomId, this.roomIndependentPermissions(roomId)));
+			return permissions;
+		}
+
+		const rooms = await this.roomRepository.findByRoomIds(otherRoomIds, ROOM_ACCESS_FIELDS);
+		const userPermissions = await this.getUserPermissionsInRooms(user.userId, rooms);
+		rooms.forEach((room, index) => permissions.set(room.roomId, userPermissions[index]));
+		return permissions;
+	}
+
+	/**
 	 * The authenticated user of the current request when their permissions depend on the room: a user other than an
 	 * admin, and no room member token.
 	 */

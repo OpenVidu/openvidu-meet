@@ -119,9 +119,7 @@ export const INTERNAL_CONFIG = {
 	CONCURRENCY_MEETING_DURATION_LIMIT_GC: 10, // Concurrency limit for re-arming duration-limit timers and ending the meetings already past them
 	CONCURRENCY_BULK_DELETE_ROOMS: 10, // Concurrency limit for bulk deleting rooms
 	CONCURRENCY_BULK_RETRIEVE_ROOMS: 20, // Concurrency limit for bulk retrieving room info
-	CONCURRENCY_BULK_DELETE_RECORDINGS: 20, // Concurrency limit for bulk deleting recordings
 	CONCURRENCY_BULK_DELETE_ROOM_RECORDINGS: 10, // Concurrency limit for bulk deleting recordings of a room
-	CONCURRENCY_BULK_RETRIEVE_RECORDINGS: 10, // Concurrency limit for bulk retrieving recording info
 	CONCURRENCY_BULK_DELETE_STORAGE: 20, // Concurrency limit for bulk deleting objects in storage
 	CONCURRENCY_BULK_KICK_MEMBERS: 20, // Concurrency limit for bulk kicking members from a room
 	CONCURRENCY_BULK_PARTICIPANT_UPDATES: 20, // Concurrency limit for bulk per-participant LiveKit updates (mute all, lower all hands)

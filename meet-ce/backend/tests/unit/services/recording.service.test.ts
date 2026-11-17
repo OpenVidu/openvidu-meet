@@ -706,13 +706,16 @@ describe('RecordingService.stopRecording', () => {
 });
 
 describe('RecordingService.writeRecordingsZip', () => {
-	const recordingIds = Array.from({ length: 60 }, (_, index) => `room-1--EG_${index}--abc`);
+	const recordings = Array.from({ length: 60 }, (_, index) => ({
+		recordingId: `room-1--EG_${index}--abc`,
+		status: MeetRecordingStatus.COMPLETE,
+		filename: `room-1--EG_${index}--abc.mp4`
+	}));
 
 	const buildZipService = (openStream: () => Readable) => {
 		const service = buildService(new FakeLiveKitService([]), new FakeMutexService());
 		Object.assign(service, {
-			getRecording: async (recordingId: string) => ({ filename: `${recordingId}.mp4` }),
-			getRecordingAsStream: async () => ({ fileSize: undefined, fileStream: openStream() })
+			blobStorageService: { getRecordingMedia: async () => ({ fileSize: undefined, fileStream: openStream() }) }
 		});
 		return service;
 	};
@@ -721,7 +724,11 @@ describe('RecordingService.writeRecordingsZip', () => {
 		const chunks: Buffer[] = [];
 		const output = new PassThrough();
 		output.on('data', (chunk: Buffer) => chunks.push(chunk));
-		return { output, zipEntries: () => Buffer.concat(chunks).toString('latin1').split('PK\x03\x04').length - 1 };
+		return {
+			output,
+			zip: () => Buffer.concat(chunks).toString('latin1'),
+			zipEntries: () => Buffer.concat(chunks).toString('latin1').split('PK\x03\x04').length - 1
+		};
 	};
 
 	it('writes every recording while holding at most one of them open', async () => {
@@ -736,36 +743,65 @@ describe('RecordingService.writeRecordingsZip', () => {
 		});
 		const { output, zipEntries } = drainedOutput();
 
-		await service.writeRecordingsZip(recordingIds, output, new AbortController().signal);
+		await service.writeRecordingsZip(recordings, output, new AbortController().signal);
 
 		expect(opened).toHaveLength(60);
 		expect(mostOpenAtOnce).toBe(1);
 		expect(zipEntries()).toBe(60);
 	});
 
-	it('leaves out a recording it cannot open and names a recording without a filename after its id', async () => {
+	it('reads nothing from the database for the recordings it is given', async () => {
 		const service = buildZipService(() => Readable.from([Buffer.alloc(16)]));
 		Object.assign(service, {
-			getRecording: async (recordingId: string) => {
-				if (recordingId === 'room-1--EG_1--abc') throw new Error('not found');
-
-				return { filename: '' };
+			recordingRepository: {
+				findByRecordingId: () => {
+					throw new Error('the recordings were already read');
+				}
 			}
 		});
-		const chunks: Buffer[] = [];
-		const output = new PassThrough();
-		output.on('data', (chunk: Buffer) => chunks.push(chunk));
+		const { output, zipEntries } = drainedOutput();
+
+		await service.writeRecordingsZip(recordings.slice(0, 3), output, new AbortController().signal);
+
+		expect(zipEntries()).toBe(3);
+	});
+
+	it('leaves out a recording that is not complete and names a recording without a filename after its id', async () => {
+		const service = buildZipService(() => Readable.from([Buffer.alloc(16)]));
+		const { output, zip, zipEntries } = drainedOutput();
 
 		await service.writeRecordingsZip(
-			['room-1--EG_0--abc', 'room-1--EG_1--abc'],
+			[
+				{ recordingId: 'room-1--EG_0--abc', status: MeetRecordingStatus.COMPLETE, filename: undefined },
+				{
+					recordingId: 'room-1--EG_1--abc',
+					status: MeetRecordingStatus.ACTIVE,
+					filename: 'room-1--EG_1--abc.mp4'
+				}
+			],
 			output,
 			new AbortController().signal
 		);
 
-		const zip = Buffer.concat(chunks).toString('latin1');
-		expect(zip.split('PK\x03\x04').length - 1).toBe(1);
-		expect(zip).toContain('room-1--EG_0--abc.mp4');
-		expect(zip).not.toContain('room-1--EG_1--abc');
+		expect(zipEntries()).toBe(1);
+		expect(zip()).toContain('room-1--EG_0--abc.mp4');
+		expect(zip()).not.toContain('room-1--EG_1--abc');
+	});
+
+	it('leaves out a recording whose file cannot be opened', async () => {
+		const service = buildZipService(() => Readable.from([Buffer.alloc(16)]));
+		Object.assign(service, {
+			blobStorageService: {
+				getRecordingMedia: async () => {
+					throw new Error('missing');
+				}
+			}
+		});
+		const { output, zipEntries } = drainedOutput();
+
+		await service.writeRecordingsZip(recordings.slice(0, 2), output, new AbortController().signal);
+
+		expect(zipEntries()).toBe(0);
 	});
 
 	it('destroys the recording being read and opens no other when the download is aborted', async () => {
@@ -780,13 +816,123 @@ describe('RecordingService.writeRecordingsZip', () => {
 		});
 		const download = new AbortController();
 
-		const writing = service.writeRecordingsZip(recordingIds, drainedOutput().output, download.signal);
+		const writing = service.writeRecordingsZip(recordings, drainedOutput().output, download.signal);
 		await opening;
 		download.abort();
 
 		await expect(writing).rejects.toMatchObject({ name: 'AbortError' });
 		expect(opened).toHaveLength(1);
 		expect(opened[0].destroyed).toBe(true);
+	});
+});
+
+describe('RecordingService.bulkDeleteRecordings', () => {
+	const build = () => {
+		const actions: string[] = [];
+		const service = buildService(new FakeLiveKitService([]), new FakeMutexService());
+		Object.assign(service, {
+			recordingRepository: {
+				findByRecordingId: () => {
+					throw new Error('the recordings were already read');
+				},
+				deleteByRecordingIds: async (ids: string[]) => void actions.push(`mongo:${ids.join(',')}`)
+			},
+			blobStorageService: {
+				deleteRecordingMediaBatch: async (ids: string[]) => void actions.push(`blob:${ids.join(',')}`)
+			}
+		});
+		return { service, actions };
+	};
+
+	it('deletes the finished recordings and reports the others as not stopped, in the order given', async () => {
+		const { service, actions } = build();
+
+		const result = await service.bulkDeleteRecordings([
+			{ recordingId: 'a--EG_1--1', status: MeetRecordingStatus.COMPLETE },
+			{ recordingId: 'a--EG_2--2', status: MeetRecordingStatus.ACTIVE },
+			{ recordingId: 'a--EG_3--3', status: MeetRecordingStatus.FAILED },
+			{ recordingId: 'a--EG_4--4', status: MeetRecordingStatus.ENDING }
+		]);
+
+		expect(result).toEqual({
+			deleted: ['a--EG_1--1', 'a--EG_3--3'],
+			failed: [
+				{ recordingId: 'a--EG_2--2', error: "Recording 'a--EG_2--2' is not stopped yet" },
+				{ recordingId: 'a--EG_4--4', error: "Recording 'a--EG_4--4' is not stopped yet" }
+			]
+		});
+		expect(actions).toEqual(['mongo:a--EG_1--1,a--EG_3--3', 'blob:a--EG_1--1,a--EG_3--3']);
+	});
+
+	it('deletes nothing when no recording is finished', async () => {
+		const { service, actions } = build();
+
+		const result = await service.bulkDeleteRecordings([
+			{ recordingId: 'a--EG_2--2', status: MeetRecordingStatus.ACTIVE }
+		]);
+
+		expect(result.deleted).toEqual([]);
+		expect(result.failed).toHaveLength(1);
+		expect(actions).toEqual([]);
+	});
+});
+
+describe('RecordingService.validateRecordingsAccess', () => {
+	const stored = [
+		{ recordingId: 'r1--EG_1--1', roomId: 'r1', status: MeetRecordingStatus.COMPLETE, filename: 'one.mp4' },
+		{ recordingId: 'r2--EG_2--2', roomId: 'r2', status: MeetRecordingStatus.COMPLETE, filename: 'two.mp4' },
+		{ recordingId: 'r3--EG_3--3', roomId: 'r3', status: MeetRecordingStatus.COMPLETE, filename: 'three.mp4' },
+		{ recordingId: 'r1--EG_4--4', roomId: 'r1', status: MeetRecordingStatus.ACTIVE, filename: 'four.mp4' }
+	];
+
+	const build = (permissionsByRoom: Map<string, Record<string, boolean>>) => {
+		const reads: { recordings: string[][]; rooms: string[][] } = { recordings: [], rooms: [] };
+		const service = buildService(new FakeLiveKitService([]), new FakeMutexService());
+		Object.assign(service, {
+			recordingRepository: {
+				findByRecordingIds: async (ids: string[]) => {
+					reads.recordings.push(ids);
+					return stored.filter((recording) => ids.includes(recording.recordingId)).reverse();
+				}
+			},
+			roomAccessService: {
+				getAuthenticatedRoomMemberPermissionsInRooms: async (roomIds: string[]) => {
+					reads.rooms.push(roomIds);
+					return permissionsByRoom;
+				}
+			}
+		});
+		return { service, reads };
+	};
+
+	it('splits the recordings into the accessible ones and the failures, each in the order of the identifiers', async () => {
+		const { service } = build(
+			new Map([
+				['r1', { recordingDelete: true }],
+				['r2', { recordingDelete: false }]
+			])
+		);
+
+		const result = await service.validateRecordingsAccess(
+			['r1--EG_4--4', 'nope--EG_0--0', 'r2--EG_2--2', 'r3--EG_3--3', 'r1--EG_1--1'],
+			'recordingDelete'
+		);
+
+		expect(result.accessible.map(({ recordingId }) => recordingId)).toEqual(['r1--EG_4--4', 'r1--EG_1--1']);
+		expect(result.failed).toEqual([
+			{ recordingId: 'nope--EG_0--0', error: "Recording 'nope--EG_0--0' not found" },
+			{ recordingId: 'r2--EG_2--2', error: 'Insufficient permissions to access this resource' },
+			{ recordingId: 'r3--EG_3--3', error: "Room 'r3' does not exist" }
+		]);
+	});
+
+	it('reads the recordings once and the permissions once for each distinct room', async () => {
+		const { service, reads } = build(new Map([['r1', { recordingDownload: true }]]));
+
+		await service.validateRecordingsAccess(['r1--EG_1--1', 'r1--EG_4--4', 'r2--EG_2--2'], 'recordingDownload');
+
+		expect(reads.recordings).toEqual([['r1--EG_1--1', 'r1--EG_4--4', 'r2--EG_2--2']]);
+		expect(reads.rooms).toEqual([['r1', 'r2']]);
 	});
 });
 
