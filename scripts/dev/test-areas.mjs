@@ -4,13 +4,19 @@
 // has `specs: []` and is named by its paths only). `paths` are source globs (`*` stays inside a folder, `**` crosses
 // folders). Per heavy suite, the tests that cover it:
 //   backend:  a folder of tests/integration (a key of BACKEND_FOLDER_SCRIPTS) or a test file relative to tests/integration
-//   frontend: a spec file of meet-ce/frontend/e2e
-//   wc:       a spec file of meet-ce/frontend/webcomponent/tests/e2e, or [file, grep] to run only its matching tests
+//   frontend: a spec file of meet-ce/frontend/e2e, or [file, grep] to run only its matching tests
+//   wc:       a spec file of meet-ce/frontend/webcomponent/tests/e2e, or [file, grep]
+//
+// A source file shared by every area (configuration, errors, Redis, the server) belongs to none: `affected`
+// names it and leaves it to the whole suites in CI. `scripts/dev/affected-tests.test.mjs` pins the cases this
+// map has to get right; add one when a pull request shows a test it should have listed.
 
 const BACKEND = 'meet-ce/backend/src/';
 const TYPINGS = 'meet-ce/typings/src/';
-const LIBRARY = 'meet-ce/frontend/projects/shared-meet-components/src/lib/domains/';
-const MEETING = `${LIBRARY}meeting/`;
+const LIBRARY = 'meet-ce/frontend/projects/shared-meet-components/src/lib/';
+const DOMAINS = `${LIBRARY}domains/`;
+const MEETING = `${DOMAINS}meeting/`;
+const MEETING_UI = `${MEETING}openvidu-components/`;
 
 export const BACKEND_FOLDER_SCRIPTS = {
 	analytics: 'test:integration-analytics',
@@ -31,23 +37,43 @@ export const NO_TESTS_OF_THEIR_OWN = ['deployment'];
 
 export const AREAS = {
 	appearance: {
-		paths: [`${BACKEND}**/*global-config*`],
-		backend: ['global-config']
+		paths: [`${BACKEND}**/*global-config*`, `${BACKEND}**/config-validator*`, `${TYPINGS}**/global-config*`],
+		backend: ['global-config', 'api/security/global-config-security.test.ts']
 	},
 	authentication: {
-		paths: [`${BACKEND}**/*auth*`, `${BACKEND}**/*token*`, `${BACKEND}**/*api-key*`, `${LIBRARY}auth/**`],
+		paths: [
+			`${BACKEND}**/*auth*`,
+			`${BACKEND}**/*token*`,
+			`${BACKEND}**/*api-key*`,
+			`${TYPINGS}**/api-key*`,
+			`${DOMAINS}auth/**`,
+			`${LIBRARY}shared/**/*token*`,
+			`${LIBRARY}shared/**/*api-key*`
+		],
 		backend: ['auth', 'api-keys', 'security'],
 		frontend: ['token-refresh.test.ts']
 	},
 	console: {
-		paths: [`${LIBRARY}console/**`, `${BACKEND}**/*analytics*`],
-		backend: ['analytics'],
+		paths: [
+			`${DOMAINS}console/**`,
+			`${LIBRARY}**/*analytics*`,
+			`${BACKEND}**/*analytics*`,
+			`${TYPINGS}analytics.ts`
+		],
+		backend: ['analytics', 'api/security/analytics-security.test.ts'],
 		frontend: ['console.test.ts']
+	},
+	e2ee: {
+		specs: [],
+		paths: [`${DOMAINS}**/*e2ee*`],
+		backend: ['api/rooms/e2ee-room-config.test.ts'],
+		frontend: ['e2ee.test.ts']
 	},
 	'embedded-api': {
 		paths: [
 			`${TYPINGS}embedded/**`,
-			`${LIBRARY}embedded/**`,
+			`${DOMAINS}embedded/**`,
+			`${MEETING}services/meeting-event-handler*`,
 			'meet-ce/frontend/webcomponent/src/**',
 			'meet-ce/frontend/webcomponent/tests/helpers/**',
 			'testapp/**'
@@ -56,7 +82,7 @@ export const AREAS = {
 	},
 	'embedded-attributes': {
 		specs: [],
-		paths: [`${TYPINGS}embedded/attributes.ts`],
+		paths: [`${TYPINGS}embedded/attributes.ts`, `${MEETING}guards/extract-*`, `${LIBRARY}**/*leave-redirect*`],
 		wc: ['attributes.test.ts']
 	},
 	'embedded-distribution': {
@@ -68,12 +94,7 @@ export const AREAS = {
 		wc: ['bundle-caching.test.ts', 'room.test.ts']
 	},
 	'live-broadcast': {
-		paths: [
-			`${BACKEND}**/*broadcast*`,
-			`${MEETING}**/*broadcast*`,
-			`${TYPINGS}database/broadcast*`,
-			`${TYPINGS}request/broadcast*`
-		],
+		paths: [`${BACKEND}**/*broadcast*`, `${LIBRARY}**/*broadcast*`, `${TYPINGS}**/broadcast*`],
 		backend: ['api/meetings/broadcasts.test.ts', 'api/rooms/broadcast-room-config.test.ts'],
 		frontend: ['broadcasts.test.ts'],
 		wc: [
@@ -82,12 +103,17 @@ export const AREAS = {
 		]
 	},
 	'live-captions': {
-		paths: [`${BACKEND}**/*ai-assistant*`, `${MEETING}**/*caption*`, `${TYPINGS}ai-assistant.ts`],
+		paths: [
+			`${BACKEND}**/*ai-assistant*`,
+			`${LIBRARY}**/*ai-assistant*`,
+			`${MEETING}**/*caption*`,
+			`${TYPINGS}ai-assistant.ts`
+		],
 		backend: ['api/meetings/ai-assistant.test.ts'],
 		frontend: ['captions.test.ts']
 	},
 	localization: {
-		paths: [`${LIBRARY}**/lang/**`, `${LIBRARY}**/*i18n*`],
+		paths: [`${LIBRARY}**/lang/**`, `${LIBRARY}**/i18n/**`, `${LIBRARY}**/*lang*`, `${LIBRARY}**/*translate*`],
 		wc: [['attributes.test.ts', 'with language']]
 	},
 	'locked-room': {
@@ -95,8 +121,10 @@ export const AREAS = {
 			`${BACKEND}**/waiting-participant*`,
 			`${BACKEND}services/waiting-participants/**`,
 			`${BACKEND}**/*websocket*`,
+			`${TYPINGS}**/waiting-participant*`,
+			`${TYPINGS}websocket.ts`,
 			`${MEETING}waiting-participants/**`,
-			`${MEETING}**/*lock*`
+			`${MEETING}**/*websocket*`
 		],
 		backend: [
 			'api/meetings/waiting-participants.test.ts',
@@ -111,7 +139,7 @@ export const AREAS = {
 	},
 	'meeting-chat': {
 		paths: [`${MEETING}**/*chat*`],
-		frontend: ['chat.test.ts']
+		frontend: ['chat.test.ts', 'e2ee.test.ts']
 	},
 	'meeting-join': {
 		paths: [`${BACKEND}**/participant-name*`, `${MEETING}**/*join*`, `${MEETING}**/*entry*`],
@@ -119,20 +147,32 @@ export const AREAS = {
 			'api/meetings/participant-name.service.test.ts',
 			'api/meetings/participant-name-reservation-ttl.test.ts'
 		],
-		frontend: ['meeting-start.test.ts']
+		frontend: ['meeting-start.test.ts', ['permissions.test.ts', 'Join screen']]
 	},
 	'meeting-layout': {
-		paths: [`${MEETING}**/*layout*`, `${MEETING}**/*toolbar*`, `${MEETING}**/*panel*`],
-		frontend: ['layout.test.ts', 'panels.test.ts', 'toolbar.test.ts']
+		paths: [
+			`${MEETING}**/*layout*`,
+			`${MEETING}**/*toolbar*`,
+			`${MEETING}**/*panel*`,
+			`${MEETING}**/status-rail/**`,
+			`${MEETING}**/landscape-warning/**`,
+			`${MEETING}**/*viewport*`,
+			`${MEETING}**/*shortcut*`
+		],
+		frontend: ['layout.test.ts', 'panels.test.ts', 'toolbar.test.ts'],
+		wc: ['room.test.ts']
 	},
 	'meeting-media': {
 		paths: [
 			`${MEETING}**/*media*`,
 			`${MEETING}**/*device*`,
 			`${MEETING}**/*screen*`,
-			`${MEETING}**/*virtual-background*`,
+			`${MEETING}**/*background*`,
 			`${MEETING}**/*stream*`,
-			`${MEETING}**/*quality*`
+			`${MEETING}**/*quality*`,
+			`${MEETING}**/*mic-*`,
+			`${MEETING}**/*audio-*`,
+			`${MEETING}**/*video-*`
 		],
 		frontend: [
 			'media-devices.test.ts',
@@ -147,7 +187,7 @@ export const AREAS = {
 		]
 	},
 	'meeting-moderation': {
-		paths: [`${BACKEND}**/*moderation*`, `${MEETING}**/*moderation*`, `${MEETING}**/*participant*`],
+		paths: [`${MEETING}**/*moderation*`, `${MEETING}**/*participant*`],
 		backend: [
 			'api/meetings/kick-participant.test.ts',
 			'api/meetings/mute-participant.test.ts',
@@ -158,22 +198,39 @@ export const AREAS = {
 		wc: [['commands.test.ts', 'KICK_PARTICIPANT|PARTICIPANT_MUTE|UPDATE_ROLE|END_MEETING']]
 	},
 	meetings: {
-		paths: [`${BACKEND}**/meeting.*`, `${BACKEND}**/meeting-presence*`, `${BACKEND}**/livekit*`],
-		backend: ['meetings'],
-		frontend: ['meeting-start.test.ts']
+		paths: [
+			`${BACKEND}**/meeting.*`,
+			`${BACKEND}**/meeting-*`,
+			`${BACKEND}**/livekit*`,
+			`${BACKEND}**/frontend-event*`,
+			`${BACKEND}**/participant.helper.ts`,
+			`${TYPINGS}**/meeting*`,
+			`${TYPINGS}**/participant*`,
+			`${TYPINGS}frontend-signal.ts`,
+			`${MEETING}pages/**`,
+			`${MEETING}routes/**`,
+			`${MEETING}services/meeting-context*`,
+			`${MEETING}services/meeting-state*`,
+			`${MEETING_UI}components/meeting-view/**`,
+			`${MEETING_UI}services/livekit/**`,
+			`${MEETING_UI}services/meeting-*/**`
+		],
+		backend: ['meetings', 'api/security/meeting-security.test.ts', 'webhooks/webhook.test.ts'],
+		frontend: ['meeting-start.test.ts', 'e2ee.test.ts'],
+		wc: ['room.test.ts']
 	},
 	permissions: {
 		paths: [
 			`${BACKEND}**/*permission*`,
-			`${LIBRARY}**/*permission*`,
+			`${DOMAINS}**/*permission*`,
 			`${TYPINGS}database/room-member-permissions.ts`,
 			`${TYPINGS}livekit-permissions.ts`
 		],
-		backend: ['room-members', 'api/rooms/permission-naming.test.ts'],
+		backend: ['room-members', 'api/rooms/permission-naming.test.ts', 'api/rooms/room-migrations.test.ts'],
 		frontend: ['permissions.test.ts']
 	},
 	'raise-hand': {
-		paths: [`${MEETING}**/meeting-hand*`, `${MEETING}**/*raise-hand*`, `${MEETING}**/*lower-hand*`],
+		paths: [`${MEETING}**/meeting-hand*`, `${MEETING}**/*raised-hand*`],
 		backend: ['api/meetings/hand.test.ts'],
 		wc: [
 			['events.test.ts', 'HAND'],
@@ -181,7 +238,7 @@ export const AREAS = {
 		]
 	},
 	reactions: {
-		paths: [`${BACKEND}**/*reaction*`, `${MEETING}**/*reaction*`, `${TYPINGS}reaction.ts`],
+		paths: [`${MEETING}**/*reaction*`, `${TYPINGS}reaction.ts`],
 		backend: ['api/meetings/reaction.test.ts'],
 		wc: [['commands.test.ts', 'SEND_REACTION']]
 	},
@@ -190,25 +247,33 @@ export const AREAS = {
 			`${BACKEND}**/*recording*`,
 			`${BACKEND}**/*egress*`,
 			`${BACKEND}services/storage/**`,
-			`${LIBRARY}recordings/**`,
+			`${BACKEND}**/storage-key*`,
+			`${BACKEND}**/encoding-converter*`,
+			`${BACKEND}**/s3-sse*`,
+			`${DOMAINS}recordings/**`,
 			`${MEETING}**/*recording*`,
-			`${TYPINGS}database/recording*`
+			`${TYPINGS}**/recording*`
 		],
-		backend: ['recordings'],
-		frontend: ['recordings.test.ts'],
+		backend: ['recordings', 'api/security/recording-security.test.ts', 'webhooks/webhook.test.ts'],
+		frontend: ['recordings.test.ts', ['permissions.test.ts', 'Recordings']],
 		wc: [
 			['events.test.ts', 'RECORDING'],
 			['commands.test.ts', 'RECORDING']
 		]
 	},
 	'room-access': {
-		paths: [`${BACKEND}**/*room-access*`, `${MEETING}**/*room-access*`, `${MEETING}**/*share-link*`],
+		paths: [`${BACKEND}**/*room-access*`, `${DOMAINS}**/*room-access*`, `${MEETING}guards/**`],
 		frontend: ['access.test.ts', 'share-link.test.ts']
 	},
 	'room-config': {
-		paths: [`${BACKEND}**/*room-config*`, `${TYPINGS}database/room-config.ts`],
+		paths: [
+			`${TYPINGS}database/room-config.ts`,
+			`${DOMAINS}rooms/**/*feature*`,
+			`${DOMAINS}rooms/pages/room-wizard/**`
+		],
 		backend: [
 			'api/rooms/get-room-config.test.ts',
+			'api/rooms/update-room-config.test.ts',
 			'api/rooms/e2ee-room-config.test.ts',
 			'api/rooms/broadcast-room-config.test.ts',
 			'api/rooms/recording-layout-room-config.test.ts'
@@ -216,24 +281,36 @@ export const AREAS = {
 		frontend: ['room-features.test.ts', 'e2ee.test.ts', 'room-wizard.test.ts']
 	},
 	'room-members': {
-		paths: [`${BACKEND}**/room-member*`, `${LIBRARY}room-members/**`, `${TYPINGS}database/room-member*`],
-		backend: ['room-members'],
+		paths: [`${BACKEND}**/room-member*`, `${DOMAINS}room-members/**`, `${TYPINGS}**/room-member*`],
+		backend: ['room-members', 'api/security/room-members-security.test.ts'],
+		frontend: ['console.test.ts'],
 		wc: ['identified-guest-state.test.ts']
 	},
 	rooms: {
-		paths: [`${BACKEND}**/room.*`, `${BACKEND}**/room-scheduled-tasks*`, `${LIBRARY}rooms/**`],
-		backend: ['rooms'],
-		frontend: ['room-wizard.test.ts']
+		paths: [
+			`${BACKEND}**/room.*`,
+			`${BACKEND}**/room-scheduled-tasks*`,
+			`${BACKEND}**/room-validator*`,
+			`${BACKEND}**/room-migrations*`,
+			`${BACKEND}**/room-id*`,
+			`${BACKEND}**/room-projection*`,
+			`${TYPINGS}**/room.entity.ts`,
+			`${TYPINGS}**/room-request.ts`,
+			`${TYPINGS}**/room-response.ts`,
+			`${DOMAINS}rooms/**`
+		],
+		backend: ['rooms', 'api/security/room-security.test.ts'],
+		frontend: ['room-wizard.test.ts', 'console.test.ts']
 	},
 	users: {
-		paths: [`${BACKEND}**/*user*`, `${LIBRARY}users/**`],
-		backend: ['users'],
+		paths: [`${BACKEND}**/*user*`, `${TYPINGS}**/user*`, `${DOMAINS}users/**`],
+		backend: ['users', 'api/security/user-security.test.ts'],
 		frontend: ['console.test.ts']
 	},
 	webhooks: {
 		paths: [
 			`${BACKEND}**/*webhook*`,
-			`${TYPINGS}webhook.ts`,
+			`${TYPINGS}**/webhook*`,
 			`${TYPINGS}leave-reason.ts`,
 			`${TYPINGS}event-origin.ts`
 		],
