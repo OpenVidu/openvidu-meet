@@ -22,6 +22,9 @@ An OpenSpec change name with the task groups assigned to you, or a described fix
   projection, route config arrays).
 - The typings are the contract the backend builds on at the same time: if they need to change, stop and
   say so instead of changing them.
+- A question the specs and the design do not answer about product behavior, a public contract or the
+  architecture is the user's to decide: finish what does not depend on it and report the question with
+  its options instead of choosing.
 - Every scenario of the delta specs your groups cover gets a test that fails without your code, in the
   existing spec file of that component or service. Never leave a skipped test for a known bug, and never
   make a test pass by waiting longer.
