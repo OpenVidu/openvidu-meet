@@ -82,7 +82,7 @@ export class MeetingModerationService {
 
 	/**
 	 * Raises or lowers a participant's hand. Only the local participant's own hand can be raised;
-	 * lowering another participant's hand requires the `participantHandLower` permission.
+	 * lowering another participant's hand requires the `participantLowerHand` permission.
 	 *
 	 * @param roomId - The unique identifier of the meeting room
 	 * @param participantIdentity - The identity of the participant whose hand changes
@@ -90,7 +90,7 @@ export class MeetingModerationService {
 	 */
 	async updateParticipantHand(roomId: string, participantIdentity: string, raised: boolean): Promise<void> {
 		const path = `${this.MEETINGS_API}/${roomId}/participants/${participantIdentity}/hand`;
-		const body: MeetParticipantHandOptions = { raised };
+		const body: MeetParticipantHandOptions = { handRaised: raised };
 		await this.httpService.putRequest(path, body);
 		this.log.d(`Hand of participant '${participantIdentity}' ${raised ? 'raised' : 'lowered'} in room '${roomId}'`);
 	}
@@ -102,7 +102,7 @@ export class MeetingModerationService {
 	 */
 	async lowerAllHands(roomId: string): Promise<void> {
 		const path = `${this.MEETINGS_API}/${roomId}/participants/hand`;
-		const body: MeetParticipantHandOptions = { raised: false };
+		const body: MeetParticipantHandOptions = { handRaised: false };
 		await this.httpService.putRequest(path, body);
 		this.log.d(`Lowered every hand in room '${roomId}'`);
 	}

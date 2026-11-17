@@ -26,7 +26,7 @@ export const MEET_BROADCAST_FIELDS = [
 export type MeetBroadcastField = (typeof MEET_BROADCAST_FIELDS)[number];
 
 /**
- * Answer of `bulkStopBroadcasts`: `200` when all were stopped, `400` when any was not.
+ * Answer of `broadcastBulkStop`: `200` when all were stopped, `400` when any was not.
  */
 export interface MeetBroadcastBulkStopResponse {
 	/** Summary of the outcome */
@@ -40,4 +40,20 @@ export interface MeetBroadcastBulkStopResponse {
 		/** Why the broadcast was not stopped */
 		error: string;
 	}[];
+}
+
+/**
+ * `error` code of a broadcast request refused with `409`, a status with several causes.
+ */
+export enum MeetBroadcastErrorCode {
+	/** `broadcastStart`: the meeting already streams to a destination with the stream key of one asked for */
+	DESTINATION_IN_USE = 'destination_in_use',
+	/** `broadcastStart`: no destination was asked for and the meeting already streams to every room destination */
+	ALREADY_BROADCASTING = 'already_broadcasting',
+	/** `broadcastStart`: the meeting has no participants to broadcast */
+	NO_PARTICIPANTS = 'no_participants',
+	/** `broadcastStart` and `broadcastStop`: another broadcast request of the meeting was still being applied; retry it */
+	BROADCAST_BUSY = 'broadcast_busy',
+	/** `broadcastStop`: the broadcast is already being stopped */
+	BROADCAST_ENDING = 'broadcast_ending'
 }

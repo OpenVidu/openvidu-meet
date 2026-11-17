@@ -75,7 +75,7 @@ describe('MeetRoomHelper anonymous link disclosure', () => {
 		recordingDownload: true,
 		meetingJoin: true,
 		meetingRead: true,
-		participantReactionSend: true,
+		participantSendReaction: true,
 		mediaPublishVideo: true,
 		mediaPublishAudio: true,
 		mediaShareScreen: true,
@@ -118,7 +118,7 @@ describe('MeetRoomHelper anonymous link disclosure', () => {
 		});
 
 		it('should refuse a link whose permission is missing from the holder set', () => {
-			const { participantReactionSend: _omitted, ...holder } = speakerPermissions;
+			const { participantSendReaction: _omitted, ...holder } = speakerPermissions;
 
 			expect(MeetRoomMemberHelper.grantsWithin(speakerPermissions, holder as MeetRoomMemberPermissions)).toBe(
 				false

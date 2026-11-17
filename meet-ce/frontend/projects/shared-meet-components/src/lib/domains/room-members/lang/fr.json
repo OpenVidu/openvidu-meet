@@ -145,11 +145,11 @@
           "LABEL": "Couper le micro des participants",
           "DESCRIPTION": "Autoriser à couper le microphone, la caméra ou le partage d'écran des autres participants"
         },
-        "participantHandLower": {
+        "participantLowerHand": {
           "LABEL": "Baisser les mains",
           "DESCRIPTION": "Permet de baisser les mains levées des autres participants, une par une ou toutes à la fois"
         },
-        "participantReactionSend": {
+        "participantSendReaction": {
           "LABEL": "Envoyer des réactions",
           "DESCRIPTION": "Permet d'envoyer des réactions que tout le monde voit pendant quelques secondes"
         },

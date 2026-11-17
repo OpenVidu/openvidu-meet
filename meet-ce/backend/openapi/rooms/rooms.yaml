@@ -1,6 +1,6 @@
 /rooms:
     post:
-        operationId: createRoom
+        operationId: roomCreate
         summary: Create a room
         description: |
             Creates a new OpenVidu Meet room using the provided data and returns the room details along with the generated participant URLs.
@@ -36,7 +36,7 @@
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
     get:
-        operationId: getRooms
+        operationId: roomList
         summary: Get all rooms
         description: |
             Retrieves a paginated list of rooms in the system, optionally filtered by criteria.
@@ -82,7 +82,7 @@
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
     delete:
-        operationId: bulkDeleteRooms
+        operationId: roomBulkDelete
         summary: Bulk delete rooms
         description: |
             Deletes multiple OpenVidu Meet rooms using the specified room IDs.
@@ -127,7 +127,7 @@
                 $ref: '../shared/responses/errors/service-unavailable.yaml'
 /rooms/{roomId}:
     get:
-        operationId: getRoom
+        operationId: roomGet
         summary: Get a room
         description: |
             Retrieves the details of an OpenVidu Meet room by its room ID.
@@ -162,7 +162,7 @@
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
     delete:
-        operationId: deleteRoom
+        operationId: roomDelete
         summary: Delete a room
         description: |
             Deletes the specified OpenVidu Meet room by its room ID.
@@ -209,7 +209,7 @@
                 $ref: '../shared/responses/errors/service-unavailable.yaml'
 /rooms/{roomId}/config:
     get:
-        operationId: getRoomConfig
+        operationId: roomGetConfig
         summary: Get room config
         description: >
             Retrieves the config of an OpenVidu Meet room with the specified room ID.
@@ -240,7 +240,7 @@
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
     put:
-        operationId: updateRoomConfig
+        operationId: roomUpdateConfig
         summary: Update room config
         description: >
             Updates the config of an OpenVidu Meet room with the specified room ID.
@@ -279,7 +279,7 @@
                 $ref: '../shared/responses/errors/internal-server.yaml'
 /rooms/{roomId}/status:
     put:
-        operationId: updateRoomStatus
+        operationId: roomUpdateStatus
         summary: Update room status
         description: >
             Updates the status of an OpenVidu Meet room with the specified room ID.
@@ -331,7 +331,7 @@
                 $ref: '../shared/responses/errors/internal-server.yaml'
 /rooms/{roomId}/roles:
     put:
-        operationId: updateRoomRoles
+        operationId: roomUpdateRoles
         summary: Update roles permissions for a room
         description: |
             Updates the permissions by role for the specified room.
@@ -376,7 +376,7 @@
                 $ref: '../shared/responses/errors/internal-server.yaml'
 /rooms/{roomId}/access:
     put:
-        operationId: updateRoomAccess
+        operationId: roomUpdateAccess
         summary: Update access config for a room
         description: |
             Updates the access configuration for the specified room.

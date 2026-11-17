@@ -265,33 +265,33 @@ export class IframeBridgeService {
 				await commandService.recordingStop();
 				break;
 
-			case EmbeddedCommandName.PARTICIPANT_HAND_RAISE:
-				await commandService.participantHandRaise();
+			case EmbeddedCommandName.PARTICIPANT_RAISE_HAND:
+				await commandService.participantRaiseHand();
 				break;
 
-			case EmbeddedCommandName.PARTICIPANT_HAND_LOWER: {
+			case EmbeddedCommandName.PARTICIPANT_LOWER_HAND: {
 				const payload = 'payload' in message ? message.payload : undefined;
 				const participantIdentity =
 					payload && 'participantIdentity' in payload ? payload.participantIdentity : undefined;
 
-				await commandService.participantHandLower(participantIdentity);
+				await commandService.participantLowerHand(participantIdentity);
 				break;
 			}
 
-			case EmbeddedCommandName.PARTICIPANT_HAND_LOWER_ALL:
-				await commandService.participantHandLowerAll();
+			case EmbeddedCommandName.PARTICIPANT_LOWER_ALL_HANDS:
+				await commandService.participantLowerAllHands();
 				break;
 
-			case EmbeddedCommandName.PARTICIPANT_REACTION_SEND: {
+			case EmbeddedCommandName.PARTICIPANT_SEND_REACTION: {
 				const payload = 'payload' in message ? message.payload : undefined;
 				const reaction = payload && 'reaction' in payload ? payload.reaction : undefined;
 
 				if (!reaction) {
-					this.log.e('participantReactionSend command received without a reaction');
+					this.log.e('participantSendReaction command received without a reaction');
 					return;
 				}
 
-				await commandService.participantReactionSend(reaction);
+				await commandService.participantSendReaction(reaction);
 				break;
 			}
 

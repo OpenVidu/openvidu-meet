@@ -223,7 +223,7 @@ describe('RoomMemberTokenMetadataSchema fields', () => {
 		expect(parsed.permissions.recordingControl).toBe(true);
 		expect(parsed.permissions.recordingPlay).toBe(true);
 		expect(parsed.permissions.meetingRead).toBe(false);
-		expect(parsed.permissions.participantReactionSend).toBe(true);
+		expect(parsed.permissions.participantSendReaction).toBe(true);
 		expect(Object.keys(parsed.permissions).sort()).toEqual([...MEET_PERMISSION_KEYS].sort());
 	});
 

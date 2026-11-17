@@ -27,7 +27,7 @@ export class MeetingRaisedHandsStripComponent {
 	readonly raisedHandCount = computed(() => this.participantService.raisedHands().length);
 	readonly visible = computed(
 		() =>
-			this.roomMemberContextService.hasPermission('participantHandLower') &&
+			this.roomMemberContextService.hasPermission('participantLowerHand') &&
 			this.participantService.raisedHands().some((participant) => !participant.isLocal)
 	);
 

@@ -103,7 +103,7 @@ export interface MeetRoomMemberPermissions {
 	 * (see {@link UNALIASED_PERMISSION_DEFAULTS}). A room or member stored before 3.10.0 is migrated
 	 * with it granted to the moderator role and denied to the speaker role.
 	 */
-	participantHandLower: boolean;
+	participantLowerHand: boolean;
 	/**
 	 * Can send reactions in the meeting. Seeing the reactions of others is never gated.
 	 *
@@ -113,7 +113,7 @@ export interface MeetRoomMemberPermissions {
 	 * from scratch, which is what a stored document migrated from before 3.10.0 and a token issued
 	 * back then go through, starts it at `true` (see {@link UNALIASED_PERMISSION_DEFAULTS}).
 	 */
-	participantReactionSend: boolean;
+	participantSendReaction: boolean;
 	/**
 	 * Can join a locked room (`access.lock`) without waiting to be admitted.
 	 *
@@ -305,9 +305,9 @@ export const MEET_PERMISSION_ALIASES = {
  * - `participantMute` ← `false`: a moderation capability nothing hands out unasked. Deliberately
  *   not derived from `participantKick` — removing someone from a meeting and silencing their
  *   microphone are different powers, and a deployment that granted one never decided on the other.
- * - `participantHandLower` ← `false`, for the same reason: lowering someone else's hand is a
+ * - `participantLowerHand` ← `false`, for the same reason: lowering someone else's hand is a
  *   moderation capability no earlier permission decided.
- * - `participantReactionSend` ← `true`: reacting is taking part, like raising one's own hand, not
+ * - `participantSendReaction` ← `true`: reacting is taking part, like raising one's own hand, not
  *   a power over others, and the room config `reactions.enabled` is what turns it off for everyone.
  * - `accessBypassLock`, `waitingParticipantAdmin` ← `false`: joining a locked room without waiting and deciding who enters are
  *   powers no deployment decided on before 3.10.0, and a completed set never opens a room that
@@ -319,8 +319,8 @@ export const MEET_PERMISSION_ALIASES = {
 const UNALIASED_PERMISSION_DEFAULTS = {
 	meetingRead: 'meetingJoin',
 	participantMute: false,
-	participantHandLower: false,
-	participantReactionSend: true,
+	participantLowerHand: false,
+	participantSendReaction: true,
 	accessBypassLock: false,
 	waitingParticipantAdmin: false,
 	broadcastControl: false,

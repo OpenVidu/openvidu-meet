@@ -185,27 +185,27 @@ export class EmbeddedCommandService {
 		});
 	}
 
-	async participantHandRaise(): Promise<void> {
-		await this.run(EmbeddedCommandName.PARTICIPANT_HAND_RAISE, null, () => this.handService.raise());
+	async participantRaiseHand(): Promise<void> {
+		await this.run(EmbeddedCommandName.PARTICIPANT_RAISE_HAND, null, () => this.handService.raise());
 	}
 
-	async participantHandLower(participantIdentity?: string): Promise<void> {
-		const permission = this.handService.isOwn(participantIdentity) ? null : 'participantHandLower';
-		await this.run(EmbeddedCommandName.PARTICIPANT_HAND_LOWER, permission, () =>
+	async participantLowerHand(participantIdentity?: string): Promise<void> {
+		const permission = this.handService.isOwn(participantIdentity) ? null : 'participantLowerHand';
+		await this.run(EmbeddedCommandName.PARTICIPANT_LOWER_HAND, permission, () =>
 			this.handService.lower(participantIdentity)
 		);
 	}
 
-	async participantHandLowerAll(): Promise<void> {
-		await this.run(EmbeddedCommandName.PARTICIPANT_HAND_LOWER_ALL, 'participantHandLower', () =>
+	async participantLowerAllHands(): Promise<void> {
+		await this.run(EmbeddedCommandName.PARTICIPANT_LOWER_ALL_HANDS, 'participantLowerHand', () =>
 			this.handService.lowerAll()
 		);
 	}
 
-	async participantReactionSend(reaction: MeetReaction): Promise<void> {
-		await this.run(EmbeddedCommandName.PARTICIPANT_REACTION_SEND, 'participantReactionSend', async () => {
+	async participantSendReaction(reaction: MeetReaction): Promise<void> {
+		await this.run(EmbeddedCommandName.PARTICIPANT_SEND_REACTION, 'participantSendReaction', async () => {
 			if (!Object.values(MeetReaction).includes(reaction)) {
-				this.log.w(`participantReactionSend() called with '${reaction}', which is not a reaction`);
+				this.log.w(`participantSendReaction() called with '${reaction}', which is not a reaction`);
 				return;
 			}
 

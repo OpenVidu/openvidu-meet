@@ -1,5 +1,10 @@
 import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
-import type { MeetBroadcastDestination, MeetRoom, MeetRoomOptions } from '@openvidu-meet/typings';
+import type {
+	MeetBroadcastDestination,
+	MeetRoom,
+	MeetRoomConfigOptions,
+	MeetRoomOptions
+} from '@openvidu-meet/typings';
 import {
 	MEET_BROADCAST_REDACTED_STREAM_KEY,
 	MeetRecordingAudioCodec,
@@ -132,20 +137,13 @@ describe('Broadcast Room Configuration Tests', () => {
 			}
 		});
 
-		it('should create a room with broadcast disabled when the block leaves the switch out', async () => {
-			const room = await createRoom(
-				{
-					roomName: 'no-switch',
-					config: { broadcast: { destinations: [destination('a')], layout: MeetRecordingLayout.SPEAKER } }
-				},
-				undefined,
-				{ xExtraFields: 'config' }
-			);
+		it('should reject a room whose broadcast block leaves the switch out', async () => {
+			const response = await createRoomRequest({
+				roomName: 'no-switch',
+				config: { broadcast: { destinations: [destination('a')], layout: MeetRecordingLayout.SPEAKER } }
+			} as unknown as MeetRoomOptions);
 
-			expect(room.config.broadcast).toEqual(
-				expect.objectContaining({ enabled: false, layout: MeetRecordingLayout.SPEAKER })
-			);
-			expect(room.config.broadcast.destinations).toHaveLength(1);
+			expectValidationError(response, 'config.broadcast.enabled', 'Required');
 		});
 
 		it('should create a room with broadcast disabled and no destinations when the block leaves them out', async () => {
@@ -344,13 +342,15 @@ describe('Broadcast Room Configuration Tests', () => {
 			expect(await storedUrls(room.roomId)).toEqual({ [b.id]: destination('b').url });
 		});
 
-		it('should keep the switch as saved when an update leaves it out', async () => {
+		it('should reject an update whose broadcast block leaves the switch out, keeping the saved config', async () => {
 			const room = await createBroadcastRoom(['a']);
 
-			const updated = await updateRoomConfig(room.roomId, { broadcast: { layout: MeetRecordingLayout.SPEAKER } });
+			const updated = await updateRoomConfig(room.roomId, {
+				broadcast: { layout: MeetRecordingLayout.SPEAKER }
+			} as unknown as MeetRoomConfigOptions);
 
-			expect(updated.status).toBe(200);
-			expect(updated.body.broadcast).toEqual({ ...room.config.broadcast, layout: MeetRecordingLayout.SPEAKER });
+			expectValidationError(updated, 'config.broadcast.enabled', 'Required');
+			expect((await getRoomConfig(room.roomId)).body.broadcast).toEqual(room.config.broadcast);
 		});
 
 		it('should change only the layout, keeping the destinations the update leaves out', async () => {

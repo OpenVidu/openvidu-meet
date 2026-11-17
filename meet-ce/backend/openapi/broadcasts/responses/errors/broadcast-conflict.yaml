@@ -1,11 +1,30 @@
 description: >
-    Conflict: the meeting already streams to a destination asked for, or to one with the same stream key,
-    or to every room destination when none is asked for, has no participants to broadcast, or another
-    broadcast request of the meeting was still being applied: retry it
+    Conflict, told apart by `error`: the meeting already streams to a destination with the stream key of one asked for
+    (`destination_in_use`), or to every room destination when none is asked for (`already_broadcasting`), has no
+    participants to broadcast (`no_participants`), or another broadcast request of the meeting was still being applied
+    (`broadcast_busy`): retry it
 content:
     application/json:
         schema:
             $ref: '../../../shared/schemas/error.yaml'
-        example:
-            error: 'Broadcast Error'
-            message: "A destination with the stream key of 'rtmp://a.rtmp.youtube.com/live2/********' is already being broadcast"
+        examples:
+            destination_in_use:
+                summary: A destination asked for is already being streamed to
+                value:
+                    error: destination_in_use
+                    message: "A destination with the stream key of 'rtmp://a.rtmp.youtube.com/live2/********' is already being broadcast"
+            already_broadcasting:
+                summary: Every room destination is already being streamed to
+                value:
+                    error: already_broadcasting
+                    message: "Room 'room-123' is already being broadcast to every one of its destinations"
+            no_participants:
+                summary: The meeting has no participants to broadcast
+                value:
+                    error: no_participants
+                    message: "Room 'room-123' has no participants to broadcast"
+            broadcast_busy:
+                summary: Another broadcast request of the meeting was still being applied
+                value:
+                    error: broadcast_busy
+                    message: "The broadcast of room 'room-123' stayed busy with another change"

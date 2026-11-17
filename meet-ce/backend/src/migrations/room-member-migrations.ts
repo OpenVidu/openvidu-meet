@@ -49,13 +49,13 @@ const normalizeMemberPermissionsTransform: SchemaTransform<MeetRoomMemberDocumen
 	return roomMember;
 };
 
-// v4 adds the `participantHandLower` permission: the normalization completes it, and a member with the
+// v4 adds the `participantLowerHand` permission: the normalization completes it, and a member with the
 // moderator role is then granted it, as the moderator role of every room is.
 const roomMemberMigrationV3ToV4Transform: SchemaTransform<MeetRoomMemberDocument> = (roomMember) => {
 	normalizeMemberPermissionsTransform(roomMember);
 
 	if (roomMember.baseRole === MeetRoomMemberRole.MODERATOR) {
-		roomMember.effectivePermissions.participantHandLower = true;
+		roomMember.effectivePermissions.participantLowerHand = true;
 	}
 
 	return roomMember;

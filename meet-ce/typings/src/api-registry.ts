@@ -1,9 +1,8 @@
 /**
  * Canonical module registry of the Meet API naming scheme (`moduleAction` / `moduleEvent` /
  * `moduleAbility`). Every public identifier — permission keys, embedding commands and events,
- * webhook event types and new `operationId`s — starts with exactly one of these tokens (a bulk
- * `operationId` names it after `bulk` and a verb, in the plural: `bulkRejectWaitingParticipants`), and the
- * registry is the **enforcement point**: `scripts/lint-api-naming.mjs` (wired into
+ * webhook event types and `operationId`s, a bulk one included (`roomBulkDelete`) — starts with exactly
+ * one of these tokens, and the registry is the **enforcement point**: `scripts/lint-api-naming.mjs` (wired into
  * `./meet.sh lint-backend`, so it gates CI) fails when an identifier doesn't resolve to a
  * registered module. The naming charter itself lives in this package's `CLAUDE.md` and in
  * `meet-ce/backend/openapi/README.md`.
@@ -23,9 +22,10 @@
  *   iframe a host mounts (not the meeting running inside it, which is `meeting`): every event
  *   about that element, not about the meeting, its participants or their media, starts with it.
  *
- * The list covers the implemented modules and the ones the API studies already commit to
- * (`waitingParticipant`, `hand`, `breakout`, `notes`, `whiteboard`, `file`, `reaction`, `broadcast`), so a
- * future feature lands with its naming already decided.
+ * The list covers the implemented modules, the ones the API studies already commit to
+ * (`breakout`, `notes`, `whiteboard`, `file`), so a future feature lands with its naming already decided,
+ * and the platform groups whose operations are named after them (`user`, `auth`, `config`, `analytics`,
+ * `ai`). Raising hands and reactions belong to `participant`.
  */
 export const MEET_API_MODULES = [
 	'room',
@@ -39,12 +39,15 @@ export const MEET_API_MODULES = [
 	'waitingParticipant',
 	'chat',
 	'file',
-	'reaction',
-	'hand',
 	'breakout',
 	'notes',
 	'whiteboard',
-	'webhook'
+	'webhook',
+	'user',
+	'auth',
+	'config',
+	'analytics',
+	'ai'
 ] as const;
 
 /** A registered module token of the Meet API naming scheme. See {@link MEET_API_MODULES}. */

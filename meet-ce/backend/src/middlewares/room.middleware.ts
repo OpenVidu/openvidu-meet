@@ -166,11 +166,11 @@ export const withRoomPermission = (
 	};
 };
 
-const checkHandLowerPermission = withRoomPermission('participantHandLower');
+const checkHandLowerPermission = withRoomPermission('participantLowerHand');
 
 /**
  * Authorizes a change to a participant's hand. A participant raises and lowers their own hand
- * without any permission, and lowering another participant's hand needs `participantHandLower`.
+ * without any permission, and lowering another participant's hand needs `participantLowerHand`.
  * Raising it is never allowed, whatever the caller holds, which the meeting service answers once
  * it knows the room has a meeting.
  */
@@ -181,7 +181,7 @@ export const withHandUpdatePermission = (req: Request, res: Response, next: Next
 		return next();
 	}
 
-	if (!(req.body as MeetParticipantHandOptions).raised) {
+	if (!(req.body as MeetParticipantHandOptions).handRaised) {
 		return checkHandLowerPermission(req, res, next);
 	}
 

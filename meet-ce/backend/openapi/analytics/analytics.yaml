@@ -1,6 +1,6 @@
 /analytics:
     get:
-        operationId: getAnalytics
+        operationId: analyticsGet
         summary: Get usage analytics
         description: >
             Retrieves usage analytics for OpenVidu Meet, including metrics for rooms and recordings.

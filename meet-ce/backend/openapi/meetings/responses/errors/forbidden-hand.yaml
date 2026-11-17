@@ -1,0 +1,20 @@
+description: >
+    Forbidden: the caller lacks the permission to lower another participant's hand, or raising hands is disabled in
+    the room's config. In a locked room, that includes a room member token without a participant identity, which a
+    token obtained without joining is: it acts on the meeting only once it is a join token, issued to a holder of
+    `accessBypassLock` or to an admitted participant. A host application acting for itself uses the API key
+content:
+    application/json:
+        schema:
+            $ref: '../../../shared/schemas/error.yaml'
+        examples:
+            insufficient_permissions:
+                summary: The room permissions of the caller do not cover the operation
+                value:
+                    error: Authorization Error
+                    message: 'Insufficient permissions to access this resource'
+            raise_hand_disabled:
+                summary: Raising hands is disabled in the room's config
+                value:
+                    error: 'Hand Error'
+                    message: "Raising hands is disabled for room 'room-123'"

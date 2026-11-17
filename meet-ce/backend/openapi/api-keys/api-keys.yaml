@@ -1,6 +1,6 @@
 /auth/api-keys:
     post:
-        operationId: createApiKey
+        operationId: authCreateApiKey
         summary: Create a new API key
         description: |
             Creates a new API key, returning it in the response.
@@ -28,7 +28,7 @@
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
     get:
-        operationId: getApiKeys
+        operationId: authListApiKeys
         summary: Get API keys
         description: |
             Retrieves the existing API keys.
@@ -53,7 +53,7 @@
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
     delete:
-        operationId: deleteApiKeys
+        operationId: authDeleteApiKeys
         summary: Delete API keys
         description: >
             Deletes the existing API keys.

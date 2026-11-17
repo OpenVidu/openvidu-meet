@@ -480,7 +480,7 @@ describe('RoomWizardStateService.initializeWizard (the room it proposes)', () =>
 					participantPromote: false,
 					participantKick: false,
 					participantMute: false,
-					participantHandLower: false,
+					participantLowerHand: false,
 					meetingEnd: false,
 					accessBypassLock: false,
 					waitingParticipantAdmin: false

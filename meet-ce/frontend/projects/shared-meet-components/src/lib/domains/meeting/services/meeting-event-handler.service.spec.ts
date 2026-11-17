@@ -1058,8 +1058,8 @@ describe('MeetingEventHandlerService', () => {
 			expect(notificationService.showMessage).toHaveBeenCalledOnceWith('HAND.LOWERED_BY_MODERATOR');
 		});
 
-		it('offers a holder of participantHandLower to lower a hand that just went up', () => {
-			permissions.set({ participantHandLower: true });
+		it('offers a holder of participantLowerHand to lower a hand that just went up', () => {
+			permissions.set({ participantLowerHand: true });
 
 			changeHand(bob, raisedHandAttributes(1000));
 
@@ -1072,7 +1072,7 @@ describe('MeetingEventHandlerService', () => {
 		});
 
 		it('names the participant as the meeting does, with the decrypted name', () => {
-			permissions.set({ participantHandLower: true });
+			permissions.set({ participantLowerHand: true });
 			remoteModels.push({ identity: 'bob', name: 'Bob' });
 			bob.name = 'Xk9f3a';
 
@@ -1084,7 +1084,7 @@ describe('MeetingEventHandlerService', () => {
 		});
 
 		it('takes the notice away when that hand goes down', () => {
-			permissions.set({ participantHandLower: true });
+			permissions.set({ participantLowerHand: true });
 
 			changeHand(bob, raisedHandAttributes(1000));
 			expect(notificationService.dismissNotification).not.toHaveBeenCalled();
@@ -1094,7 +1094,7 @@ describe('MeetingEventHandlerService', () => {
 		});
 
 		it('takes the notice away when that participant leaves', () => {
-			permissions.set({ participantHandLower: true });
+			permissions.set({ participantLowerHand: true });
 
 			changeHand(bob, raisedHandAttributes(1000));
 			listeners.get(RoomEvent.ParticipantDisconnected)!(bob);
@@ -1103,7 +1103,7 @@ describe('MeetingEventHandlerService', () => {
 		});
 
 		it('takes the notice away when the participant can no longer lower hands', () => {
-			permissions.set({ participantHandLower: true });
+			permissions.set({ participantLowerHand: true });
 			TestBed.tick();
 			changeHand(bob, raisedHandAttributes(1000));
 
@@ -1114,7 +1114,7 @@ describe('MeetingEventHandlerService', () => {
 		});
 
 		it('gathers the hands that go up while the notice is on screen, naming the first one', () => {
-			permissions.set({ participantHandLower: true });
+			permissions.set({ participantLowerHand: true });
 
 			changeHand(bob, raisedHandAttributes(1000));
 			changeHand(fakeParticipant('carol', false), raisedHandAttributes(2000));
@@ -1130,7 +1130,7 @@ describe('MeetingEventHandlerService', () => {
 		});
 
 		it('drops each hand that goes down from the notice, offering to lower the one left', () => {
-			permissions.set({ participantHandLower: true });
+			permissions.set({ participantLowerHand: true });
 			const carol = fakeParticipant('carol', false);
 			changeHand(bob, raisedHandAttributes(1000));
 			changeHand(carol, raisedHandAttributes(2000));
@@ -1148,7 +1148,7 @@ describe('MeetingEventHandlerService', () => {
 		});
 
 		it('starts a notice of its own for a hand that goes up once the previous notice is gone', () => {
-			permissions.set({ participantHandLower: true });
+			permissions.set({ participantLowerHand: true });
 			changeHand(bob, raisedHandAttributes(1000));
 			notificationsOnScreen.set([]);
 
@@ -1163,7 +1163,7 @@ describe('MeetingEventHandlerService', () => {
 
 		it('offers nothing to a participant who cannot lower hands, nor for a hand going down', () => {
 			changeHand(bob, raisedHandAttributes(1000));
-			permissions.set({ participantHandLower: true });
+			permissions.set({ participantLowerHand: true });
 			changeHand(bob, loweredHandAttributes(MeetEventOrigin.PARTICIPANT));
 
 			expect(notificationService.showNotification).not.toHaveBeenCalled();

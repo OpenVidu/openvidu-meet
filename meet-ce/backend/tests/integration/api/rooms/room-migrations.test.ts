@@ -152,8 +152,8 @@ const expectedCurrentModeratorPermissions = {
 	participantPromote: true,
 	participantKick: true,
 	participantMute: false,
-	participantHandLower: true,
-	participantReactionSend: true,
+	participantLowerHand: true,
+	participantSendReaction: true,
 	accessBypassLock: true,
 	waitingParticipantAdmin: true,
 	meetingEnd: true,
@@ -179,8 +179,8 @@ const expectedCurrentSpeakerPermissions = {
 	participantPromote: false,
 	participantKick: false,
 	participantMute: false,
-	participantHandLower: false,
-	participantReactionSend: true,
+	participantLowerHand: false,
+	participantSendReaction: true,
 	accessBypassLock: false,
 	waitingParticipantAdmin: false,
 	meetingEnd: false,
@@ -542,7 +542,7 @@ describe('Room Schema Migrations', () => {
 
 			expect(migratedRoom.roles.moderator.permissions).toEqual({
 				...expectedCurrentModeratorPermissions,
-				participantHandLower: false,
+				participantLowerHand: false,
 				accessBypassLock: false,
 				waitingParticipantAdmin: false
 			});

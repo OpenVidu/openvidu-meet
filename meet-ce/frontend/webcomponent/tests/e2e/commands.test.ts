@@ -41,9 +41,9 @@ import {
 	expectEvent,
 	expectWebhook,
 	participantHandChangedLocator,
-	participantHandLowerAllCommand,
-	participantHandLowerCommand,
-	participantHandRaiseCommand,
+	participantLowerAllHandsCommand,
+	participantLowerHandCommand,
+	participantRaiseHandCommand,
 	joinedParticipantIdentity,
 	kickParticipantCommand,
 	kickParticipantLegacyCommand,
@@ -61,7 +61,7 @@ import {
 	openMeetingAtMediaSetup,
 	participantMuteAllCommand,
 	participantMuteCommand,
-	participantReactionSendCommand,
+	participantSendReactionCommand,
 	participantReactionSentLocator,
 	participantUpdateRoleCommand,
 	recordingStartCommand,
@@ -551,7 +551,7 @@ for (const integration of INTEGRATIONS) {
 		// connected too (the prejoin screen has real local tracks), and the first with an
 		// optional boolean: omitted = toggle, provided = set. Both halves of that contract
 		// are asserted here against the participant's real device state.
-		test.describe('PARTICIPANT_HAND_RAISE / PARTICIPANT_HAND_LOWER / PARTICIPANT_HAND_LOWER_ALL Commands', () => {
+		test.describe('PARTICIPANT_RAISE_HAND / PARTICIPANT_LOWER_HAND / PARTICIPANT_LOWER_ALL_HANDS Commands', () => {
 			test('should raise and lower the own hand, telling everyone', async ({ page, browser }) => {
 				await openMeeting(page, roomId, { integration, role: 'speaker', name: 'Raiser' });
 				const raiserIdentity = await joinedParticipantIdentity(page);
@@ -561,7 +561,7 @@ for (const integration of INTEGRATIONS) {
 				await openMeeting(observerPage, roomId, { role: 'speaker', name: 'Observer' });
 				await expectEvent(observerPage, EmbeddedEventName.JOINED);
 
-				await participantHandRaiseCommand(page);
+				await participantRaiseHandCommand(page);
 
 				const raised = participantHandChangedLocator(page, raiserIdentity, true);
 				await expect(raised).toHaveCount(1, { timeout: 15_000 });
@@ -572,7 +572,7 @@ for (const integration of INTEGRATIONS) {
 				});
 				await expect(meetLocator(page, integration, '#raise-hand-button')).toHaveClass(/active/);
 
-				await participantHandLowerCommand(page);
+				await participantLowerHandCommand(page);
 
 				const lowered = participantHandChangedLocator(page, raiserIdentity, false);
 				await expect(lowered).toHaveCount(1, { timeout: 15_000 });
@@ -595,12 +595,12 @@ for (const integration of INTEGRATIONS) {
 				await openMeeting(speakerPage, roomId, { role: 'speaker', name: 'Speaker' });
 				const speakerIdentity = await joinedParticipantIdentity(speakerPage);
 
-				await participantHandRaiseCommand(speakerPage);
+				await participantRaiseHandCommand(speakerPage);
 				await expect(participantHandChangedLocator(page, speakerIdentity, true)).toHaveCount(1, {
 					timeout: 15_000
 				});
 
-				await participantHandLowerCommand(page, speakerIdentity);
+				await participantLowerHandCommand(page, speakerIdentity);
 
 				const lowered = participantHandChangedLocator(speakerPage, speakerIdentity, false);
 				await expect(lowered).toHaveCount(1, { timeout: 15_000 });
@@ -612,7 +612,7 @@ for (const integration of INTEGRATIONS) {
 				await speakerContext.close();
 			});
 
-			test('should not lower another participant hand for a speaker who lacks participantHandLower', async ({
+			test('should not lower another participant hand for a speaker who lacks participantLowerHand', async ({
 				page,
 				browser
 			}) => {
@@ -624,14 +624,14 @@ for (const integration of INTEGRATIONS) {
 				await openMeeting(targetPage, roomId, { role: 'speaker', name: 'Target' });
 				const targetIdentity = await joinedParticipantIdentity(targetPage);
 
-				await participantHandRaiseCommand(targetPage);
+				await participantRaiseHandCommand(targetPage);
 				await expect(participantHandChangedLocator(page, targetIdentity, true)).toHaveCount(1, {
 					timeout: 15_000
 				});
 
-				await participantHandLowerCommand(page, targetIdentity);
+				await participantLowerHandCommand(page, targetIdentity);
 				// The actor's own hand is the round trip the rejected command never made.
-				await participantHandRaiseCommand(page);
+				await participantRaiseHandCommand(page);
 				await expect(participantHandChangedLocator(page, actorIdentity, true)).toHaveCount(1, {
 					timeout: 15_000
 				});
@@ -653,7 +653,7 @@ for (const integration of INTEGRATIONS) {
 					const speakerPage = await context.newPage();
 					await openMeeting(speakerPage, roomId, { role: 'speaker', name });
 					identities.push(await joinedParticipantIdentity(speakerPage));
-					await participantHandRaiseCommand(speakerPage);
+					await participantRaiseHandCommand(speakerPage);
 					contexts.push(context);
 				}
 
@@ -663,7 +663,7 @@ for (const integration of INTEGRATIONS) {
 					});
 				}
 
-				await participantHandLowerAllCommand(page);
+				await participantLowerAllHandsCommand(page);
 
 				for (const identity of identities) {
 					const lowered = participantHandChangedLocator(page, identity, false);
@@ -677,7 +677,7 @@ for (const integration of INTEGRATIONS) {
 			});
 		});
 
-		test.describe('PARTICIPANT_REACTION_SEND Command', () => {
+		test.describe('PARTICIPANT_SEND_REACTION Command', () => {
 			test('should send a reaction, telling everyone who sent it', async ({ page, browser }) => {
 				await openMeeting(page, roomId, { integration, role: 'speaker', name: 'Reactor' });
 				const reactorIdentity = await joinedParticipantIdentity(page);
@@ -687,7 +687,7 @@ for (const integration of INTEGRATIONS) {
 				await openMeeting(observerPage, roomId, { role: 'speaker', name: 'Observer' });
 				await expectEvent(observerPage, EmbeddedEventName.JOINED);
 
-				await participantReactionSendCommand(page, MeetReaction.CLAPPING_HANDS);
+				await participantSendReactionCommand(page, MeetReaction.CLAPPING_HANDS);
 
 				const sent = participantReactionSentLocator(page, reactorIdentity, MeetReaction.CLAPPING_HANDS);
 				await expect(sent).toHaveCount(1, { timeout: 15_000 });

@@ -6,7 +6,7 @@ import { MeetingStateService } from './meeting-state.service';
 
 /**
  * The local participant's side of the raise hand feature: their own hand, and the hands a holder of
- * `participantHandLower` may lower. No state is kept here: the server writes it into each participant's LiveKit
+ * `participantLowerHand` may lower. No state is kept here: the server writes it into each participant's LiveKit
  * attributes, which every client renders from.
  */
 @Service()

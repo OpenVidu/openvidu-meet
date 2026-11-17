@@ -1,13 +1,13 @@
 /meetings/{roomId}/reactions:
     post:
-        operationId: participantReactionSend
+        operationId: participantSendReaction
         summary: Send a reaction
         description: >
             Shows a reaction of the participant the room member token belongs to on their video and in the
             participants panel of everyone in the meeting, them included, for a few seconds. Nothing is
             stored: a participant joining later never sees it.
 
-            Requires the `participantReactionSend` permission. A room whose `reactions.enabled` config is
+            Requires the `participantSendReaction` permission. A room whose `reactions.enabled` config is
             `false` rejects every reaction with a `403`, and a room without a meeting running answers `404`.
 
         tags:

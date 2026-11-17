@@ -81,7 +81,7 @@ describe('Meetings API Tests', () => {
 			const raise = await updateParticipantHand(
 				roomData.room.roomId,
 				alice.identity,
-				{ raised: true },
+				{ handRaised: true },
 				alice.token
 			);
 			expect(raise.status).toBe(200);
@@ -104,7 +104,7 @@ describe('Meetings API Tests', () => {
 			const lower = await updateParticipantHand(
 				roomData.room.roomId,
 				alice.identity,
-				{ raised: false },
+				{ handRaised: false },
 				alice.token
 			);
 			expect(lower.status).toBe(200);
@@ -126,13 +126,13 @@ describe('Meetings API Tests', () => {
 			const alice = await joinSpeaker('Alice');
 			const webhookSpy = spyOnHandWebhook();
 
-			await updateParticipantHand(roomData.room.roomId, alice.identity, { raised: true }, alice.token);
+			await updateParticipantHand(roomData.room.roomId, alice.identity, { handRaised: true }, alice.token);
 			const { handRaiseDate } = await handOf(alice);
 
 			const again = await updateParticipantHand(
 				roomData.room.roomId,
 				alice.identity,
-				{ raised: true },
+				{ handRaised: true },
 				alice.token
 			);
 			expect(again.status).toBe(200);
@@ -146,7 +146,7 @@ describe('Meetings API Tests', () => {
 
 			const responses = await Promise.all(
 				[1, 2].map(() =>
-					updateParticipantHand(roomData.room.roomId, alice.identity, { raised: true }, alice.token)
+					updateParticipantHand(roomData.room.roomId, alice.identity, { handRaised: true }, alice.token)
 				)
 			);
 			expect(responses.map((response) => response.status)).toEqual([200, 200]);
@@ -157,12 +157,12 @@ describe('Meetings API Tests', () => {
 		it("should let a moderator lower another participant's hand, attributed to the moderator", async () => {
 			const alice = await joinSpeaker('Alice');
 			const webhookSpy = spyOnHandWebhook();
-			await updateParticipantHand(roomData.room.roomId, alice.identity, { raised: true }, alice.token);
+			await updateParticipantHand(roomData.room.roomId, alice.identity, { handRaised: true }, alice.token);
 
 			const response = await updateParticipantHand(
 				roomData.room.roomId,
 				alice.identity,
-				{ raised: false },
+				{ handRaised: false },
 				roomData.moderatorToken
 			);
 			expect(response.status).toBe(200);
@@ -175,15 +175,15 @@ describe('Meetings API Tests', () => {
 			);
 		});
 
-		it("should fail with 403 when the caller lowers another participant's hand without participantHandLower", async () => {
+		it("should fail with 403 when the caller lowers another participant's hand without participantLowerHand", async () => {
 			const alice = await joinSpeaker('Alice');
 			const bob = await joinSpeaker('Bob');
-			await updateParticipantHand(roomData.room.roomId, alice.identity, { raised: true }, alice.token);
+			await updateParticipantHand(roomData.room.roomId, alice.identity, { handRaised: true }, alice.token);
 
 			const response = await updateParticipantHand(
 				roomData.room.roomId,
 				alice.identity,
-				{ raised: false },
+				{ handRaised: false },
 				bob.token
 			);
 			expectMeetError(response, errorInsufficientPermissions());
@@ -196,7 +196,7 @@ describe('Meetings API Tests', () => {
 			const response = await updateParticipantHand(
 				roomData.room.roomId,
 				alice.identity,
-				{ raised: true },
+				{ handRaised: true },
 				roomData.moderatorToken
 			);
 			expect(response.status).toBe(409);
@@ -204,14 +204,14 @@ describe('Meetings API Tests', () => {
 			expect((await handOf(alice)).handRaised).toBe(false);
 		});
 
-		it("should reject with 409 a participant without participantHandLower raising another participant's hand", async () => {
+		it("should reject with 409 a participant without participantLowerHand raising another participant's hand", async () => {
 			const alice = await joinSpeaker('Alice');
 			const bob = await joinSpeaker('Bob');
 
 			const response = await updateParticipantHand(
 				roomData.room.roomId,
 				alice.identity,
-				{ raised: true },
+				{ handRaised: true },
 				bob.token
 			);
 			expectMeetError(response, errorHandNotOwn(alice.identity, roomData.room.roomId));
@@ -225,7 +225,7 @@ describe('Meetings API Tests', () => {
 			const response = await updateParticipantHand(
 				roomData.room.roomId,
 				alice.identity,
-				{ raised: true },
+				{ handRaised: true },
 				otherRoom.moderatorToken
 			);
 			expectMeetError(response, errorInsufficientPermissions());
@@ -238,7 +238,7 @@ describe('Meetings API Tests', () => {
 			const response = await updateParticipantHand(
 				emptyRoom.room.roomId,
 				'SOMEONE',
-				{ raised: true },
+				{ handRaised: true },
 				emptyRoom.moderatorToken
 			);
 			expect(response.status).toBe(404);
@@ -251,7 +251,7 @@ describe('Meetings API Tests', () => {
 			const response = await updateParticipantHand(
 				roomData.room.roomId,
 				alice.identity,
-				{ raised: true },
+				{ handRaised: true },
 				alice.token
 			);
 			expect(response.status).toBe(403);
@@ -265,7 +265,7 @@ describe('Meetings API Tests', () => {
 			const response = await updateParticipantHand(
 				roomData.room.roomId,
 				alice.identity,
-				{ raised: true },
+				{ handRaised: true },
 				alice.token
 			);
 			expect(response.status).toBe(404);
@@ -276,33 +276,33 @@ describe('Meetings API Tests', () => {
 			const response = await updateParticipantHand(
 				roomData.room.roomId,
 				'NON_EXISTENT_PARTICIPANT',
-				{ raised: false },
+				{ handRaised: false },
 				roomData.moderatorToken
 			);
 			expect(response.status).toBe(404);
 			expect(response.body.error).toBe('Participant Error');
 		});
 
-		it('should reject a body without a boolean raised', async () => {
+		it('should reject a body without a boolean handRaised', async () => {
 			const alice = await joinSpeaker('Alice');
 
 			const response = await updateParticipantHand(
 				roomData.room.roomId,
 				alice.identity,
-				{ raised: 'yes' } as never,
+				{ handRaised: 'yes' } as never,
 				alice.token
 			);
-			expectValidationError(response, 'raised', 'Expected boolean, received string');
+			expectValidationError(response, 'handRaised', 'Expected boolean, received string');
 		});
 
 		it('should lower every raised hand as a moderator action', async () => {
 			const alice = await joinSpeaker('Alice');
 			const bob = await joinSpeaker('Bob');
-			await updateParticipantHand(roomData.room.roomId, alice.identity, { raised: true }, alice.token);
-			await updateParticipantHand(roomData.room.roomId, bob.identity, { raised: true }, bob.token);
+			await updateParticipantHand(roomData.room.roomId, alice.identity, { handRaised: true }, alice.token);
+			await updateParticipantHand(roomData.room.roomId, bob.identity, { handRaised: true }, bob.token);
 			const webhookSpy = spyOnHandWebhook();
 
-			const response = await lowerAllHands(roomData.room.roomId, { raised: false }, roomData.moderatorToken);
+			const response = await lowerAllHands(roomData.room.roomId, { handRaised: false }, roomData.moderatorToken);
 			expect(response.status).toBe(200);
 			expect((await handOf(alice)).handRaised).toBe(false);
 			expect((await handOf(bob)).handRaised).toBe(false);
@@ -316,12 +316,12 @@ describe('Meetings API Tests', () => {
 		});
 
 		it('should reject raising every hand', async () => {
-			const response = await lowerAllHands(roomData.room.roomId, { raised: true }, roomData.moderatorToken);
-			expectValidationError(response, 'raised', "Invalid enum value. Expected 'false', received 'true'");
+			const response = await lowerAllHands(roomData.room.roomId, { handRaised: true }, roomData.moderatorToken);
+			expectValidationError(response, 'handRaised', "Invalid enum value. Expected 'false', received 'true'");
 		});
 
-		it('should fail with 403 when lowering every hand without participantHandLower', async () => {
-			const response = await lowerAllHands(roomData.room.roomId, { raised: false }, roomData.speakerToken);
+		it('should fail with 403 when lowering every hand without participantLowerHand', async () => {
+			const response = await lowerAllHands(roomData.room.roomId, { handRaised: false }, roomData.speakerToken);
 			expectMeetError(response, errorInsufficientPermissions());
 		});
 	});

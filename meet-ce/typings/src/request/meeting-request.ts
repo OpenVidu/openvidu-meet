@@ -25,17 +25,17 @@ export interface MeetParticipantMuteOptions {
  * `PUT /meetings/{roomId}/participants/hand`.
  *
  * A participant raises and lowers their own hand freely. Lowering another participant's hand
- * requires the `participantHandLower` permission, and nobody raises a hand but its owner, so a
+ * requires the `participantLowerHand` permission, and nobody raises a hand but its owner, so a
  * foreign target and the bulk twin accept `false` only.
  */
 export interface MeetParticipantHandOptions {
 	/** `true` raises the hand, `false` lowers it. */
-	raised: boolean;
+	handRaised: boolean;
 }
 
 /**
  * The reaction a participant sends, as carried by the internal
- * `POST /meetings/{roomId}/reactions`, which the meeting and the `participantReactionSend`
+ * `POST /meetings/{roomId}/reactions`, which the meeting and the `participantSendReaction`
  * embedding command call on the participant's behalf.
  */
 export interface MeetParticipantReactionOptions {

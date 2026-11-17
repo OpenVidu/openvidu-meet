@@ -41,7 +41,7 @@ describe('MeetingRaisedHandsStripComponent', () => {
 					provide: RoomMemberContextService,
 					useValue: {
 						hasPermission: (permission: keyof MeetRoomMemberPermissions) =>
-							permission === 'participantHandLower' && granted()
+							permission === 'participantLowerHand' && granted()
 					}
 				},
 				{ provide: ParticipantService, useValue: { raisedHands } },
@@ -69,7 +69,7 @@ describe('MeetingRaisedHandsStripComponent', () => {
 		expect(fixture.componentInstance.raisedHandCount()).toBe(2);
 	});
 
-	it('stays out of the panel without participantHandLower', () => {
+	it('stays out of the panel without participantLowerHand', () => {
 		granted.set(false);
 		raisedHands.set([hand(false)]);
 

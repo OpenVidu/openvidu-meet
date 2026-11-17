@@ -355,20 +355,20 @@ export class App {
 		return this.commandService.recordingStop();
 	}
 
-	participantHandRaise(): Promise<void> {
-		return this.commandService.participantHandRaise();
+	participantRaiseHand(): Promise<void> {
+		return this.commandService.participantRaiseHand();
 	}
 
-	participantHandLower(participantIdentity?: string): Promise<void> {
-		return this.commandService.participantHandLower(participantIdentity);
+	participantLowerHand(participantIdentity?: string): Promise<void> {
+		return this.commandService.participantLowerHand(participantIdentity);
 	}
 
-	participantHandLowerAll(): Promise<void> {
-		return this.commandService.participantHandLowerAll();
+	participantLowerAllHands(): Promise<void> {
+		return this.commandService.participantLowerAllHands();
 	}
 
-	participantReactionSend(reaction: MeetReaction): Promise<void> {
-		return this.commandService.participantReactionSend(reaction);
+	participantSendReaction(reaction: MeetReaction): Promise<void> {
+		return this.commandService.participantSendReaction(reaction);
 	}
 
 	broadcastStart(options?: MeetBroadcastStartOptions): Promise<void> {

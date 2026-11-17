@@ -145,11 +145,11 @@
           "LABEL": "参加者をミュート",
           "DESCRIPTION": "他の参加者のマイク、カメラ、画面共有をオフにすることを許可します"
         },
-        "participantHandLower": {
+        "participantLowerHand": {
           "LABEL": "手を下ろす",
           "DESCRIPTION": "他の参加者の挙手を、個別またはまとめて下ろせるようにします"
         },
-        "participantReactionSend": {
+        "participantSendReaction": {
           "LABEL": "リアクションを送る",
           "DESCRIPTION": "全員に数秒間表示されるリアクションを送れるようにします"
         },

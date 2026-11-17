@@ -1,9 +1,18 @@
 description: >
-    Conflict: the broadcast is already stopping
+    Conflict, told apart by `error`: the broadcast is already being stopped (`broadcast_ending`), or another broadcast
+    request of the meeting was still being applied (`broadcast_busy`): retry it
 content:
     application/json:
         schema:
             $ref: '../../../shared/schemas/error.yaml'
-        example:
-            error: 'Broadcast Error'
-            message: "Broadcast 'room-123--Qm4tZ8vR1c' is already stopped"
+        examples:
+            broadcast_ending:
+                summary: The broadcast is already being stopped
+                value:
+                    error: broadcast_ending
+                    message: "Broadcast 'room-123--Qm4tZ8vR1c' is already being stopped"
+            broadcast_busy:
+                summary: Another broadcast request of the meeting was still being applied
+                value:
+                    error: broadcast_busy
+                    message: "The broadcast of room 'room-123' stayed busy with another change"

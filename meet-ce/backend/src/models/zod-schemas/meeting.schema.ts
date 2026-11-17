@@ -20,12 +20,12 @@ export const MuteParticipantMediaReqSchema = z
 	});
 
 export const UpdateParticipantHandReqSchema: z.ZodType<MeetParticipantHandOptions> = z.object({
-	raised: z.boolean()
+	handRaised: z.boolean()
 });
 
 // Nobody raises a hand but its owner, so the bulk form only lowers.
 export const LowerAllHandsReqSchema: z.ZodType<MeetParticipantHandOptions> = z.object({
-	raised: z.literal(false)
+	handRaised: z.literal(false)
 });
 
 export const SendParticipantReactionReqSchema: z.ZodType<MeetParticipantReactionOptions> = z.object({
