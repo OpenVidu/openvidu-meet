@@ -102,10 +102,9 @@ describe('Recording API Tests', () => {
 
 			const recordingRepository = container.get(RecordingRepository);
 
-			const recSecrets = await recordingRepository.findAccessSecretsByRecordingId(recordingId);
-			expect(recSecrets).toBeDefined();
-			expect(Object.keys(recSecrets!).sort()).toEqual(['private', 'privatePlay', 'public', 'publicPlay']);
-			expect(new Set(Object.values(recSecrets!)).size).toBe(4);
+			const { accessSecrets } = (await recordingRepository.findAccessByRecordingId(recordingId))!;
+			expect(Object.keys(accessSecrets).sort()).toEqual(['private', 'privatePlay', 'public', 'publicPlay']);
+			expect(new Set(Object.values(accessSecrets)).size).toBe(4);
 
 			const stopResponse = await stopRecording(recordingId);
 			expectValidStopRecordingResponse(stopResponse, recordingId, room.roomId, room.roomName);

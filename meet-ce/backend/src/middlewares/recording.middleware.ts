@@ -85,10 +85,24 @@ export const setupRecordingAuthentication = (permission: 'recordingPlay' | 'reco
 				const recordingId = req.params.recordingId as string;
 
 				const recordingService = container.get(RecordingService);
-				const { scope, download } = await recordingService.getRecordingSecretGrant(
-					recordingId,
-					recordingSecret
-				);
+
+				const readRoomAccess = async () => {
+					const { roomId } = RecordingHelper.extractInfoFromRecordingId(recordingId);
+					const { access } = await container.get(RoomService).getMeetRoom(roomId, ['access']);
+					return { roomId, access };
+				};
+
+				// Only a public secret needs the room, but its read does not depend on the secret's, so both run
+				// together; the room's error is thrown only once the secret has passed.
+				const [secretResult, roomResult] = await Promise.allSettled([
+					recordingService.getRecordingSecretGrant(recordingId, recordingSecret),
+					readRoomAccess()
+				]);
+
+				if (secretResult.status === 'rejected') throw secretResult.reason;
+
+				const { scope, download, recording } = secretResult.value;
+				res.locals.recording = recording;
 
 				if (permission === 'recordingDownload' && !download) {
 					return rejectRequestFromMeetError(res, errorInsufficientPermissions());
@@ -96,9 +110,9 @@ export const setupRecordingAuthentication = (permission: 'recordingPlay' | 'reco
 
 				if (scope === 'public') {
 					// Public recording secret is only valid if anonymous recording access is enabled in the room
-					const { roomId } = RecordingHelper.extractInfoFromRecordingId(recordingId);
-					const roomService = container.get(RoomService);
-					const { access } = await roomService.getMeetRoom(roomId, ['access']);
+					if (roomResult.status === 'rejected') throw roomResult.reason;
+
+					const { roomId, access } = roomResult.value;
 
 					if (!access.anonymous.recording.enabled) {
 						return rejectRequestFromMeetError(res, errorAnonymousAccessDisabled(roomId, 'recording'));
@@ -211,7 +225,11 @@ export const authorizeRecordingAccess = (
 		try {
 			// Check recording existence and permissions based on the authenticated context
 			const recordingService = container.get(RecordingService);
-			await recordingService.validateRecordingAccess(recordingId, permission, ['roomId']);
+			res.locals.recording = await recordingService.validateRecordingAccess(recordingId, permission, [
+				'roomId',
+				'status',
+				'filename'
+			]);
 			return next();
 		} catch (error) {
 			return handleError(res, error, 'checking recording permissions');

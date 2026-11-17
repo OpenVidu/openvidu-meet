@@ -1,4 +1,4 @@
-import type { MeetRecordingField } from '@openvidu-meet/typings';
+import type { MeetRecordingField, MeetRecordingInfo } from '@openvidu-meet/typings';
 import type { Request, Response } from 'express';
 import type { Readable } from 'stream';
 import type { z } from 'zod';
@@ -151,14 +151,12 @@ const streamRecordingMedia = async (req: Request, res: Response, asAttachment: b
 		logger.debug(`Streaming recording '${recordingId}'${asAttachment ? ' as attachment' : ''}`);
 		const recordingService = container.get(RecordingService);
 
-		let contentDisposition: string | undefined;
+		const { status, filename } = res.locals.recording as Pick<MeetRecordingInfo, 'status' | 'filename'>;
+		const contentDisposition = asAttachment
+			? `attachment; filename="${filename || `${recordingId}.mp4`}"`
+			: undefined;
 
-		if (asAttachment) {
-			const { filename } = await recordingService.getRecording(recordingId, ['filename']);
-			contentDisposition = `attachment; filename="${filename || `${recordingId}.mp4`}"`;
-		}
-
-		const result = await recordingService.getRecordingAsStream(recordingId, range);
+		const result = await recordingService.getRecordingAsStream(recordingId, status, range);
 		const { fileSize, start, end } = result;
 		fileStream = result.fileStream;
 

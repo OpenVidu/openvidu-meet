@@ -46,7 +46,7 @@ import {
 	errorRoomNotFound,
 	OpenViduMeetError
 } from '../models/error.model.js';
-import type { MeetRecordingAccessSecrets } from '../models/mongoose-schemas/recording.schema.js';
+import type { MeetRecordingAccess } from '../models/mongoose-schemas/recording.schema.js';
 import type { RedisLock } from '../models/redis-lock.model.js';
 import { RecordingRepository } from '../repositories/recording.repository.js';
 import { RoomRepository } from '../repositories/room.repository.js';
@@ -641,43 +641,47 @@ export class RecordingService {
 	}
 
 	/**
-	 * Retrieves the access secrets for a specific recording.
+	 * Retrieves the access secrets of a specific recording, with its status and filename.
 	 *
 	 * @param recordingId - The unique identifier of the recording
-	 * @returns A promise that resolves to the recording's four access secrets
 	 * @throws Will throw an error if the recording is not found
 	 */
-	protected async getRecordingAccessSecrets(recordingId: string): Promise<MeetRecordingAccessSecrets> {
-		const recordingSecrets = await this.recordingRepository.findAccessSecretsByRecordingId(recordingId);
+	protected async getRecordingAccess(recordingId: string): Promise<MeetRecordingAccess> {
+		const recordingAccess = await this.recordingRepository.findAccessByRecordingId(recordingId);
 
-		if (!recordingSecrets) {
+		if (!recordingAccess) {
 			throw errorRecordingNotFound(recordingId);
 		}
 
-		return recordingSecrets;
+		return recordingAccess;
 	}
 
 	/**
-	 * Tells what a recording secret grants: the scope of the link (public or private) and whether it
-	 * downloads the recording or only plays it.
+	 * Tells what a recording secret grants: the scope of the link (public or private), whether it
+	 * downloads the recording or only plays it, and the status and filename of the recording it read.
 	 *
 	 * @throws Will throw an error if the recording is not found or the secret is not one of its secrets
 	 */
 	async getRecordingSecretGrant(
 		recordingId: string,
 		recordingSecret: string
-	): Promise<{ scope: 'public' | 'private'; download: boolean }> {
-		const secrets = await this.getRecordingAccessSecrets(recordingId);
+	): Promise<{
+		scope: 'public' | 'private';
+		download: boolean;
+		recording: Pick<MeetRecordingInfo, 'status' | 'filename'>;
+	}> {
+		const { accessSecrets, status, filename } = await this.getRecordingAccess(recordingId);
+		const recording = { status, filename };
 
 		switch (recordingSecret) {
-			case secrets.public:
-				return { scope: 'public', download: true };
-			case secrets.publicPlay:
-				return { scope: 'public', download: false };
-			case secrets.private:
-				return { scope: 'private', download: true };
-			case secrets.privatePlay:
-				return { scope: 'private', download: false };
+			case accessSecrets.public:
+				return { scope: 'public', download: true, recording };
+			case accessSecrets.publicPlay:
+				return { scope: 'public', download: false, recording };
+			case accessSecrets.private:
+				return { scope: 'private', download: true, recording };
+			case accessSecrets.privatePlay:
+				return { scope: 'private', download: false, recording };
 			default:
 				throw errorInvalidRecordingSecret(recordingId);
 		}
@@ -692,7 +696,7 @@ export class RecordingService {
 	 */
 	async generateRecordingUrl(recordingId: string, privateAccess: boolean): Promise<string> {
 		const { roomId } = RecordingHelper.extractInfoFromRecordingId(recordingId);
-		const recordingSecrets = await this.getRecordingAccessSecrets(recordingId);
+		const { accessSecrets } = await this.getRecordingAccess(recordingId);
 		const { recordingDownload } = await this.roomAccessService.getAuthenticatedRoomMemberPermissions(roomId);
 
 		if (!privateAccess) {
@@ -704,7 +708,7 @@ export class RecordingService {
 		}
 
 		const scope = privateAccess ? 'private' : 'public';
-		const secret = recordingSecrets[recordingDownload ? scope : (`${scope}Play` as const)];
+		const secret = accessSecrets[recordingDownload ? scope : (`${scope}Play` as const)];
 		return `${getBaseUrl()}/recording/${recordingId}?recordingSecret=${secret}`;
 	}
 
@@ -741,13 +745,12 @@ export class RecordingService {
 
 	async getRecordingAsStream(
 		recordingId: string,
+		status: MeetRecordingStatus,
 		rangeHeader?: string
 	): Promise<{ fileSize: number | undefined; fileStream: Readable; start?: number; end?: number }> {
 		const DEFAULT_CHUNK_SIZE = 5 * 1024 * 1024; // 5MB
 
 		// Ensure the recording is streamable
-		const { status } = await this.getRecording(recordingId, ['status']);
-
 		if (status !== MeetRecordingStatus.COMPLETE) {
 			throw errorRecordingNotStreamable(recordingId);
 		}

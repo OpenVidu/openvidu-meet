@@ -705,6 +705,131 @@ describe('RecordingService.stopRecording', () => {
 	});
 });
 
+describe('RecordingService.getRecordingAsStream', () => {
+	const buildStreamService = () => {
+		const mediaRequests: Array<{ recordingId: string; range?: { start: number; end: number } }> = [];
+		const reads: string[] = [];
+		const recordings = {
+			findByRecordingId: async (recordingId: string) => {
+				reads.push(recordingId);
+				return { recordingId };
+			}
+		};
+		const blobStorage = {
+			getRecordingMedia: async (recordingId: string, range?: { start: number; end: number }) => {
+				mediaRequests.push({ recordingId, range });
+				return { fileSize: 100_000_000, fileStream: Readable.from([]) };
+			}
+		};
+		const service = new RecordingService(
+			...([
+				new FakeLiveKitService([]),
+				new FakeMutexService(),
+				recordings,
+				{},
+				blobStorage,
+				{},
+				{},
+				{},
+				noopLogger
+			] as unknown as ConstructorParameters<typeof RecordingService>)
+		);
+		return { service, mediaRequests, reads };
+	};
+
+	it('streams from the status it is given without reading the recording again', async () => {
+		const { service, mediaRequests, reads } = buildStreamService();
+
+		await service.getRecordingAsStream(RECORDING_ID, MeetRecordingStatus.COMPLETE);
+
+		expect(reads).toEqual([]);
+		expect(mediaRequests).toEqual([{ recordingId: RECORDING_ID, range: undefined }]);
+	});
+
+	it.each([
+		MeetRecordingStatus.STARTING,
+		MeetRecordingStatus.ACTIVE,
+		MeetRecordingStatus.ENDING,
+		MeetRecordingStatus.FAILED,
+		MeetRecordingStatus.ABORTED
+	])('answers 409 for a recording that is %s without touching the storage', async (status) => {
+		const { service, mediaRequests } = buildStreamService();
+
+		await expect(service.getRecordingAsStream(RECORDING_ID, status)).rejects.toMatchObject({ statusCode: 409 });
+		expect(mediaRequests).toEqual([]);
+	});
+
+	it('cuts an open-ended range to a 5 MB chunk and keeps a closed one', async () => {
+		const { service, mediaRequests } = buildStreamService();
+
+		await service.getRecordingAsStream(RECORDING_ID, MeetRecordingStatus.COMPLETE, 'bytes=1000-');
+		await service.getRecordingAsStream(RECORDING_ID, MeetRecordingStatus.COMPLETE, 'bytes=1000-1999');
+
+		expect(mediaRequests.map(({ range }) => range)).toEqual([
+			{ start: 1000, end: 1000 + 5 * 1024 * 1024 - 1 },
+			{ start: 1000, end: 1999 }
+		]);
+	});
+});
+
+describe('RecordingService.getRecordingSecretGrant', () => {
+	const accessSecrets = { public: 'pub', private: 'priv', publicPlay: 'pubPlay', privatePlay: 'privPlay' };
+
+	const buildGrantService = (found = true) => {
+		const reads: string[] = [];
+		const recordings = {
+			findAccessByRecordingId: async (recordingId: string) => {
+				reads.push(recordingId);
+				return found
+					? { accessSecrets, status: MeetRecordingStatus.COMPLETE, filename: 'room-1--uid1.mp4' }
+					: null;
+			}
+		};
+		const service = new RecordingService(
+			...([
+				new FakeLiveKitService([]),
+				new FakeMutexService(),
+				recordings,
+				{},
+				{},
+				{},
+				{},
+				{},
+				noopLogger
+			] as unknown as ConstructorParameters<typeof RecordingService>)
+		);
+		return { service, reads };
+	};
+
+	it.each([
+		['pub', 'public', true],
+		['pubPlay', 'public', false],
+		['priv', 'private', true],
+		['privPlay', 'private', false]
+	])(
+		'tells what the %s secret grants and returns the status and filename from the same read',
+		async (secret, scope, download) => {
+			const { service, reads } = buildGrantService();
+
+			await expect(service.getRecordingSecretGrant(RECORDING_ID, secret)).resolves.toEqual({
+				scope,
+				download,
+				recording: { status: MeetRecordingStatus.COMPLETE, filename: 'room-1--uid1.mp4' }
+			});
+			expect(reads).toEqual([RECORDING_ID]);
+		}
+	);
+
+	it('answers 400 to a secret the recording does not have and 404 to a recording that does not exist', async () => {
+		await expect(buildGrantService().service.getRecordingSecretGrant(RECORDING_ID, 'nope')).rejects.toMatchObject({
+			statusCode: 400
+		});
+		await expect(
+			buildGrantService(false).service.getRecordingSecretGrant(RECORDING_ID, 'pub')
+		).rejects.toMatchObject({ statusCode: 404 });
+	});
+});
+
 describe('RecordingService.writeRecordingsZip', () => {
 	const recordings = Array.from({ length: 60 }, (_, index) => ({
 		recordingId: `room-1--EG_${index}--abc`,
