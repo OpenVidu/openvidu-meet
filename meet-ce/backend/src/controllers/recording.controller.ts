@@ -80,17 +80,14 @@ export const bulkDeleteRecordings = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const recordingService = container.get(RecordingService);
 	const { recordingIds } = res.locals.validatedQuery as { recordingIds: string[] };
-	const bulkValidation = res.locals.bulkValidation;
+	const { accessible = [], failed: preFailed = [] } = res.locals.bulkRecordings ?? {};
 
 	logger.info(`Deleting recordings: ${String(recordingIds)}`);
 
 	try {
-		const recordingIdsToProcess = bulkValidation?.processableIds ?? [];
-		const preFailed = (bulkValidation?.failed as { recordingId: string; error: string }[]) ?? [];
-
 		const { deleted, failed } =
-			recordingIdsToProcess.length > 0
-				? await recordingService.bulkDeleteRecordings(recordingIdsToProcess)
+			accessible.length > 0
+				? await recordingService.bulkDeleteRecordings(accessible)
 				: { deleted: [], failed: [] };
 		const allFailed = [...preFailed, ...failed];
 
@@ -286,12 +283,9 @@ export const downloadRecordingsZip = async (req: Request, res: Response) => {
 	const recordingService = container.get(RecordingService);
 
 	const { recordingIds } = res.locals.validatedQuery as { recordingIds: string[] };
-	const bulkValidation = res.locals.bulkValidation;
+	const { accessible = [], failed = [] } = res.locals.bulkRecordings ?? {};
 
 	logger.info(`Preparing ZIP download for recordings: ${String(recordingIds)}`);
-
-	const recordingIdsToProccess = bulkValidation?.processableIds ?? [];
-	const failed = (bulkValidation?.failed as { recordingId: string; error: string }[]) ?? [];
 
 	failed.forEach((failure) => {
 		logger.warn(
@@ -299,7 +293,7 @@ export const downloadRecordingsZip = async (req: Request, res: Response) => {
 		);
 	});
 
-	if (recordingIdsToProccess.length === 0) {
+	if (accessible.length === 0) {
 		handleError(res, errorRecordingsZipEmpty(), 'downloading recordings ZIP');
 		return;
 	}
@@ -311,7 +305,7 @@ export const downloadRecordingsZip = async (req: Request, res: Response) => {
 	res.on('close', () => download.abort());
 
 	try {
-		await recordingService.writeRecordingsZip(recordingIdsToProccess, res, download.signal);
+		await recordingService.writeRecordingsZip(accessible, res, download.signal);
 	} catch (error) {
 		if (!download.signal.aborted) {
 			logger.error('Error writing recordings ZIP', error);

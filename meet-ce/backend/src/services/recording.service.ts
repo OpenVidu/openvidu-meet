@@ -69,6 +69,17 @@ import { RoomAccessService } from './room-access.service.js';
 import { BlobStorageService } from './storage/blob-storage.service.js';
 import { WebhookDispatcherService } from './webhook-dispatcher.service.js';
 
+export const BULK_RECORDING_FIELDS = [
+	'recordingId',
+	'roomId',
+	'status',
+	'filename'
+] as const satisfies readonly MeetRecordingField[];
+
+export type BulkRecording = ProjectedRecording<typeof BULK_RECORDING_FIELDS>;
+
+export type BulkRecordingFailure = { recordingId: string; error: string };
+
 @injectable()
 export class RecordingService {
 	constructor(
@@ -357,89 +368,92 @@ export class RecordingService {
 	}
 
 	/**
-	 * Deletes multiple recordings in bulk from MongoDB and blob storage.
-	 * For each provided recordingId, the metadata and recording file are deleted (only if the status is stopped).
+	 * {@link validateRecordingAccess} for each of the given recordings, reading the recordings, and the rooms and
+	 * memberships behind them, at once.
 	 *
-	 * @param recordingIds Array of recording identifiers.
+	 * @param recordingIds The recording identifiers to validate.
+	 * @param permission The permission to check.
+	 * @returns The accessible recordings, in the order of the identifiers, and for each of the others why it is not.
+	 */
+	async validateRecordingsAccess(
+		recordingIds: readonly string[],
+		permission: keyof MeetRoomMemberPermissions
+	): Promise<{ accessible: BulkRecording[]; failed: BulkRecordingFailure[] }> {
+		const stored = await this.recordingRepository.findByRecordingIds(recordingIds, BULK_RECORDING_FIELDS);
+		const recordingsById = new Map(stored.map((recording) => [recording.recordingId, recording]));
+		const roomIds = [...new Set(stored.map(({ roomId }) => roomId).filter(Boolean))];
+		const permissionsByRoom = await this.roomAccessService.getAuthenticatedRoomMemberPermissionsInRooms(roomIds);
+
+		const accessible: BulkRecording[] = [];
+		const failed: BulkRecordingFailure[] = [];
+
+		for (const recordingId of recordingIds) {
+			const recording = recordingsById.get(recordingId);
+			const roomPermissions = recording && permissionsByRoom.get(recording.roomId);
+			let refusal: OpenViduMeetError | undefined;
+
+			if (!recording?.roomId) {
+				refusal = errorRecordingNotFound(recordingId);
+			} else if (!roomPermissions) {
+				refusal = errorRoomNotFound(recording.roomId);
+			} else if (!roomPermissions[permission]) {
+				this.logger.warn(`Insufficient permissions to access recording '${recordingId}'`);
+				refusal = errorInsufficientPermissions();
+			}
+
+			if (refusal) {
+				failed.push({ recordingId, error: refusal.message });
+			} else {
+				accessible.push(recording!);
+			}
+		}
+
+		return { accessible, failed };
+	}
+
+	/**
+	 * Deletes multiple recordings in bulk from MongoDB and blob storage.
+	 * For each provided recording, the metadata and recording file are deleted (only if the status is stopped).
+	 *
+	 * @param recordings The recordings, already read, to delete.
 	 * @returns An object containing:
 	 * - `deleted`: An array of successfully deleted recording IDs.
 	 * - `failed`: An array of objects containing recording IDs and error messages for those that could not be deleted.
 	 */
 	async bulkDeleteRecordings(
-		recordingIds: string[]
-	): Promise<{ deleted: string[]; failed: { recordingId: string; error: string }[] }> {
-		type BulkDeleteFailed = { recordingId: string; error: string };
-		const concurrency = INTERNAL_CONFIG.CONCURRENCY_BULK_DELETE_RECORDINGS;
+		recordings: readonly Pick<BulkRecording, 'recordingId' | 'status'>[]
+	): Promise<{ deleted: string[]; failed: BulkRecordingFailure[] }> {
+		const deleted: string[] = [];
+		const failed: BulkRecordingFailure[] = [];
 
-		const settledResults = await runConcurrently<
-			string,
-			{ ok: true; recordingId: string } | { ok: false; failed: BulkDeleteFailed }
-		>(
-			recordingIds,
-			async (recordingId) => {
-				try {
-					// Access validation is handled by HTTP middleware; service keeps business validation (deletable status).
-					const { status } = await this.getRecording(recordingId, ['status']);
-
-					// Check if the recording can be deleted (must be stopped)
-					if (!RecordingHelper.canBeDeleted(status)) {
-						throw errorRecordingNotStopped(recordingId);
-					}
-
-					return { ok: true, recordingId };
-				} catch (error) {
-					// Per-item failures are collected into the `failed` array and returned as an HTTP
-					// 400 payload, so they never reach handleError.
-					if (error instanceof OpenViduMeetError) {
-						this.logger.debug(`Recording '${recordingId}' cannot be deleted: ${error.message}`);
-						return { ok: false, failed: { recordingId, error: error.message } };
-					}
-
-					this.logger.error(`Unexpected error deleting recording '${recordingId}'`, error);
-					return { ok: false, failed: { recordingId, error: 'Unexpected error' } };
-				}
-			},
-			{ concurrency }
-		);
-
-		const validRecordingIds = new Set<string>();
-		const failedRecordings: BulkDeleteFailed[] = [];
-
-		settledResults.forEach((result) => {
-			if (result.status === 'fulfilled') {
-				if (result.value.ok) {
-					validRecordingIds.add(result.value.recordingId);
-				} else {
-					failedRecordings.push(result.value.failed);
-				}
+		for (const { recordingId, status } of recordings) {
+			if (RecordingHelper.canBeDeleted(status)) {
+				deleted.push(recordingId);
+			} else {
+				const { message } = errorRecordingNotStopped(recordingId);
+				this.logger.debug(`Recording '${recordingId}' cannot be deleted: ${message}`);
+				failed.push({ recordingId, error: message });
 			}
-		});
-
-		const deletedRecordings = Array.from(validRecordingIds);
-
-		if (validRecordingIds.size === 0) {
-			this.logger.debug(`No eligible recordings found for deletion`);
-			return { deleted: deletedRecordings, failed: failedRecordings };
 		}
 
-		const validRecordingIdsArray = Array.from(validRecordingIds);
+		if (deleted.length === 0) {
+			this.logger.debug(`No eligible recordings found for deletion`);
+			return { deleted, failed };
+		}
 
 		// Delete recordings metadata from MongoDB and media files from blob storage
 		try {
 			await Promise.all([
-				this.recordingRepository.deleteByRecordingIds(validRecordingIdsArray),
-				this.blobStorageService.deleteRecordingMediaBatch(validRecordingIdsArray)
+				this.recordingRepository.deleteByRecordingIds(deleted),
+				this.blobStorageService.deleteRecordingMediaBatch(deleted)
 			]);
-			this.logger.info(`Successfully deleted ${validRecordingIds.size} recordings`);
+			this.logger.info(`Successfully deleted ${deleted.length} recordings`);
 		} catch (error) {
 			this.logger.error(`Error performing bulk deletion`, error);
 			throw error;
 		}
 
-		return {
-			deleted: deletedRecordings,
-			failed: failedRecordings
-		};
+		return { deleted, failed };
 	}
 
 	/**
@@ -448,19 +462,23 @@ export class RecordingService {
 	 * destroys the stream being read and opens no other one. A recording that cannot be opened is left
 	 * out of the ZIP.
 	 */
-	async writeRecordingsZip(recordingIds: string[], output: Writable, signal: AbortSignal): Promise<void> {
+	async writeRecordingsZip(
+		recordings: readonly Pick<BulkRecording, 'recordingId' | 'status' | 'filename'>[],
+		output: Writable,
+		signal: AbortSignal
+	): Promise<void> {
 		const archive = new ZipArchive({ zlib: { level: 0 } });
 		// Every archive error also rejects the entry or the finalize being awaited, which reports it.
 		archive.on('error', () => {});
 		archive.pipe(output);
 
 		try {
-			for (const recordingId of recordingIds) {
+			for (const recording of recordings) {
 				signal.throwIfAborted();
-				const recording = await this.openRecordingForZip(recordingId);
+				const entry = await this.openRecordingForZip(recording);
 
-				if (recording) {
-					await this.appendToZip(archive, recording, signal);
+				if (entry) {
+					await this.appendToZip(archive, entry, signal);
 				}
 			}
 
@@ -472,10 +490,19 @@ export class RecordingService {
 		}
 	}
 
-	protected async openRecordingForZip(recordingId: string): Promise<{ name: string; stream: Readable } | undefined> {
+	protected async openRecordingForZip({
+		recordingId,
+		status,
+		filename
+	}: Pick<BulkRecording, 'recordingId' | 'status' | 'filename'>): Promise<
+		{ name: string; stream: Readable } | undefined
+	> {
 		try {
-			const { filename } = await this.getRecording(recordingId, ['filename']);
-			const { fileStream } = await this.getRecordingAsStream(recordingId);
+			if (status !== MeetRecordingStatus.COMPLETE) {
+				throw errorRecordingNotStreamable(recordingId);
+			}
+
+			const { fileStream } = await this.blobStorageService.getRecordingMedia(recordingId);
 			return { name: filename || `${recordingId}.mp4`, stream: fileStream };
 		} catch (error) {
 			this.logger.warn(`Error adding recording '${recordingId}' to ZIP`, error);

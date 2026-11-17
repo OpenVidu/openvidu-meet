@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
+import { MeetRoomMemberRole } from '@openvidu-meet/typings';
 import stream from 'stream';
 import unzipper from 'unzipper';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
@@ -12,7 +13,12 @@ import {
 	startTestServer
 } from '../../../helpers/request-helpers.js';
 
-import { setupMultiRecordingsTestContext, setupSingleRoomWithRecording } from '../../../helpers/test-scenarios.js';
+import {
+	setupMultiRecordingsTestContext,
+	setupRoomMember,
+	setupSingleRoomWithRecording,
+	setupTestUsers
+} from '../../../helpers/test-scenarios.js';
 
 describe('Recording API Tests', () => {
 	beforeAll(async () => {
@@ -73,6 +79,29 @@ describe('Recording API Tests', () => {
 			const entries = await getZipEntries(res.body);
 			expect(entries.length).toBe(1);
 			expect(entries[0]).toContain(roomId);
+		});
+
+		it('should only include the recordings of the rooms a room manager may download', async () => {
+			const { roomManager } = await setupTestUsers();
+			const roomData = await setupSingleRoomWithRecording(true);
+			await setupRoomMember(
+				roomData.room.roomId,
+				{ userId: roomManager.user.userId, baseRole: MeetRoomMemberRole.MODERATOR },
+				roomManager.accessToken
+			);
+			const otherRoomData = await setupSingleRoomWithRecording(true);
+
+			const res = await downloadRecordings(
+				[otherRoomData.recordingId!, roomData.recordingId!, 'non_existent--EG_000--1234'],
+				true,
+				undefined,
+				roomManager.accessToken
+			);
+
+			expect(res.status).toBe(200);
+			const entries = await getZipEntries(res.body);
+			expect(entries.length).toBe(1);
+			expect(entries[0]).toContain(roomData.room.roomId);
 		});
 
 		it('should return an error if none of the recordings belong to the room in the token', async () => {

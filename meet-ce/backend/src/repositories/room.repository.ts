@@ -281,6 +281,22 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	}
 
 	/**
+	 * Finds the rooms with the given identifiers in one read.
+	 *
+	 * @param roomIds - The unique room identifiers
+	 * @param fields - Array of field names to include in the result
+	 * @returns The rooms found, in no particular order
+	 */
+	findByRoomIds<const TFields extends readonly MeetRoomField[]>(
+		roomIds: readonly string[],
+		fields: TFields
+	): Promise<ProjectedMeetRoom<TFields>[]>;
+
+	findByRoomIds(roomIds: readonly string[], fields: readonly MeetRoomField[]): Promise<Partial<MeetRoom>[]> {
+		return this.findAll({ roomId: { $in: [...roomIds] } }, fields as string[]);
+	}
+
+	/**
 	 * Finds rooms owned by a specific user.
 	 * Returns rooms with enriched URLs (including base URL).
 	 *

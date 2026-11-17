@@ -1172,7 +1172,8 @@ export const getAllRecordingsFromRoom = async (roomMemberToken: string) => {
 export const downloadRecordings = async (
 	recordingIds: string[],
 	asBuffer = true,
-	roomMemberToken?: string
+	roomMemberToken?: string,
+	accessToken?: string
 ): Promise<Response> => {
 	checkAppIsRunning();
 
@@ -1182,6 +1183,8 @@ export const downloadRecordings = async (
 
 	if (roomMemberToken) {
 		req.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
+	} else if (accessToken) {
+		req.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken);
 	} else {
 		req.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
 	}
@@ -1272,7 +1275,11 @@ export const deleteRecording = async (recordingId: string) => {
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
 };
 
-export const bulkDeleteRecordings = async (recordingIds: string[], roomMemberToken?: string): Promise<Response> => {
+export const bulkDeleteRecordings = async (
+	recordingIds: string[],
+	roomMemberToken?: string,
+	accessToken?: string
+): Promise<Response> => {
 	checkAppIsRunning();
 
 	const req = request(app)
@@ -1281,6 +1288,8 @@ export const bulkDeleteRecordings = async (recordingIds: string[], roomMemberTok
 
 	if (roomMemberToken) {
 		req.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
+	} else if (accessToken) {
+		req.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken);
 	} else {
 		req.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
 	}

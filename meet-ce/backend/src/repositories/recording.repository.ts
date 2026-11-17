@@ -184,6 +184,25 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 	}
 
 	/**
+	 * Finds the recordings with the given recordingIds in one read.
+	 *
+	 * @param recordingIds - The IDs of the recordings to find
+	 * @param fields - Array of field names to include in the result
+	 * @returns The recordings found (without access secrets), in no particular order
+	 */
+	findByRecordingIds<const TFields extends readonly MeetRecordingField[]>(
+		recordingIds: readonly string[],
+		fields: TFields
+	): Promise<ProjectedRecording<TFields>[]>;
+
+	findByRecordingIds(
+		recordingIds: readonly string[],
+		fields: readonly MeetRecordingField[]
+	): Promise<Partial<MeetRecordingInfo>[]> {
+		return this.findAll({ recordingId: { $in: [...recordingIds] } }, fields as string[]);
+	}
+
+	/**
 	 * Finds recordings with filtering, pagination, and sorting.
 	 * Default sort is by startDate descending (newest first).
 	 *
