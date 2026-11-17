@@ -24,7 +24,7 @@ import { MutexService } from '../../src/services/mutex.service.js';
 const DEFAULT_POLL_INTERVAL_MS = 250;
 const DEFAULT_ROOM_TIMEOUT_MS = 15_000;
 const DEFAULT_RECORDING_TIMEOUT_MS = 30_000;
-const DEFAULT_PARTICIPANT_TIMEOUT_MS = 15_000;
+export const DEFAULT_PARTICIPANT_TIMEOUT_MS = 15_000;
 const DEFAULT_WEBHOOK_TIMEOUT_MS = 10_000;
 
 // ─── GENERIC POLLING ─────────────────────────────────────────────────────────
@@ -36,7 +36,7 @@ const DEFAULT_WEBHOOK_TIMEOUT_MS = 10_000;
  * returns `true` or `timeoutMs` milliseconds have elapsed.
  * Throws a descriptive error if the condition is never satisfied.
  */
-const pollUntil = async (
+export const pollUntil = async (
 	condition: () => Promise<boolean>,
 	options: {
 		intervalMs?: number;
