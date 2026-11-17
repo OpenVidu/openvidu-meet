@@ -131,7 +131,8 @@ ordering). `./meet.sh help` lists all commands.
 ./meet.sh install                 # pnpm install for the whole workspace
 ./meet.sh doctor                  # local environment check: one line per check, with its fix
 ./meet.sh verify                  # is this change ready: static checks + the unit suites it affects
-./meet.sh stack up <name>         # isolated backend on the shared Docker deployment
+./meet.sh affected                # the integration and e2e tests this change can break, with their commands
+./meet.sh stack up <name>         # isolated backend on the shared Docker deployment (--testapp: its own testapp too)
 ./meet.sh dev                     # all watchers (typings, backend, frontend, API docs)
 ./meet.sh dev --testapp           # + testapp on :5080, webhook bridge on :5081, webcomponent bundle watcher
 ./meet.sh build                   # full build, correct order
@@ -156,17 +157,27 @@ Flags on any command: `--skip-install`, `--skip-typings` (typings already built)
   `.claude/rules`, and the unit suites the diff affects (tests, type-check and lint each). It picks the suites with `scripts/ci/changed-suites.mjs`, as CI does, and
   the CI unit jobs run it too. One line per step; a failure prints its excerpt and the path of the full
   log. `--fix` formats the changed files; never run Prettier over a directory, the repository is not
-  uniformly formatted. It lists the integration and e2e suites the diff selects and never runs them.
-- **`./meet.sh doctor`** tells in a second whether the OpenVidu local deployment those suites need is
-  usable (containers, LAN IP, built bundles, who holds :6080), with the fix for each problem. When it
-  is up, run them; when it is not, report them as not run instead of reporting a pass.
+  uniformly formatted. It names the integration and e2e suites the diff selects and never runs them.
+- **`./meet.sh affected`** narrows those suites to the tests the change can break: the test files the
+  diff changed, plus the tests of the areas it touches, named by the OpenSpec capabilities of the change
+  and by the source paths (the map is `scripts/dev/test-areas.mjs`; `verify` fails when a spec file or a
+  capability is missing from it). It prints the command of each. Those are the ones to run locally, the
+  changed test files first; the whole suites run in CI on the pull request, which a draft is enough to
+  start. A selected suite with no targeted test is left to CI.
+- **`./meet.sh doctor`** tells in a second whether the OpenVidu local deployment those tests need is
+  usable (containers, LAN IP, built bundles, who holds :6080 and the testapp ports), with the fix for
+  each problem. When it is up, run them; when it is not, report them as not run instead of reporting a
+  pass.
 - **`./meet.sh stack`** keeps test runs apart: several sessions share that deployment, so a test run
   never uses the default Mongo database, Redis DB 0 or the `openvidu-meet` subbucket.
   `stack up <name>` starts this checkout's backend on its own port, database, Redis DB and subbucket;
   `stack run <name> -- <command>` runs a test command on them (after `up` when a meeting has to start:
   only a listening backend receives LiveKit's webhooks); `stack down <name>` deletes them and
-  `stack list` shows who runs what. LiveKit posts its webhooks to :6080 and to the stack ports its
-  `livekit.yaml` lists; `doctor` shows them and how to add them.
+  `stack list` shows who runs what. `stack up <name> --testapp` also starts this checkout's testapp and
+  webhook bridge on ports of the stack, with the stack's webhook pointed at them, which is what a
+  webcomponent e2e run needs: never the testapp on :5080, which may belong to another checkout. LiveKit
+  posts its webhooks to :6080 and to the stack ports its `livekit.yaml` lists; `doctor` shows them and
+  how to add them.
 
 ## Agents
 
@@ -177,7 +188,9 @@ lives in the repository.
 
 - The main session writes the typings of a change first; backend and frontend groups then run side by
   side. At most two agents at once unless the user asks for more.
-- Suites run through `test-runner`, so their logs stay out of the main conversation.
+- Tests run through `test-runner`, so their logs stay out of the main conversation. An implementer runs
+  the end-to-end tests it wrote or rewrote before reporting them done.
+- A change is made in its own worktree; `.claude/rules/worktrees.md` holds what differs there.
 - An agent's report is a claim, with its commands and exit codes: check it (`./meet.sh verify`, the
   diff) before reporting the work as done. Agents do not commit; the main session does.
 

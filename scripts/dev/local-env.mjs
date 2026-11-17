@@ -12,6 +12,8 @@ export const DEFAULTS = { port: '6080', mongoDb: 'openvidu-meet', redisDb: '0', 
 export const deploymentDir = () =>
 	process.env.OPENVIDU_LOCAL_DEPLOYMENT_DIR ?? join(homedir(), 'CODEURJC/openvidu-local-deployment/community');
 
+export const TESTAPP_DEFAULT_PORTS = [5080, 5081];
+
 export const STACK_FIRST_PORT = 6100;
 export const STACK_WEBHOOK_PORTS = Array.from({ length: 6 }, (_, index) => STACK_FIRST_PORT + index);
 
@@ -69,7 +71,7 @@ const CHECKOUT_SUFFIX = /\/(?:meet-ce|meet-pro)\/backend(?:\/(?:dist\/)?src\/ser
 
 const checkoutOf = (pid, serverPath) => {
 	try {
-		const base = serverPath.startsWith('/') ? serverPath : join(readlinkSync(`/proc/${pid}/cwd`), serverPath);
+		const base = serverPath.startsWith('/') ? serverPath : join(processCwd(pid), serverPath);
 
 		return resolve(base).replace(CHECKOUT_SUFFIX, '');
 	} catch {
@@ -107,6 +109,20 @@ export const runningContainers = () => {
 	const output = run('docker', ['ps', '--format', '{{.Names}}']);
 
 	return output === undefined ? undefined : new Set(output.split('\n').filter(Boolean));
+};
+
+export const processCwd = (pid) => {
+	try {
+		return readlinkSync(`/proc/${pid}/cwd`);
+	} catch {
+		return undefined;
+	}
+};
+
+export const portListener = (port) => {
+	const listing = run('ss', ['-Hltnp', `sport = :${port}`])?.trim();
+
+	return listing ? { pid: Number(listing.match(/pid=(\d+)/)?.[1]) || undefined } : undefined;
 };
 
 export const processCommandLine = (pid) => {

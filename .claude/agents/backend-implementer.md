@@ -30,11 +30,11 @@ An OpenSpec change name with the task groups assigned to you, or a described fix
 ## Proof
 
 1. `./meet.sh verify --only static,backend-unit` passes.
-2. The integration suites of the area you changed: run `./meet.sh doctor`; when the deployment is usable,
-   `./meet.sh stack up <name>`, then
+2. The integration tests of the area you changed (`./meet.sh affected` lists them with their commands):
+   run `./meet.sh doctor`; when the deployment is usable, `./meet.sh stack up <name>`, then
    `./meet.sh stack run <name> -- pnpm --filter @openvidu-meet/backend run test:integration-<area>`
    (the script names are in `meet-ce/backend/package.json`), then `./meet.sh stack down <name>`. When
-   `doctor` says it is not usable, report those suites as not run.
+   `doctor` says it is not usable, report those tests as not run.
 3. A test that fails is reproduced and fixed, not rerun until it passes.
 
 ## Report

@@ -22,7 +22,7 @@ const MAX_LINE_LENGTH = 200;
 const BACKEND = ['pnpm', '--filter', '@openvidu-meet/backend', 'run'];
 const WEBCOMPONENT = ['pnpm', '--filter', '@openvidu-meet/webcomponent', 'run'];
 
-const STATIC_CHECKS = ['format', 'openspec', 'openapi', 'agents'];
+const STATIC_CHECKS = ['format', 'openspec', 'openapi', 'agents', 'affected'];
 
 const TYPINGS = ['./meet.sh', 'build-typings', '--skip-install'];
 const meet = (command) => ['./meet.sh', command, '--skip-install', '--skip-typings'];
@@ -45,15 +45,10 @@ const UNIT_SUITES = {
 	]
 };
 
-const NOT_RUN_HERE = {
-	'backend-integration':
-		'needs the local deployment (./meet.sh doctor): pnpm run test:integration-backend-<room-management|auth-security|webhooks|config-analytics|websocket|recordings>',
-	'frontend-e2e':
-		'needs the local deployment (./meet.sh doctor): ./meet.sh test-e2e-frontend --skip-install -- <specs>',
-	'wc-e2e': 'needs the local deployment (./meet.sh doctor): ./meet.sh test-e2e-webcomponent --skip-install -- <specs>'
-};
+const SUITES_NOT_RUN_HERE = ['backend-integration', 'frontend-e2e', 'wc-e2e'];
+const NOT_RUN_HERE = 'needs the local deployment (./meet.sh doctor): ./meet.sh affected lists the tests to run';
 
-const SUITES = [...Object.keys(UNIT_SUITES), ...Object.keys(NOT_RUN_HERE)];
+const SUITES = [...Object.keys(UNIT_SUITES), ...SUITES_NOT_RUN_HERE];
 const KNOWN_IDS = [...STATIC_CHECKS, 'static', ...SUITES];
 
 const color = process.stdout.isTTY && !process.env.NO_COLOR;
@@ -274,8 +269,18 @@ const staticAction = {
 		['changes', commandAction(['npx', 'openspec', 'validate', '--changes', '--strict'])]
 	],
 	openapi: [['', commandAction([...BACKEND, 'lint:api'])]],
-	agents: [['', checkClaudeFiles]]
+	agents: [['', checkClaudeFiles]],
+	affected: [['', commandAction(['node', 'scripts/dev/affected-tests.mjs', '--check'])]]
 };
+
+const AFFECTED_INPUTS = [
+	'scripts/dev/test-areas.mjs',
+	'scripts/dev/affected-tests.mjs',
+	'meet-ce/frontend/e2e/',
+	'meet-ce/frontend/webcomponent/tests/e2e/',
+	'meet-ce/backend/tests/integration/',
+	'openspec/specs/'
+];
 
 const staticReason = (ctx) => ({
 	format: ctx.files.length > 0 ? `${ctx.files.length} changed files` : undefined,
@@ -283,6 +288,9 @@ const staticReason = (ctx) => ({
 	openapi: ctx.files.some((file) => file.startsWith('meet-ce/backend/openapi/')) ? 'openapi/ changed' : undefined,
 	agents: ctx.files.some((file) => CLAUDE_DIRECTORIES.some((directory) => file.startsWith(`${directory}/`)))
 		? '.claude/ changed'
+		: undefined,
+	affected: ctx.files.some((file) => AFFECTED_INPUTS.some((input) => file.startsWith(input)))
+		? 'test map inputs changed'
 		: undefined
 });
 
@@ -290,7 +298,8 @@ const STATIC_SKIP_REASON = {
 	format: 'no changed files',
 	openspec: 'no openspec/ changes',
 	openapi: 'no openapi/ changes',
-	agents: 'no .claude/agents or .claude/rules changes'
+	agents: 'no .claude/agents or .claude/rules changes',
+	affected: 'no test map, e2e/integration test or openspec/specs changes'
 };
 
 const planStatic = (ctx) => {
@@ -378,7 +387,7 @@ const main = async () => {
 				suite.id === 'backend-integration' && selected.storage === 'true'
 					? ' (storage changed: also run recordings)'
 					: '';
-			report('todo', suite.id, `selected, not run here: ${NOT_RUN_HERE[suite.id]}${storage}`);
+			report('todo', suite.id, `selected, not run here: ${NOT_RUN_HERE}${storage}`);
 		}
 	}
 

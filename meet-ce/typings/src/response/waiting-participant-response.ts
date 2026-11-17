@@ -1,5 +1,5 @@
 import { MeetWaitingParticipantType } from '../database/room-member.entity.js';
-import { MeetEventOrigin } from '../embedded/events.js';
+import { MeetEventOrigin } from '../event-origin.js';
 
 /**
  * Status of a wait to join a locked room, carried by the `waitingParticipantStatusChanged` webhook and embedded event.

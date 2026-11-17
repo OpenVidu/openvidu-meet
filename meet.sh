@@ -101,13 +101,20 @@ show_help() {
   echo "    Tell whether the current change is ready: formatting, OpenSpec, OpenAPI and the unit suites it affects"
   echo -e "    ${YELLOW}Options:${NC} --base <ref>   Diff against <ref> (default: merge base with origin/main)"
   echo -e "             ${NC} --all          Every check, regardless of the diff"
-  echo -e "             ${NC} --only <ids>   Only these checks (format, openspec, openapi, agents, static, backend-unit, frontend-unit, wc-unit)"
+  echo -e "             ${NC} --only <ids>   Only these checks (format, openspec, openapi, agents, affected, static, backend-unit, frontend-unit, wc-unit)"
   echo -e "             ${NC} --list         Print what would run and why"
   echo -e "             ${NC} --fix          Format the files the format check would fail"
   echo
+  echo -e "  ${BLUE}affected${NC}"
+  echo "    Say which integration and e2e tests the current change needs to run locally, with the commands"
+  echo -e "    ${YELLOW}Options:${NC} --base <ref>   Diff against <ref> (default: merge base with origin/main)"
+  echo -e "             ${NC} --stdin        Read the changed files from stdin instead of the diff"
+  echo -e "             ${NC} --check        Fail when a test or an OpenSpec capability is missing from the map"
+  echo
   echo -e "  ${BLUE}stack up|run|env|list|down <name>${NC}"
   echo "    Isolated backend on the shared Docker deployment: its own port, Mongo database, Redis DB and S3 subbucket"
-  echo -e "    ${YELLOW}Usage:${NC} stack up <name> [--primary] | stack run <name> -- <command> | stack env <name> | stack list | stack down <name>"
+  echo -e "    ${YELLOW}Usage:${NC} stack up <name> [--primary] [--testapp] | stack run <name> -- <command> | stack env <name> | stack list | stack down <name>"
+  echo "    --testapp also starts the webcomponent testapp and its webhook bridge on ports of their own, wired to the stack"
   echo
   echo -e "  ${BLUE}build${NC}"
   echo "    Build all project components (typings, frontend, backend, webcomponent)"
@@ -467,9 +474,15 @@ ensure_playwright_chromium() {
     force_arg="--force"
   fi
 
+  # --with-deps installs system packages through sudo, which only a CI runner can do unattended.
+  local deps_arg=""
+  if [ -n "$CI" ] || [ -n "$GITHUB_ACTIONS" ]; then
+    deps_arg="--with-deps"
+  fi
+
   echo -e "${GREEN}Installing Playwright browsers (chromium)...${NC}"
   # Use a single deterministic CLI path to avoid version-resolution discrepancies.
-  PLAYWRIGHT_BROWSERS_PATH="$PW_BROWSERS_PATH" node ./node_modules/@playwright/test/cli.js install --with-deps chromium $force_arg
+  PLAYWRIGHT_BROWSERS_PATH="$PW_BROWSERS_PATH" node ./node_modules/@playwright/test/cli.js install $deps_arg chromium $force_arg
   PLAYWRIGHT_VER=$(PLAYWRIGHT_BROWSERS_PATH="$PW_BROWSERS_PATH" node ./node_modules/@playwright/test/cli.js --version 2>/dev/null || true)
 
   echo "installed_at=$(date --iso-8601=seconds)" > "$MARKER_FILE" || true
@@ -893,6 +906,9 @@ main() {
       ;;
     verify)
       node "$(dirname "$0")/scripts/verify.mjs" "$@"
+      ;;
+    affected)
+      node "$(dirname "$0")/scripts/dev/affected-tests.mjs" "$@"
       ;;
     build)
       build_project

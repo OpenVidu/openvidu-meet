@@ -1,7 +1,8 @@
 import { MeetBroadcastInfo } from './database/broadcast.entity.js';
 import { MeetRecordingInfo } from './database/recording.entity.js';
 import { MeetRoom } from './database/room.entity.js';
-import { LeftEventReason, MeetEventOrigin } from './embedded/events.js';
+import { MeetEventOrigin } from './event-origin.js';
+import { LeftEventReason } from './leave-reason.js';
 import {
 	MeetWaitingParticipant,
 	MeetWaitingParticipantReason,

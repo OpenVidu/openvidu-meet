@@ -61,7 +61,7 @@ operations:
     guidance:
       - Read the `CLAUDE.md` of each package before editing it and respect the build order typings, backend, shared-meet-components, frontend, webcomponent.
       - Backend integration tests and Playwright suites need the OpenVidu local deployment. `./meet.sh doctor` says whether it is usable and `./meet.sh stack` gives the run its own data; report them as not run only when it is not usable.
-      - A change is implemented when `./meet.sh verify` passes and every suite it lists as selected has run or is reported as not run.
+      - A change is implemented when `./meet.sh verify` passes and every test `./meet.sh affected` lists has run or is reported as not run. The whole suites run in CI on the pull request.
   archive:
     guidance:
       - Archive inside the pull request that implements the change, once every task is done, and run `./meet.sh verify --only openspec --all` afterwards.

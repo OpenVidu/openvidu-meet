@@ -1,5 +1,7 @@
 import { MeetBroadcastInfo } from '../database/broadcast.entity.js';
 import { MeetRecordingInfo } from '../database/recording.entity.js';
+import { MeetEventOrigin } from '../event-origin.js';
+import { LeftEventReason } from '../leave-reason.js';
 import { MeetReaction } from '../reaction.js';
 import {
 	MeetWaitingParticipant,
@@ -143,50 +145,6 @@ export enum EmbeddedEventName {
 	 * @deprecated Renamed to `embeddedCloseRequested` ({@link EmbeddedEventName.EMBEDDED_CLOSE_REQUESTED}). Removed in 3.12.0.
 	 */
 	CLOSED = 'closed'
-}
-
-/**
- * Reason for emitting the LEFT event in OpenVidu Meet.
- */
-export enum LeftEventReason {
-	/** The participant left the meeting voluntarily */
-	VOLUNTARY_LEAVE = 'voluntary_leave',
-	/** The participant was disconnected due to network issues */
-	NETWORK_DISCONNECT = 'network_disconnect',
-	/** The server was shut down unexpectedly */
-	SERVER_SHUTDOWN = 'server_shutdown',
-	/** The participant was kicked from the meeting by a moderator */
-	PARTICIPANT_KICKED = 'participant_kicked',
-	/**
-	 * The meeting was ended for everyone by someone or something other than the local participant:
-	 * another participant, the `meetingEnd` REST operation or command of another participant, or the
-	 * forced deletion or closing of its room. It is also the only end reason `participantLeft` carries.
-	 */
-	MEETING_ENDED = 'meeting_ended',
-	/** The local participant ended the meeting for all participants */
-	MEETING_ENDED_BY_SELF = 'meeting_ended_by_self',
-	/** The meeting was automatically ended because it reached its configured maximum duration */
-	MEETING_ENDED_BY_DURATION_LIMIT = 'meeting_ended_by_duration_limit',
-	/** The participant was disconnected because the same identity joined again */
-	DUPLICATE_IDENTITY = 'duplicate_identity',
-	/** Unknown reason for leaving the meeting */
-	UNKNOWN = 'unknown'
-}
-
-/**
- * Who caused the state change an event notifies.
- *
- * The shared value-set for every front event that attributes its change (the `origin` payload
- * field): the affected participant themselves, a moderator acting on them, or the server applying
- * room configuration (defaults, limits, timers).
- */
-export enum MeetEventOrigin {
-	/** The affected participant caused the change themselves */
-	PARTICIPANT = 'participant',
-	/** A moderator caused the change on the affected participant */
-	MODERATOR = 'moderator',
-	/** The server caused the change (room defaults, limits, timers) */
-	SYSTEM = 'system'
 }
 
 /**
