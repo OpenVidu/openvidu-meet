@@ -6,6 +6,7 @@ settings:
 
 overrides:
   livekit-client: github:OpenVidu/client-sdk-js#v2.23.0-openvidu.1
+  livekit-server-sdk>@livekit/protocol: 1.53.1
   '@azure/identity>@azure/msal-browser': '-'
 
 importers:
@@ -45,6 +46,9 @@ importers:
       '@google-cloud/storage':
         specifier: 8.4.0
         version: 8.4.0(supports-color@5.5.0)
+      '@livekit/protocol':
+        specifier: 1.53.1
+        version: 1.53.1
       '@openvidu-meet/typings':
         specifier: workspace:*
         version: link:../typings
@@ -2716,11 +2720,11 @@ packages:
   '@livekit/mutex@1.1.1':
     resolution: {integrity: sha512-EsshAucklmpuUAfkABPxJNhzj9v2sG7JuzFDL4ML1oJQSV14sqrpTYnsaOudMAw9yOaW53NU3QQTlUQoRs4czw==}
 
-  '@livekit/protocol@1.51.0':
-    resolution: {integrity: sha512-kEDEDaFvIcp5VlYBromdSKMJMEJKfPvXPfEaJPdEz1Qgo84gZAoLF2g58CcMlVYGsjrwE5XYgQxRS5B7KuEj3w==}
-
   '@livekit/protocol@1.52.1':
     resolution: {integrity: sha512-X8DxKlNbzk6Lh+v630+mjdFHSotdAFwIyzxSRSUql2DbTxCnlpa7JsvFGc6Na3mXiex2OFh0iiQtWwOBP0rIYA==}
+
+  '@livekit/protocol@1.53.1':
+    resolution: {integrity: sha512-Kx67RzZL5PhNUtzg7J7CRyCOEKOEyNLh2tKLaGK5FAluKrpIusYAJX8S3o+IYeVwEWGB1gNbfxhIwzAeUC0GNA==}
 
   '@livekit/track-processors@0.8.2':
     resolution: {integrity: sha512-e7mBsNMR7Ond4IyJ4afZ2azAdbd9SwQTUQgJvJBySp9M9UlObXjp/H9oKyV5UttBUjTS1h0O7SksN4PJIjYScg==}
@@ -12120,11 +12124,11 @@ snapshots:
 
   '@livekit/mutex@1.1.1': {}
 
-  '@livekit/protocol@1.51.0':
+  '@livekit/protocol@1.52.1':
     dependencies:
       '@bufbuild/protobuf': 1.10.1
 
-  '@livekit/protocol@1.52.1':
+  '@livekit/protocol@1.53.1':
     dependencies:
       '@bufbuild/protobuf': 1.10.1
 
@@ -16640,7 +16644,7 @@ snapshots:
   livekit-server-sdk@2.19.2:
     dependencies:
       '@bufbuild/protobuf': 1.10.1
-      '@livekit/protocol': 1.51.0
+      '@livekit/protocol': 1.53.1
       jose: 5.10.0
 
   lmdb@3.5.6:

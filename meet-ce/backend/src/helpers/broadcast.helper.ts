@@ -20,14 +20,13 @@ import {
 	errorBroadcastDuplicateDestination,
 	errorBroadcastRedactedDestinationUrl,
 	errorBroadcastUnknownDestination,
-	errorEgressWithoutStreamTags
+	errorEgressWithoutStreamIds
 } from '../models/error.model.js';
 import { EgressHelper } from './egress.helper.js';
 
 const ID_LENGTH = 10;
 const IN_PROGRESS_STATUSES = [MeetBroadcastStatus.STARTING, MeetBroadcastStatus.ACTIVE, MeetBroadcastStatus.ENDING];
 const RUNNING_STATUSES = [MeetBroadcastStatus.STARTING, MeetBroadcastStatus.ACTIVE];
-const STREAM_TAG = '#ov-stream-tag=';
 const IPV4_MAPPED_PREFIX = '::ffff:';
 
 // No RTMP server a meeting is streamed to can live here: the media server's own host (loopback),
@@ -90,15 +89,6 @@ export class BroadcastHelper {
 
 	static newBroadcastId(roomId: string): string {
 		return `${roomId}--${uid(ID_LENGTH)}`;
-	}
-
-	/**
-	 * The URL the egress streams to for a broadcast: the destination's, tagged with the broadcast's
-	 * id. The egress streams to the URL without the tag and reports the tag after the redacted URL,
-	 * which is how a broadcast finds its stream in everything LiveKit reports of the egress.
-	 */
-	static taggedUrl({ broadcastId, destination }: Pick<BroadcastRecord, 'broadcastId' | 'destination'>): string {
-		return `${destination.url}${STREAM_TAG}${broadcastId}`;
 	}
 
 	/**
@@ -195,8 +185,8 @@ export class BroadcastHelper {
 	}
 
 	/**
-	 * The record of a broadcast whose tagged URL the egress just took. An egress that does not
-	 * report the tag back could never tell the broadcast how its stream goes.
+	 * The record of a broadcast whose stream the egress just took. An egress that does not report
+	 * the stream under the broadcast's id could never tell the broadcast how its stream goes.
 	 */
 	static createRecord(
 		broadcastId: string,
@@ -205,7 +195,7 @@ export class BroadcastHelper {
 		destination: MeetBroadcastDestination,
 		{ layout, encoding }: Pick<BroadcastRecord, 'layout' | 'encoding'>
 	): BroadcastRecord {
-		if (!BroadcastHelper.findStream(egress, broadcastId)) throw errorEgressWithoutStreamTags();
+		if (!BroadcastHelper.findStream(egress, broadcastId)) throw errorEgressWithoutStreamIds();
 
 		return BroadcastHelper.withEgressInfo(
 			{
@@ -310,9 +300,9 @@ export class BroadcastHelper {
 		return FORBIDDEN_STREAM_ADDRESSES.check(address, isIP(address) === 6 ? 'ipv6' : 'ipv4');
 	}
 
-	/** The stream of the broadcast among those LiveKit reports of the egress, by its tag. */
+	/** The stream of the broadcast among those LiveKit reports of the egress, by its id. */
 	private static findStream(egress: EgressInfo, broadcastId: string): StreamInfo | undefined {
-		return egress.streamResults.find(({ url }) => url.endsWith(`${STREAM_TAG}${broadcastId}`));
+		return egress.streamResults.find(({ id }) => id === broadcastId);
 	}
 
 	/** How far the broadcast went: starting, active, ending and over, in that order. */

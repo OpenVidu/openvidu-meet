@@ -29,6 +29,8 @@ allowBuilds:
 
 overrides:
   livekit-client: github:OpenVidu/client-sdk-js#v2.23.0-openvidu.1
+  # The first protocol with StreamDestination, which livekit-server-sdk does not depend on yet.
+  'livekit-server-sdk>@livekit/protocol': 1.53.1
   # Only the browser build of @azure/identity loads it.
   '@azure/identity>@azure/msal-browser': '-'
 

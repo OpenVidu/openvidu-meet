@@ -84,10 +84,10 @@ export const errorEgressOptionsRefused = (): OpenViduMeetError => {
 	return new OpenViduMeetError('LiveKit Error', 'The media server refused the egress options as invalid', 422);
 };
 
-export const errorEgressWithoutStreamTags = (): OpenViduMeetError => {
+export const errorEgressWithoutStreamIds = (): OpenViduMeetError => {
 	return new OpenViduMeetError(
 		'LiveKit Error',
-		'The egress service does not report stream tags, which broadcasts need: it is not the OpenVidu egress',
+		'The egress service does not report stream ids, which broadcasts need',
 		500
 	);
 };
