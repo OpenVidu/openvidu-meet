@@ -1,6 +1,6 @@
 /recordings:
     post:
-        operationId: startRecording
+        operationId: recordingStart
         summary: Start a recording
         description: >
             Start a new recording for an OpenVidu Meet room with the specified room ID.
@@ -26,7 +26,7 @@
             the `starting` status. It becomes `active` when the first published track reaches it, so a
             room where nobody publishes audio or video keeps it `starting` until someone does. Follow the
             transition through the [`recordingUpdated`](#/webhooks/recordingUpdatedWebhook) webhook or by
-            [fetching the recording](#/operations/getRecording).
+            [fetching the recording](#/operations/recordingGet).
 
         tags:
             - OpenVidu Meet - Recordings
@@ -63,7 +63,7 @@
                 $ref: '../shared/responses/errors/egress-unavailable.yaml'
 
     get:
-        operationId: getRecordings
+        operationId: recordingList
         summary: Get all recordings
         description: |
             Retrieves a paginated list of recordings available in the system.
@@ -113,7 +113,7 @@
                 $ref: '../shared/responses/errors/internal-server.yaml'
 
     delete:
-        operationId: bulkDeleteRecordings
+        operationId: recordingBulkDelete
         summary: Bulk delete recordings
         description: |
             Deletes multiple recordings at once with the specified recording IDs.
@@ -154,7 +154,7 @@
 
 /recordings/download:
     get:
-        operationId: downloadRecordings
+        operationId: recordingBulkDownload
         summary: Download recordings
         description: |
             Downloads multiple recordings as a ZIP file with the specified recording IDs.
@@ -209,7 +209,7 @@
 
 /recordings/{recordingId}:
     get:
-        operationId: getRecording
+        operationId: recordingGet
         summary: Get a recording
         description: >
             Retrieves the details of a recording with the specified recording ID.
@@ -249,7 +249,7 @@
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
     delete:
-        operationId: deleteRecording
+        operationId: recordingDelete
         summary: Delete a recording
         description: |
             Deletes a recording with the specified recording ID.
@@ -289,7 +289,7 @@
                 $ref: '../shared/responses/errors/service-unavailable.yaml'
 /recordings/{recordingId}/media:
     get:
-        operationId: getRecordingMedia
+        operationId: recordingGetMedia
         summary: Get recording media
         description: |
             Retrieves the media of a recording with the specified recording ID.
@@ -372,7 +372,7 @@
                 $ref: '../shared/responses/errors/service-unavailable.yaml'
 /recordings/{recordingId}/download:
     get:
-        operationId: downloadRecording
+        operationId: recordingDownload
         summary: Download recording media
         description: |
             Downloads the media of a recording with the specified recording ID: the same stream as
@@ -477,7 +477,7 @@
                 $ref: '../shared/responses/errors/service-unavailable.yaml'
 /recordings/{recordingId}/stop:
     post:
-        operationId: stopRecording
+        operationId: recordingStop
         summary: Stop a recording
         description: |
             Stops a recording with the specified recording ID.
@@ -518,7 +518,7 @@
                 $ref: '../shared/responses/errors/service-unavailable.yaml'
 /recordings/{recordingId}/url:
     get:
-        operationId: getRecordingUrl
+        operationId: recordingGetUrl
         summary: Get recording URL
         description: |
             Retrieves the URL of a recording with the specified recording ID.

@@ -43,7 +43,7 @@ import {
 	eventSequence,
 	expectEvent,
 	participantHandChangedLocator,
-	participantHandRaiseCommand,
+	participantRaiseHandCommand,
 	joinedParticipantIdentity,
 	leaveMeeting,
 	leaveRoomCommand,
@@ -390,7 +390,7 @@ for (const integration of INTEGRATIONS) {
 					const speakerPage = await context.newPage();
 					await openMeeting(speakerPage, roomId, { role: 'speaker', name });
 					const identity = await joinedParticipantIdentity(speakerPage);
-					await participantHandRaiseCommand(speakerPage);
+					await participantRaiseHandCommand(speakerPage);
 					await expect(participantHandChangedLocator(speakerPage, identity, true)).toHaveCount(1, {
 						timeout: 15_000
 					});

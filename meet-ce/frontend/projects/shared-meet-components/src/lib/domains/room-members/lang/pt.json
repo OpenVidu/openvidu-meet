@@ -145,11 +145,11 @@
           "LABEL": "Silenciar participantes",
           "DESCRIPTION": "Permitir desligar o microfone, a câmara ou a partilha de ecrã de outros participantes"
         },
-        "participantHandLower": {
+        "participantLowerHand": {
           "LABEL": "Baixar mãos",
           "DESCRIPTION": "Permite baixar as mãos levantadas de outros participantes, uma de cada vez ou todas de uma vez"
         },
-        "participantReactionSend": {
+        "participantSendReaction": {
           "LABEL": "Enviar reações",
           "DESCRIPTION": "Permite enviar reações que todos veem durante alguns segundos"
         },

@@ -81,9 +81,10 @@ token.
   into a locked room, the one compound), registered exactly once, never a prefix of another token.
   Any other concept needing two words is not a module; fold it into the closest one and put the extra
   word in the action (`mediaChangeVirtualBackground`, not a `virtualBackground` module).
-- **Command** `moduleAction`: module first, then an imperative verb (`meetingLeave`,
-  `participantKick`); bulk variants suffix `All`. **Event/webhook** `moduleEvent`: module first,
-  past tense (`meetingJoined`, `recordingEnded`), same string on both surfaces. An event that asks
+- **Command** `moduleAction`: module first, then an imperative verb, then its object if any
+  (`meetingLeave`, `participantKick`, `participantRaiseHand`); bulk variants suffix `All`.
+  **Event/webhook** `moduleEvent`: module first, past tense (`meetingJoined`, `recordingEnded`), same
+  string on both surfaces. An event that asks
   the host to act ends in `Requested` (`embeddedCloseRequested`), never in an imperative verb,
   which would read as a command.
 - **Permission** `moduleAbility`: flat boolean, no `can` prefix, **flat forever** (nesting is
@@ -95,8 +96,10 @@ token.
 - **REST**: live meeting state is a sub-resource of `/meetings/{roomId}`; only durable artifacts,
   egresses addressed by their own id like a recording (`/broadcasts`) and platform groups are
   top-level (see `MEET_API_REST_GROUPS`). Collections plural, singletons
-  singular. `operationId` = `moduleAction`, except a bulk operation over a module's collection, which
-  takes the shape of the released bulk deletes: `bulk` + verb + module plural (`bulkRejectWaitingParticipants`).
+  singular. `operationId` = `moduleAction`, verb before object (`roomUpdateConfig`); one acting on everyone
+  suffixes `All` (`participantMuteAll`) and one on the ids it names puts `Bulk` before the verb
+  (`roomBulkDelete`). No SDK is generated from the OpenAPI, so an `operationId` can be renamed: only the
+  `#/operations/<id>` links of the docs change.
 - **Reserved words**: `broadcast` = RTMP only, `reaction` = emoji only, `message(s)` = chat only,
   `embedded` = the OpenVidu Meet element or iframe a host mounts (the meeting inside it is
   `meeting`). Every event about that element, not about the meeting, its participants or their

@@ -52,12 +52,12 @@ with no replacement.
   demotes them back. Every promotion and demotion is reported as the
   [`participantRoleChanged`][3.10-participant-role-changed] webhook and as the embedded event of the same name to the
   affected participant.
-- Raise hand, in the meeting and through the REST API, the embedded commands `participantHandRaise`,
-  `participantHandLower` and `participantHandLowerAll` and the embedded event and webhook `participantHandChanged`,
-  with the `participantHandLower` permission to lower other participants' hands and the room config
+- Raise hand, in the meeting and through the REST API, the embedded commands `participantRaiseHand`,
+  `participantLowerHand` and `participantLowerAllHands` and the embedded event and webhook `participantHandChanged`,
+  with the `participantLowerHand` permission to lower other participants' hands and the room config
   `raiseHand.enabled` to turn it off.
-- Reactions, in the meeting and through the embedded command `participantReactionSend` and the embedded event
-  `participantReactionSent`, with the `participantReactionSend` permission to send them and the room config
+- Reactions, in the meeting and through the embedded command `participantSendReaction` and the embedded event
+  `participantReactionSent`, with the `participantSendReaction` permission to send them and the room config
   `reactions.enabled` to turn them off.
 - [Broadcasts API][3.10-broadcasts] under `/api/v1/broadcasts`: stream a live meeting to one or more RTMP
   destinations, one broadcast per destination, each with its own status and its own `broadcastId`, as a
@@ -74,13 +74,13 @@ with no replacement.
   Every response replaces the stream key of a destination URL with `********`, and a redacted URL sent back
   keeps the saved key.
 - Locked rooms, on the REST API, the webhooks and the embedded API: in a room whose
-  [`access.lock`][3.10-room-access], set with `createRoom` and `updateRoomAccess`, has `enabled` set, participants
+  [`access.lock`][3.10-room-access], set with `roomCreate` and `roomUpdateAccess`, has `enabled` set, participants
   without the new
   [`accessBypassLock`][3.10-permissions] permission ask to join and wait until a holder of `waitingParticipantAdmin` admits or rejects
   them. [`waitingParticipantList`][3.10-waiting-participant-list], `waitingParticipantGet`,
   [`waitingParticipantAdmit`][3.10-waiting-participant-admit], `waitingParticipantAdmitAll`,
   [`waitingParticipantReject`][3.10-waiting-participant-reject] and
-  [`bulkRejectWaitingParticipants`][3.10-bulk-reject-waiting-participants], and the embedded commands
+  [`waitingParticipantBulkReject`][3.10-waiting-participant-bulk-reject], and the embedded commands
   `waitingParticipantAdmit`, `waitingParticipantAdmitAll`, `waitingParticipantReject` and
   `waitingParticipantRejectAll`, are gated by `waitingParticipantAdmin`. The webhooks
   [`waitingParticipantKnocked`][3.10-waiting-participant-knocked] and
@@ -139,7 +139,7 @@ with no replacement.
   placeholder rows instead of a loading screen.
 - The console overview shows the rooms by status (open, in a meeting now and closed), the recordings by status
   (available for playback, in progress and failed) and the rooms that reach their auto-deletion date within 7 days, and
-  refreshes every 30 seconds while its tab is visible or on Refresh; `getAnalytics` returns them as `openRooms`,
+  refreshes every 30 seconds while its tab is visible or on Refresh; `analyticsGet` returns them as `openRooms`,
   `closedRooms`, `recordingsInProgress`, `failedRecordings`, `roomsExpiringSoon` and `nextExpiringRoom`.
 
 ### Fixed
@@ -147,11 +147,11 @@ with no replacement.
 #### Integration
 
 - A room member token issued before its participant was demoted through
-  [`participantRoleUpdate`][3.10-participant-role-update] or `participantUpdateRole` stayed valid until it expired,
-  so they kept their moderator permissions. It is now rejected.
+  [`participantUpdateRole`][3.10-participant-update-role] or the embedded command of the same name stayed valid until
+  it expired, so they kept their moderator permissions. It is now rejected.
 - A room member token held by a participant kicked through [`participantKick`][3.10-participant-kick] or the embedded
   command of the same name stayed valid for up to 2 hours, so they could reconnect with it. It is now rejected.
-- `refreshRoomMemberToken` renewed room member tokens without the checks that invalidate them after a change of the
+- `roomRefreshMemberToken` renewed room member tokens without the checks that invalidate them after a change of the
   room's roles or access, of the member's permissions or of the user's role, or the deletion of the member or the
   user. It now applies them, and the meeting renews a refused token with the
   credentials it joined with.
@@ -160,9 +160,9 @@ with no replacement.
   Guests added from this release get an `accessUrl` whose `secret` adds a random part to the `memberId`, and only
   that exact secret grants their access.
 - A room member holding `roomShareAccessLinks` received every anonymous link of the room from
-  [`getRoom`][3.10-get-room] and [`getRooms`][3.10-get-rooms], the moderator link included. Each link is now returned
+  [`roomGet`][3.10-room-get] and [`roomList`][3.10-room-list], the moderator link included. Each link is now returned
   only to a caller that also holds every permission it grants.
-- [`getRecordingUrl`][3.10-get-recording-url] returned a link that downloads the recording to a caller holding
+- [`recordingGetUrl`][3.10-recording-get-url] returned a link that downloads the recording to a caller holding
   `recordingPlay` without `recordingDownload`, and the recording player's context menu saved the video for any viewer.
   Such a caller now gets a link that only plays the recording, and the player opens no context menu.
 - A `participantName` of any length was accepted when requesting a room member token to join a meeting. It is now
@@ -174,17 +174,17 @@ with no replacement.
 - Kicking a participant answered `404` when the media server stopped answering during the kick. It now answers `503`.
 - A list request with a `maxItems` below 1, such as `0.5`, answered an empty page marked as truncated and without a
   `nextPageToken`. Such a value now returns one item.
-- The pages after the first of [`getRooms`][3.9-get-rooms] and [`getRecordings`][3.9-get-recordings] requested by a
+- The pages after the first of [`roomList`][3.10-room-list] and [`recordingList`][3.10-recording-list] requested by a
   `room_manager` or `room_member` user listed rooms and recordings outside that user's scope, and those of
-  [`getUsers`][3.9-get-users] with both `userId` and `name` ignored both filters. Every page now keeps the scope and the
+  [`userList`][3.10-user-list] with both `userId` and `name` ignored both filters. Every page now keeps the scope and the
   filters of the first.
-- When `fields` left out the field the list is sorted by, the second page of `getRooms`, `getRecordings` and
-  [`getRoomMembers`][3.9-get-room-members] was empty. It now continues the listing.
-- [`participantRoleUpdate`][3.10-participant-role-update], [`participantMute`][3.9-participant-mute],
-  [`participantMuteAll`][3.9-participant-mute-all], `updateRoomMember` and the embedded commands that use them
+- When `fields` left out the field the list is sorted by, the second page of `roomList`, `recordingList` and
+  [`roomListMembers`][3.10-room-list-members] was empty. It now continues the listing.
+- [`participantUpdateRole`][3.10-participant-update-role], [`participantMute`][3.9-participant-mute],
+  [`participantMuteAll`][3.9-participant-mute-all], `roomUpdateMember` and the embedded commands that use them
   answered with an error when the notice to the affected participants could not be delivered, although the change
   was already applied. They now succeed.
-- Two simultaneous [`participantRoleUpdate`][3.10-participant-role-update] requests for the same participant both
+- Two simultaneous [`participantUpdateRole`][3.10-participant-update-role] requests for the same participant both
   succeeded, and a promotion made while the participant's token was being regenerated could be undone by it. Both
   now apply one after the other, so the second promotion answers `409`.
 - [`participantKick`][3.9-participant-kick] and the embedded command of the same name could disconnect the recorder
@@ -198,59 +198,59 @@ with no replacement.
   the [`participantJoined`][3.9-participant-joined] webhook.
 - The [`meetingEnded`][3.9-meeting-ended] webhook could be sent twice for one meeting when the media server's notice
   of its end and the periodic meeting status check handled it at the same time. It is now sent once.
-- [`startRecording`][3.9-start-recording] checked the target room before `recordingControl`, so a room member token of
+- [`recordingStart`][3.10-recording-start] checked the target room before `recordingControl`, so a room member token of
   another room got `404` for a room that does not exist and learned whether a room could be recorded. It now answers
   `403` first.
-- [`startRecording`][3.9-start-recording] answered `500` when the media server did not accept the recording, and `500`
+- [`recordingStart`][3.10-recording-start] answered `500` when the media server did not accept the recording, and `500`
   or `409` (no participants) when it could not be reached. It now answers `503`.
 - A recording encoding the media server cannot use, such as an odd width, was accepted in a room's
-  `recording.encoding` and in the `config.encoding` of [`startRecording`][3.9-start-recording], and the start then
+  `recording.encoding` and in the `config.encoding` of [`recordingStart`][3.10-recording-start], and the start then
   failed with a server error. Both now answer `422`.
-- [`stopRecording`][3.9-stop-recording] answered `404` for a recording that had ended more than 24 hours earlier, and
+- [`recordingStop`][3.10-recording-stop] answered `404` for a recording that had ended more than 24 hours earlier, and
   `500` for one that ended while the stop was being processed. It now answers `409` for both, as for any recording
   already stopped.
-- [`bulkDeleteRecordings`][3.9-bulk-delete-recordings] and [`downloadRecordings`][3.9-download-recordings] accepted any
+- [`recordingBulkDelete`][3.10-recording-bulk-delete] and [`recordingBulkDownload`][3.10-recording-bulk-download] accepted any
   number of `recordingIds`, and a long list failed with a server or proxy error. They now accept up to 100 distinct ids
   and answer `422` to more, and the recording lists disable ZIP download and bulk delete beyond 100 selected
   recordings.
 - A recording whose egress service died stayed in progress for good: stopping it answered 500 and starting another one
   in the room 409. It ends as `failed`, with its [`recordingEnded`][3.10-recording-ended] webhook, and the room can
   record again.
-- [`downloadRecordings`][3.9-download-recordings] with more than 50 recordings, two large ZIPs at once or a cancelled
+- [`recordingBulkDownload`][3.10-recording-bulk-download] with more than 50 recordings, two large ZIPs at once or a cancelled
   ZIP left every later recording playback and download on that server hanging until it restarted. Each ZIP now
   releases what it opened, whatever its size or however it ends.
 - A recording ended by the stale-recordings clean-up sent no [`recordingEnded`][3.9-recording-ended] webhook and stayed
   in progress in the meeting and for the embedded event `recordingStatusChanged`. Its end is now reported like any
   other, once.
 - The access token of a user with a pending password change also reached public endpoints whose path ends in `/me`
-  or `/change-password`, such as `GET /api/v1/users/me`. Only `getMe` and `changeUserPassword` accept it now.
+  or `/change-password`, such as `GET /api/v1/users/me`. Only `userGetMe` and `userChangePassword` accept it now.
 - Two simultaneous API key regenerations could leave two API keys, both accepted. Exactly one remains now, the last
   one generated.
 - Logging out, changing one's own password and refreshing with rotation left the earlier user tokens valid until
-  they expired. `logoutUser` now revokes the session's tokens, `changeUserPassword` revokes every earlier token of
+  they expired. `authLogout` now revokes the session's tokens, `userChangePassword` revokes every earlier token of
   the user and returns new ones, and a rotated refresh token is accepted once.
-- Two simultaneous [`createUser`][3.10-create-user] requests with the same `userId` could answer `500`. The one that
+- Two simultaneous [`userCreate`][3.10-user-create] requests with the same `userId` could answer `500`. The one that
   finds the `userId` taken now answers `409`.
-- [`updateRoomStatus`][3.10-update-room-status] with `open` during a meeting set the room `open` while the meeting
+- [`roomUpdateStatus`][3.10-room-update-status] with `open` during a meeting set the room `open` while the meeting
   went on, cancelling a scheduled close or deletion and sending a second `meetingStarted` webhook, and `closed` turned
   a scheduled deletion into a close. During a meeting the room now stays `active_meeting`: `open` cancels only a
   scheduled close and answers `409` when a deletion is scheduled, and `closed` keeps a scheduled deletion.
-- The room returned by `deleteRoom` and `bulkDeleteRooms` carried its `roles` with the current permission keys only. It
+- The room returned by `roomDelete` and `roomBulkDelete` carried its `roles` with the current permission keys only. It
   now carries the deprecated `can*` keys next to them, as every other room response does.
-- [`deleteRoom`][3.9-delete-room], [`bulkDeleteRooms`][3.9-bulk-delete-rooms] and the automatic deletion of expired
+- [`roomDelete`][3.10-room-delete], [`roomBulkDelete`][3.10-room-bulk-delete] and the automatic deletion of expired
   rooms could leave a room `open` with a pending deletion when its meeting ended at the same moment, and the next
   meeting then deleted the room and its recordings; a meeting starting at the same moment could have its room deleted
   under it. A deletion now acts on the meeting state the room has when it is written.
-- `getRoomMember` answered `404` for a member that does not exist before checking the caller, so a caller without
+- `roomGetMember` answered `404` for a member that does not exist before checking the caller, so a caller without
   access could tell which `memberId` values belong to the room. Such a caller now gets `403` whether or not the member
   exists.
-- A room member token of one room got `404` for a room that does not exist and `403` for one that does on `getRoom`,
-  `getRoomConfig`, `getRoomMember` and the meeting and broadcast operations, so it could tell which rooms exist. It
+- A room member token of one room got `404` for a room that does not exist and `403` for one that does on `roomGet`,
+  `roomGetConfig`, `roomGetMember` and the meeting and broadcast operations, so it could tell which rooms exist. It
   now gets `403` for both.
-- A permission change made with `updateRoomMember` during a meeting reached the media server only when the
+- A permission change made with `roomUpdateMember` during a meeting reached the media server only when the
   participant's client renewed its token, so a client that skipped the renewal kept publishing what it had lost. The
   server now applies the new media grant at once.
-- An `updateRoomMember` that changed nothing, such as one with an empty body, revoked the member's room member tokens
+- A `roomUpdateMember` that changed nothing, such as one with an empty body, revoked the member's room member tokens
   and told a member in the meeting that their permissions were updated. Only an update that changes the member's
   effective permissions does so now.
 - The name an identified guest, a member user or a signed-in user joined a meeting with was locked by the join screen
@@ -508,14 +508,8 @@ registered on both receives it twice.
 - Unanswered webhooks caused active connections to grow continuously. Every webhook is answered.
 - The `openvidu/openvidu-meet` Docker image resolved its dependencies anew on every build instead of installing the versions in the lockfile. It now installs the locked versions.
 
-[3.10-create-user]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/createUser
 [3.10-participant-kick]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/participantKick
 [3.10-participant-role-changed]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/participantRoleChangedWebhook
-[3.10-participant-role-update]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/participantRoleUpdate
-[3.10-update-room-status]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/updateRoomStatus
-[3.10-get-room]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/getRoom
-[3.10-get-recording-url]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/getRecordingUrl
-[3.10-get-rooms]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/getRooms
 [3.9-api]: https://openvidu.io/3.9/meet/embedded/reference/api.html
 [3.9-meetings]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/meetingGet
 [3.9-webhooks-api]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/webhookList
@@ -531,16 +525,7 @@ registered on both receives it twice.
 [3.9-recording]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/schemas/MeetRecording
 [3.9-create-room]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/createRoom
 [3.9-start-recording]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/startRecording
-[3.9-stop-recording]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/stopRecording
 [3.9-recording-ended]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/webhooks/recordingEndedWebhook
-[3.9-bulk-delete-recordings]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/bulkDeleteRecordings
-[3.9-download-recordings]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/downloadRecordings
-[3.9-delete-room]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/deleteRoom
-[3.9-bulk-delete-rooms]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/bulkDeleteRooms
-[3.9-get-rooms]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/getRooms
-[3.9-get-recordings]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/getRecordings
-[3.9-get-users]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/getUsers
-[3.9-get-room-members]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/getRoomMembers
 
 [3.10-recording-ended]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/recordingEndedWebhook
 [3.10-broadcasts]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/broadcastStart
@@ -554,6 +539,21 @@ registered on both receives it twice.
 [3.10-waiting-participant-list]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/waitingParticipantList
 [3.10-waiting-participant-admit]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/waitingParticipantAdmit
 [3.10-waiting-participant-reject]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/waitingParticipantReject
-[3.10-bulk-reject-waiting-participants]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/bulkRejectWaitingParticipants
 [3.10-waiting-participant-knocked]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/waitingParticipantKnockedWebhook
 [3.10-waiting-participant-status-changed]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/waitingParticipantStatusChangedWebhook
+[3.10-participant-update-role]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/participantUpdateRole
+[3.10-recording-bulk-delete]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/recordingBulkDelete
+[3.10-recording-bulk-download]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/recordingBulkDownload
+[3.10-recording-get-url]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/recordingGetUrl
+[3.10-recording-list]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/recordingList
+[3.10-recording-start]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/recordingStart
+[3.10-recording-stop]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/recordingStop
+[3.10-room-bulk-delete]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/roomBulkDelete
+[3.10-room-delete]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/roomDelete
+[3.10-room-get]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/roomGet
+[3.10-room-list]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/roomList
+[3.10-room-list-members]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/roomListMembers
+[3.10-room-update-status]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/roomUpdateStatus
+[3.10-user-create]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/userCreate
+[3.10-user-list]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/userList
+[3.10-waiting-participant-bulk-reject]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/waitingParticipantBulkReject

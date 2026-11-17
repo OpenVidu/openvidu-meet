@@ -63,15 +63,15 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
 				icon: 'mic_off'
 			},
 			{
-				key: 'participantHandLower',
-				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.participantHandLower.LABEL',
-				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.participantHandLower.DESCRIPTION',
+				key: 'participantLowerHand',
+				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.participantLowerHand.LABEL',
+				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.participantLowerHand.DESCRIPTION',
 				icon: 'do_not_touch'
 			},
 			{
-				key: 'participantReactionSend',
-				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.participantReactionSend.LABEL',
-				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.participantReactionSend.DESCRIPTION',
+				key: 'participantSendReaction',
+				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.participantSendReaction.LABEL',
+				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.participantSendReaction.DESCRIPTION',
 				icon: 'add_reaction'
 			},
 			{

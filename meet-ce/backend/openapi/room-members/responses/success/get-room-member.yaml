@@ -54,8 +54,8 @@ content:
                         participantPromote: true
                         participantKick: true
                         participantMute: true
-                        participantHandLower: true
-                        participantReactionSend: true
+                        participantLowerHand: true
+                        participantSendReaction: true
                         accessBypassLock: true
                         waitingParticipantAdmin: true
                         meetingEnd: false

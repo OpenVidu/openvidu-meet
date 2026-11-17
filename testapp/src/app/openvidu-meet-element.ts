@@ -29,10 +29,10 @@ export interface OpenViduMeetElement extends HTMLElement {
 	mediaToggleScreenShare(active?: boolean): void;
 	recordingStart(): void;
 	recordingStop(): void;
-	participantHandRaise(): void;
-	participantHandLower(participantIdentity?: string): void;
-	participantHandLowerAll(): void;
-	participantReactionSend(reaction: MeetReaction): void;
+	participantRaiseHand(): void;
+	participantLowerHand(participantIdentity?: string): void;
+	participantLowerAllHands(): void;
+	participantSendReaction(reaction: MeetReaction): void;
 	waitingParticipantAdmit(options: MeetWaitingParticipantDecisionOptions): void;
 	waitingParticipantAdmitAll(): void;
 	waitingParticipantReject(options: MeetWaitingParticipantDecisionOptions): void;

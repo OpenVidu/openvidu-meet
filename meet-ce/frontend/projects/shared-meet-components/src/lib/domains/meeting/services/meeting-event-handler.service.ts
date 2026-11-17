@@ -216,7 +216,7 @@ export class MeetingEventHandlerService {
 
 	// The notice offers to lower the hand, so it goes when the permission to do that does.
 	private readonly handNoticePermissionEffect = effect(() => {
-		if (!this.roomMemberContextService.hasPermission('participantHandLower')) {
+		if (!this.roomMemberContextService.hasPermission('participantLowerHand')) {
 			untracked(() => this.dismissHandNotice());
 		}
 	});
@@ -411,7 +411,7 @@ export class MeetingEventHandlerService {
 	/**
 	 * Reacts to a hand going up or down. The attribute the server wrote says whether the hand is
 	 * raised and who lowered it, so a moderator lower reaches the affected participant, the holders
-	 * of `participantHandLower` and the host without any further exchange.
+	 * of `participantLowerHand` and the host without any further exchange.
 	 */
 	private handleParticipantAttributesChanged(
 		changedAttributes: Record<string, string>,
@@ -428,7 +428,7 @@ export class MeetingEventHandlerService {
 			}
 		} else if (!raised) {
 			this.withdrawHand(participant.identity);
-		} else if (this.roomMemberContextService.hasPermission('participantHandLower')) {
+		} else if (this.roomMemberContextService.hasPermission('participantLowerHand')) {
 			this.announceRaisedHand(participant);
 		}
 

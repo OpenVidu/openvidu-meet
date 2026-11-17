@@ -28,6 +28,11 @@ class FakeRoomRepository {
 		this.reads++;
 		return Promise.resolve(this.rooms.get(roomId) ?? null);
 	}
+
+	findByRoomIds(roomIds: string[]): Promise<RoomAccessFacts[]> {
+		this.reads++;
+		return Promise.resolve(roomIds.flatMap((roomId) => this.rooms.get(roomId) ?? []));
+	}
 }
 
 class FakeRoomMemberRepository {
@@ -54,6 +59,14 @@ class FakeRequestSession {
 
 	getRoomIdFromMember() {
 		return this.memberRoomId;
+	}
+
+	getRoom() {
+		return { access: { lock: undefined } };
+	}
+
+	getParticipantIdentity() {
+		return undefined;
 	}
 
 	getRoomMemberPermissions() {
@@ -155,6 +168,67 @@ describe('RoomAccessService granted permissions', () => {
 				NONE
 			]);
 			expect(await service.getGrantedRoomMemberPermissions('owned')).toEqual(NONE);
+		});
+	});
+
+	describe('getAuthenticatedRoomMemberPermissionsInRooms', () => {
+		const allRoomIds = () => [...rooms.rooms.keys()];
+
+		it('grants a user what it grants them in each room one at a time, reading the rooms and memberships once', async () => {
+			session.user = { userId: USER_ID, role: MeetUserRole.ROOM_MANAGER };
+
+			const many = await service.getAuthenticatedRoomMemberPermissionsInRooms(allRoomIds());
+			const one = await Promise.all(allRoomIds().map((id) => service.getAuthenticatedRoomMemberPermissions(id)));
+
+			expect(allRoomIds().map((id) => many.get(id))).toEqual(one);
+		});
+
+		it('reads the rooms and the memberships of a user in one query each', async () => {
+			session.user = { userId: USER_ID, role: MeetUserRole.ROOM_MANAGER };
+
+			await service.getAuthenticatedRoomMemberPermissionsInRooms(allRoomIds());
+
+			expect(rooms.reads).toBe(1);
+			expect(members.queriedRoomIds).toEqual([['member', 'member-open', 'open', 'closed']]);
+		});
+
+		it('leaves a room that does not exist out of the answer', async () => {
+			session.user = { userId: USER_ID, role: MeetUserRole.ROOM_MANAGER };
+
+			const permissions = await service.getAuthenticatedRoomMemberPermissionsInRooms(['owned', 'missing']);
+
+			expect([...permissions.keys()]).toEqual(['owned']);
+		});
+
+		it('grants everything to an admin and to a system process without reading anything', async () => {
+			session.user = { userId: USER_ID, role: MeetUserRole.ADMIN };
+			expect(
+				(await service.getAuthenticatedRoomMemberPermissionsInRooms(['closed', 'missing'])).get('missing')
+			).toEqual(ALL);
+
+			session.user = undefined;
+			expect((await service.getAuthenticatedRoomMemberPermissionsInRooms(['closed'])).get('closed')).toEqual(ALL);
+			expect(rooms.reads).toBe(0);
+			expect(members.queriedRoomIds).toEqual([]);
+		});
+
+		it('grants a room member token its permissions in its own room and nothing elsewhere', async () => {
+			session.memberRoomId = 'member';
+			session.user = { userId: USER_ID, role: MeetUserRole.ROOM_MANAGER };
+			const withPolicy = new RoomAccessService(
+				rooms as never,
+				members as never,
+				session as never,
+				{
+					permissionsOf: (_lock: unknown, permissions: unknown) => permissions
+				} as never
+			);
+
+			const permissions = await withPolicy.getAuthenticatedRoomMemberPermissionsInRooms(['member', 'owned']);
+
+			expect(permissions.get('member')).toEqual(TOKEN);
+			expect(permissions.get('owned')).toEqual(NONE);
+			expect(rooms.reads).toBe(0);
 		});
 	});
 });

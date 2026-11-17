@@ -5,9 +5,9 @@ content:
         schema:
             type: object
             required:
-                - raised
+                - handRaised
             properties:
-                raised:
+                handRaised:
                     type: boolean
                     enum: [false]
                     description: Set to `false` to lower every raised hand. Nobody raises a hand but its owner.

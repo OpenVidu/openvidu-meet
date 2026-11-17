@@ -141,11 +141,11 @@ describe('RoomOptionsSchema defaults', () => {
 		});
 	});
 
-	it('completes a broadcast config that names no switch', () => {
-		expect(parseRoom({ config: { broadcast: { layout: 'speaker' } } }).config.broadcast).toEqual({
+	it('completes a broadcast config that names only its switch', () => {
+		expect(parseRoom({ config: { broadcast: { enabled: false } } }).config.broadcast).toEqual({
 			enabled: false,
 			destinations: [],
-			layout: 'speaker',
+			layout: 'grid',
 			encoding: 'H264_720P_30'
 		});
 	});

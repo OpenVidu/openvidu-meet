@@ -54,8 +54,8 @@ describe('Permission alias map', () => {
 		expect(MEET_UNALIASED_PERMISSION_KEYS).toEqual([
 			'meetingRead',
 			'participantMute',
-			'participantHandLower',
-			'participantReactionSend',
+			'participantLowerHand',
+			'participantSendReaction',
 			'accessBypassLock',
 			'waitingParticipantAdmin',
 			'broadcastControl',
@@ -182,8 +182,8 @@ describe('normalizePermissions', () => {
 	// Every key born after the rename that completes to a literal, at that literal.
 	const literalDefaults = {
 		participantMute: false,
-		participantHandLower: false,
-		participantReactionSend: true,
+		participantLowerHand: false,
+		participantSendReaction: true,
 		accessBypassLock: false,
 		waitingParticipantAdmin: false,
 		broadcastControl: false,
@@ -223,27 +223,27 @@ describe('normalizePermissions', () => {
 		});
 	});
 
-	// participantHandLower is implied by nothing either: a moderation capability no earlier permission decided.
-	it('should default participantHandLower to false, never take it from participantMute', () => {
+	// participantLowerHand is implied by nothing either: a moderation capability no earlier permission decided.
+	it('should default participantLowerHand to false, never take it from participantMute', () => {
 		expect(normalizePermissions({ participantMute: true }, { complete: true })).toEqual({
 			...literalDefaults,
 			participantMute: true
 		});
-		expect(normalizePermissions({ participantHandLower: true }, { complete: true })).toEqual({
+		expect(normalizePermissions({ participantLowerHand: true }, { complete: true })).toEqual({
 			...literalDefaults,
-			participantHandLower: true
+			participantLowerHand: true
 		});
 	});
 
 	// Reacting is taking part, not a power over others, so a set that cannot name it keeps it.
-	it('should default participantReactionSend to true, and keep an explicit false', () => {
+	it('should default participantSendReaction to true, and keep an explicit false', () => {
 		expect(normalizePermissions({ chatWrite: false }, { complete: true })).toEqual({
 			chatWrite: false,
 			...literalDefaults
 		});
-		expect(normalizePermissions({ participantReactionSend: false }, { complete: true })).toEqual({
+		expect(normalizePermissions({ participantSendReaction: false }, { complete: true })).toEqual({
 			...literalDefaults,
-			participantReactionSend: false
+			participantSendReaction: false
 		});
 	});
 
@@ -331,7 +331,7 @@ describe('toDeprecatedPermissions', () => {
 		expect(normalizePermissions(toDeprecatedPermissions(current), { complete: true })).toEqual({
 			...current,
 			participantMute: false,
-			participantHandLower: false,
+			participantLowerHand: false,
 			accessBypassLock: false,
 			waitingParticipantAdmin: false,
 			broadcastControl: false,

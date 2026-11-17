@@ -119,9 +119,9 @@ describe('FeatureCalculator.applyPermissions', () => {
 		expect(noRead.showChatInput).toBeFalse();
 	});
 
-	it('should gate the reaction picker on participantReactionSend', () => {
+	it('should gate the reaction picker on participantSendReaction', () => {
 		expect(featuresFor().showReactions).toBeTrue();
-		expect(featuresFor({ participantReactionSend: false }).showReactions).toBeFalse();
+		expect(featuresFor({ participantSendReaction: false }).showReactions).toBeFalse();
 	});
 
 	it('should gate the virtual backgrounds on mediaChangeVirtualBackground AND mediaPublishVideo', () => {

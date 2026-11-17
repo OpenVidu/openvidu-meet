@@ -661,7 +661,7 @@ test.describe('Participants E2E Tests', () => {
 		});
 	});
 
-	test.describe('Raise hand (participantHandLower)', () => {
+	test.describe('Raise hand (participantLowerHand)', () => {
 		// Not "Second Speaker": the row lookup matches names by text, and the local row comes first.
 		const secondSpeakerName = 'Observer';
 
@@ -754,7 +754,7 @@ test.describe('Participants E2E Tests', () => {
 			}
 		});
 
-		test('should not offer lowering hands to a participant without participantHandLower', async ({ browser }) => {
+		test('should not offer lowering hands to a participant without participantLowerHand', async ({ browser }) => {
 			const { byName, removeAllParticipants } = await joinModeratorAndSpeakers(browser, [
 				speakerName,
 				secondSpeakerName
@@ -861,7 +861,7 @@ test.describe('Participants E2E Tests', () => {
 				await speakerPage.keyboard.press('r');
 				await expectHandRaised(speakerPage, false);
 				await expectHandRaisedNotice(moderatorPage, false);
-				expect(handRequests).toEqual(['{"raised":true}', '{"raised":false}']);
+				expect(handRequests).toEqual(['{"handRaised":true}', '{"handRaised":false}']);
 			} finally {
 				await removeAllParticipants();
 			}
@@ -906,7 +906,7 @@ test.describe('Participants E2E Tests', () => {
 		});
 	});
 
-	test.describe('Reactions (participantReactionSend)', () => {
+	test.describe('Reactions (participantSendReaction)', () => {
 		const joinModeratorAndSpeaker = (browser: Browser) =>
 			joinParticipants(browser, {
 				roomId,
@@ -1094,7 +1094,7 @@ test.describe('Participants E2E Tests', () => {
 			}
 		});
 
-		test('should leave out the picker without participantReactionSend, still showing the reactions of others', async ({
+		test('should leave out the picker without participantSendReaction, still showing the reactions of others', async ({
 			browser
 		}) => {
 			const { byName, removeAllParticipants } = await joinParticipants(browser, {
@@ -1104,7 +1104,7 @@ test.describe('Participants E2E Tests', () => {
 					{
 						name: speakerName,
 						baseRole: MeetRoomMemberRole.SPEAKER,
-						customPermissions: { participantReactionSend: false }
+						customPermissions: { participantSendReaction: false }
 					}
 				]
 			});

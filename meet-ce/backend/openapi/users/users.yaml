@@ -1,6 +1,6 @@
 /users:
     post:
-        operationId: createUser
+        operationId: userCreate
         summary: Create a new user
         description: |
             Creates a new user account in the system.
@@ -36,7 +36,7 @@
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
     get:
-        operationId: getUsers
+        operationId: userList
         summary: Get all users
         description: |
             Retrieves a paginated list of all users in the system.
@@ -75,7 +75,7 @@
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
     delete:
-        operationId: bulkDeleteUsers
+        operationId: userBulkDelete
         summary: Bulk delete users
         description: |
             Deletes multiple users at once by their userIds.
@@ -105,7 +105,7 @@
                 $ref: '../shared/responses/errors/internal-server.yaml'
 /users/{userId}:
     get:
-        operationId: getUser
+        operationId: userGet
         summary: Get a user
         description: >
             Retrieves the details of a specific user by their userId.
@@ -133,7 +133,7 @@
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
     delete:
-        operationId: deleteUser
+        operationId: userDelete
         summary: Delete a user
         description: |
             Deletes a user from the system.
@@ -166,7 +166,7 @@
                 $ref: '../shared/responses/errors/internal-server.yaml'
 /users/{userId}/password:
     put:
-        operationId: resetUserPassword
+        operationId: userResetPassword
         summary: Reset user password
         description: |
             Allows an admin to reset the password of a specific user.
@@ -202,7 +202,7 @@
                 $ref: '../shared/responses/errors/internal-server.yaml'
 /users/{userId}/role:
     put:
-        operationId: updateUserRole
+        operationId: userUpdateRole
         summary: Update user role
         description: |
             Allows an admin to change the role of a specific user.

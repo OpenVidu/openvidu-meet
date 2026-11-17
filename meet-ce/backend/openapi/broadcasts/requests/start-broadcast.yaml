@@ -22,7 +22,7 @@ content:
                         | `[]` | None: `destinations` must then have at least one entry, or the request is rejected with a `422` |
                         | `["id1"]` | Only the ones listed |
 
-                        An `id` the room does not have is rejected with a `400`.
+                        An `id` the room does not have is rejected with a `422`.
                     items:
                         type: string
                         example: 'kX9pL2mQ7a'

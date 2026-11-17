@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as prettier from 'prettier';
+import { parse as parseYaml } from 'yaml';
 
 // Tells whether a change is ready, with the logic CI uses: the suites the diff affects come from
 // scripts/ci/changed-suites.mjs and each suite runs the commands its CI job runs.
@@ -21,7 +22,7 @@ const MAX_LINE_LENGTH = 200;
 const BACKEND = ['pnpm', '--filter', '@openvidu-meet/backend', 'run'];
 const WEBCOMPONENT = ['pnpm', '--filter', '@openvidu-meet/webcomponent', 'run'];
 
-const STATIC_CHECKS = ['format', 'openspec', 'openapi'];
+const STATIC_CHECKS = ['format', 'openspec', 'openapi', 'agents'];
 
 const TYPINGS = ['./meet.sh', 'build-typings', '--skip-install'];
 const meet = (command) => ['./meet.sh', command, '--skip-install', '--skip-typings'];
@@ -227,6 +228,40 @@ const skip = (id, reason) => {
 	report('skip', id, reason);
 };
 
+const CLAUDE_DIRECTORIES = ['.claude/agents', '.claude/rules'];
+
+const frontmatterProblem = (file) => {
+	const frontmatter = readFileSync(join(ROOT, file), 'utf8').match(/^---\n([\s\S]*?)\n---\n/);
+
+	if (!frontmatter) return 'no frontmatter';
+
+	try {
+		const fields = parseYaml(frontmatter[1]);
+		const name = file.split('/').at(-1).replace(/\.md$/, '');
+
+		if (file.startsWith('.claude/agents/') && fields?.name !== name) return `name must be "${name}"`;
+
+		if (file.startsWith('.claude/agents/') && !fields?.description) return 'no description';
+
+		return undefined;
+	} catch (error) {
+		return error.message.split('\n')[0];
+	}
+};
+
+const checkClaudeFiles = async () => {
+	const problems = CLAUDE_DIRECTORIES.filter((directory) => existsSync(join(ROOT, directory)))
+		.flatMap((directory) => readdirSync(join(ROOT, directory)).map((file) => `${directory}/${file}`))
+		.filter((file) => file.endsWith('.md'))
+		.map((file) => [file, frontmatterProblem(file)])
+		.filter(([, problem]) => problem);
+
+	return {
+		ok: problems.length === 0,
+		output: problems.map(([file, problem]) => `${file}: error ${problem}`).join('\n')
+	};
+};
+
 const commandAction = (cmd) => async () => {
 	const result = run(cmd);
 	return { ok: result.status === 0, output: result.stdout };
@@ -238,14 +273,25 @@ const staticAction = {
 		['specs', commandAction(['npx', 'openspec', 'validate', '--specs'])],
 		['changes', commandAction(['npx', 'openspec', 'validate', '--changes', '--strict'])]
 	],
-	openapi: [['', commandAction([...BACKEND, 'lint:api'])]]
+	openapi: [['', commandAction([...BACKEND, 'lint:api'])]],
+	agents: [['', checkClaudeFiles]]
 };
 
 const staticReason = (ctx) => ({
 	format: ctx.files.length > 0 ? `${ctx.files.length} changed files` : undefined,
 	openspec: ctx.files.some((file) => file.startsWith('openspec/')) ? 'openspec/ changed' : undefined,
-	openapi: ctx.files.some((file) => file.startsWith('meet-ce/backend/openapi/')) ? 'openapi/ changed' : undefined
+	openapi: ctx.files.some((file) => file.startsWith('meet-ce/backend/openapi/')) ? 'openapi/ changed' : undefined,
+	agents: ctx.files.some((file) => CLAUDE_DIRECTORIES.some((directory) => file.startsWith(`${directory}/`)))
+		? '.claude/ changed'
+		: undefined
 });
+
+const STATIC_SKIP_REASON = {
+	format: 'no changed files',
+	openspec: 'no openspec/ changes',
+	openapi: 'no openapi/ changes',
+	agents: 'no .claude/agents or .claude/rules changes'
+};
 
 const planStatic = (ctx) => {
 	const reasons = staticReason(ctx);
@@ -253,7 +299,7 @@ const planStatic = (ctx) => {
 	return STATIC_CHECKS.filter((id) => !ctx.options.only || ctx.options.only.includes(id)).map((id) => ({
 		id,
 		reason: ctx.options.all && id !== 'format' ? 'all' : reasons[id],
-		missing: `no ${id === 'format' ? 'changed files' : id === 'openspec' ? 'openspec/ changes' : 'openapi/ changes'}`
+		missing: STATIC_SKIP_REASON[id]
 	}));
 };
 

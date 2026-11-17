@@ -109,9 +109,9 @@ describe('Meetings API Tests', () => {
 			expect(signalSpy).not.toHaveBeenCalled();
 		});
 
-		it('should fail with 403 without participantReactionSend', async () => {
+		it('should fail with 403 without participantSendReaction', async () => {
 			await updateRoomRoles(roomData.room.roomId, {
-				speaker: { permissions: { participantReactionSend: false } }
+				speaker: { permissions: { participantSendReaction: false } }
 			});
 			const alice = await joinSpeaker('Alice');
 			const signalSpy = spyOnReactionSignal();

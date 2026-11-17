@@ -10,10 +10,8 @@
  *   2. Every permission key, embedding command/event and webhook event type starts with a
  *      registered module token. The deprecated 3.8.0 aliases are exempt, derived from the alias
  *      maps so the exemption list shrinks to nothing when the aliases are removed in 3.12.0.
- *   3. Every OpenAPI `operationId` starts with a registered module token, except the frozen
- *      pre-charter list below (aligned in the next major, when SDK method names may break) and a
- *      bulk operation, named `bulk` + verb + the plural of a module token like the released bulk
- *      deletes (`bulkRejectWaitingParticipants`).
+ *   3. Every OpenAPI `operationId` starts with a registered module token, a bulk operation
+ *      included (`roomBulkDelete`).
  *   4. Every top-level REST path segment of both specs belongs to `MEET_API_REST_GROUPS` — live
  *      meeting features go under `/meetings/{roomId}`, not new top-level groups, unless addressed
  *      by their own id like a recording (`/broadcasts`).
@@ -27,74 +25,6 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const typingsDist = join(repoRoot, 'meet-ce/typings/dist/index.js');
 const openapiDir = join(repoRoot, 'meet-ce/backend/openapi');
-
-/**
- * `operationId`s that predate the charter, frozen verbatim: public ones generate SDK method names,
- * so they keep their spelling until the next major (migration plan §D7/§8.5). Do NOT add entries —
- * a new operation must be named `moduleAction` from day one.
- */
-const PRE_CHARTER_OPERATION_IDS = new Set([
-	// auth / api-keys / users (platform groups)
-	'loginUser',
-	'logoutUser',
-	'refreshAccessToken',
-	'createApiKey',
-	'deleteApiKeys',
-	'getApiKeys',
-	'bulkDeleteUsers',
-	'changeUserPassword',
-	'createUser',
-	'deleteUser',
-	'getMe',
-	'getUser',
-	'getUsers',
-	'resetUserPassword',
-	'updateUserRole',
-	// config / analytics / ai
-	'getCaptionsConfig',
-	'getRoomsAppearanceConfig',
-	'getSecurityConfig',
-	'updateRoomsAppearanceConfig',
-	'updateSecurityConfig',
-	'getAnalytics',
-	'cancelAiAssistant',
-	'createAiAssistant',
-	// rooms / room members
-	'bulkDeleteRooms',
-	'createRoom',
-	'deleteRoom',
-	'getRoom',
-	'getRoomConfig',
-	'getRooms',
-	'updateRoomAccess',
-	'updateRoomConfig',
-	'updateRoomRoles',
-	'updateRoomStatus',
-	'addRoomMember',
-	'bulkDeleteRoomMembers',
-	'deleteRoomMember',
-	'getRoomMember',
-	'getRoomMembers',
-	'updateRoomMember',
-	'generateRoomMemberToken',
-	'refreshRoomMemberToken',
-	// recordings
-	'bulkDeleteRecordings',
-	'deleteRecording',
-	'downloadRecording',
-	'downloadRecordings',
-	'getRecording',
-	'getRecordingMedia',
-	'getRecordings',
-	'getRecordingUrl',
-	'startRecording',
-	'stopRecording'
-]);
-
-const isBulkOperationId = (operationId, modules) => {
-	const match = /^bulk[A-Z][a-z]+([A-Z][A-Za-z]*)s$/.exec(operationId);
-	return !!match && modules.includes(match[1][0].toLowerCase() + match[1].slice(1));
-};
 
 const errors = [];
 const fail = (message) => errors.push(message);
@@ -174,14 +104,10 @@ for (const file of yamlFiles) {
 		const operationId = match[1];
 		operationIdCount++;
 
-		if (
-			!PRE_CHARTER_OPERATION_IDS.has(operationId) &&
-			!meetApiModuleOf(operationId) &&
-			!isBulkOperationId(operationId, MEET_API_MODULES)
-		) {
+		if (!meetApiModuleOf(operationId)) {
 			fail(
 				`operationId '${operationId}' (${file.slice(repoRoot.length + 1)}) does not start with a ` +
-					`registered module token — new operations are named moduleAction from day one`
+					`registered module token — operations are named moduleAction`
 			);
 		}
 	}

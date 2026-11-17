@@ -115,8 +115,8 @@ describe('BroadcastHelper.resolveTargets', () => {
 		]);
 	});
 
-	it('rejects an id the room does not have with a 400, and a redacted URL, which has no stream key', () => {
-		expectStatus(() => BroadcastHelper.resolveTargets(room, urls, [], { destinationIds: ['a', 'zzz'] }), 400);
+	it('rejects an id the room does not have and a redacted URL, which has no stream key', () => {
+		expectStatus(() => BroadcastHelper.resolveTargets(room, urls, [], { destinationIds: ['a', 'zzz'] }), 422);
 		expectStatus(
 			() =>
 				BroadcastHelper.resolveTargets(room, urls, [], {

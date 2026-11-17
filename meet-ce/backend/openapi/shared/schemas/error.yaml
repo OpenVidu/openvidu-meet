@@ -5,7 +5,9 @@ required:
 properties:
     error:
         type: string
-        description: Name of the error
+        description: >
+            Name of the error, such as `Room Error`, or a snake_case code, such as `not_enough_places`, where the
+            operation documents codes for that status because it has several causes
     message:
         type: string
         description: Description of the error

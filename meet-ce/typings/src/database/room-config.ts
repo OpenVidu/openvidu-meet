@@ -169,8 +169,7 @@ export interface MeetBroadcastConfig {
 	/**
 	 * Indicates if live broadcast is enabled in the room. Forced to `false` while end-to-end
 	 * encryption is enabled, which excludes broadcast the same way it excludes recording. Defaults to
-	 * `false`; config updates deep-merge with the stored config, so omitting this field keeps its
-	 * current value.
+	 * `false` when the config sends no `broadcast` object.
 	 */
 	enabled: boolean;
 	/**

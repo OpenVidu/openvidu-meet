@@ -80,7 +80,7 @@ export class MeetingParticipantItemContentComponent {
 		const canMakeModerator = this.roomMemberContextService.hasPermission('participantPromote');
 		const canKickParticipants = this.roomMemberContextService.hasPermission('participantKick');
 		const canMuteParticipants = this.roomMemberContextService.hasPermission('participantMute');
-		const canLowerHands = this.roomMemberContextService.hasPermission('participantHandLower');
+		const canLowerHands = this.roomMemberContextService.hasPermission('participantLowerHand');
 
 		// If the user doesn't have any moderation permissions, no need to compute further.
 		if (!canMakeModerator && !canKickParticipants && !canMuteParticipants && !canLowerHands) {
@@ -115,7 +115,7 @@ export class MeetingParticipantItemContentComponent {
 	});
 
 	async onLowerHandClick(): Promise<void> {
-		if (!this.roomMemberContextService.hasPermission('participantHandLower')) return;
+		if (!this.roomMemberContextService.hasPermission('participantLowerHand')) return;
 
 		try {
 			await this.meetingHandService.lower(this.participant().identity);

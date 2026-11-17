@@ -26,7 +26,7 @@ import {
 	errorBroadcastDisabled,
 	errorBroadcastNotFound,
 	errorBroadcastRoomHasNoParticipants,
-	errorBroadcastStartUnknownDestination,
+	errorBroadcastUnknownDestination,
 	errorEgressNotAvailable,
 	errorInsufficientPermissions
 } from '../../../../src/models/error.model.js';
@@ -261,12 +261,12 @@ describe('Broadcasts API Tests', () => {
 			const [idA] = await roomDestinationIds(roomData);
 			expectMeetError(
 				await startBroadcasts(roomId, { destinationIds: [idA, 'nope'] }),
-				errorBroadcastStartUnknownDestination('nope')
+				errorBroadcastUnknownDestination('nope')
 			);
 			const [idOfAnotherRoom] = await roomDestinationIds(idleRoom);
 			expectMeetError(
 				await startBroadcasts(roomId, { destinationIds: [idOfAnotherRoom] }),
-				errorBroadcastStartUnknownDestination(idOfAnotherRoom)
+				errorBroadcastUnknownDestination(idOfAnotherRoom)
 			);
 
 			const refused = [

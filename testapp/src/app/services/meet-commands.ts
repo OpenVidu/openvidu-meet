@@ -211,30 +211,30 @@ export class MeetCommandsService {
 
 	// ── Raise hand ──────────────────────────────────────────────────────────
 
-	participantHandRaise(): void {
+	participantRaiseHand(): void {
 		this.dispatch(
-			() => this.iframeHost.participantHandRaise(),
-			(element) => element.participantHandRaise()
+			() => this.iframeHost.participantRaiseHand(),
+			(element) => element.participantRaiseHand()
 		);
-		this.log.command('participantHandRaise', '()');
+		this.log.command('participantRaiseHand', '()');
 	}
 
 	/** Lowers the hand of the participant identity above, or the own hand when it is empty. */
-	participantHandLower(): void {
+	participantLowerHand(): void {
 		const identity = this.participantIdentity().trim() || undefined;
 		this.dispatch(
-			() => this.iframeHost.participantHandLower(identity),
-			(element) => element.participantHandLower(identity)
+			() => this.iframeHost.participantLowerHand(identity),
+			(element) => element.participantLowerHand(identity)
 		);
-		this.log.command('participantHandLower', identity ? `("${identity}")` : '()');
+		this.log.command('participantLowerHand', identity ? `("${identity}")` : '()');
 	}
 
-	participantHandLowerAll(): void {
+	participantLowerAllHands(): void {
 		this.dispatch(
-			() => this.iframeHost.participantHandLowerAll(),
-			(element) => element.participantHandLowerAll()
+			() => this.iframeHost.participantLowerAllHands(),
+			(element) => element.participantLowerAllHands()
 		);
-		this.log.command('participantHandLowerAll', '()');
+		this.log.command('participantLowerAllHands', '()');
 	}
 
 	// ── Waiting participants ────────────────────────────────────────────────
@@ -283,12 +283,12 @@ export class MeetCommandsService {
 
 	// ── Reactions ───────────────────────────────────────────────────────────
 
-	participantReactionSend(reaction: MeetReaction): void {
+	participantSendReaction(reaction: MeetReaction): void {
 		this.dispatch(
-			() => this.iframeHost.participantReactionSend(reaction),
-			(element) => element.participantReactionSend(reaction)
+			() => this.iframeHost.participantSendReaction(reaction),
+			(element) => element.participantSendReaction(reaction)
 		);
-		this.log.command('participantReactionSend', `("${reaction}")`);
+		this.log.command('participantSendReaction', `("${reaction}")`);
 	}
 
 	// ── Live broadcast ──────────────────────────────────────────────────────

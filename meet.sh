@@ -101,7 +101,7 @@ show_help() {
   echo "    Tell whether the current change is ready: formatting, OpenSpec, OpenAPI and the unit suites it affects"
   echo -e "    ${YELLOW}Options:${NC} --base <ref>   Diff against <ref> (default: merge base with origin/main)"
   echo -e "             ${NC} --all          Every check, regardless of the diff"
-  echo -e "             ${NC} --only <ids>   Only these checks (format, openspec, openapi, static, backend-unit, frontend-unit, wc-unit)"
+  echo -e "             ${NC} --only <ids>   Only these checks (format, openspec, openapi, agents, static, backend-unit, frontend-unit, wc-unit)"
   echo -e "             ${NC} --list         Print what would run and why"
   echo -e "             ${NC} --fix          Format the files the format check would fail"
   echo

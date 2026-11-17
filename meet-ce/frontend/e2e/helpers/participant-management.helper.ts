@@ -899,7 +899,7 @@ export const lowerAllHands = async (page: Page): Promise<void> => {
 };
 
 /**
- * Asserts the raised-hand notice a holder of `participantHandLower` is shown: none, or a single one
+ * Asserts the raised-hand notice a holder of `participantLowerHand` is shown: none, or a single one
  * reading `message`.
  */
 export const expectHandRaisedNotice = async (page: Page, message: string | false): Promise<void> => {

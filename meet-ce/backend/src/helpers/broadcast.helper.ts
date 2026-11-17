@@ -19,7 +19,6 @@ import {
 	errorBroadcastDestinationNotAllowed,
 	errorBroadcastDuplicateDestination,
 	errorBroadcastRedactedDestinationUrl,
-	errorBroadcastStartUnknownDestination,
 	errorBroadcastUnknownDestination,
 	errorEgressWithoutStreamTags
 } from '../models/error.model.js';
@@ -118,7 +117,7 @@ export class BroadcastHelper {
 			? destinationIds.map((destinationId) => {
 					const destination = roomDestinations.find(({ id }) => id === destinationId);
 
-					if (!destination) throw errorBroadcastStartUnknownDestination(destinationId);
+					if (!destination) throw errorBroadcastUnknownDestination(destinationId);
 
 					return destination;
 				})

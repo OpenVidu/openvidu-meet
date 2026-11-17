@@ -29,10 +29,10 @@ class FakeImpl extends HTMLElement {
 	mediaToggleScreenShare = jest.fn();
 	recordingStart = jest.fn();
 	recordingStop = jest.fn();
-	participantHandRaise = jest.fn();
-	participantHandLower = jest.fn();
-	participantHandLowerAll = jest.fn();
-	participantReactionSend = jest.fn();
+	participantRaiseHand = jest.fn();
+	participantLowerHand = jest.fn();
+	participantLowerAllHands = jest.fn();
+	participantSendReaction = jest.fn();
 	broadcastStart = jest.fn();
 	broadcastStop = jest.fn();
 	broadcastStopAll = jest.fn();

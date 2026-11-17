@@ -18,9 +18,9 @@ import type { BroadcastRecord } from '../models/broadcast.model.js';
 import { EGRESS_LOST_ERROR } from '../models/egress.model.js';
 import {
 	errorBroadcastAlreadyStarted,
-	errorBroadcastAlreadyStopped,
 	errorBroadcastNotFound,
 	errorBroadcastRoomHasNoParticipants,
+	errorBroadcastStopInProgress,
 	errorBroadcastUpdateInProgress,
 	OpenViduMeetError
 } from '../models/error.model.js';
@@ -332,7 +332,7 @@ export class BroadcastService {
 
 		if (!record) throw errorBroadcastNotFound(broadcastId);
 
-		if (!BroadcastHelper.isRunning(record.status)) throw errorBroadcastAlreadyStopped(broadcastId);
+		if (!BroadcastHelper.isRunning(record.status)) throw errorBroadcastStopInProgress(broadcastId);
 
 		return record;
 	}
