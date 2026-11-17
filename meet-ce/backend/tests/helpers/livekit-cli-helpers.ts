@@ -2,7 +2,8 @@ import { MeetRoomMemberTokenMetadata } from '@openvidu-meet/typings';
 import { ChildProcess, spawn } from 'child_process';
 import { MEET_ENV } from '../../src/environment.js';
 import {
-	waitForParticipantsToDisconnect,
+	DEFAULT_PARTICIPANT_TIMEOUT_MS,
+	pollUntil,
 	waitForParticipantToConnect,
 	waitForParticipantToUpdateMetadata
 } from './wait-helpers.js';
@@ -117,34 +118,40 @@ export const disconnectFakeParticipants = async () => {
 	});
 
 	fakeParticipantsProcesses.clear();
+	fakeParticipantRooms.clear();
 
-	for (const roomId of roomIds) {
-		const identities = await listRoomParticipantIdentities(roomId);
+	// A participant can be in the room without being listed by the first pass (the egress of a recording or a
+	// broadcast joins on its own schedule), so every pass removes whoever is there until one finds it empty.
+	await pollUntil(async () => (await Promise.all(roomIds.map(removeEveryParticipant))).every(Boolean), {
+		timeoutMs: DEFAULT_PARTICIPANT_TIMEOUT_MS,
+		errorMessage: `Participants in rooms [${roomIds.join(', ')}] did not disconnect`
+	});
+};
 
-		for (const identity of identities) {
-			try {
-				await executeLivekitCliCommand([
-					'room',
-					'participants',
-					'remove',
-					'--room',
-					roomId,
-					'--identity',
-					identity
-				]);
-			} catch (error) {
-				const errorMessage = error instanceof Error ? error.message : String(error);
-				console.warn(
-					`Could not remove participant '${identity}' from room '${roomId}'. Continuing cleanup. Reason: ${errorMessage}`
-				);
-			}
+/** Removes every participant of the room and says whether it was already empty. */
+const removeEveryParticipant = async (roomId: string): Promise<boolean> => {
+	const identities = await listRoomParticipantIdentities(roomId);
+
+	if (identities.length > 0) console.log(`Removing [${identities.join(', ')}] from room '${roomId}'`);
+
+	for (const identity of identities) {
+		try {
+			await executeLivekitCliCommand([
+				'room',
+				'participants',
+				'remove',
+				'--room',
+				roomId,
+				'--identity',
+				identity
+			]);
+		} catch (error) {
+			const errorMessage = error instanceof Error ? error.message : String(error);
+			console.warn(`Could not remove participant '${identity}' from room '${roomId}': ${errorMessage}`);
 		}
 	}
 
-	fakeParticipantRooms.clear();
-
-	// Wait until LiveKit confirms no participants remain in any of the affected rooms
-	await waitForParticipantsToDisconnect(roomIds);
+	return identities.length === 0;
 };
 
 const withLivekitCredentials = (args: string[]): string[] => {
