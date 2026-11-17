@@ -94,16 +94,20 @@ describe('BlobStorageService reading and deleting recording media', () => {
 			...([noopLogger, provider, keyBuilder] as unknown as ConstructorParameters<typeof BlobStorageService>)
 		);
 
-	const mediaOf = (fileSize: number | undefined) => {
+	const mediaOf = (storedFileSize: number | undefined, openStream = () => Readable.from([])) => {
 		const reads: unknown[] = [];
+		let sizeRequests = 0;
 		const service = build({
-			getObjectHeaders: async () => ({ contentLength: fileSize }),
+			getObjectHeaders: async () => {
+				sizeRequests++;
+				return { contentLength: storedFileSize };
+			},
 			getObjectAsStream: async (_key: string, range?: unknown) => {
 				reads.push(range);
-				return Readable.from([]);
+				return openStream();
 			}
 		} as Partial<StorageProvider>);
-		return { service, reads };
+		return { service, reads, sizeRequests: () => sizeRequests };
 	};
 
 	it.each([
@@ -116,28 +120,66 @@ describe('BlobStorageService reading and deleting recording media', () => {
 		['a range that is not a number, as the whole file', { start: NaN, end: 10 }, undefined],
 		['a range that ends before it starts, as the whole file', { start: 20, end: 10 }, undefined]
 	])('reads %s of a 100-byte recording', async (_case, range, expected) => {
-		const { service, reads } = mediaOf(100);
+		const { service, reads, sizeRequests } = mediaOf(undefined);
 
-		const media = await service.getRecordingMedia('room-1--EG_1--abc', range);
+		const media = await service.getRecordingMedia('room-1--EG_1--abc', 100, range);
 
 		expect(reads).toEqual([expected]);
 		expect(media).toMatchObject({ fileSize: 100, start: expected?.start, end: expected?.end });
+		expect(sizeRequests()).toBe(0);
+	});
+
+	it('asks the storage for the size of a recording that does not store it', async () => {
+		const { service, reads, sizeRequests } = mediaOf(100);
+
+		const media = await service.getRecordingMedia('room-1--EG_1--abc', undefined, { start: 90, end: 500 });
+
+		expect(sizeRequests()).toBe(1);
+		expect(reads).toEqual([{ start: 90, end: 99 }]);
+		expect(media).toMatchObject({ fileSize: 100, start: 90, end: 99 });
+	});
+
+	it('hands over the stream with its content untouched', async () => {
+		const { service } = mediaOf(undefined, () => Readable.from([Buffer.from('first'), Buffer.from('second')]));
+
+		const { fileStream } = await service.getRecordingMedia('room-1--EG_1--abc', 11);
+
+		expect(Buffer.concat(await fileStream.toArray()).toString()).toBe('firstsecond');
+	});
+
+	it('fails before handing over a stream whose file turns out to be missing when it is first read', async () => {
+		const missing = new Error('No such object');
+		const { service } = mediaOf(
+			undefined,
+			() =>
+				new Readable({
+					read: function () {
+						this.destroy(missing);
+					}
+				})
+		);
+
+		await expect(service.getRecordingMedia('room-1--EG_1--abc', 100)).rejects.toBe(missing);
 	});
 
 	it('answers 416 to a range that starts past the end of the recording', async () => {
-		const { service, reads } = mediaOf(100);
+		const { service, reads } = mediaOf(undefined);
 
-		await expect(service.getRecordingMedia('room-1--EG_1--abc', { start: 100, end: 150 })).rejects.toMatchObject({
+		await expect(
+			service.getRecordingMedia('room-1--EG_1--abc', 100, { start: 100, end: 150 })
+		).rejects.toMatchObject({
 			statusCode: 416
 		});
 		expect(reads).toEqual([]);
 	});
 
-	it('answers 404 for a recording whose file is missing or empty', async () => {
+	it('answers 404 for a recording without a stored size whose file is missing or empty', async () => {
 		const { service, reads } = mediaOf(undefined);
 
-		await expect(service.getRecordingMedia('room-1--EG_1--abc')).rejects.toMatchObject({ statusCode: 404 });
-		await expect(mediaOf(0).service.getRecordingMedia('room-1--EG_1--abc')).rejects.toMatchObject({
+		await expect(service.getRecordingMedia('room-1--EG_1--abc', undefined)).rejects.toMatchObject({
+			statusCode: 404
+		});
+		await expect(mediaOf(0).service.getRecordingMedia('room-1--EG_1--abc', undefined)).rejects.toMatchObject({
 			statusCode: 404
 		});
 		expect(reads).toEqual([]);

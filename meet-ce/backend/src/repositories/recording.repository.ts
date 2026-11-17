@@ -335,16 +335,16 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 	}
 
 	/**
-	 * Finds the access secrets of a specific recording, with the status and filename a media request needs.
+	 * Finds the access secrets of a specific recording, with the status, filename and size a media request needs.
 	 * This is the only method that returns the access secrets.
 	 *
 	 * @param recordingId - The ID of the recording
-	 * @returns The recording's four secrets, status and filename, or null if not found
+	 * @returns The recording's four secrets, status, filename and size, or null if not found
 	 */
 	async findAccessByRecordingId(recordingId: string): Promise<MeetRecordingAccess | null> {
 		return this.model
 			.findOne({ recordingId })
-			.select({ _id: 0, accessSecrets: 1, status: 1, filename: 1 })
+			.select({ _id: 0, accessSecrets: 1, status: 1, filename: 1, size: 1 })
 			.lean()
 			.exec();
 	}

@@ -30,7 +30,7 @@ export interface MeetRecordingAccessSecrets {
 /**
  * What a media request reads about a recording: its secrets, and the status and filename it serves with.
  */
-export type MeetRecordingAccess = Pick<MeetRecordingDocument, 'accessSecrets' | 'status' | 'filename'>;
+export type MeetRecordingAccess = Pick<MeetRecordingDocument, 'accessSecrets' | 'status' | 'filename' | 'size'>;
 
 /**
  * Type for fields in MeetRecordingDocument that are not present in MeetRecordingInfo domain model.

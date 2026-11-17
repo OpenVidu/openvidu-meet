@@ -2,7 +2,10 @@ import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { MeetRoomMemberRole } from '@openvidu-meet/typings';
 import stream from 'stream';
 import unzipper from 'unzipper';
+import { container } from '../../../../src/config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
+import { RecordingRepository } from '../../../../src/repositories/recording.repository.js';
+import { BlobStorageService } from '../../../../src/services/storage/blob-storage.service.js';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
 import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
 import {
@@ -62,6 +65,21 @@ describe('Recording API Tests', () => {
 			roomIds.forEach((id) => {
 				expect(entries.some((name) => name.includes(id))).toBe(true);
 			});
+		});
+
+		it('should leave out a recording whose file is no longer in the storage', async () => {
+			const testContext = await setupMultiRecordingsTestContext(2, 2, 2);
+			const [lost, kept] = testContext.rooms;
+			await container.get(BlobStorageService).deleteRecordingMedia(lost.recordingId!);
+
+			try {
+				const res = await downloadRecordings([lost.recordingId!, kept.recordingId!]);
+
+				expect(res.status).toBe(200);
+				expect(await getZipEntries(res.body)).toEqual([expect.stringContaining(kept.room.roomId)]);
+			} finally {
+				await container.get(RecordingRepository).deleteByRecordingId(lost.recordingId!);
+			}
 		});
 
 		it('should only include recordings from the room when using a room member token', async () => {

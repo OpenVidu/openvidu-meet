@@ -73,7 +73,8 @@ export const BULK_RECORDING_FIELDS = [
 	'recordingId',
 	'roomId',
 	'status',
-	'filename'
+	'filename',
+	'size'
 ] as const satisfies readonly MeetRecordingField[];
 
 export type BulkRecording = ProjectedRecording<typeof BULK_RECORDING_FIELDS>;
@@ -463,7 +464,7 @@ export class RecordingService {
 	 * out of the ZIP.
 	 */
 	async writeRecordingsZip(
-		recordings: readonly Pick<BulkRecording, 'recordingId' | 'status' | 'filename'>[],
+		recordings: readonly Pick<BulkRecording, 'recordingId' | 'status' | 'filename' | 'size'>[],
 		output: Writable,
 		signal: AbortSignal
 	): Promise<void> {
@@ -493,8 +494,9 @@ export class RecordingService {
 	protected async openRecordingForZip({
 		recordingId,
 		status,
-		filename
-	}: Pick<BulkRecording, 'recordingId' | 'status' | 'filename'>): Promise<
+		filename,
+		size
+	}: Pick<BulkRecording, 'recordingId' | 'status' | 'filename' | 'size'>): Promise<
 		{ name: string; stream: Readable } | undefined
 	> {
 		try {
@@ -502,7 +504,7 @@ export class RecordingService {
 				throw errorRecordingNotStreamable(recordingId);
 			}
 
-			const { fileStream } = await this.blobStorageService.getRecordingMedia(recordingId);
+			const { fileStream } = await this.blobStorageService.getRecordingMedia(recordingId, size);
 			return { name: filename || `${recordingId}.mp4`, stream: fileStream };
 		} catch (error) {
 			this.logger.warn(`Error adding recording '${recordingId}' to ZIP`, error);
@@ -641,7 +643,7 @@ export class RecordingService {
 	}
 
 	/**
-	 * Retrieves the access secrets of a specific recording, with its status and filename.
+	 * Retrieves the access secrets of a specific recording, with its status, filename and size.
 	 *
 	 * @param recordingId - The unique identifier of the recording
 	 * @throws Will throw an error if the recording is not found
@@ -668,10 +670,9 @@ export class RecordingService {
 	): Promise<{
 		scope: 'public' | 'private';
 		download: boolean;
-		recording: Pick<MeetRecordingInfo, 'status' | 'filename'>;
+		recording: Pick<MeetRecordingInfo, 'status' | 'filename' | 'size'>;
 	}> {
-		const { accessSecrets, status, filename } = await this.getRecordingAccess(recordingId);
-		const recording = { status, filename };
+		const { accessSecrets, ...recording } = await this.getRecordingAccess(recordingId);
 
 		switch (recordingSecret) {
 			case accessSecrets.public:
@@ -745,7 +746,7 @@ export class RecordingService {
 
 	async getRecordingAsStream(
 		recordingId: string,
-		status: MeetRecordingStatus,
+		{ status, size }: Pick<MeetRecordingInfo, 'status' | 'size'>,
 		rangeHeader?: string
 	): Promise<{ fileSize: number | undefined; fileStream: Readable; start?: number; end?: number }> {
 		const DEFAULT_CHUNK_SIZE = 5 * 1024 * 1024; // 5MB
@@ -770,7 +771,7 @@ export class RecordingService {
 			this.logger.debug(`Streaming full content for recording '${recordingId}'.`);
 		}
 
-		return this.blobStorageService.getRecordingMedia(recordingId, validatedRange);
+		return this.blobStorageService.getRecordingMedia(recordingId, size, validatedRange);
 	}
 
 	/**

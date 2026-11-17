@@ -1,3 +1,4 @@
+import { once } from 'events';
 import { inject, injectable } from 'inversify';
 import type { Readable } from 'stream';
 import { errorRecordingNotFound, errorRecordingRangeNotSatisfiable } from '../../models/error.model.js';
@@ -63,24 +64,30 @@ export class BlobStorageService {
 	}
 
 	/**
-	 * Retrieves recording media file as a stream.
+	 * Retrieves recording media file as a stream, once its first bytes have arrived.
 	 * Supports partial content requests via HTTP range headers.
 	 *
 	 * @param recordingId - The unique identifier of the recording
+	 * @param size - The size the recording stores, in bytes. Without it, the storage is asked for the size of the file
 	 * @param range - Optional range specification for partial content
 	 * @returns Stream of the recording file with metadata
 	 */
 	async getRecordingMedia(
 		recordingId: string,
+		size: number | undefined,
 		range?: { start: number; end: number }
 	): Promise<{ fileSize: number | undefined; fileStream: Readable; start?: number; end?: number }> {
 		try {
 			const storageKey = this.keyBuilder.buildBinaryRecordingKey(recordingId);
 			this.logger.debug(`Getting recording media for '${recordingId}' from storage: ${storageKey}`);
 
-			const fileSize = await this.getRecordingFileSize(storageKey, recordingId);
+			const fileSize = size || (await this.getRecordingFileSize(storageKey, recordingId));
 			const adjustedRange = this.validateAndAdjustRange(range, fileSize, recordingId);
 			const fileStream = await this.storageProvider.getObjectAsStream(storageKey, adjustedRange);
+
+			// A provider may only ask for the file when its stream is first read: a file missing from the
+			// storage has to fail here, before the response starts.
+			await once(fileStream, 'readable');
 
 			return {
 				fileSize,

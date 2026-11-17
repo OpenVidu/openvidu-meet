@@ -228,7 +228,8 @@ export const authorizeRecordingAccess = (
 			res.locals.recording = await recordingService.validateRecordingAccess(recordingId, permission, [
 				'roomId',
 				'status',
-				'filename'
+				'filename',
+				'size'
 			]);
 			return next();
 		} catch (error) {

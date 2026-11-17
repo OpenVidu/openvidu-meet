@@ -22,7 +22,7 @@ const mockResponse = (): ResponseMock => {
 };
 
 const RECORDING_ID = 'room-1--EG_1--uid1';
-const recording = { status: MeetRecordingStatus.COMPLETE, filename: 'room-1--uid1.mp4' };
+const recording = { status: MeetRecordingStatus.COMPLETE, filename: 'room-1--uid1.mp4', size: 1024 };
 
 const requestWithSecret = (recordingSecret?: string): Request =>
 	({ params: { recordingId: RECORDING_ID }, query: { recordingSecret }, headers: {} }) as unknown as Request;
@@ -158,7 +158,8 @@ describe('authorizeRecordingAccess', () => {
 		expect(recordingService.validateRecordingAccess).toHaveBeenCalledWith(RECORDING_ID, 'recordingPlay', [
 			'roomId',
 			'status',
-			'filename'
+			'filename',
+			'size'
 		]);
 		expect(res.locals.recording).toEqual({ roomId: 'room-1', ...recording });
 		expect(next).toHaveBeenCalled();

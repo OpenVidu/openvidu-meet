@@ -1,6 +1,9 @@
-import { errorRecordingNotFound } from '../../../../src/models/error.model.js';
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { MeetRoom } from '@openvidu-meet/typings';
+import { container } from '../../../../src/config/dependency-injector.config.js';
+import { errorRecordingNotFound } from '../../../../src/models/error.model.js';
+import { RecordingRepository } from '../../../../src/repositories/recording.repository.js';
+import { BlobStorageService } from '../../../../src/services/storage/blob-storage.service.js';
 import {
 	expectMeetError,
 	expectSuccessRecordingMediaResponse,
@@ -184,6 +187,21 @@ describe('Recording API Tests', () => {
 			expect(response.body.message).toContain(`Recording '${activeRecordingId}' is not streamable`);
 
 			await stopRecording(activeRecordingId);
+		});
+
+		it('should return 500 when the file of the recording is no longer in the storage', async () => {
+			const testContext = await setupMultiRecordingsTestContext(1, 1, 1);
+			const { recordingId: lostRecordingId = '' } = testContext.rooms[0];
+			await container.get(BlobStorageService).deleteRecordingMedia(lostRecordingId);
+
+			try {
+				const fullResponse = await getRecordingMedia(lostRecordingId);
+				const rangeResponse = await getRecordingMedia(lostRecordingId, 'bytes=0-99');
+
+				expect([fullResponse.status, rangeResponse.status]).toEqual([500, 500]);
+			} finally {
+				await container.get(RecordingRepository).deleteByRecordingId(lostRecordingId);
+			}
 		});
 
 		it('should return 404 when recording not found', async () => {

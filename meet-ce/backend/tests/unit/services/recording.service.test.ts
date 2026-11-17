@@ -707,7 +707,7 @@ describe('RecordingService.stopRecording', () => {
 
 describe('RecordingService.getRecordingAsStream', () => {
 	const buildStreamService = () => {
-		const mediaRequests: Array<{ recordingId: string; range?: { start: number; end: number } }> = [];
+		const mediaRequests: Array<{ recordingId: string; size?: number; range?: { start: number; end: number } }> = [];
 		const reads: string[] = [];
 		const recordings = {
 			findByRecordingId: async (recordingId: string) => {
@@ -716,8 +716,12 @@ describe('RecordingService.getRecordingAsStream', () => {
 			}
 		};
 		const blobStorage = {
-			getRecordingMedia: async (recordingId: string, range?: { start: number; end: number }) => {
-				mediaRequests.push({ recordingId, range });
+			getRecordingMedia: async (
+				recordingId: string,
+				size: number | undefined,
+				range?: { start: number; end: number }
+			) => {
+				mediaRequests.push({ recordingId, size, range });
 				return { fileSize: 100_000_000, fileStream: Readable.from([]) };
 			}
 		};
@@ -737,13 +741,15 @@ describe('RecordingService.getRecordingAsStream', () => {
 		return { service, mediaRequests, reads };
 	};
 
-	it('streams from the status it is given without reading the recording again', async () => {
+	const complete = { status: MeetRecordingStatus.COMPLETE, size: 100_000_000 };
+
+	it('streams from the status and size it is given without reading the recording again', async () => {
 		const { service, mediaRequests, reads } = buildStreamService();
 
-		await service.getRecordingAsStream(RECORDING_ID, MeetRecordingStatus.COMPLETE);
+		await service.getRecordingAsStream(RECORDING_ID, complete);
 
 		expect(reads).toEqual([]);
-		expect(mediaRequests).toEqual([{ recordingId: RECORDING_ID, range: undefined }]);
+		expect(mediaRequests).toEqual([{ recordingId: RECORDING_ID, size: 100_000_000, range: undefined }]);
 	});
 
 	it.each([
@@ -755,15 +761,15 @@ describe('RecordingService.getRecordingAsStream', () => {
 	])('answers 409 for a recording that is %s without touching the storage', async (status) => {
 		const { service, mediaRequests } = buildStreamService();
 
-		await expect(service.getRecordingAsStream(RECORDING_ID, status)).rejects.toMatchObject({ statusCode: 409 });
+		await expect(service.getRecordingAsStream(RECORDING_ID, { status })).rejects.toMatchObject({ statusCode: 409 });
 		expect(mediaRequests).toEqual([]);
 	});
 
 	it('cuts an open-ended range to a 5 MB chunk and keeps a closed one', async () => {
 		const { service, mediaRequests } = buildStreamService();
 
-		await service.getRecordingAsStream(RECORDING_ID, MeetRecordingStatus.COMPLETE, 'bytes=1000-');
-		await service.getRecordingAsStream(RECORDING_ID, MeetRecordingStatus.COMPLETE, 'bytes=1000-1999');
+		await service.getRecordingAsStream(RECORDING_ID, complete, 'bytes=1000-');
+		await service.getRecordingAsStream(RECORDING_ID, complete, 'bytes=1000-1999');
 
 		expect(mediaRequests.map(({ range }) => range)).toEqual([
 			{ start: 1000, end: 1000 + 5 * 1024 * 1024 - 1 },
@@ -781,7 +787,7 @@ describe('RecordingService.getRecordingSecretGrant', () => {
 			findAccessByRecordingId: async (recordingId: string) => {
 				reads.push(recordingId);
 				return found
-					? { accessSecrets, status: MeetRecordingStatus.COMPLETE, filename: 'room-1--uid1.mp4' }
+					? { accessSecrets, status: MeetRecordingStatus.COMPLETE, filename: 'room-1--uid1.mp4', size: 1024 }
 					: null;
 			}
 		};
@@ -807,14 +813,14 @@ describe('RecordingService.getRecordingSecretGrant', () => {
 		['priv', 'private', true],
 		['privPlay', 'private', false]
 	])(
-		'tells what the %s secret grants and returns the status and filename from the same read',
+		'tells what the %s secret grants and returns the status, filename and size from the same read',
 		async (secret, scope, download) => {
 			const { service, reads } = buildGrantService();
 
 			await expect(service.getRecordingSecretGrant(RECORDING_ID, secret)).resolves.toEqual({
 				scope,
 				download,
-				recording: { status: MeetRecordingStatus.COMPLETE, filename: 'room-1--uid1.mp4' }
+				recording: { status: MeetRecordingStatus.COMPLETE, filename: 'room-1--uid1.mp4', size: 1024 }
 			});
 			expect(reads).toEqual([RECORDING_ID]);
 		}
@@ -834,7 +840,8 @@ describe('RecordingService.writeRecordingsZip', () => {
 	const recordings = Array.from({ length: 60 }, (_, index) => ({
 		recordingId: `room-1--EG_${index}--abc`,
 		status: MeetRecordingStatus.COMPLETE,
-		filename: `room-1--EG_${index}--abc.mp4`
+		filename: `room-1--EG_${index}--abc.mp4`,
+		size: 16
 	}));
 
 	const buildZipService = (openStream: () => Readable) => {
