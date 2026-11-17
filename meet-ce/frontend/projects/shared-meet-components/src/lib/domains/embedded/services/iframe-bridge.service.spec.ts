@@ -709,15 +709,20 @@ describe('IframeBridgeService', () => {
 			expect(relayed).toEqual([EmbeddedEventName.EMBEDDED_CLOSE_REQUESTED, EmbeddedEventName.CLOSED]);
 		});
 
-		it('relays RECORDING_STATUS_CHANGED once, since it has no deprecated alias', () => {
+		it('relays RECORDING_STARTED once, since it has no deprecated alias', () => {
 			startBridge();
 
-			const payload = { recordingId: 'rec-1', status: MeetRecordingStatus.ACTIVE };
-			eventBus.emit({ event: EmbeddedEventName.RECORDING_STATUS_CHANGED, payload });
+			const payload = {
+				recordingId: 'rec-1',
+				roomId: ROOM_ID,
+				roomName: ROOM_ID,
+				status: MeetRecordingStatus.ACTIVE
+			};
+			eventBus.emit({ event: EmbeddedEventName.RECORDING_STARTED, payload });
 			TestBed.tick();
 
 			expect(postMessageSpy.calls.allArgs()).toEqual([
-				[{ event: EmbeddedEventName.RECORDING_STATUS_CHANGED, payload }, PARENT_ORIGIN]
+				[{ event: EmbeddedEventName.RECORDING_STARTED, payload }, PARENT_ORIGIN]
 			]);
 		});
 

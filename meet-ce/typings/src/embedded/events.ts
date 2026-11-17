@@ -1,5 +1,5 @@
 import { MeetBroadcastInfo } from '../database/broadcast.entity.js';
-import { MeetRecordingStatus } from '../database/recording.entity.js';
+import { MeetRecordingInfo } from '../database/recording.entity.js';
 import { MeetReaction } from '../reaction.js';
 import {
 	MeetWaitingParticipant,
@@ -90,12 +90,21 @@ export enum EmbeddedEventName {
 	 */
 	MEDIA_SCREEN_SHARE_STATUS_CHANGED = 'mediaScreenShareStatusChanged',
 	/**
-	 * Event emitted to every participant when the status of the meeting's recording changes, whoever
-	 * started or stopped it. Each recording's statuses are reported in order, each at most once, and a
-	 * participant joining a meeting that is being recorded receives its current status right after
-	 * `meetingJoined`.
+	 * Event emitted to every participant when a recording of the meeting starts, whoever started it. A
+	 * participant who joins while the meeting is being recorded receives it on joining, right after
+	 * `meetingJoined`, so the host can always show that the meeting is being recorded.
 	 */
-	RECORDING_STATUS_CHANGED = 'recordingStatusChanged',
+	RECORDING_STARTED = 'recordingStarted',
+	/**
+	 * Event emitted to every participant when a recording in progress changes, for example when it
+	 * goes active once media is being recorded, or starts ending.
+	 */
+	RECORDING_UPDATED = 'recordingUpdated',
+	/**
+	 * Event emitted to every participant when a recording of the meeting ends, normally or because it
+	 * failed.
+	 */
+	RECORDING_ENDED = 'recordingEnded',
 	/**
 	 * Event emitted to every participant when a live broadcast of the meeting starts, one per
 	 * destination. A participant who joins while broadcasts are running receives one event per
@@ -103,8 +112,8 @@ export enum EmbeddedEventName {
 	 */
 	BROADCAST_STARTED = 'broadcastStarted',
 	/**
-	 * Event emitted to every participant when a running broadcast changes: it goes active once media
-	 * reaches its destination, or it starts ending.
+	 * Event emitted to every participant when a running broadcast changes, for example when it goes
+	 * active once media reaches its destination, or starts ending.
 	 */
 	BROADCAST_UPDATED = 'broadcastUpdated',
 	/**
@@ -302,13 +311,18 @@ export interface EmbeddedEventPayloads {
 		origin: MeetEventOrigin;
 	};
 	/**
-	 * Payload for the {@link EmbeddedEventName.RECORDING_STATUS_CHANGED} event.
-	 * `status` is the recording's new status (see {@link MeetRecordingStatus}).
+	 * Payload for the {@link EmbeddedEventName.RECORDING_STARTED} event: the recording as it starts.
 	 */
-	[EmbeddedEventName.RECORDING_STATUS_CHANGED]: {
-		recordingId: string;
-		status: MeetRecordingStatus;
-	};
+	[EmbeddedEventName.RECORDING_STARTED]: MeetRecordingInfo;
+	/**
+	 * Payload for the {@link EmbeddedEventName.RECORDING_UPDATED} event: the recording after the change.
+	 */
+	[EmbeddedEventName.RECORDING_UPDATED]: MeetRecordingInfo;
+	/**
+	 * Payload for the {@link EmbeddedEventName.RECORDING_ENDED} event: the recording in its final
+	 * state, with its end date, duration and error if it failed.
+	 */
+	[EmbeddedEventName.RECORDING_ENDED]: MeetRecordingInfo;
 	/**
 	 * Payload for the {@link EmbeddedEventName.BROADCAST_STARTED} event: the broadcast as it starts.
 	 */
@@ -507,13 +521,33 @@ export interface EmbeddedMediaScreenShareStatusChangedEvent {
 }
 
 /**
- * Event message emitted when the status of the meeting's recording changes: the event name plus its
- * payload, derived from {@link EmbeddedEventPayloadFor}.
+ * Event message emitted when a recording of the meeting starts: the event name plus its payload,
+ * derived from {@link EmbeddedEventPayloadFor}.
  * @category Communication
  */
-export interface EmbeddedRecordingStatusChangedEvent {
-	event: EmbeddedEventName.RECORDING_STATUS_CHANGED;
-	payload: EmbeddedEventPayloadFor<EmbeddedEventName.RECORDING_STATUS_CHANGED>;
+export interface EmbeddedRecordingStartedEvent {
+	event: EmbeddedEventName.RECORDING_STARTED;
+	payload: EmbeddedEventPayloadFor<EmbeddedEventName.RECORDING_STARTED>;
+}
+
+/**
+ * Event message emitted when a recording in progress changes: the event name plus its payload,
+ * derived from {@link EmbeddedEventPayloadFor}.
+ * @category Communication
+ */
+export interface EmbeddedRecordingUpdatedEvent {
+	event: EmbeddedEventName.RECORDING_UPDATED;
+	payload: EmbeddedEventPayloadFor<EmbeddedEventName.RECORDING_UPDATED>;
+}
+
+/**
+ * Event message emitted when a recording of the meeting ends: the event name plus its payload,
+ * derived from {@link EmbeddedEventPayloadFor}.
+ * @category Communication
+ */
+export interface EmbeddedRecordingEndedEvent {
+	event: EmbeddedEventName.RECORDING_ENDED;
+	payload: EmbeddedEventPayloadFor<EmbeddedEventName.RECORDING_ENDED>;
 }
 
 /**
@@ -604,7 +638,9 @@ export type EmbeddedEvent =
 	| EmbeddedMediaAudioStatusChangedEvent
 	| EmbeddedMediaVideoStatusChangedEvent
 	| EmbeddedMediaScreenShareStatusChangedEvent
-	| EmbeddedRecordingStatusChangedEvent
+	| EmbeddedRecordingStartedEvent
+	| EmbeddedRecordingUpdatedEvent
+	| EmbeddedRecordingEndedEvent
 	| EmbeddedBroadcastStartedEvent
 	| EmbeddedBroadcastUpdatedEvent
 	| EmbeddedBroadcastEndedEvent

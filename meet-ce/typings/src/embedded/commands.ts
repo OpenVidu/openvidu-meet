@@ -106,7 +106,8 @@ export enum EmbeddedCommandName {
 	 */
 	MEDIA_TOGGLE_SCREEN_SHARE = 'mediaToggleScreenShare',
 	/**
-	 * Starts recording the meeting. Its progress is reported by the `recordingStatusChanged` event.
+	 * Starts recording the meeting. Its progress is reported by the `recordingStarted`,
+	 * `recordingUpdated` and `recordingEnded` events.
 	 * @permission recordingControl
 	 */
 	RECORDING_START = 'recordingStart',

@@ -3,7 +3,7 @@
 ## Why
 
 A participant whose connection drops and returns after the recording ended keeps seeing the recording as in
-progress: the REC mark stays on and an embedded host never receives `recordingStatusChanged` with the final
+progress: the REC mark stays on and an embedded host never receives `recordingEnded` with the final
 status. A `recordingStop()` from that participant then answers `409`.
 
 ## What Changes
@@ -24,7 +24,7 @@ None.
 
 ## Impact
 
-- Meeting UI and embedded API: the REC mark and `recordingStatusChanged` follow an end that happened during an outage. No contract change: the event already exists and the client already drops repeated states.
+- Meeting UI and embedded API: the REC mark and `recordingEnded` follow an end that happened during an outage. No contract change: the event already exists and the client already drops repeated states.
 - Code: the participant-joined handler of the LiveKit webhook service in `meet-ce/backend`; the meeting events service of `shared-meet-components` only if the client-side option below is chosen.
 - REST API, webhooks, console UI, deployment configuration: not affected.
 - openvidu.io: none.

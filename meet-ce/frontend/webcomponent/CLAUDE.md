@@ -70,6 +70,9 @@ element. The wrapper rejects them the same way while the Angular component does 
 - `broadcastStarted`/`broadcastUpdated`/`broadcastEnded` relay the server's broadcast signal as-is,
   one broadcast per destination: the first signal this client hears of a broadcast is always
   `broadcastStarted`, for a late joiner too, and the destination URL comes redacted.
+- `recordingStarted`/`recordingUpdated`/`recordingEnded` relay the server's recording signal as-is, the
+  same way: the first report this client hears of a recording is always `recordingStarted`, for a late
+  joiner too, and `recordingEnded` carries the final state.
 - Methods: every command runs through `EmbeddedCommandService.run()`, which enforces the permission
   and which commands work from the prejoin screen. `src/app/custom-element/wrapper.ts` adds the
   `on()` / `once()` / `off()` listener API and keeps the 3.8.0 method names as aliases that forward

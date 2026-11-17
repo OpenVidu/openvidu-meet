@@ -139,7 +139,9 @@ export class App {
 	readonly mediaVideoStatusChanged = output<EmbeddedEventPayloadFor<EmbeddedEventName.MEDIA_VIDEO_STATUS_CHANGED>>();
 	readonly mediaScreenShareStatusChanged =
 		output<EmbeddedEventPayloadFor<EmbeddedEventName.MEDIA_SCREEN_SHARE_STATUS_CHANGED>>();
-	readonly recordingStatusChanged = output<EmbeddedEventPayloadFor<EmbeddedEventName.RECORDING_STATUS_CHANGED>>();
+	readonly recordingStarted = output<EmbeddedEventPayloadFor<EmbeddedEventName.RECORDING_STARTED>>();
+	readonly recordingUpdated = output<EmbeddedEventPayloadFor<EmbeddedEventName.RECORDING_UPDATED>>();
+	readonly recordingEnded = output<EmbeddedEventPayloadFor<EmbeddedEventName.RECORDING_ENDED>>();
 	readonly participantHandChanged = output<EmbeddedEventPayloadFor<EmbeddedEventName.PARTICIPANT_HAND_CHANGED>>();
 	readonly participantReactionSent = output<EmbeddedEventPayloadFor<EmbeddedEventName.PARTICIPANT_REACTION_SENT>>();
 	readonly broadcastStarted = output<EmbeddedEventPayloadFor<EmbeddedEventName.BROADCAST_STARTED>>();
@@ -444,8 +446,14 @@ export class App {
 			case EmbeddedEventName.MEDIA_SCREEN_SHARE_STATUS_CHANGED:
 				this.mediaScreenShareStatusChanged.emit(payload);
 				break;
-			case EmbeddedEventName.RECORDING_STATUS_CHANGED:
-				this.recordingStatusChanged.emit(payload);
+			case EmbeddedEventName.RECORDING_STARTED:
+				this.recordingStarted.emit(payload);
+				break;
+			case EmbeddedEventName.RECORDING_UPDATED:
+				this.recordingUpdated.emit(payload);
+				break;
+			case EmbeddedEventName.RECORDING_ENDED:
+				this.recordingEnded.emit(payload);
 				break;
 			case EmbeddedEventName.PARTICIPANT_HAND_CHANGED:
 				this.participantHandChanged.emit(payload);

@@ -43,8 +43,8 @@ with no replacement.
 
 #### Integration
 
-- Embedded commands `recordingStart` and `recordingStop`, gated by `recordingControl`, and the embedded event
-  `recordingStatusChanged`, carrying `{ recordingId, status }` to every participant.
+- Embedded commands `recordingStart` and `recordingStop`, gated by `recordingControl`, and the embedded events
+  `recordingStarted`, `recordingUpdated` and `recordingEnded`, carrying the recording to every participant.
 - Embedded attributes and URL parameters `language`, which sets the initial interface language, meeting and
   recording screens alike (a BCP 47 language tag, or `auto` for the browser's), over the participant's stored
   preference without replacing it, and `show-language-selector`, which hides the language selectors when `false`.
@@ -220,8 +220,7 @@ with no replacement.
   ZIP left every later recording playback and download on that server hanging until it restarted. Each ZIP now
   releases what it opened, whatever its size or however it ends.
 - A recording ended by the stale-recordings clean-up sent no [`recordingEnded`][3.9-recording-ended] webhook and stayed
-  in progress in the meeting and for the embedded event `recordingStatusChanged`. Its end is now reported like any
-  other, once.
+  in progress in the meeting. Its end is now reported like any other, once.
 - The access token of a user with a pending password change also reached public endpoints whose path ends in `/me`
   or `/change-password`, such as `GET /api/v1/users/me`. Only `userGetMe` and `userChangePassword` accept it now.
 - Two simultaneous API key regenerations could leave two API keys, both accepted. Exactly one remains now, the last

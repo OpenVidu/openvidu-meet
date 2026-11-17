@@ -664,9 +664,13 @@ export const participantReactionSentLocator = (
 		.filter({ hasText: `"participantIdentity":"${participantIdentity}"` })
 		.filter({ hasText: `"reaction":"${reaction}"` });
 
-/** The `.event-recordingStatusChanged` markers carrying the given status. */
-export const recordingStatusLocator = (page: Page, status: MeetRecordingStatus): Locator =>
-	eventLocator(page, EmbeddedEventName.RECORDING_STATUS_CHANGED).filter({ hasText: `"status":"${status}"` });
+/** The markers of a recording event (`recordingStarted`, `recordingUpdated` or `recordingEnded`) carrying the given status. */
+export const recordingEventLocator = (
+	page: Page,
+	eventName:
+		EmbeddedEventName.RECORDING_STARTED | EmbeddedEventName.RECORDING_UPDATED | EmbeddedEventName.RECORDING_ENDED,
+	status: MeetRecordingStatus
+): Locator => eventLocator(page, eventName).filter({ hasText: `"status":"${status}"` });
 
 /**
  * Asserts that exactly `count` `.webhook-{name}` markers exist, then returns the locator.
