@@ -236,7 +236,9 @@
 				(mediaScreenShareStatusChanged)="
 								handleEmbeddedEvent('mediaScreenShareStatusChanged', $event)
 							"
-				(recordingStatusChanged)="handleEmbeddedEvent('recordingStatusChanged', $event)"
+				(recordingStarted)="handleEmbeddedEvent('recordingStarted', $event)"
+				(recordingUpdated)="handleEmbeddedEvent('recordingUpdated', $event)"
+				(recordingEnded)="handleEmbeddedEvent('recordingEnded', $event)"
 				(waitingParticipantKnocked)="handleEmbeddedEvent('waitingParticipantKnocked', $event)"
 				(participantHandChanged)="handleEmbeddedEvent('participantHandChanged', $event)"
 				(participantReactionSent)="handleEmbeddedEvent('participantReactionSent', $event)"

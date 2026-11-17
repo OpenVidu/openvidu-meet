@@ -65,7 +65,7 @@ import {
 	participantReactionSentLocator,
 	participantUpdateRoleCommand,
 	recordingStartCommand,
-	recordingStatusLocator,
+	recordingEventLocator,
 	recordingStopCommand,
 	removeEmbeddedMeeting
 } from '../helpers/testapp.helper';
@@ -478,20 +478,26 @@ for (const integration of INTEGRATIONS) {
 		});
 
 		test.describe('RECORDING_START / RECORDING_STOP Commands', () => {
-			test('should start and stop a recording, reporting each status to the host', async ({ page }) => {
+			test('should start and stop a recording, reporting its start and its end to the host', async ({ page }) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
 				await expectEvent(page, EmbeddedEventName.JOINED);
 
 				await recordingStartCommand(page);
 
-				const active = recordingStatusLocator(page, MeetRecordingStatus.ACTIVE);
-				await expect(active).toHaveCount(1, { timeout: 20_000 });
-				const recordingId = await eventPayloadField(active, 'recordingId');
+				const started = await expectEvent(page, EmbeddedEventName.RECORDING_STARTED, { timeout: 20_000 });
+				const recordingId = await eventPayloadField(started, 'recordingId');
 				expect((await getRecording(recordingId)).roomId).toBe(roomId);
+				await expect(
+					recordingEventLocator(page, EmbeddedEventName.RECORDING_UPDATED, MeetRecordingStatus.ACTIVE)
+				).toHaveCount(1, { timeout: 20_000 });
 
 				await recordingStopCommand(page);
 
-				const complete = recordingStatusLocator(page, MeetRecordingStatus.COMPLETE);
+				const complete = recordingEventLocator(
+					page,
+					EmbeddedEventName.RECORDING_ENDED,
+					MeetRecordingStatus.COMPLETE
+				);
 				await expect(complete).toHaveCount(1, { timeout: 20_000 });
 				await expect(complete).toContainText(recordingId);
 				await expectWebhook(page, MeetWebhookEventType.RECORDING_ENDED);
@@ -507,7 +513,7 @@ for (const integration of INTEGRATIONS) {
 				await recordingStartCommand(page);
 				await recordingStopCommand(page);
 
-				const ended = eventLocator(page, EmbeddedEventName.RECORDING_STATUS_CHANGED).filter({
+				const ended = eventLocator(page, EmbeddedEventName.RECORDING_ENDED).filter({
 					hasText: /"status":"(complete|aborted)"/
 				});
 				await expect(ended).toHaveCount(1, { timeout: 30_000 });
@@ -531,17 +537,22 @@ for (const integration of INTEGRATIONS) {
 				await openMeeting(moderatorPage, roomId, { role: 'moderator' });
 				await expectEvent(moderatorPage, EmbeddedEventName.JOINED);
 
-				await expect(eventLocator(page, EmbeddedEventName.RECORDING_STATUS_CHANGED)).toHaveCount(0);
+				await expect(eventLocator(page, EmbeddedEventName.RECORDING_STARTED)).toHaveCount(0);
 
 				await recordingStartCommand(moderatorPage);
-				await expect(recordingStatusLocator(page, MeetRecordingStatus.ACTIVE)).toHaveCount(1, {
-					timeout: 20_000
-				});
+				await expectEvent(page, EmbeddedEventName.RECORDING_STARTED, { timeout: 20_000 });
+				await expect(
+					recordingEventLocator(page, EmbeddedEventName.RECORDING_UPDATED, MeetRecordingStatus.ACTIVE)
+				).toHaveCount(1, { timeout: 20_000 });
 
 				await recordingStopCommand(moderatorPage);
-				await expect(recordingStatusLocator(moderatorPage, MeetRecordingStatus.COMPLETE)).toHaveCount(1, {
-					timeout: 20_000
-				});
+				await expect(
+					recordingEventLocator(
+						moderatorPage,
+						EmbeddedEventName.RECORDING_ENDED,
+						MeetRecordingStatus.COMPLETE
+					)
+				).toHaveCount(1, { timeout: 20_000 });
 
 				await moderatorContext.close();
 			});

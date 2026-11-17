@@ -747,31 +747,42 @@ describe('MeetingEventHandlerService', () => {
 	});
 
 	/**
-	 * The recording's status reaches every participant as a server signal carrying the whole
-	 * recording; the host is told of each status the signal brings, once, and none before it knows the
-	 * participant joined.
+	 * The recording reaches every participant as a server signal carrying the whole recording; the
+	 * host is told of the first report as a start, of each later change as an update and of the final
+	 * one as the end, each once, and none before it knows the participant joined.
 	 */
-	describe('recording status', () => {
-		function receiveRecordingStatus(status: MeetRecordingStatus, recordingId = 'rec-1', roomId = 'room1'): void {
-			const payload: MeetRecordingUpdatedPayload = {
-				roomId,
-				recording: { recordingId, roomId, roomName: roomId, status } as MeetRecordingInfo,
-				timestamp: 0
-			};
+	describe('recording events', () => {
+		const RECORDING_EVENT_NAMES: EmbeddedEventName[] = [
+			EmbeddedEventName.RECORDING_STARTED,
+			EmbeddedEventName.RECORDING_UPDATED,
+			EmbeddedEventName.RECORDING_ENDED
+		];
+
+		function receiveRecording(recording: MeetRecordingInfo, roomId = 'room1'): void {
+			const payload: MeetRecordingUpdatedPayload = { roomId, recording, timestamp: 0 };
 			receiveSignal(MeetSignalType.MEET_RECORDING_UPDATED, payload);
 		}
 
-		function notifiedStatuses(): { recordingId: string; status: MeetRecordingStatus }[] {
+		function receiveRecordingStatus(status: MeetRecordingStatus, recordingId = 'rec-1', roomId = 'room1'): void {
+			receiveRecording({ recordingId, roomId, roomName: roomId, status }, roomId);
+		}
+
+		function notifiedRecordings(): {
+			event: EmbeddedEventName;
+			recordingId: string;
+			status: MeetRecordingStatus;
+		}[] {
 			return eventBus
 				.events()
-				.filter((event) => event.event === EmbeddedEventName.RECORDING_STATUS_CHANGED)
-				.map(
-					(event) =>
-						('payload' in event ? event.payload : undefined) as {
-							recordingId: string;
-							status: MeetRecordingStatus;
-						}
-				);
+				.filter(({ event }) => RECORDING_EVENT_NAMES.includes(event))
+				.map((event) => {
+					const { recordingId, status } = (event as { payload: MeetRecordingInfo }).payload;
+					return { event: event.event, recordingId, status };
+				});
+		}
+
+		function notifiedEvents(): EmbeddedEventName[] {
+			return notifiedRecordings().map(({ event }) => event);
 		}
 
 		function joinMeeting(): void {
@@ -793,38 +804,107 @@ describe('MeetingEventHandlerService', () => {
 				eventBus.drain();
 			});
 
-			for (const status of Object.values(MeetRecordingStatus)) {
-				it(`notifies the host of a recording that is '${status}'`, () => {
-					receiveRecordingStatus(status);
-
-					expect(notifiedStatuses()).toEqual([{ recordingId: 'rec-1', status }]);
-				});
-			}
-
-			it('notifies every status transition, in order', () => {
+			it('tells the start, the updates and the end of a recording, in order', () => {
 				receiveRecordingStatus(MeetRecordingStatus.STARTING);
 				receiveRecordingStatus(MeetRecordingStatus.ACTIVE);
 				receiveRecordingStatus(MeetRecordingStatus.ENDING);
 				receiveRecordingStatus(MeetRecordingStatus.COMPLETE);
 
-				expect(notifiedStatuses().map(({ status }) => status)).toEqual([
-					MeetRecordingStatus.STARTING,
-					MeetRecordingStatus.ACTIVE,
-					MeetRecordingStatus.ENDING,
-					MeetRecordingStatus.COMPLETE
+				expect(notifiedRecordings()).toEqual([
+					{
+						event: EmbeddedEventName.RECORDING_STARTED,
+						recordingId: 'rec-1',
+						status: MeetRecordingStatus.STARTING
+					},
+					{
+						event: EmbeddedEventName.RECORDING_UPDATED,
+						recordingId: 'rec-1',
+						status: MeetRecordingStatus.ACTIVE
+					},
+					{
+						event: EmbeddedEventName.RECORDING_UPDATED,
+						recordingId: 'rec-1',
+						status: MeetRecordingStatus.ENDING
+					},
+					{
+						event: EmbeddedEventName.RECORDING_ENDED,
+						recordingId: 'rec-1',
+						status: MeetRecordingStatus.COMPLETE
+					}
 				]);
 			});
 
-			// The server repeats the current status to a participant who joins mid-recording or reconnects.
-			it('does not repeat a status the host already knows', () => {
-				receiveRecordingStatus(MeetRecordingStatus.ACTIVE);
-				receiveRecordingStatus(MeetRecordingStatus.ACTIVE);
+			for (const status of [
+				MeetRecordingStatus.COMPLETE,
+				MeetRecordingStatus.FAILED,
+				MeetRecordingStatus.ABORTED,
+				MeetRecordingStatus.LIMIT_REACHED
+			]) {
+				it(`tells a recording first known as '${status}' as an end alone`, () => {
+					receiveRecordingStatus(status);
 
-				expect(notifiedStatuses().length).toBe(1);
+					expect(notifiedEvents()).toEqual([EmbeddedEventName.RECORDING_ENDED]);
+				});
+			}
+
+			it('carries the recording as the server sent it', () => {
+				const recording: MeetRecordingInfo = {
+					recordingId: 'rec-1',
+					roomId: 'room1',
+					roomName: 'room1',
+					status: MeetRecordingStatus.COMPLETE,
+					filename: 'rec-1.mp4',
+					size: 1024
+				};
+
+				receiveRecording(recording);
+
+				expect(eventBus.events()).toEqual([{ event: EmbeddedEventName.RECORDING_ENDED, payload: recording }]);
 			});
 
-			// The server repeats the current status on join and relays egress webhooks that can arrive late.
-			it('never walks a recording back to an earlier status', () => {
+			it('does not repeat a report the host already knows', () => {
+				receiveRecordingStatus(MeetRecordingStatus.ACTIVE);
+				receiveRecordingStatus(MeetRecordingStatus.ACTIVE);
+
+				expect(notifiedEvents()).toEqual([EmbeddedEventName.RECORDING_STARTED]);
+			});
+
+			it('does not repeat a report whose fields come in another order', () => {
+				receiveRecording({
+					recordingId: 'rec-1',
+					roomId: 'room1',
+					roomName: 'room1',
+					status: MeetRecordingStatus.ACTIVE,
+					encoding: { video: { width: 1280, height: 720 } }
+				} as MeetRecordingInfo);
+				receiveRecording({
+					encoding: { video: { height: 720, width: 1280 } },
+					status: MeetRecordingStatus.ACTIVE,
+					roomName: 'room1',
+					roomId: 'room1',
+					recordingId: 'rec-1'
+				} as MeetRecordingInfo);
+
+				expect(notifiedEvents()).toEqual([EmbeddedEventName.RECORDING_STARTED]);
+			});
+
+			it('tells an update when a field other than the status changes', () => {
+				receiveRecordingStatus(MeetRecordingStatus.ACTIVE);
+				receiveRecording({
+					recordingId: 'rec-1',
+					roomId: 'room1',
+					roomName: 'room1',
+					status: MeetRecordingStatus.ACTIVE,
+					startDate: 1
+				});
+
+				expect(notifiedEvents()).toEqual([
+					EmbeddedEventName.RECORDING_STARTED,
+					EmbeddedEventName.RECORDING_UPDATED
+				]);
+			});
+
+			it('never walks a recording back to an earlier status, nor says more once it ended', () => {
 				receiveRecordingStatus(MeetRecordingStatus.ACTIVE);
 				receiveRecordingStatus(MeetRecordingStatus.STARTING);
 				receiveRecordingStatus(MeetRecordingStatus.ENDING);
@@ -833,7 +913,7 @@ describe('MeetingEventHandlerService', () => {
 				receiveRecordingStatus(MeetRecordingStatus.ENDING);
 				receiveRecordingStatus(MeetRecordingStatus.FAILED);
 
-				expect(notifiedStatuses().map(({ status }) => status)).toEqual([
+				expect(notifiedRecordings().map(({ status }) => status)).toEqual([
 					MeetRecordingStatus.ACTIVE,
 					MeetRecordingStatus.ENDING,
 					MeetRecordingStatus.COMPLETE
@@ -844,7 +924,11 @@ describe('MeetingEventHandlerService', () => {
 				receiveRecordingStatus(MeetRecordingStatus.ACTIVE, 'rec-1');
 				receiveRecordingStatus(MeetRecordingStatus.ACTIVE, 'rec-2');
 
-				expect(notifiedStatuses().map(({ recordingId }) => recordingId)).toEqual(['rec-1', 'rec-2']);
+				expect(notifiedRecordings().map(({ recordingId }) => recordingId)).toEqual(['rec-1', 'rec-2']);
+				expect(notifiedEvents()).toEqual([
+					EmbeddedEventName.RECORDING_STARTED,
+					EmbeddedEventName.RECORDING_STARTED
+				]);
 			});
 
 			it('starts over on the next entry, once the host knows it joined again', async () => {
@@ -853,16 +937,16 @@ describe('MeetingEventHandlerService', () => {
 				eventBus.drain();
 
 				receiveRecordingStatus(MeetRecordingStatus.ACTIVE);
-				expect(notifiedStatuses()).toEqual([]);
+				expect(notifiedRecordings()).toEqual([]);
 
 				joinMeeting();
-				expect(notifiedStatuses().length).toBe(1);
+				expect(notifiedEvents()).toEqual([EmbeddedEventName.RECORDING_STARTED]);
 			});
 
 			it("ignores another room's recording", () => {
 				receiveRecordingStatus(MeetRecordingStatus.ACTIVE, 'rec-1', 'room2');
 
-				expect(notifiedStatuses()).toEqual([]);
+				expect(notifiedRecordings()).toEqual([]);
 			});
 
 			it('marks the meeting as having recordings once one completes', () => {
@@ -883,10 +967,10 @@ describe('MeetingEventHandlerService', () => {
 			});
 		});
 
-		// The server repeats the current status from the participant_joined webhook, while the
+		// The server repeats the current recording from the participant_joined webhook, while the
 		// participant is still connecting.
 		describe('on joining', () => {
-			it('reports a recording already underway right after meetingJoined', () => {
+			it('tells a recording already underway as a start right after meetingJoined', () => {
 				receiveRecordingStatus(MeetRecordingStatus.ACTIVE);
 				expect(eventBus.events()).toEqual([]);
 
@@ -894,22 +978,39 @@ describe('MeetingEventHandlerService', () => {
 
 				expect(eventBus.events().map(({ event }) => event)).toEqual([
 					EmbeddedEventName.MEETING_JOINED,
-					EmbeddedEventName.RECORDING_STATUS_CHANGED
+					EmbeddedEventName.RECORDING_STARTED
 				]);
-				expect(notifiedStatuses()).toEqual([{ recordingId: 'rec-1', status: MeetRecordingStatus.ACTIVE }]);
+				expect(notifiedRecordings()[0].status).toBe(MeetRecordingStatus.ACTIVE);
 			});
 
-			it('reports only the furthest status each recording reached while joining', () => {
+			it('tells each recording once, with the furthest status it reached while joining', () => {
 				receiveRecordingStatus(MeetRecordingStatus.STARTING, 'rec-1');
 				receiveRecordingStatus(MeetRecordingStatus.ACTIVE, 'rec-1');
 				receiveRecordingStatus(MeetRecordingStatus.STARTING, 'rec-2');
 
 				joinMeeting();
 
-				expect(notifiedStatuses()).toEqual([
-					{ recordingId: 'rec-1', status: MeetRecordingStatus.ACTIVE },
-					{ recordingId: 'rec-2', status: MeetRecordingStatus.STARTING }
+				expect(notifiedRecordings()).toEqual([
+					{
+						event: EmbeddedEventName.RECORDING_STARTED,
+						recordingId: 'rec-1',
+						status: MeetRecordingStatus.ACTIVE
+					},
+					{
+						event: EmbeddedEventName.RECORDING_STARTED,
+						recordingId: 'rec-2',
+						status: MeetRecordingStatus.STARTING
+					}
 				]);
+			});
+
+			it('tells nothing of a recording that ended before the participant joined', () => {
+				receiveRecordingStatus(MeetRecordingStatus.ACTIVE);
+				receiveRecordingStatus(MeetRecordingStatus.COMPLETE);
+
+				joinMeeting();
+
+				expect(notifiedRecordings()).toEqual([]);
 			});
 		});
 	});

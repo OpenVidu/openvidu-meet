@@ -4,11 +4,11 @@ import type { BroadcastDestinationDraft } from '../../../../../shared/utils/broa
 import { ElapsedClock } from '../../../../../shared/utils/elapsed-clock';
 import {
 	broadcastDestinationKey,
-	broadcastProgress,
+	egressProgress,
 	BroadcastRequestedEvent,
 	BroadcastRequestRefusal,
 	hasBroadcastFailed,
-	isBroadcastInProgress,
+	isEgressInProgress,
 	MeetingDestination
 } from '../../models/broadcast.model';
 
@@ -55,7 +55,7 @@ export class BroadcastStateService {
 	 */
 	readonly elapsed = this.clock.elapsed;
 
-	readonly inProgress = computed(() => this._broadcasts().filter(({ status }) => isBroadcastInProgress(status)));
+	readonly inProgress = computed(() => this._broadcasts().filter(({ status }) => isEgressInProgress(status)));
 	readonly failed = computed(() => this._broadcasts().filter(({ status }) => hasBroadcastFailed(status)));
 	readonly isLive = computed(() => this._broadcasts().some(({ status }) => status === MeetBroadcastStatus.ACTIVE));
 	readonly isStartPending = computed(() => this._pendingRequests().some(({ action }) => action === 'start'));
@@ -85,16 +85,16 @@ export class BroadcastStateService {
 	setBroadcast(broadcast: MeetBroadcastInfo): void {
 		const known = this._broadcasts().find(({ broadcastId }) => broadcastId === broadcast.broadcastId);
 		const reached = this.endedIds.has(broadcast.broadcastId)
-			? broadcastProgress(MeetBroadcastStatus.COMPLETE)
-			: known && broadcastProgress(known.status);
+			? egressProgress(MeetBroadcastStatus.COMPLETE)
+			: known && egressProgress(known.status);
 
-		if (reached !== undefined && broadcastProgress(broadcast.status) < reached) return;
+		if (reached !== undefined && egressProgress(broadcast.status) < reached) return;
 
-		if (!isBroadcastInProgress(broadcast.status)) this.endedIds.add(broadcast.broadcastId);
+		if (!isEgressInProgress(broadcast.status)) this.endedIds.add(broadcast.broadcastId);
 
 		const key = broadcastDestinationKey(broadcast);
 		const failed = hasBroadcastFailed(broadcast.status);
-		const keep = isBroadcastInProgress(broadcast.status) || failed;
+		const keep = isEgressInProgress(broadcast.status) || failed;
 
 		this._broadcasts.update((broadcasts) => {
 			const known = broadcasts.some(({ broadcastId }) => broadcastId === broadcast.broadcastId);
@@ -106,7 +106,7 @@ export class BroadcastStateService {
 					? keep
 					: !(hasBroadcastFailed(other.status) && broadcastDestinationKey(other) === key)
 			);
-			const stoppedStreaming = !keep && !kept.some(({ status }) => isBroadcastInProgress(status));
+			const stoppedStreaming = !keep && !kept.some(({ status }) => isEgressInProgress(status));
 
 			return stoppedStreaming ? kept.filter(({ status }) => !hasBroadcastFailed(status)) : kept;
 		});

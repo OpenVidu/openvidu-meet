@@ -28,7 +28,7 @@ import {
 	BroadcastPhase,
 	BroadcastRequest,
 	BroadcastRequestedEvent,
-	isBroadcastInProgress,
+	isEgressInProgress,
 	isBroadcastRunning,
 	MeetingDestination,
 	startsMeetingDestination,
@@ -413,7 +413,7 @@ export class BroadcastActivityComponent {
 			pending.some((request) => stopsBroadcast(request, broadcast.broadcastId))
 		) {
 			status = 'stopping';
-		} else if ((!broadcast || !isBroadcastInProgress(broadcast.status)) && pending.some(startsRow)) {
+		} else if ((!broadcast || !isEgressInProgress(broadcast.status)) && pending.some(startsRow)) {
 			status = 'connecting';
 		} else {
 			status = broadcast ? ROW_STATUS_BY_BROADCAST[broadcast.status] : 'stopped';

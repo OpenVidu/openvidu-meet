@@ -1,4 +1,4 @@
-import type { MeetBroadcastInfo, MeetBroadcastStartOptions } from '@openvidu-meet/typings';
+import type { MeetBroadcastInfo, MeetBroadcastStartOptions, MeetRecordingStatus } from '@openvidu-meet/typings';
 import { MeetBroadcastStatus } from '@openvidu-meet/typings';
 import type { BroadcastDestinationDraft } from '../../../../shared/utils/broadcast-destination-editor';
 import type { DistributiveOmit } from '../../../../shared/utils/object.utils';
@@ -45,12 +45,17 @@ export const stopsBroadcast = (request: BroadcastRequestedEvent, broadcastId: st
 /** The meeting's broadcasts as the activity shows them: what the row says and offers depends on the phase alone. */
 export type BroadcastPhase = 'idle' | 'starting' | 'live' | 'ending' | 'failed';
 
-const IN_PROGRESS_STATUSES = [MeetBroadcastStatus.STARTING, MeetBroadcastStatus.ACTIVE, MeetBroadcastStatus.ENDING];
+const IN_PROGRESS_STATUSES: readonly (MeetBroadcastStatus | MeetRecordingStatus)[] = [
+	MeetBroadcastStatus.STARTING,
+	MeetBroadcastStatus.ACTIVE,
+	MeetBroadcastStatus.ENDING
+];
 const RUNNING_STATUSES = [MeetBroadcastStatus.STARTING, MeetBroadcastStatus.ACTIVE];
 const FAILED_STATUSES = [MeetBroadcastStatus.FAILED, MeetBroadcastStatus.LIMIT_REACHED];
 
-/** Whether the broadcast is still one of the meeting's current ones: not over yet, if only just ending. */
-export const isBroadcastInProgress = (status: MeetBroadcastStatus): boolean => IN_PROGRESS_STATUSES.includes(status);
+/** Whether the broadcast or recording is still one of the meeting's current ones: not over yet, if only just ending. */
+export const isEgressInProgress = (status: MeetBroadcastStatus | MeetRecordingStatus): boolean =>
+	IN_PROGRESS_STATUSES.includes(status);
 
 /** Whether the broadcast can still be stopped. */
 export const isBroadcastRunning = (status: MeetBroadcastStatus): boolean => RUNNING_STATUSES.includes(status);
@@ -58,9 +63,9 @@ export const isBroadcastRunning = (status: MeetBroadcastStatus): boolean => RUNN
 /** Whether the broadcast ended in a failure the activity should say something about. */
 export const hasBroadcastFailed = (status: MeetBroadcastStatus): boolean => FAILED_STATUSES.includes(status);
 
-/** How far a broadcast went: starting, active, ending and over, in that order. A broadcast only moves forward. */
-export const broadcastProgress = (status: MeetBroadcastStatus): number =>
-	isBroadcastInProgress(status) ? IN_PROGRESS_STATUSES.indexOf(status) : IN_PROGRESS_STATUSES.length;
+/** How far a broadcast or recording went: starting, active, ending and over, in that order. It only moves forward. */
+export const egressProgress = (status: MeetBroadcastStatus | MeetRecordingStatus): number =>
+	isEgressInProgress(status) ? IN_PROGRESS_STATUSES.indexOf(status) : IN_PROGRESS_STATUSES.length;
 
 /**
  * A broadcast the server will say nothing more of, settled as the server settles one: complete if

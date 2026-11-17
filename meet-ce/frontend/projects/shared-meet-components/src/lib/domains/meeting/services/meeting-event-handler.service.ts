@@ -2,7 +2,6 @@ import { Injectable, effect, inject, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
 	EmbeddedEventName,
-	EmbeddedEventPayloadFor,
 	handLoweredByOf,
 	handRaiseDateOf,
 	LeftEventReason,
@@ -14,6 +13,7 @@ import {
 	MeetParticipantPermissionsUpdatedPayload,
 	MeetParticipantReactionSentPayload,
 	MeetReaction,
+	MeetRecordingInfo,
 	MeetRecordingStatus,
 	MeetRecordingUpdatedPayload,
 	MeetRoomMemberRole,
@@ -21,6 +21,7 @@ import {
 } from '@openvidu-meet/typings';
 import type { EmbeddedParticipantHandChangedEvent } from '@openvidu-meet/typings';
 import type { NotificationOptions } from '../../../shared/models/notification.model';
+import { isPlainObject } from '../../../shared/utils/object.utils';
 import { TranslateService } from '../../../shared/services/i18n/translate.service';
 import { NavigationService } from '../../../shared/services/navigation.service';
 import { NotificationService } from '../../../shared/services/notification.service';
@@ -44,8 +45,8 @@ import type {
 	Room
 } from '../openvidu-components';
 import {
-	broadcastProgress,
-	isBroadcastInProgress,
+	egressProgress,
+	isEgressInProgress,
 	BroadcastStateService,
 	LocalMediaService,
 	ScreenShareService,
@@ -88,15 +89,25 @@ interface HandNotice {
 	hands: AnnouncedHand[];
 }
 
-const RECORDING_STATUS_ORDER: Record<MeetRecordingStatus, number> = {
-	[MeetRecordingStatus.STARTING]: 0,
-	[MeetRecordingStatus.ACTIVE]: 1,
-	[MeetRecordingStatus.ENDING]: 2,
-	[MeetRecordingStatus.COMPLETE]: 3,
-	[MeetRecordingStatus.FAILED]: 3,
-	[MeetRecordingStatus.ABORTED]: 3,
-	[MeetRecordingStatus.LIMIT_REACHED]: 3
-};
+const RECORDING_EVENTS = {
+	started: EmbeddedEventName.RECORDING_STARTED,
+	updated: EmbeddedEventName.RECORDING_UPDATED,
+	ended: EmbeddedEventName.RECORDING_ENDED
+} as const;
+
+const BROADCAST_EVENTS = {
+	started: EmbeddedEventName.BROADCAST_STARTED,
+	updated: EmbeddedEventName.BROADCAST_UPDATED,
+	ended: EmbeddedEventName.BROADCAST_ENDED
+} as const;
+
+type LifecyclePhase = keyof typeof RECORDING_EVENTS;
+
+const withSortedKeys = (_key: string, value: unknown): unknown =>
+	isPlainObject(value) ? Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b))) : value;
+
+const haveSameContent = (a: object, b: object): boolean =>
+	JSON.stringify(a, withSortedKeys) === JSON.stringify(b, withSortedKeys);
 
 /**
  * Service that handles all LiveKit/OpenVidu room events.
@@ -209,8 +220,9 @@ export class MeetingEventHandlerService {
 
 	// What the host has been told about each local device's status in the current entry.
 	private mediaStatusLedger: Partial<Record<EmbeddedEventName, boolean>> = {};
-	// The furthest status each recording has reached in the current entry.
-	private recordingStatusLedger = new Map<string, MeetRecordingStatus>();
+	// The last report of each recording and broadcast in the current entry.
+	private readonly recordingLedger = new Map<string, MeetRecordingInfo>();
+	private readonly broadcastLedger = new Map<string, MeetBroadcastInfo>();
 	// A hand that goes up while the notice is on screen joins it; one that goes down or leaves drops out.
 	private handNotice?: HandNotice;
 
@@ -375,7 +387,8 @@ export class MeetingEventHandlerService {
 
 	/**
 	 * Forwards the participant-connected event to the host as a `meetingJoined` lifecycle event
-	 * (embedded modes only), followed by the status of every recording the meeting already has. The
+	 * (embedded modes only), followed by a start for every recording and broadcast still in progress,
+	 * and the raised hands. The
 	 * bus only ever queues the canonical name; each shell is responsible for also dispatching the
 	 * deprecated `joined` alias alongside it.
 	 */
@@ -393,12 +406,14 @@ export class MeetingEventHandlerService {
 		});
 		this.meetingJoinedNotified = true;
 
-		for (const [recordingId, status] of this.recordingStatusLedger) {
-			this.eventBus.emit({ event: EmbeddedEventName.RECORDING_STATUS_CHANGED, payload: { recordingId, status } });
+		for (const recording of this.recordingLedger.values()) {
+			if (isEgressInProgress(recording.status)) {
+				this.eventBus.emit({ event: EmbeddedEventName.RECORDING_STARTED, payload: recording });
+			}
 		}
 
 		for (const broadcast of this.broadcastLedger.values()) {
-			if (isBroadcastInProgress(broadcast.status)) {
+			if (isEgressInProgress(broadcast.status)) {
 				this.eventBus.emit({ event: EmbeddedEventName.BROADCAST_STARTED, payload: broadcast });
 			}
 		}
@@ -557,7 +572,7 @@ export class MeetingEventHandlerService {
 		this.meetingState.clear();
 		// Per entry: the next one starts up again, against its own initial state.
 		this.mediaStatusLedger = {};
-		this.recordingStatusLedger.clear();
+		this.recordingLedger.clear();
 		this.broadcastLedger.clear();
 		this.handNotice = undefined;
 		this.meetingReactions.clear();
@@ -728,6 +743,33 @@ export class MeetingEventHandlerService {
 		return applied;
 	}
 
+	/**
+	 * Keeps the report and names its phase for the host, or nothing when the known one already ended
+	 * or the report is older than or equal to it.
+	 */
+	private advance<T extends MeetRecordingInfo | MeetBroadcastInfo>(
+		ledger: Map<string, T>,
+		id: string,
+		report: T
+	): LifecyclePhase | undefined {
+		const known = ledger.get(id);
+
+		if (
+			known &&
+			(!isEgressInProgress(known.status) ||
+				egressProgress(report.status) < egressProgress(known.status) ||
+				haveSameContent(report, known))
+		) {
+			return undefined;
+		}
+
+		ledger.set(id, report);
+
+		if (!isEgressInProgress(report.status)) return 'ended';
+
+		return known ? 'updated' : 'started';
+	}
+
 	private handleRecordingUpdated(event: MeetRecordingUpdatedPayload): void {
 		const roomId = this.meetingContext.roomId();
 
@@ -735,40 +777,18 @@ export class MeetingEventHandlerService {
 			return;
 		}
 
-		const { recordingId, status } = event.recording;
+		const { recording } = event;
 
-		if (status === MeetRecordingStatus.COMPLETE) {
+		if (recording.status === MeetRecordingStatus.COMPLETE) {
 			this.meetingContext.setHasRecordings(true);
 		}
 
-		this.notifyRecordingStatus({ recordingId, status });
-	}
+		const phase = this.advance(this.recordingLedger, recording.recordingId, recording);
 
-	/**
-	 * Notifies the host of the recording's status (embedded modes only) only when it moves that
-	 * recording forward: the server repeats the current status to a participant who joins
-	 * mid-recording or reconnects, and the egress webhooks it relays can arrive late. That repeat
-	 * reaches a joining participant before `meetingJoined` does, so until then the status is only
-	 * recorded, for {@link onParticipantConnected} to report.
-	 */
-	private notifyRecordingStatus(payload: EmbeddedEventPayloadFor<EmbeddedEventName.RECORDING_STATUS_CHANGED>): void {
-		if (!this.runtimeConfigService.isEmbeddedMode()) return;
-
-		const { recordingId, status } = payload;
-		const known = this.recordingStatusLedger.get(recordingId);
-
-		if (known !== undefined && RECORDING_STATUS_ORDER[status] <= RECORDING_STATUS_ORDER[known]) return;
-
-		this.recordingStatusLedger.set(recordingId, status);
-
-		if (this.meetingJoinedNotified) {
-			this.eventBus.emit({ event: EmbeddedEventName.RECORDING_STATUS_CHANGED, payload });
+		if (phase && this.runtimeConfigService.isEmbeddedMode() && this.meetingJoinedNotified) {
+			this.eventBus.emit({ event: RECORDING_EVENTS[phase], payload: recording });
 		}
 	}
-
-	// The last report of each broadcast in the current entry, so the first of each reads as a start
-	// (for a late joiner too), the rest as updates until the one that ends it, and nothing repeats.
-	private readonly broadcastLedger = new Map<string, MeetBroadcastInfo>();
 
 	private handleBroadcastUpdated(event: MeetBroadcastUpdatedPayload): void {
 		const roomId = this.meetingContext.roomId();
@@ -780,34 +800,12 @@ export class MeetingEventHandlerService {
 		this.notifyBroadcast(event.broadcast);
 	}
 
-	/**
-	 * Notifies the host of a change of a broadcast (embedded modes only) when it moves the broadcast
-	 * forward: a broadcast that ended says nothing more, and a repeat or a late, older report says
-	 * nothing new. Until `meetingJoined` the change is only recorded, for
-	 * {@link onParticipantConnected} to report the broadcasts in progress.
-	 */
 	private notifyBroadcast(broadcast: MeetBroadcastInfo): void {
-		const known = this.broadcastLedger.get(broadcast.broadcastId);
+		const phase = this.advance(this.broadcastLedger, broadcast.broadcastId, broadcast);
 
-		if (
-			known &&
-			(!isBroadcastInProgress(known.status) ||
-				broadcastProgress(broadcast.status) < broadcastProgress(known.status) ||
-				JSON.stringify(broadcast) === JSON.stringify(known))
-		) {
-			return;
+		if (phase && this.runtimeConfigService.isEmbeddedMode() && this.meetingJoinedNotified) {
+			this.eventBus.emit({ event: BROADCAST_EVENTS[phase], payload: broadcast });
 		}
-
-		this.broadcastLedger.set(broadcast.broadcastId, broadcast);
-
-		if (!this.runtimeConfigService.isEmbeddedMode() || !this.meetingJoinedNotified) return;
-
-		const event = !isBroadcastInProgress(broadcast.status)
-			? EmbeddedEventName.BROADCAST_ENDED
-			: known
-				? EmbeddedEventName.BROADCAST_UPDATED
-				: EmbeddedEventName.BROADCAST_STARTED;
-		this.eventBus.emit({ event, payload: broadcast });
 	}
 
 	/**
