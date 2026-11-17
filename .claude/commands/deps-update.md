@@ -28,14 +28,16 @@ Requested: `$ARGUMENTS`
    what a lockfile change needs.
 2. Hand the scope to the `dependency-updater` agent with the absolute path of the worktree. It reads what
    changed in each package over the versions it crosses (Context7, then the release notes of the
-   package), moves the manifests and the lockfile together, and returns its proof.
-3. Check its report against the diff: only the packages in scope moved, the lockfile changed with the
-   manifests, `./meet.sh verify --all` and `./meet.sh build --skip-install` pass. Fix what an upgrade
-   broke in the same branch; a fix that changes what a user can observe is not a dependency update, so
-   stop and say so.
-4. Commit the manifests and the lockfile together (`build(deps): ...`), push and open a draft pull
-   request. A lockfile change selects every CI suite, and those whole suites are the proof of a
-   dependency update: `./meet.sh affected` has nothing to narrow.
-5. Report: the packages moved (from, to, the change worth knowing in each), the ones held or left at a
-   major with the reason, the pull request, and the `node scripts/dev/pro-deps.mjs --fix` to run in the
-   checkout that has `meet-pro/`.
+   package), moves the manifests and the lockfile together, adapts the code to the new versions (the
+   migrations a package ships, what it breaks, the APIs it deprecates) and proves that everything builds
+   and the unit suites pass.
+3. Check its report against the diff and rerun its proof (`./meet.sh build --skip-install`, then
+   `./meet.sh verify --all`): only the packages in scope moved, the lockfile changed with the manifests,
+   and every code change follows from an upgrade the report names. A behavior change it stopped on is not
+   a dependency update: bring it to the user with the options before going on.
+4. Commit the manifests, the lockfile and the adapted code together (`build(deps): ...`), push and open a
+   draft pull request: a lockfile change selects every CI suite, and those whole suites are the rest of
+   the proof.
+5. Report: the packages moved (from, to, the change worth knowing in each), the code adapted, the ones
+   held or left at a major with the reason, the opportunities the new versions open, the pull request,
+   and the `node scripts/dev/pro-deps.mjs --fix` to run in the checkout that has `meet-pro/`.
