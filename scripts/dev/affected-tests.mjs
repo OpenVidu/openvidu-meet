@@ -100,7 +100,19 @@ const areaMatchers = Object.entries(AREAS).map(([name, area]) => ({
 	paths: area.paths.map(toRegExp)
 }));
 
-const isHeavyTest = (file) => [BACKEND_TESTS, FRONTEND_TESTS, WC_TESTS].some((folder) => file.startsWith(`${folder}/`));
+const PRODUCT_SOURCE =
+	/^(?:meet-ce\/(?:backend|typings)\/src\/|meet-ce\/frontend\/(?:src|projects|webcomponent\/src)\/|testapp\/src\/)/;
+const TEST_SUPPORT = [
+	BACKEND_TESTS,
+	FRONTEND_TESTS,
+	WC_TESTS,
+	'meet-ce/backend/tests/helpers',
+	'meet-ce/backend/tests/interfaces'
+];
+// What an area can claim: product source, and the helpers and fixtures the heavy suites share.
+const needsAnArea = (file) =>
+	!/\.(?:md|spec\.ts|test\.ts)$/.test(file) &&
+	(PRODUCT_SOURCE.test(file) || TEST_SUPPORT.some((folder) => file.startsWith(`${folder}/`)));
 
 const SPEC_PATH = /^openspec\/(?:specs|changes\/.+?\/specs)\/([^/]+)\//;
 
@@ -120,9 +132,7 @@ const touchedAreas = (files) => {
 
 		for (const area of hits) signal(area.name, file);
 
-		const placed = hits.length > 0 || file.startsWith('openspec/') || file.endsWith('.md') || isHeavyTest(file);
-
-		if (!placed) unplaced.push(file);
+		if (hits.length === 0 && needsAnArea(file)) unplaced.push(file);
 	}
 
 	return { touched, unplaced };
@@ -235,20 +245,35 @@ const describeTarget = (key, target) => {
 	return `  ${key}${grep}  <- ${[...new Set(target.reasons)].join('; ')}`;
 };
 
-const report = (files, base, selected) => {
+// The targets of a suite the diff does not select are undefined.
+export const plan = (files, selected = selectedSuites(files)) => {
 	const { touched, unplaced } = touchedAreas(files);
+
+	return {
+		areas: [...touched.keys()],
+		unplaced,
+		targets: Object.fromEntries(
+			Object.keys(SUITES).map((suite) => [
+				suite,
+				selected[suite] === 'true' ? collect(suite, files, touched) : undefined
+			])
+		)
+	};
+};
+
+const report = (files, base) => {
+	const { areas, unplaced, targets: bySuite } = plan(files);
 	const output = [`base ${base.slice(0, 12)}, ${files.length} changed files`];
-	const areas = [...touched.keys()];
 
 	output.push(`areas: ${areas.length > 0 ? areas.join(', ') : 'none'}`);
 
 	for (const [suite, { title, whole }] of Object.entries(SUITES)) {
-		if (selected[suite] !== 'true') {
+		const targets = bySuite[suite];
+
+		if (!targets) {
 			output.push(`${title}: not selected by the diff, nothing to run`);
 			continue;
 		}
-
-		const targets = collect(suite, files, touched);
 
 		if (targets.size === 0) {
 			const command = whole
@@ -271,7 +296,8 @@ const report = (files, base, selected) => {
 	if (unplaced.length > 0) {
 		const shown = unplaced.slice(0, MAX_UNPLACED).join(', ');
 		output.push(
-			`no area for ${unplaced.length} changed files: ${shown}${unplaced.length > MAX_UNPLACED ? ', ...' : ''}`
+			`in no area, ${unplaced.length} shared files: ${shown}${unplaced.length > MAX_UNPLACED ? ', ...' : ''}`,
+			'  the tests above do not cover them: the whole suites in CI do'
 		);
 	}
 
@@ -296,7 +322,31 @@ const check = () => {
 		...listDirectories(`${BACKEND_TESTS}/api`),
 		...listDirectories(BACKEND_TESTS).filter((name) => name !== 'api')
 	];
+	const tracked = lines(git('ls-files').stdout);
+	const tests = Object.entries(AREAS).flatMap(([area, { backend = [], frontend = [], wc = [] }]) =>
+		[
+			[BACKEND_TESTS, backend.filter((entry) => !(entry in BACKEND_FOLDER_SCRIPTS))],
+			[FRONTEND_TESTS, frontend],
+			[WC_TESTS, wc]
+		].flatMap(([folder, entries]) =>
+			entries.map((entry) => {
+				const [file, grep] = [entry].flat();
+				return { area, path: `${folder}/${file}`, grep };
+			})
+		)
+	);
+	const matchesNothing = ({ path, grep }) =>
+		grep && existsSync(join(ROOT, path)) && !new RegExp(grep).test(readFileSync(join(ROOT, path), 'utf8'));
 	const problems = [
+		...Object.entries(AREAS).flatMap(([area, { paths }]) =>
+			paths
+				.filter((glob) => !tracked.some((file) => toRegExp(glob).test(file)))
+				.map((glob) => `area ${area}: path matches no file: ${glob}`)
+		),
+		...tests
+			.filter(({ path }) => !existsSync(join(ROOT, path)))
+			.map(({ area, path }) => `area ${area}: test does not exist: ${path}`),
+		...tests.filter(matchesNothing).map(({ path, grep }) => `--grep '${grep}' matches no test of ${path}`),
 		...listFiles(FRONTEND_TESTS, '.test.ts')
 			.filter((file) => !referenced('frontend').has(file))
 			.map((file) => `frontend e2e spec not in any area: ${FRONTEND_TESTS}/${file}`),
@@ -333,8 +383,8 @@ const main = () => {
 		? { ref: 'stdin', files: lines(readFileSync(0, 'utf8')) }
 		: changedFiles(options.base);
 
-	console.log(report(files, ref, selectedSuites(files)));
+	console.log(report(files, ref));
 	return 0;
 };
 
-process.exitCode = main();
+if (process.argv[1] === fileURLToPath(import.meta.url)) process.exitCode = main();

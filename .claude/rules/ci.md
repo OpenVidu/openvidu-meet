@@ -35,6 +35,10 @@ paths:
 - CI always runs the whole suites it selects. `./meet.sh affected` (`scripts/dev/affected-tests.mjs`)
   narrows the same selection to the tests worth running locally, from the map of areas in
   `scripts/dev/test-areas.mjs`; `Static checks` fails when a spec file, an integration folder or an
-  OpenSpec capability is missing from that map. A change under `meet-ce/typings/src/embedded/` does not
+  OpenSpec capability is missing from that map, when one of its paths matches no file or one of its
+  `--grep` matches no test, and when a case of `scripts/dev/affected-tests.test.mjs` no longer holds.
+  `node scripts/dev/affected-replay.mjs` measures the map on the merged pull requests: from the files of
+  each one, would it have listed the integration and e2e tests that pull request changed. A test it
+  missed becomes a case of the test file. A change under `meet-ce/typings/src/embedded/` does not
   select backend integration, because the backend uses nothing from that folder: a value both sides
   need lives outside it (`leave-reason.ts`, `event-origin.ts`).

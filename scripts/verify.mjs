@@ -270,17 +270,14 @@ const staticAction = {
 	],
 	openapi: [['', commandAction([...BACKEND, 'lint:api'])]],
 	agents: [['', checkClaudeFiles]],
-	affected: [['', commandAction(['node', 'scripts/dev/affected-tests.mjs', '--check'])]]
+	affected: [
+		['map', commandAction(['node', 'scripts/dev/affected-tests.mjs', '--check'])],
+		['cases', commandAction(['node', '--test', 'scripts/dev/affected-tests.test.mjs'])]
+	]
 };
 
-const AFFECTED_INPUTS = [
-	'scripts/dev/test-areas.mjs',
-	'scripts/dev/affected-tests.mjs',
-	'meet-ce/frontend/e2e/',
-	'meet-ce/frontend/webcomponent/tests/e2e/',
-	'meet-ce/backend/tests/integration/',
-	'openspec/specs/'
-];
+// A renamed source file can leave a path of the map matching nothing, so the sources are inputs too.
+const AFFECTED_INPUTS = ['scripts/', 'meet-ce/', 'testapp/', 'openspec/specs/'];
 
 const staticReason = (ctx) => ({
 	format: ctx.files.length > 0 ? `${ctx.files.length} changed files` : undefined,
@@ -290,7 +287,7 @@ const staticReason = (ctx) => ({
 		? '.claude/ changed'
 		: undefined,
 	affected: ctx.files.some((file) => AFFECTED_INPUTS.some((input) => file.startsWith(input)))
-		? 'test map inputs changed'
+		? 'sources, tests or the test map changed'
 		: undefined
 });
 
@@ -299,7 +296,7 @@ const STATIC_SKIP_REASON = {
 	openspec: 'no openspec/ changes',
 	openapi: 'no openapi/ changes',
 	agents: 'no .claude/agents or .claude/rules changes',
-	affected: 'no test map, e2e/integration test or openspec/specs changes'
+	affected: 'no source, test, test map or openspec/specs changes'
 };
 
 const planStatic = (ctx) => {
