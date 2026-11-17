@@ -31,14 +31,6 @@ redis.call('DEL', KEYS[1])
 return 1
 `;
 
-const FIND_FREE_NUMBER_SCRIPT = `
-local number = 1
-while redis.call('EXISTS', ARGV[1] .. number) == 1 do
-	number = number + 1
-end
-return number
-`;
-
 @injectable()
 export class ParticipantNameService {
 	private readonly MAX_CONCURRENT_NAME_REQUESTS = INTERNAL_CONFIG.PARTICIPANT_MAX_CONCURRENT_NAME_REQUESTS;
@@ -236,9 +228,16 @@ export class ParticipantNameService {
 	 */
 	private async findNextAvailableNumber(roomId: string, baseName: string): Promise<number> {
 		const prefix = `${RedisKeyName.ROOM_PARTICIPANTS}${roomId}:${baseName}_`;
+		const findFreeNumberScript = `
+			local number = 1
+			while redis.call('EXISTS', ARGV[1] .. number) == 1 do
+				number = number + 1
+			end
+			return number
+		`;
 
 		try {
-			const nextNumber = (await this.redisService.runScript(FIND_FREE_NUMBER_SCRIPT, [], [prefix])) as number;
+			const nextNumber = (await this.redisService.runScript(findFreeNumberScript, [], [prefix])) as number;
 
 			this.logger.verbose(`Generated new sequential number ${nextNumber} for '${baseName}' in room '${roomId}'`);
 			return nextNumber;
