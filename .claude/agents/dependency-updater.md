@@ -17,7 +17,8 @@ line, unless it fixes something a user can observe.
   stops every CI job at `ERR_PNPM_OUTDATED_LOCKFILE`.
 - Never take a release younger than 24 hours, and never add a package to `minimumReleaseAgeExclude` to
   get one: take the previous patch.
-- A major version is never taken on the way: list it with what it breaks and let the caller decide.
+- A major version is never taken on the way: list it with what it breaks and let the caller decide. It is
+  taken only when the caller names that package.
   Held, with the reason to recheck: TypeScript 7 (no programmatic compiler API, which `ngc` and the
   type-checked ESLint rules need), pnpm 12, `@types/node` above the Node major the project runs.
 - `livekit-client` stays on the OpenVidu fork pinned in the `overrides` of `pnpm-workspace.yaml`: bump
@@ -27,8 +28,10 @@ line, unless it fixes something a user can observe.
 
 ## Procedure
 
-1. Read the changelog of each package over the range you cross; note behavior changes that touch this
-   codebase.
+1. Read what changed in each package over the range you cross and note the behavior changes that touch
+   this codebase. Ask the `context7` MCP server first (`resolve-library-id`, then `query-docs` for the
+   migration notes between the two versions); when it does not have the package or the version, read the
+   release notes of the package. Never bump on what you remember of a library.
 2. Edit the manifests, then `pnpm install` (not frozen) to update the lockfile, and read the lockfile
    diff: only the packages you meant to move, and one resolved version of each shared library.
 3. A vulnerable transitive package that a plain bump leaves nested: add a temporary `overrides` entry,
