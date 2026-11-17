@@ -56,9 +56,13 @@ refactors, dependency bumps, tests and tooling do not need one:
 
 Three rules keep a change from going back to the start:
 
-- **Decisions first.** The proposal opens with the product decisions it rests on (public names,
-  permissions, what this version leaves out, how failures show). Nothing else is written while one is
-  open: ask the user, do not guess.
+- **Decisions first, and they are the user's.** Whoever writes a proposal asks every question the request
+  leaves open about the product (behavior, permissions, limits, what this version leaves out, how
+  failures show), a public contract (names, payloads, errors of the REST API, the webhooks and the
+  embedded API) or the architecture (a new mechanism, persisted data, replicas, a new dependency), in
+  numbered rounds with a recommended answer each, and decides none of them. Facts are looked up, not
+  asked. The proposal opens with those decisions and who took each; nothing else is written while one
+  is open, and one that appears during the implementation stops it until the user answers.
 - **Small changes.** At most 10 spec deltas and one pull request. A larger feature is a series of
   changes that each deliver something a person can observe.
 - **Two review rounds.** `spec-reviewer` reads the whole change once, then only what its findings
@@ -114,6 +118,17 @@ committed in place, without a worktree. Each spec's `## Purpose` names the pages
   `--fix` writes CE's versions into meet-pro. The committed lockfile covers meet-ce only, so with
   meet-pro cloned `./meet.sh install` resolves it on top and leaves the lockfile as committed; a
   dependency change regenerates the lockfile in a checkout without meet-pro (a git worktree has none).
+
+## Dependencies and their documentation
+
+- Before writing code against the API of a library (Angular and Angular Material, `livekit-client` and
+  the LiveKit server SDK, Express 5, Mongoose, zod, Playwright, Jest), read its documentation for the
+  version this repository pins instead of relying on memory: the `context7` MCP server of `.mcp.json`
+  serves it (`resolve-library-id`, then `query-docs` with the version of the package's `package.json`).
+  A query names the library and the question, never code or data of this repository.
+- `/deps-update` updates every dependency that has a patch or minor release, and
+  `/deps-update <package> ...` only the ones named, each run in its own worktree and draft pull request
+  through `dependency-updater`.
 
 ## Build order (non-negotiable)
 
@@ -182,12 +197,16 @@ Flags on any command: `--skip-install`, `--skip-typings` (typings already built)
 ## Agents
 
 `.claude/agents/` defines the agents for the recurring jobs: `backend-implementer`,
-`frontend-implementer`, `test-runner`, `spec-reviewer`, `change-reviewer`, `dependency-updater` and
-`docs-writer`. An agent reads this file and the rules, never the session's memory, so what it must know
-lives in the repository.
+`frontend-implementer`, `refactorer`, `test-runner`, `spec-reviewer`, `change-reviewer`,
+`dependency-updater` and `docs-writer`. An agent reads this file and the rules, never the session's
+memory, so what it must know lives in the repository.
 
 - The main session writes the typings of a change first; backend and frontend groups then run side by
   side. At most two agents at once unless the user asks for more.
+- A change that adds product code goes, once implemented and with `./meet.sh verify` passing, through
+  `refactorer`: it removes what the change added and nobody needs, reuses what the codebase already had
+  and leaves behavior, contracts and test assertions alone. Then the affected tests run and
+  `change-reviewer` reads the result, so what is tested and reviewed is what merges.
 - Tests run through `test-runner`, so their logs stay out of the main conversation. An implementer runs
   the end-to-end tests it wrote or rewrote before reporting them done.
 - A change is made in its own worktree; `.claude/rules/worktrees.md` holds what differs there.

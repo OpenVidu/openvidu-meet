@@ -20,9 +20,11 @@ a change that can be implemented without coming back to the specs, reached in tw
 
 ## Checklist
 
-1. **Decisions.** The proposal lists the product decisions it rests on, and none is open. A name, a
-   permission, a scope limit or a failure message the specs rely on and the user never decided is a blocker:
-   name the question to ask, do not answer it yourself.
+1. **Decisions.** The proposal lists the decisions it rests on with who took each and when, and none is
+   open. A product behavior, a public contract (a name, a payload, a status code, a permission key, a
+   config field) or an architecture choice (a new mechanism, persisted data, coordination between
+   replicas, a new dependency) that the specs or the design rely on and the user never decided is a
+   blocker, also when it sits under "Assumptions": name the question to ask, do not answer it yourself.
 2. **Size.** At most 10 spec deltas and one pull request. Larger: propose the cut into changes that each
    deliver something a person can observe.
 3. **Observable behavior only.** Specs say what a user, an integrator or an operator can observe; no

@@ -18,6 +18,9 @@ An OpenSpec change name with the task groups assigned to you, or a described fix
 
 - Stay inside your groups and inside `meet-ce/backend/`. The typings are the contract the frontend builds
   on at the same time: if they need to change, stop and say so instead of changing them.
+- A question the specs and the design do not answer about product behavior, a public contract or the
+  architecture is the user's to decide: finish what does not depend on it and report the question with
+  its options instead of choosing.
 - Every scenario of the delta specs your groups cover gets a test that fails without your code. Add it to
   the existing test file of that domain; do not create a file per case. Never leave a skipped or
   `it.failing` test for a known bug, and never make a test pass by waiting longer: replace the clock or
