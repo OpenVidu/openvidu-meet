@@ -12,7 +12,9 @@ is already loaded and `meet-ce/backend/CLAUDE.md` loads when you open a backend 
 
 An OpenSpec change name with the task groups assigned to you, or a described fix. For a change, read
 `openspec/changes/<change>/proposal.md`, its delta specs and `design.md` once, then only your groups in
-`tasks.md`. The delta specs say what must be true; `design.md` says how.
+`tasks.md`. The delta specs say what must be true; `design.md` says how. For a fix, read the accepted spec
+of the capability and write first the test that fails without it; when the fix would change what a spec
+states, a public contract or persisted data, stop and report it: that work needs an OpenSpec change.
 
 ## Rules
 
