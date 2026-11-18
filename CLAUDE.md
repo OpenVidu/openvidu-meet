@@ -38,11 +38,46 @@ details the specs only name:
 | Behavior: what happens, for whom, gated by which permission, how it fails | `openspec/specs/` |
 | REST API and webhooks wire contract | OpenAPI in `meet-ce/backend/openapi/` |
 | Embedded API reference (attributes, commands, events) | TSDoc in `meet-ce/typings/src/embedded/` |
-| User documentation | openvidu.io (see next section) |
+| User documentation | openvidu.io (see "Documentation") |
 | Release notes | `CHANGELOG.md` |
 
-Every change a user, an integrator or an operator can observe goes through an OpenSpec change;
-refactors, dependency bumps, tests and tooling do not need one:
+## Size the task first
+
+A task runs only the steps its level needs. The level comes from what the task changes, never from how
+hard it looks. Ask in this order and stop at the first yes:
+
+1. **`spec`**: it changes what Meet does. A requirement or a scenario of `openspec/specs/` is added or
+   reworded, or a public contract (REST API, webhooks, embedded API, room config fields, permission
+   keys, environment variables) or persisted data changes.
+2. **`code`**: it changes logic and every spec stays true as written. A fix that makes the code do what
+   its spec says, a refactor, performance, a dependency (`/deps-update`), tests, tooling.
+3. **`cosmetic`**: neither. Wording and translations, styles and spacing, an icon or an asset,
+   comments, documentation.
+
+| Step | `cosmetic` | `code` | `spec` |
+| ---- | ---------- | ------ | ------ |
+| Own worktree, `./meet.sh verify`, pull request with its CI | yes | yes | yes |
+| OpenSpec change (next section) | no | no | yes |
+| Who writes the code | main session | main session, or one implementer when it spans many files | main session the typings, then the implementers |
+| Tests written | none: update the ones that quote what changed | one that fails without the fix; a refactor adds none | the ones the tasks name |
+| `refactorer` | no | no | when product code was added |
+| Tests run locally | the ones that quote what changed | `./meet.sh affected` | `./meet.sh affected` |
+| `change-reviewer` | no | when product code changed | yes |
+| `CHANGELOG.md`, openvidu.io | main session; a page only when it quotes what changed | main session | `docs-writer` |
+
+- Reading the spec of the capability answers the first question: it is a lookup, not an estimate. Where
+  the spec is silent, a fix with one sensible outcome is `code`; one that has to choose what Meet does
+  is `spec`.
+- Say the level and the fact that sets it in one line before starting ("code: the `recordings` spec
+  already requires X, the backend returns Y"), so the user can correct it. The user can also name it.
+- The level only goes up. When the work meets something of a higher level (a contract field, a
+  migration, a scenario that has to be reworded), stop and restart at that level's first step.
+- CI runs the suites the diff selects whole at every level, so a skipped local step is never the last
+  check.
+
+## The OpenSpec change (`spec` tasks)
+
+A `spec` task is an OpenSpec change from its proposal to its archive; no other level opens one:
 
 1. `/opsx:explore` (optional) to investigate, then `/opsx:propose <change-name>`: writes
    `openspec/changes/<change-name>/` with `proposal.md`, delta specs, `design.md` and `tasks.md`.
@@ -57,12 +92,11 @@ refactors, dependency bumps, tests and tooling do not need one:
 Three rules keep a change from going back to the start:
 
 - **Decisions first, and they are the user's.** Whoever writes a proposal asks every question the request
-  leaves open about the product (behavior, permissions, limits, what this version leaves out, how
-  failures show), a public contract (names, payloads, errors of the REST API, the webhooks and the
-  embedded API) or the architecture (a new mechanism, persisted data, replicas, a new dependency), in
-  numbered rounds with a recommended answer each, and decides none of them. Facts are looked up, not
-  asked. The proposal opens with those decisions and who took each; nothing else is written while one
-  is open, and one that appears during the implementation stops it until the user answers.
+  leaves open about the product, a public contract or the architecture (`openspec/config.yaml` spells
+  out the three kinds), in numbered rounds with a recommended answer each, and decides none of them.
+  Facts are looked up, not asked. The proposal opens with those decisions and who took each; nothing
+  else is written while one is open, and one that appears during the implementation stops it until the
+  user answers.
 - **Small changes.** At most 10 spec deltas and one pull request. A larger feature is a series of
   changes that each deliver something a person can observe.
 - **Two review rounds.** `spec-reviewer` reads the whole change once, then only what its findings
@@ -201,14 +235,15 @@ Flags on any command: `--skip-install`, `--skip-typings` (typings already built)
 `dependency-updater` and `docs-writer`. An agent reads this file and the rules, never the session's
 memory, so what it must know lives in the repository.
 
+- The level of the task says which of them it uses ("Size the task first").
 - The main session writes the typings of a change first; backend and frontend groups then run side by
   side. At most two agents at once unless the user asks for more.
-- A change that adds product code goes, once implemented and with `./meet.sh verify` passing, through
-  `refactorer`: it removes what the change added and nobody needs, reuses what the codebase already had
-  and leaves behavior, contracts and test assertions alone. Then the affected tests run and
-  `change-reviewer` reads the result, so what is tested and reviewed is what merges.
-- Tests run through `test-runner`, so their logs stay out of the main conversation. An implementer runs
-  the end-to-end tests it wrote or rewrote before reporting them done.
+- After the implementation the order is `./meet.sh verify`, `refactorer`, the affected tests,
+  `change-reviewer`, so what is tested and reviewed is what merges. `refactorer` removes what the change
+  added and nobody needs, reuses what the codebase already had and leaves behavior, contracts and test
+  assertions alone.
+- Tests that need the local deployment run through `test-runner`, so their logs stay out of the main
+  conversation. An implementer runs the end-to-end tests it wrote or rewrote before reporting them done.
 - A change is made in its own worktree; `.claude/rules/worktrees.md` holds what differs there.
 - An agent's report is a claim, with its commands and exit codes: check it (`./meet.sh verify`, the
   diff) before reporting the work as done. Agents do not commit; the main session does.

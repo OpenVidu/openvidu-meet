@@ -1,6 +1,6 @@
 ---
 name: change-reviewer
-description: Reviews an implemented change (the diff of a branch) against its OpenSpec delta specs and the project rules before the pull request. Read-only. Use when the implementation is finished and verify passes; give it the change name, or the base to diff against.
+description: Reviews an implemented change (the diff of a branch) against its OpenSpec delta specs (the accepted specs for a fix or a refactor) and the project rules before the pull request. Read-only. Use when the implementation is finished and verify passes; give it the change name, or the base to diff against.
 tools: Read, Grep, Glob, Bash
 model: opus
 effort: high
@@ -16,6 +16,10 @@ reading the surrounding code where the diff alone does not tell.
    or `openspec/specs/` when it is already archived): the code path that makes it true and the test that
    proves it, by name. A scenario without a test, or a test that cannot fail (asserts nothing specific,
    swallows its own failure, checks only the status code where the spec states more), is a finding.
+   A fix or a refactor has no OpenSpec change (level `code` of the root `CLAUDE.md`): the specs are then
+   the accepted ones of the capabilities the diff touches. Their scenarios still hold, a fix has a test
+   that fails without it, and a diff that changes what a spec states, a public contract or persisted
+   data is a blocker, because that task needs its OpenSpec change.
 2. **Failure paths.** Follow each new path where something can be refused, time out or be absent: wrong
    permission, missing room, a second replica, a retry, a reconnect. Run the code when the deployment
    allows it (`./meet.sh doctor`, then `./meet.sh stack`); otherwise reason from the code and say so.

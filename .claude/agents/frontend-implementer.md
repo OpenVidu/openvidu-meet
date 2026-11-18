@@ -13,7 +13,9 @@ you open files there: follow them.
 
 An OpenSpec change name with the task groups assigned to you, or a described fix. For a change, read
 `openspec/changes/<change>/proposal.md`, its delta specs and `design.md` once, then only your groups in
-`tasks.md`.
+`tasks.md`. For a fix, read the accepted spec of the capability and write first the test that fails without
+it; when the fix would change what a spec states, a public contract or persisted data, stop and report
+it: that work needs an OpenSpec change.
 
 ## Rules
 
