@@ -1,11 +1,16 @@
 /meetings/{roomId}:
     get:
         operationId: meetingGet
-        summary: Get the info of a live meeting
+        summary: Get live meeting
         description: |
             Retrieves the details of a live meeting.
 
             Requires the `meetingRead` permission.
+
+            The participants of the meeting (`participants`) and the participants waiting to join it
+            (`waitingParticipants`) come only when requested with `extraFields` or `X-ExtraFields`.
+            `waitingParticipants` also requires the `waitingParticipantAdmin` permission: without it the
+            request still succeeds and the field is left out.
         tags:
             - OpenVidu Meet - Meetings
         security:
@@ -13,6 +18,8 @@
             - roomMemberTokenHeader: []
         parameters:
             - $ref: '../rooms/parameters/room-id-path.yaml'
+            - $ref: './parameters/meeting-x-extra-fields-header.yaml'
+            - $ref: './parameters/meeting-extra-fields.yaml'
         responses:
             '200':
                 $ref: './responses/success/get-meeting.yaml'
@@ -66,7 +73,7 @@
 /meetings/{roomId}/participants:
     get:
         operationId: participantList
-        summary: List the participants of a meeting
+        summary: List participants
         description: |
             Lists the participants currently in the meeting, as live
             snapshots: identity, the application-provided correlation fields (`externalId`,

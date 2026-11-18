@@ -18,24 +18,27 @@ export const fieldListSchema = <TField extends string>(allowedFields: readonly T
 		});
 
 /**
- * Merges the fields the `X-Fields` header names into the `fields` query parameter, as a union, so a
- * request validator reads one list whichever way the client sent it.
+ * Merges the names the `X-Fields` header carries into the `fields` query parameter, or the ones
+ * `X-ExtraFields` carries into `extraFields`, as a union, so a request validator reads one list
+ * whichever way the client sent it.
  */
 export const mergeFieldsHeaderIntoQuery = <TField extends string>(
 	headers: Record<string, unknown>,
 	query: Record<string, unknown>,
-	allowedFields: readonly TField[]
+	allowedFields: readonly TField[],
+	param: 'fields' | 'extraFields' = 'fields'
 ): void => {
-	const headerFields = fieldListSchema(allowedFields).safeParse(headers['x-fields']).data;
+	const headerFields = fieldListSchema(allowedFields).safeParse(headers[`x-${param.toLowerCase()}`]).data;
 
 	if (!headerFields) return;
 
+	const queryValue = query[param];
 	const queryFields =
-		typeof query.fields === 'string'
-			? query.fields
+		typeof queryValue === 'string'
+			? queryValue
 					.split(',')
 					.map((field) => field.trim())
 					.filter((field) => field !== '')
 			: [];
-	query.fields = Array.from(new Set([...queryFields, ...headerFields])).join(',');
+	query[param] = Array.from(new Set([...queryFields, ...headerFields])).join(',');
 };

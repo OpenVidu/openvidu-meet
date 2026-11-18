@@ -5,6 +5,7 @@ import { configureZodErrorMessages } from '../../../src/config/zod-config.js';
 import { INTERNAL_CONFIG } from '../../../src/config/internal-config.js';
 import {
 	BulkRejectWaitingParticipantsReqSchema,
+	GetMeetingQuerySchema,
 	WaitingParticipantLeaveReqSchema,
 	LowerAllHandsReqSchema,
 	MuteParticipantMediaReqSchema,
@@ -27,6 +28,21 @@ const issues = (schema: z.ZodType, input: unknown): string[] => {
 
 beforeAll(() => {
 	configureZodErrorMessages();
+});
+
+describe('GetMeetingQuerySchema', () => {
+	it('reads the extra fields of the meeting once each, ignoring the unknown names', () => {
+		expect(
+			GetMeetingQuerySchema.parse({ extraFields: ' waitingParticipants,foo,participants,participants' })
+		).toEqual({
+			extraFields: ['waitingParticipants', 'participants']
+		});
+	});
+
+	it('reads a list with no usable name, or none, as no extra field', () => {
+		expect(GetMeetingQuerySchema.parse({ extraFields: 'foo, ,' })).toEqual({ extraFields: undefined });
+		expect(GetMeetingQuerySchema.parse({})).toEqual({ extraFields: undefined });
+	});
 });
 
 describe('UpdateParticipantRoleReqSchema', () => {

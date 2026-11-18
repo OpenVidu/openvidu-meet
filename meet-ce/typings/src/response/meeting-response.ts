@@ -1,3 +1,7 @@
+import { ExtraFieldKey } from './extra-field.js';
+import { MeetParticipantInfo } from './participant-response.js';
+import { MeetWaitingParticipant } from './waiting-participant-response.js';
+
 /**
  * Live snapshot of the meeting currently running in a room, as served by `GET /meetings/{roomId}`.
  *
@@ -29,4 +33,29 @@ export interface MeetMeetingInfo {
 	 * Taken from the room's `maxParticipants` when the meeting started, so it does not change mid-meeting.
 	 */
 	maxParticipants?: number;
+	/**
+	 * Participants currently in the meeting, as `GET /meetings/{roomId}/participants` lists them.
+	 * Present only when requested through `extraFields`.
+	 */
+	participants?: MeetParticipantInfo[];
+	/**
+	 * Participants waiting to join the meeting, as `GET /meetings/{roomId}/waiting-participants` lists them.
+	 * Present only when requested through `extraFields` by a caller holding `waitingParticipantAdmin`.
+	 * Empty in an unlocked room.
+	 */
+	waitingParticipants?: MeetWaitingParticipant[];
 }
+
+/**
+ * Properties of a {@link MeetMeetingInfo} that are left out of the API response unless requested
+ * through the `extraFields` parameter.
+ */
+export const MEET_MEETING_EXTRA_FIELDS = [
+	'participants',
+	'waitingParticipants'
+] as const satisfies readonly ExtraFieldKey<Required<MeetMeetingInfo>>[];
+
+/**
+ * Properties of a meeting that can be requested as extra fields in the API response.
+ */
+export type MeetMeetingExtraField = (typeof MEET_MEETING_EXTRA_FIELDS)[number];

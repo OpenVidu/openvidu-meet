@@ -89,6 +89,9 @@ with no replacement.
   and what became of each wait. In these rooms a room member token acts on the meeting (reads, moderation, recording and
   broadcast control, admission) only if it carries a participant identity, and locking the room invalidates the room
   member tokens issued before and updates `rolesUpdatedAt`.
+- [`meetingGet`][3.10-meetings] returns the participants and the waiting participants of the meeting on request, with
+  `extraFields=participants` and `extraFields=waitingParticipants`, the latter for callers with
+  `waitingParticipantAdmin`.
 - User responses carry `isRootAdmin`, `true` for the `MEET_INITIAL_ADMIN_USER` account.
 
 #### UI

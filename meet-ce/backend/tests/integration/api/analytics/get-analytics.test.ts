@@ -10,6 +10,7 @@ import ms from 'ms';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { MeetRoomModel } from '../../../../src/models/mongoose-schemas/room.schema.js';
 import { RecordingRepository } from '../../../../src/repositories/recording.repository.js';
+import { TaskSchedulerService } from '../../../../src/services/task-scheduler.service.js';
 import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	createRoom,
@@ -135,6 +136,8 @@ describe('Analytics API Tests', () => {
 		});
 
 		it('should count each recording status under one figure: complete, in progress or failed', async () => {
+			// The stale recordings sweep ends any recording in progress without an egress, as these are.
+			container.get(TaskSchedulerService).cancelTask('staleRecordingsGC');
 			const { roomId } = await createRoom({ roomName: 'analytics-statuses' });
 			const recordingRepository = container.get(RecordingRepository);
 			const statuses = [

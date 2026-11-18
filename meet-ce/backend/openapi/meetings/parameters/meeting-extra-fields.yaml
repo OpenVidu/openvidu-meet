@@ -1,0 +1,11 @@
+name: extraFields
+in: query
+description: >
+    Comma-separated list of additional meeting fields to include in the response, which are excluded by default
+    to reduce payload size: `participants` and `waitingParticipants`.
+    <br/><br/>
+    Combines with the `X-ExtraFields` header. Names that are not extra meeting fields are ignored.
+required: false
+schema:
+    type: string
+example: 'participants,waitingParticipants'
