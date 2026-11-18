@@ -1,37 +1,22 @@
-import { afterAll, afterEach, beforeAll, describe, expect, it } from '@jest/globals';
-import {
-	MeetRecordingEncodingPreset,
-	MeetRecordingLayout,
-	MeetRoom,
-	MeetRoomDeletionPolicyWithMeeting,
-	MeetRoomDeletionSuccessCode
-} from '@openvidu-meet/typings';
+import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
+import { MeetRecordingEncodingPreset, MeetRecordingLayout, MeetRoomDeletionSuccessCode } from '@openvidu-meet/typings';
 import {
 	expectSuccessRoomsResponse,
 	expectValidRoom,
 	expectValidRoomWithFields
 } from '../../../helpers/assertion-helpers.js';
-import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
 import {
-	bulkDeleteRooms,
 	createRoom,
-	deleteAllRecordings,
 	deleteAllRooms,
 	deleteRoom,
 	getRoom,
 	getRooms,
 	startTestServer
 } from '../../../helpers/request-helpers.js';
-import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
 
 /**
- * Tests for X-Fields and X-ExtraFields header support across all room operations.
- *
- * All room operations (POST, GET, DELETE) support the X-Fields and X-ExtraFields headers
- * for controlling which fields are included in the response.
- *
- * For GET and DELETE operations, headers can be combined with query parameters.
- * When both are provided, values are merged (union of unique fields).
+ * X-Fields and X-ExtraFields headers on the room reads, where they combine with the query parameters
+ * (union of unique fields). Each write operation covers its own headers next to its other tests.
  */
 describe('Room Header Fields Tests', () => {
 	beforeAll(async () => {
@@ -40,11 +25,6 @@ describe('Room Header Fields Tests', () => {
 
 	afterEach(async () => {
 		await deleteAllRooms();
-	});
-
-	afterAll(async () => {
-		await disconnectFakeParticipants();
-		await deleteAllRecordings();
 	});
 
 	describe('GET /rooms - X-Fields and X-ExtraFields headers', () => {
@@ -231,38 +211,6 @@ describe('Room Header Fields Tests', () => {
 	});
 
 	describe('DELETE /rooms/:roomId - X-Fields and X-ExtraFields headers', () => {
-		it('should filter room fields in response using X-Fields header when room is returned', async () => {
-			const { room } = await setupSingleRoom(true);
-
-			const response = await deleteRoom(
-				room.roomId,
-				{ withMeeting: MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS },
-				{ xFields: 'roomId,status' }
-			);
-
-			expect(response.status).toBe(202);
-			expect(response.body).toHaveProperty(
-				'successCode',
-				MeetRoomDeletionSuccessCode.ROOM_WITH_ACTIVE_MEETING_SCHEDULED_TO_BE_DELETED
-			);
-			expect(response.body.room).toBeDefined();
-			expectValidRoomWithFields(response.body.room, ['roomId', 'status']);
-		});
-
-		it('should include extra fields in response using X-ExtraFields header', async () => {
-			const { room } = await setupSingleRoom(true);
-
-			const response = await deleteRoom(
-				room.roomId,
-				{ withMeeting: MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS },
-				{ xExtraFields: 'config' }
-			);
-
-			expect(response.status).toBe(202);
-			expect(response.body.room).toBeDefined();
-			expect(response.body.room.config).toBeDefined();
-		});
-
 		it('should not affect response when room is not returned (direct deletion)', async () => {
 			const { roomId } = await createRoom();
 
@@ -272,99 +220,6 @@ describe('Room Header Fields Tests', () => {
 			expect(response.status).toBe(200);
 			expect(response.body).toHaveProperty('successCode', MeetRoomDeletionSuccessCode.ROOM_DELETED);
 			expect(response.body).not.toHaveProperty('room');
-		});
-	});
-
-	describe('DELETE /rooms (bulk) - X-Fields and X-ExtraFields headers', () => {
-		it('should filter room fields in bulk delete response using X-Fields header', async () => {
-			const { room } = await setupSingleRoom(true);
-
-			const response = await bulkDeleteRooms(
-				[room.roomId],
-				MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS,
-				undefined,
-				undefined,
-				undefined,
-				{ xFields: 'roomId,status' }
-			);
-
-			expect(response.status).toBe(200);
-			const successItem = response.body.deleted.find((s: { room?: MeetRoom }) => s.room !== undefined);
-			expect(successItem).toBeDefined();
-			expectValidRoomWithFields(successItem.room, ['roomId', 'status']);
-		});
-
-		it('should include extra fields in bulk delete response using X-ExtraFields header', async () => {
-			const { room } = await setupSingleRoom(true);
-
-			const response = await bulkDeleteRooms(
-				[room.roomId],
-				MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS,
-				undefined,
-				undefined,
-				undefined,
-				{ xExtraFields: 'config' }
-			);
-
-			expect(response.status).toBe(200);
-			const successItem = response.body.deleted.find((s: { room?: MeetRoom }) => s.room !== undefined);
-			expect(successItem).toBeDefined();
-			expect(successItem.room.config).toBeDefined();
-		});
-
-		it('should combine headers and query params in bulk delete', async () => {
-			const [room1, { room: room2 }] = await Promise.all([createRoom(), setupSingleRoom(true)]);
-
-			const response = await bulkDeleteRooms(
-				[room1.roomId, room2.roomId],
-				MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS,
-				undefined,
-				undefined,
-				undefined,
-				{ xFields: 'roomId,roomName', xExtraFields: 'config' }
-			);
-
-			// room1 gets deleted (no room in response), room2 gets scheduled (room in response)
-			const successWithRoom = response.body.deleted.find((s: { room?: MeetRoom }) => s.room !== undefined);
-
-			if (successWithRoom) {
-				expectValidRoomWithFields(successWithRoom.room, ['roomId', 'roomName', 'config']);
-			}
-		});
-
-		it('should not affect items without room in response', async () => {
-			const { roomId } = await createRoom();
-
-			const response = await bulkDeleteRooms([roomId], undefined, undefined, undefined, undefined, {
-				xFields: 'roomId'
-			});
-
-			expect(response.status).toBe(200);
-			expect(response.body.deleted[0]).toHaveProperty('successCode', MeetRoomDeletionSuccessCode.ROOM_DELETED);
-			expect(response.body.deleted[0]).not.toHaveProperty('room');
-		});
-	});
-
-	describe('POST /rooms - X-Fields and X-ExtraFields headers (existing behavior)', () => {
-		it('should continue to support X-ExtraFields header on create', async () => {
-			const room = await createRoom({ roomName: 'post-header-test' }, undefined, { xExtraFields: 'config' });
-
-			expect(room.config).toBeDefined();
-		});
-
-		it('should continue to support X-Fields header on create', async () => {
-			const room = await createRoom({ roomName: 'post-xfields-test' }, undefined, { xFields: 'roomId,roomName' });
-
-			expectValidRoomWithFields(room, ['roomId', 'roomName']);
-		});
-
-		it('should support both X-Fields and X-ExtraFields on create', async () => {
-			const room = await createRoom({ roomName: 'post-both-test' }, undefined, {
-				xFields: 'roomId',
-				xExtraFields: 'config'
-			});
-
-			expectValidRoomWithFields(room, ['roomId', 'config']);
 		});
 	});
 });

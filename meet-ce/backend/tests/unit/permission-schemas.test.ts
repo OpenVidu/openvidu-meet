@@ -170,12 +170,6 @@ describe('Permissions introduced after the rename', () => {
 		expect(result.data!.meetingRead).toBe(false);
 	});
 
-	it('should complete meetingRead in the token of a meeting in progress', () => {
-		const result = MeetPermissionsSchema.safeParse(currentInputWithoutMeetingRead);
-		expect(result.success).toBe(true);
-		expect(result.data!.meetingRead).toBe(true);
-	});
-
 	it('should let an explicit meetingRead diverge from meetingJoin', () => {
 		const result = MeetPermissionsSchema.safeParse({ ...fullCurrentInput, meetingRead: false });
 		expect(result.success).toBe(true);

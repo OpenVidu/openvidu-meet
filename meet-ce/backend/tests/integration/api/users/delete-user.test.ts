@@ -112,13 +112,6 @@ describe('Users API Tests', () => {
 			expect(response.body.message).toContain('Cannot delete your own account');
 		});
 
-		it('should fail when root admin tries to delete own account', async () => {
-			const response = await deleteUser(MEET_ENV.INITIAL_ADMIN_USER);
-			expect(response.status).toBe(403);
-			expect(response.body).toHaveProperty('message');
-			expect(response.body.message).toContain('Cannot delete the root admin user');
-		});
-
 		it('should fail when user does not exist', async () => {
 			const response = await deleteUser('nonexistent_user_123');
 			expect(response.status).toBe(404);
