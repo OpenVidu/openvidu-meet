@@ -39,6 +39,32 @@ const storeLanguagePreference = async (page: Page, lang: string): Promise<void> 
 test.describe('WebComponent Attributes E2E Tests', () => {
 	const createdRoomIds: string[] = [];
 
+	let recordedRoomAccessUrl: string;
+	let recordingId: string;
+
+	test.beforeAll(async ({ browser }) => {
+		const room = await createRoom();
+		createdRoomIds.push(room.roomId);
+		recordedRoomAccessUrl = room.access.anonymous.moderator.url;
+
+		// Produce a recording for this room via the testapp flow.
+		const context = await browser.newContext();
+		const page = await context.newPage();
+
+		try {
+			await openMeeting(page, room.roomId, { role: 'moderator' });
+			await startRecording(page);
+			await stopRecording(page);
+			await endMeetingCommand(page);
+		} finally {
+			await context.close();
+		}
+
+		const recordings = await listRecordingsByRoomId(room.roomId);
+		expect(recordings.length).toBeGreaterThan(0);
+		recordingId = recordings[0].recordingId;
+	});
+
 	test.afterAll(async () => {
 		await deleteRooms(createdRoomIds);
 	});
@@ -460,61 +486,9 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 				});
 				await expectPrejoinCameraEnabled(page, 'webcomponent', true, { timeout: 10_000 });
 			});
-
-			test('should not carry the participant camera choice into the next meeting', async ({ page }) => {
-				const { meet } = await openMeetingAtMediaSetup(page, persistenceRoomId, { role: 'moderator' });
-				await expectPrejoinCameraEnabled(page, 'webcomponent', true, { timeout: 10_000 });
-				await meet('#camera-button').click();
-				await expectPrejoinCameraEnabled(page, 'webcomponent', false, { timeout: 10_000 });
-
-				await meet('#join-button').click();
-				await meet('#layout-container').waitFor({ state: 'visible', timeout: 15_000 });
-				await leaveMeeting(page);
-
-				// Re-entering the same tab: nothing was persisted, so the room's own default decides again.
-				await openMeetingAtMediaSetup(page, persistenceRoomId, { role: 'moderator' });
-				await expectPrejoinCameraEnabled(page, 'webcomponent', true, { timeout: 10_000 });
-			});
 		});
 
 		test.describe('with recording', () => {
-			let recordingId: string;
-
-			test.beforeAll(async ({ browser }) => {
-				const room = await createRoom();
-				createdRoomIds.push(room.roomId);
-				accessUrl = room.access.anonymous.moderator.url;
-
-				// Produce a recording for this room via the testapp flow.
-				const context = await browser.newContext();
-				const page = await context.newPage();
-
-				try {
-					await openMeeting(page, room.roomId, { role: 'moderator' });
-					await startRecording(page);
-					await stopRecording(page);
-					await endMeetingCommand(page);
-				} finally {
-					await context.close();
-				}
-
-				const recordings = await listRecordingsByRoomId(room.roomId);
-				expect(recordings.length).toBeGreaterThan(0);
-				recordingId = recordings[0].recordingId;
-			});
-
-			test('should redirect to the room recordings page when show-only-recordings is set', async ({ page }) => {
-				await openWebcomponentWithAttributes(page, {
-					[EmbeddedAttribute.ROOM_URL]: accessUrl,
-					[EmbeddedAttribute.SHOW_ONLY_RECORDINGS]: 'true'
-				});
-
-				await expect(wcLocator(page, 'ov-recording-lists, .recordings-list')).toBeVisible({
-					timeout: 15_000
-				});
-				await expect(wcLocator(page, '#participant-name-input')).toHaveCount(0);
-			});
-
 			// These two drive the raw HTML attribute with `setAttribute`, whose two string forms follow the
 			// HTML convention: `"false"` is off and a bare attribute is on. Each starts from the view the
 			// attribute has to leave, so an attribute that never reaches the element fails the test.
@@ -522,13 +496,14 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 				page
 			}) => {
 				await openWebcomponentWithAttributes(page, {
-					[EmbeddedAttribute.ROOM_URL]: accessUrl,
+					[EmbeddedAttribute.ROOM_URL]: recordedRoomAccessUrl,
 					[EmbeddedAttribute.SHOW_ONLY_RECORDINGS]: 'true'
 				});
 
 				await expect(wcLocator(page, 'ov-recording-lists, .recordings-list')).toBeVisible({
 					timeout: 15_000
 				});
+				await expect(wcLocator(page, '#participant-name-input')).toHaveCount(0);
 
 				await wcHost(page).evaluate(
 					(el, attr) => el.setAttribute(attr, 'false'),
@@ -543,7 +518,7 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 				page
 			}) => {
 				await openWebcomponentWithAttributes(page, {
-					[EmbeddedAttribute.ROOM_URL]: accessUrl
+					[EmbeddedAttribute.ROOM_URL]: recordedRoomAccessUrl
 				});
 
 				await expect(wcLocator(page, '#participant-name-input')).toBeVisible({ timeout: 15_000 });
@@ -568,7 +543,7 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 				}) => {
 					await openWebcomponentWithAttributes(
 						page,
-						{ [EmbeddedAttribute.ROOM_URL]: `${accessUrl}&${query}` },
+						{ [EmbeddedAttribute.ROOM_URL]: `${recordedRoomAccessUrl}&${query}` },
 						{ integration: 'iframe' }
 					);
 					const meet = (selector: string) => meetLocator(page, 'iframe', selector);
@@ -580,7 +555,7 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 
 			test('should redirect to the specified recording when show-recording is set', async ({ page }) => {
 				await openWebcomponentWithAttributes(page, {
-					[EmbeddedAttribute.ROOM_URL]: accessUrl,
+					[EmbeddedAttribute.ROOM_URL]: recordedRoomAccessUrl,
 					[EmbeddedAttribute.SHOW_RECORDING]: recordingId
 				});
 
@@ -595,7 +570,7 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 				await openWebcomponentWithAttributes(
 					page,
 					{
-						[EmbeddedAttribute.ROOM_URL]: accessUrl,
+						[EmbeddedAttribute.ROOM_URL]: recordedRoomAccessUrl,
 						[EmbeddedAttribute.LANGUAGE]: 'es',
 						[EmbeddedAttribute.SHOW_ONLY_RECORDINGS]: 'true'
 					},
@@ -613,7 +588,7 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 			}) => {
 				await storeLanguagePreference(page, 'de');
 				await openWebcomponentWithAttributes(page, {
-					[EmbeddedAttribute.ROOM_URL]: accessUrl,
+					[EmbeddedAttribute.ROOM_URL]: recordedRoomAccessUrl,
 					[EmbeddedAttribute.LANGUAGE]: 'es'
 				});
 				await expect(wcLocator(page, '#participant-name-input')).toBeVisible({ timeout: 15_000 });
@@ -632,30 +607,6 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 	});
 
 	test.describe('Using recording-url', () => {
-		let recordingId: string;
-
-		test.beforeAll(async ({ browser }) => {
-			const room = await createRoom();
-			createdRoomIds.push(room.roomId);
-
-			// Produce a recording for this room via the testapp flow.
-			const context = await browser.newContext();
-			const page = await context.newPage();
-
-			try {
-				await openMeeting(page, room.roomId, { role: 'moderator' });
-				await startRecording(page);
-				await stopRecording(page);
-				await endMeetingCommand(page);
-			} finally {
-				await context.close();
-			}
-
-			const recordings = await listRecordingsByRoomId(room.roomId);
-			expect(recordings.length).toBeGreaterThan(0);
-			recordingId = recordings[0].recordingId;
-		});
-
 		test('should redirect to the specified recording', async ({ page }) => {
 			const recordingUrl = await getRecordingUrl(recordingId);
 

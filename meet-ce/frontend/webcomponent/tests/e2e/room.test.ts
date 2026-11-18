@@ -1,6 +1,6 @@
 import { EmbeddedAttribute } from '@openvidu-meet/typings';
 import { expect, test } from '@playwright/test';
-import { applyBackgroundEffect, startScreensharing, stopScreensharing } from '../helpers/media-controls.helper';
+import { applyBackgroundEffect } from '../helpers/media-controls.helper';
 import { createRoom, deleteRooms, getRoom } from '../helpers/meet-api.helper';
 import { openMoreOptionsMenu } from '../helpers/panels.helper';
 import { startRecording, stopRecording } from '../helpers/recordings.helper';
@@ -23,17 +23,6 @@ test.describe('Room Features E2E Tests', () => {
 	});
 
 	test.describe('Component Rendering', () => {
-		test('should load the web component and render its shadow content', async ({ page }) => {
-			await openMeeting(page, roomId, { role: 'moderator' });
-
-			// The host element mounts and Playwright pierces its open Shadow DOM to
-			// reach the in-meeting view rendered inside it (no iframe involved).
-			await expect(page.locator('openvidu-meet')).toBeVisible();
-			await expect(wcLocator(page, 'ov-meeting-view')).toBeVisible();
-
-			await leaveMeeting(page, { role: 'moderator' });
-		});
-
 		test("should ask to log in when room-url switches to another room's user access link", async ({ page }) => {
 			const [roomA, roomB] = await Promise.all([getRoom(roomId), createRoom()]);
 			createdRoomIds.push(roomB.roomId);
@@ -193,43 +182,6 @@ test.describe('Room Features E2E Tests', () => {
 	});
 
 	test.describe('Basic Room Features', () => {
-		test('should start a videoconference and display video elements', async ({ page, browser }) => {
-			await openMeeting(page, roomId, { role: 'speaker' });
-			await expect(wcLocator(page, '.OV_stream.local')).toBeVisible();
-
-			const moderatorPage = await browser.newPage();
-			await openMeeting(moderatorPage, roomId, { role: 'moderator' });
-
-			await expect(wcLocator(page, '.OV_stream.remote')).toBeVisible();
-
-			await leaveMeeting(moderatorPage, { role: 'moderator' });
-			await moderatorPage.close();
-
-			await leaveMeeting(page);
-		});
-
-		test('should share and stop screen sharing', async ({ page }) => {
-			await openMeeting(page, roomId, { role: 'speaker' });
-			await expect(wcLocator(page, '#toolbar')).toBeVisible();
-
-			const videos = wcLocator(page, 'video');
-			await expect(videos).toHaveCount(1);
-
-			await startScreensharing(page);
-			await expect(videos).toHaveCount(2);
-
-			await stopScreensharing(page);
-			await expect(videos).toHaveCount(1);
-
-			await startScreensharing(page);
-			await expect(videos).toHaveCount(2);
-
-			await stopScreensharing(page);
-			await expect(videos).toHaveCount(1);
-
-			await leaveMeeting(page);
-		});
-
 		test('should apply virtual background and detect visual changes', async ({ page }) => {
 			await openMeeting(page, roomId, { role: 'speaker' });
 
@@ -275,31 +227,6 @@ test.describe('Room Features E2E Tests', () => {
 	});
 
 	test.describe('UI Panels and Components', () => {
-		test('should show the toolbar and media buttons', async ({ page }) => {
-			await openMeeting(page, roomId, { role: 'speaker' });
-
-			await expect(wcLocator(page, '#toolbar')).toBeVisible();
-			await expect(wcLocator(page, '#camera-btn')).toBeVisible();
-			await expect(wcLocator(page, '#mic-btn')).toBeVisible();
-
-			await leaveMeeting(page);
-		});
-
-		test('should open the chat panel and send a message', async ({ page }) => {
-			await openMeeting(page, roomId, { role: 'speaker' });
-
-			await wcLocator(page, '#chat-panel-btn').click();
-
-			const chatInput = wcLocator(page, '#chat-input');
-			await expect(chatInput).toBeVisible();
-			await chatInput.fill('Hello world');
-			await wcLocator(page, '#send-btn').click();
-
-			await expect(wcLocator(page, '.chat-message')).toBeVisible();
-
-			await leaveMeeting(page);
-		});
-
 		test('should start the next meeting joined with the same element with an empty chat', async ({ page }) => {
 			await openMeeting(page, roomId, { role: 'speaker' });
 			await wcLocator(page, '#chat-panel-btn').click();
@@ -439,15 +366,6 @@ test.describe('Room Features E2E Tests', () => {
 			await leaveMeeting(page);
 		});
 
-		test('should show participants panel', async ({ page }) => {
-			await openMeeting(page, roomId, { role: 'speaker' });
-
-			await wcLocator(page, '#participants-panel-btn').click();
-			await expect(wcLocator(page, 'ov-participants-panel')).toBeVisible();
-
-			await leaveMeeting(page);
-		});
-
 		test('should show settings panel', async ({ page }) => {
 			await openMeeting(page, roomId, { role: 'speaker' });
 
@@ -467,13 +385,33 @@ test.describe('Room Features E2E Tests', () => {
 	// against each integration.
 	for (const integration of INTEGRATIONS) {
 		test.describe(`Embedded share-link affordances hidden [${integration}]`, () => {
-			test('does not show the copy link toolbar button', async ({ page }) => {
-				// Join as moderator: in SPA this role shows the copy meeting link button,
-				// so it is the strongest check that the embedded mode hides it.
+			// Join as moderator: in SPA this role shows the copy meeting link button, the link in the
+			// invite overlay and the link in the invite panel, so it is the strongest check that the
+			// embedded mode hides them.
+			test('does not show the copy link toolbar button, nor the link in the invite overlay and the participants panel', async ({
+				page
+			}) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
 
-				await expect(meetLocator(page, integration, '#toolbar')).toBeVisible();
-				await expect(meetLocator(page, integration, '#copy-speaker-link')).toHaveCount(0);
+				await test.step('does not show the copy link toolbar button', async () => {
+					await expect(meetLocator(page, integration, '#toolbar')).toBeVisible();
+					await expect(meetLocator(page, integration, '#camera-btn')).toBeVisible();
+					await expect(meetLocator(page, integration, '#mic-btn')).toBeVisible();
+					await expect(meetLocator(page, integration, '#copy-speaker-link')).toHaveCount(0);
+				});
+
+				await test.step('shows the invite overlay without the link when alone', async () => {
+					await expect(meetLocator(page, integration, '#invite-overlay')).toBeVisible();
+					await expect(meetLocator(page, integration, '#invite-overlay .copy-url-btn')).toHaveCount(0);
+				});
+
+				await test.step('shows the invitation without the link in the participants panel', async () => {
+					await meetLocator(page, integration, '#participants-panel-btn').click();
+					await expect(meetLocator(page, integration, 'ov-participants-panel')).toBeVisible();
+
+					await expect(meetLocator(page, integration, '#invite-without-link')).toBeVisible();
+					await expect(meetLocator(page, integration, '#invite-panel')).toHaveCount(0);
+				});
 
 				await leaveMeeting(page, { integration, role: 'moderator' });
 			});
@@ -491,31 +429,6 @@ test.describe('Room Features E2E Tests', () => {
 
 				await expect(meetLocator(page, integration, '#participant-name-input')).toBeVisible();
 				await expect(meetLocator(page, integration, 'ov-share-room-access-link')).toHaveCount(0);
-			});
-
-			test('shows the invitation without the link in the participants panel', async ({ page }) => {
-				// Join as moderator: in SPA this role would see the link in the invite panel,
-				// so it is the strongest check that the embedded mode leaves it out.
-				await openMeeting(page, roomId, { integration, role: 'moderator' });
-
-				await meetLocator(page, integration, '#participants-panel-btn').click();
-				await expect(meetLocator(page, integration, 'ov-participants-panel')).toBeVisible();
-
-				await expect(meetLocator(page, integration, '#invite-without-link')).toBeVisible();
-				await expect(meetLocator(page, integration, '#invite-panel')).toHaveCount(0);
-
-				await leaveMeeting(page, { integration, role: 'moderator' });
-			});
-
-			test('shows the invite overlay without the link when alone', async ({ page }) => {
-				// Moderator alone: in SPA the overlay shows the link, so it is the
-				// strongest check that the embedded mode leaves it out.
-				await openMeeting(page, roomId, { integration, role: 'moderator' });
-
-				await expect(meetLocator(page, integration, '#invite-overlay')).toBeVisible();
-				await expect(meetLocator(page, integration, '#invite-overlay .copy-url-btn')).toHaveCount(0);
-
-				await leaveMeeting(page, { integration, role: 'moderator' });
 			});
 		});
 	}

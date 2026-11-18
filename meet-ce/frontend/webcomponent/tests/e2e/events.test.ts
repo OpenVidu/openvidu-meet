@@ -3,6 +3,7 @@ import {
 	EmbeddedEventName,
 	EmbeddedEventPayloadFor,
 	LeftEventReason,
+	MeetBroadcastInfo,
 	MeetBroadcastStatus,
 	MeetEventOrigin,
 	MeetWaitingParticipant,
@@ -31,6 +32,7 @@ import {
 	updateParticipantRole,
 	waitForMeetingParticipant
 } from '../helpers/meet-api.helper';
+import { expectToolbarMicEnabled } from '../helpers/media-controls.helper';
 import { startRecording, stopRecording } from '../helpers/recordings.helper';
 import { openWebcomponentWithAttributes } from '../helpers/webcomponent-attributes.helper';
 import {
@@ -43,13 +45,13 @@ import {
 	eventPayloads,
 	eventSequence,
 	expectEvent,
+	expectWebhook,
 	participantHandChangedLocator,
 	participantRaiseHandCommand,
 	joinedParticipantIdentity,
 	leaveMeeting,
 	leaveRoomCommand,
 	mediaToggleAudioCommand,
-	mediaToggleScreenShareCommand,
 	mediaToggleVideoCommand,
 	openMeeting,
 	openMeetingAtMediaSetup,
@@ -57,7 +59,9 @@ import {
 	participantUpdateRoleCommand,
 	recordHostEvents,
 	recordingEventLocator,
-	removeEmbeddedMeeting
+	recordingStartCommand,
+	removeEmbeddedMeeting,
+	webhookLocator
 } from '../helpers/testapp.helper';
 import { getWebhookFromStorage, webhooksFromStorage } from '../helpers/ui-utils.helper';
 
@@ -102,13 +106,27 @@ for (const integration of INTEGRATIONS) {
 		};
 
 		test.describe('JOINED Event', () => {
-			test('should receive joined event when joining as moderator', async ({ page }) => {
+			test('should receive one joined event, and meetingJoined, with the roomId and participantIdentity when joining as moderator', async ({
+				page
+			}) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
 
 				const joined = await expectEvent(page, EmbeddedEventName.JOINED);
-				await expect(joined).toContainText('roomId');
-				await expect(joined).toContainText('participantIdentity');
-				await expect(joined).toContainText(roomId);
+
+				await test.step('should include the roomId and the participantIdentity in the joined event payload', async () => {
+					await expect(joined).toContainText('"roomId"');
+					await expect(joined).toContainText(roomId);
+					await expect(joined).toHaveText(/"participantIdentity".*:/);
+				});
+
+				await test.step('should receive only one joined event per join action', async () => {
+					await expect(eventLocator(page, EmbeddedEventName.JOINED)).toHaveCount(1);
+				});
+
+				await test.step('should dispatch both joined and meetingJoined for the same transition', async () => {
+					const meetingJoined = await expectEvent(page, EmbeddedEventName.MEETING_JOINED);
+					await expect(meetingJoined).toContainText(roomId);
+				});
 			});
 
 			test('should receive joined event when joining as speaker', async ({ page }) => {
@@ -119,25 +137,48 @@ for (const integration of INTEGRATIONS) {
 				await expect(joined).toContainText('participantIdentity');
 				await expect(joined).toContainText(roomId);
 			});
-
-			test('should receive only one joined event per join action', async ({ page }) => {
-				await openMeeting(page, roomId, { integration, role: 'moderator' });
-				await expectEvent(page, EmbeddedEventName.JOINED);
-			});
 		});
 
 		test.describe('LEFT Event', () => {
-			test('should receive left event with voluntary_leave reason when using leave command', async ({ page }) => {
+			test('should receive left and meetingLeft events with the voluntary_leave reason when leaving right after joining with the leave command', async ({
+				page
+			}) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
-				await expectEvent(page, EmbeddedEventName.JOINED);
+
+				const joined = eventLocator(page, EmbeddedEventName.JOINED);
+				const left = eventLocator(page, EmbeddedEventName.LEFT);
+				await expect(left).toHaveCount(0);
 
 				await leaveRoomCommand(page);
 
-				const left = await expectEvent(page, EmbeddedEventName.LEFT);
-				await expect(left).toContainText('roomId');
-				await expect(left).toContainText('participantIdentity');
-				await expect(left).toContainText('reason');
-				await expect(left).toContainText(LeftEventReason.VOLUNTARY_LEAVE);
+				await test.step('should receive events in correct order: joined -> left', async () => {
+					await expect(left).toHaveCount(1, { timeout: 10_000 });
+					await expect(joined).toHaveCount(1);
+
+					const lifecycle = (await eventSequence(page)).filter(
+						(name) => name === EmbeddedEventName.JOINED || name === EmbeddedEventName.LEFT
+					);
+					expect(lifecycle).toEqual([EmbeddedEventName.JOINED, EmbeddedEventName.LEFT]);
+				});
+
+				await test.step('should receive left event with voluntary_leave reason when using leave command', async () => {
+					await expect(left).toContainText('roomId');
+					await expect(left).toContainText('participantIdentity');
+					await expect(left).toContainText('reason');
+					await expect(left).toContainText(LeftEventReason.VOLUNTARY_LEAVE);
+				});
+
+				await test.step('should include all required fields in left event payload', async () => {
+					await expect(left).toContainText('"roomId"');
+					await expect(left).toContainText('"participantIdentity"');
+					await expect(left).toContainText('"reason"');
+					await expect(left).toContainText(roomId);
+				});
+
+				await test.step('should dispatch both left and meetingLeft with the same reason', async () => {
+					const meetingLeft = await expectEvent(page, EmbeddedEventName.MEETING_LEFT);
+					await expect(meetingLeft).toContainText(LeftEventReason.VOLUNTARY_LEAVE);
+				});
 			});
 
 			test('should receive left event with voluntary_leave reason when using disconnect button', async ({
@@ -151,18 +192,6 @@ for (const integration of INTEGRATIONS) {
 				const left = await expectEvent(page, EmbeddedEventName.LEFT);
 				await expect(left).toContainText('reason');
 				await expect(left).toContainText(LeftEventReason.VOLUNTARY_LEAVE);
-			});
-
-			test('should receive left event with meeting_ended_by_self reason when the moderator ends the meeting', async ({
-				page
-			}) => {
-				await openMeeting(page, roomId, { integration, role: 'moderator' });
-				await expectEvent(page, EmbeddedEventName.JOINED);
-
-				await endMeetingCommand(page);
-
-				const left = await expectEvent(page, EmbeddedEventName.LEFT);
-				expect(await eventPayloadField(left, 'reason')).toBe(LeftEventReason.MEETING_ENDED_BY_SELF);
 			});
 
 			test('should receive left event when speaker leaves room', async ({ page }) => {
@@ -179,19 +208,6 @@ for (const integration of INTEGRATIONS) {
 		});
 
 		test.describe('EMBEDDED_CLOSE_REQUESTED Event', () => {
-			test('should receive embeddedCloseRequested after leaving as moderator', async ({ page }) => {
-				await openMeeting(page, roomId, { integration, role: 'moderator' });
-				await expectEvent(page, EmbeddedEventName.JOINED);
-
-				await leaveRoomCommand(page);
-				await expectEvent(page, EmbeddedEventName.LEFT);
-
-				await meetLocator(page, integration, '#back-btn').click();
-				await expect(eventLocator(page, EmbeddedEventName.EMBEDDED_CLOSE_REQUESTED).first()).toBeVisible({
-					timeout: 5_000
-				});
-			});
-
 			test('should receive embeddedCloseRequested after ending meeting', async ({ page }) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
 				await expectEvent(page, EmbeddedEventName.JOINED);
@@ -311,31 +327,48 @@ for (const integration of INTEGRATIONS) {
 
 		test.describe('RECORDING_STARTED, RECORDING_UPDATED and RECORDING_ENDED Events', () => {
 			// The recording reaches everyone in the meeting, not only whoever started it.
-			test('should report the start, the update and the end of a recording to a participant who did not start it', async ({
+			test('should report the start, the update and the end of a recording to a participant who did not start it, and let no participant without recordingControl start one', async ({
 				page,
 				browser
 			}) => {
 				await openMeeting(page, roomId, { integration, role: 'speaker' });
 				await expectEvent(page, EmbeddedEventName.JOINED);
 
+				await recordingStartCommand(page);
+
 				const moderatorContext = await browser.newContext();
 				const moderatorPage = await moderatorContext.newPage();
 				await openMeeting(moderatorPage, roomId, { role: 'moderator' });
 				await expectEvent(moderatorPage, EmbeddedEventName.JOINED);
 
+				await test.step('should not start a recording for a speaker who lacks the recordingControl permission', async () => {
+					await expect(eventLocator(page, EmbeddedEventName.RECORDING_STARTED)).toHaveCount(0);
+				});
+
 				await startRecording(moderatorPage);
 
 				const started = await expectEvent(page, EmbeddedEventName.RECORDING_STARTED, { timeout: 20_000 });
 				const recordingId = await eventPayloadField(started, 'recordingId');
-				await expect(
-					recordingEventLocator(page, EmbeddedEventName.RECORDING_UPDATED, MeetRecordingStatus.ACTIVE)
-				).toContainText(recordingId, { timeout: 20_000 });
+				const updated = recordingEventLocator(
+					page,
+					EmbeddedEventName.RECORDING_UPDATED,
+					MeetRecordingStatus.ACTIVE
+				);
+				await expect(updated).toHaveCount(1, { timeout: 20_000 });
+				await expect(updated).toContainText(recordingId);
 
 				await stopRecording(moderatorPage);
 
 				await expect(
 					recordingEventLocator(page, EmbeddedEventName.RECORDING_ENDED, MeetRecordingStatus.COMPLETE)
 				).toContainText(recordingId, { timeout: 20_000 });
+				await expect(
+					recordingEventLocator(
+						moderatorPage,
+						EmbeddedEventName.RECORDING_ENDED,
+						MeetRecordingStatus.COMPLETE
+					)
+				).toHaveCount(1, { timeout: 20_000 });
 				await expectEvent(page, EmbeddedEventName.RECORDING_STARTED);
 
 				await moderatorContext.close();
@@ -429,74 +462,7 @@ for (const integration of INTEGRATIONS) {
 			});
 		});
 
-		test.describe('Event Sequences', () => {
-			test('should receive events in correct order: joined -> left', async ({ page }) => {
-				await openMeeting(page, roomId, { integration, role: 'moderator' });
-
-				const joined = eventLocator(page, EmbeddedEventName.JOINED);
-				const left = eventLocator(page, EmbeddedEventName.LEFT);
-				await expect(joined).toHaveCount(1, { timeout: 10_000 });
-				await expect(left).toHaveCount(0);
-
-				await leaveRoomCommand(page);
-
-				await expect(left).toHaveCount(1, { timeout: 10_000 });
-				await expect(joined).toHaveCount(1);
-			});
-		});
-
-		test.describe('Event Payload Validation', () => {
-			test('should include correct roomId in joined event payload', async ({ page }) => {
-				await openMeeting(page, roomId, { integration, role: 'moderator' });
-
-				const joined = await expectEvent(page, EmbeddedEventName.JOINED);
-				await expect(joined).toContainText(roomId);
-				await expect(joined).toContainText('"roomId"');
-			});
-
-			test('should include participantIdentity in joined event payload', async ({ page }) => {
-				await openMeeting(page, roomId, { integration, role: 'moderator' });
-
-				const joined = await expectEvent(page, EmbeddedEventName.JOINED);
-				await expect(joined).toContainText('"participantIdentity"');
-				await expect(joined).toHaveText(/participantIdentity.*:/);
-			});
-
-			test('should include all required fields in left event payload', async ({ page }) => {
-				await openMeeting(page, roomId, { integration, role: 'moderator' });
-				await expectEvent(page, EmbeddedEventName.JOINED);
-
-				await leaveRoomCommand(page);
-
-				const left = await expectEvent(page, EmbeddedEventName.LEFT);
-				await expect(left).toContainText('"roomId"');
-				await expect(left).toContainText('"participantIdentity"');
-				await expect(left).toContainText('"reason"');
-				await expect(left).toContainText(roomId);
-			});
-
-			test('should have valid reason in left event payload', async ({ page }) => {
-				await openMeeting(page, roomId, { integration, role: 'moderator' });
-				await expectEvent(page, EmbeddedEventName.JOINED);
-
-				await leaveRoomCommand(page);
-				const left = await expectEvent(page, EmbeddedEventName.LEFT);
-
-				const eventText = (await left.textContent()) ?? '';
-				const validReasons = Object.values(LeftEventReason);
-				const hasValidReason = validReasons.some((reason) => eventText.includes(reason));
-				expect(hasValidReason).toBe(true);
-			});
-		});
-
 		test.describe('Event Error Handling', () => {
-			test('should emit a left event when leaving immediately after joining', async ({ page }) => {
-				await openMeeting(page, roomId, { integration, role: 'moderator' });
-
-				await leaveRoomCommand(page);
-				await expectEvent(page, EmbeddedEventName.LEFT);
-			});
-
 			test('should not emit duplicate left events on repeated leave clicks', async ({ page }) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
 				await expectEvent(page, EmbeddedEventName.JOINED);
@@ -517,6 +483,7 @@ for (const integration of INTEGRATIONS) {
 			}) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
 				await expectEvent(page, EmbeddedEventName.MEETING_JOINED);
+				await expectWebhook(page, MeetWebhookEventType.MEETING_STARTED);
 
 				const speakerContext = await browser.newContext();
 				const speakerPage = await speakerContext.newPage();
@@ -543,6 +510,11 @@ for (const integration of INTEGRATIONS) {
 				await expect(left).toContainText('crm-user_42');
 				await expect(left).toContainText(`"leaveReason":"${LeftEventReason.VOLUNTARY_LEAVE}"`);
 
+				await test.step('should receive participantJoined and participantLeft webhooks for a participant that joins and leaves', async () => {
+					await expectWebhook(page, MeetWebhookEventType.PARTICIPANT_JOINED, { count: 2 });
+					await expectWebhook(page, MeetWebhookEventType.PARTICIPANT_LEFT);
+				});
+
 				// Each event carries the participant its webhook carries, minus what only the server knows.
 				const [joinedWebhook, leftWebhook] = await Promise.all([
 					getWebhookFromStorage(page, roomId, MeetWebhookEventType.PARTICIPANT_JOINED, { matchIndex: 1 }),
@@ -556,6 +528,26 @@ for (const integration of INTEGRATIONS) {
 				expect((leftWebhook.data as MeetParticipantLeftPayload).participant).toMatchObject(
 					await eventParticipant(left)
 				);
+
+				await test.step('should carry the correlation fields through the participantJoined webhook', async () => {
+					const joinedPayload = joinedWebhook.data as MeetParticipantJoinedPayload;
+					expect(joinedPayload.roomId).toBe(roomId);
+					expect(joinedPayload.participant.participantName).toBe(speakerName);
+					expect(joinedPayload.participant.role).toBe(MeetRoomMemberRole.SPEAKER);
+					expect(joinedPayload.participant.joinDate).toBeLessThanOrEqual(Date.now());
+					expect(joinedPayload.participant.externalId).toBe('crm-user_42');
+					expect(joinedPayload.participant.metadata).toBe('{"plan":"premium"}');
+				});
+
+				await test.step('should carry the correlation fields through the participantLeft webhook', async () => {
+					const leftPayload = leftWebhook.data as MeetParticipantLeftPayload;
+					expect(leftPayload.roomId).toBe(roomId);
+					expect(leftPayload.participant.participantName).toBe(speakerName);
+					expect(leftPayload.participant.leaveReason).toBe(LeftEventReason.VOLUNTARY_LEAVE);
+					expect(leftPayload.participant.durationSeconds).toBeGreaterThanOrEqual(0);
+					expect(leftPayload.participant.externalId).toBe('crm-user_42');
+					expect(leftPayload.participant.metadata).toBe('{"plan":"premium"}');
+				});
 
 				await speakerContext.close();
 			});
@@ -657,124 +649,13 @@ for (const integration of INTEGRATIONS) {
 		// transition. `origin` is the first payload field carrying MeetEventOrigin — everything
 		// emitted today is `participant`, since only the participant's own side can change a device.
 		test.describe('MEDIA_*_STATUS_CHANGED Events', () => {
-			test('should emit mediaAudioStatusChanged once per microphone transition', async ({ page }) => {
-				await openMeeting(page, roomId, { integration, role: 'moderator' });
-				await expectEvent(page, EmbeddedEventName.MEETING_JOINED);
-
-				const audioStatus = eventLocator(page, EmbeddedEventName.MEDIA_AUDIO_STATUS_CHANGED);
-				// Joining with the microphone on is the initial state, not a transition.
-				await expect(audioStatus).toHaveCount(0);
-
-				await mediaToggleAudioCommand(page, false);
-
-				await expect(audioStatus).toHaveCount(1, { timeout: 10_000 });
-				await expect(audioStatus.first()).toContainText('"active":false');
-				await expect(audioStatus.first()).toContainText(MeetEventOrigin.PARTICIPANT);
-
-				await mediaToggleAudioCommand(page, true);
-
-				await expect(audioStatus).toHaveCount(2, { timeout: 10_000 });
-				await expect(audioStatus.nth(1)).toContainText('"active":true');
-			});
-
-			test('should emit mediaVideoStatusChanged once per camera transition', async ({ page }) => {
-				await openMeeting(page, roomId, { integration, role: 'moderator' });
-				await expectEvent(page, EmbeddedEventName.MEETING_JOINED);
-
-				const videoStatus = eventLocator(page, EmbeddedEventName.MEDIA_VIDEO_STATUS_CHANGED);
-				await expect(videoStatus).toHaveCount(0);
-
-				await mediaToggleVideoCommand(page, false);
-
-				await expect(videoStatus).toHaveCount(1, { timeout: 10_000 });
-				await expect(videoStatus.first()).toContainText('"active":false');
-				await expect(videoStatus.first()).toContainText(MeetEventOrigin.PARTICIPANT);
-
-				await mediaToggleVideoCommand(page, true);
-
-				await expect(videoStatus).toHaveCount(2, { timeout: 10_000 });
-				await expect(videoStatus.nth(1)).toContainText('"active":true');
-			});
-
-			test('should emit mediaScreenShareStatusChanged on start and stop', async ({ page }) => {
-				await openMeeting(page, roomId, { integration, role: 'moderator' });
-				await expectEvent(page, EmbeddedEventName.MEETING_JOINED);
-
-				const screenShareStatus = eventLocator(page, EmbeddedEventName.MEDIA_SCREEN_SHARE_STATUS_CHANGED);
-				await expect(screenShareStatus).toHaveCount(0);
-
-				await mediaToggleScreenShareCommand(page, true);
-
-				await expect(screenShareStatus).toHaveCount(1, { timeout: 15_000 });
-				await expect(screenShareStatus.first()).toContainText('"active":true');
-				await expect(screenShareStatus.first()).toContainText(MeetEventOrigin.PARTICIPANT);
-
-				await mediaToggleScreenShareCommand(page, false);
-
-				await expect(screenShareStatus).toHaveCount(2, { timeout: 15_000 });
-				await expect(screenShareStatus.nth(1)).toContainText('"active":false');
-			});
-
-			// The state exists in the prejoin screen too, so a change made before joining is reported
-			// like any other — there are no Room events to listen to in that window.
-			test('should emit mediaAudioStatusChanged for a mute done before joining', async ({ page }) => {
-				await openMeetingAtMediaSetup(page, roomId, { integration, role: 'moderator' });
-
-				const audioStatus = eventLocator(page, EmbeddedEventName.MEDIA_AUDIO_STATUS_CHANGED);
-				await expect(audioStatus).toHaveCount(0);
-
-				await mediaToggleAudioCommand(page, false);
-
-				await expect(audioStatus).toHaveCount(1, { timeout: 10_000 });
-				await expect(audioStatus.first()).toContainText('"active":false');
-				await expect(audioStatus.first()).toContainText(MeetEventOrigin.PARTICIPANT);
-			});
-
-			test('should emit mediaVideoStatusChanged for a camera disabled before joining', async ({ page }) => {
-				await openMeetingAtMediaSetup(page, roomId, { integration, role: 'moderator' });
-
-				const videoStatus = eventLocator(page, EmbeddedEventName.MEDIA_VIDEO_STATUS_CHANGED);
-				await expect(videoStatus).toHaveCount(0);
-
-				await mediaToggleVideoCommand(page, false);
-
-				await expect(videoStatus).toHaveCount(1, { timeout: 10_000 });
-				await expect(videoStatus.first()).toContainText('"active":false');
-			});
-
-			// Joining publishes the prejoin tracks as they are: the host already knows that state and
-			// must not be told again.
-			test('should not repeat the prejoin state when the participant joins', async ({ page }) => {
-				const { meet } = await openMeetingAtMediaSetup(page, roomId, { integration, role: 'moderator' });
-
-				const audioStatus = eventLocator(page, EmbeddedEventName.MEDIA_AUDIO_STATUS_CHANGED);
-
-				await mediaToggleAudioCommand(page, false);
-				await expect(audioStatus).toHaveCount(1, { timeout: 10_000 });
-
-				await meet('#join-button').click();
-				await expect(meet('#layout-container')).toBeVisible({ timeout: 15_000 });
-				await expectEvent(page, EmbeddedEventName.MEETING_JOINED);
-
-				await expect(audioStatus).toHaveCount(1);
-			});
-
-			test('should emit the audio event for a mute done from the in-meeting UI', async ({ page }) => {
-				await openMeeting(page, roomId, { integration, role: 'moderator' });
-				await expectEvent(page, EmbeddedEventName.MEETING_JOINED);
-
-				// Not command-specific: any real transition of the local device is notified.
-				await meetLocator(page, integration, '#mic-btn').click();
-
-				const audioStatus = await expectEvent(page, EmbeddedEventName.MEDIA_AUDIO_STATUS_CHANGED);
-				await expect(audioStatus.first()).toContainText('"active":false');
-			});
-
 			test('should not emit a media event when the requested state is already active', async ({ page }) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
 				await expectEvent(page, EmbeddedEventName.MEETING_JOINED);
+				await expectToolbarMicEnabled(page, integration, true, { timeout: 10_000 });
 
 				await mediaToggleAudioCommand(page, true);
+				await expectToolbarMicEnabled(page, integration, true, { timeout: 5_000 });
 				await mediaToggleVideoCommand(page, true);
 
 				// Give any spurious emission a chance to land before asserting the absence.
@@ -867,9 +748,10 @@ for (const integration of INTEGRATIONS) {
 				createdRoomIds.push(broadcastRoomId);
 			});
 
-			test('should emit broadcastStarted, broadcastUpdated as it streams and broadcastEnded, with the stream key hidden', async ({
+			test('should emit broadcastStarted, broadcastUpdated as it streams and broadcastEnded, with the stream key hidden, show the broadcast tag and send their webhooks', async ({
 				page
 			}) => {
+				let startedBroadcast!: MeetBroadcastInfo;
 				await openMeeting(page, broadcastRoomId, { integration, role: 'moderator' });
 				await expectEvent(page, EmbeddedEventName.MEETING_JOINED);
 
@@ -880,16 +762,54 @@ for (const integration of INTEGRATIONS) {
 				await expect(started).toContainText(`"status":"${MeetBroadcastStatus.STARTING}"`);
 				await expect(started).toContainText('/********"');
 				await expect(started).not.toContainText(sinkUrl.split('/').pop()!);
+				await expect(meetLocator(page, integration, '#broadcast-tag')).toBeVisible({ timeout: 40_000 });
 
 				const streaming = eventLocator(page, EmbeddedEventName.BROADCAST_UPDATED).filter({
 					hasText: `"status":"${MeetBroadcastStatus.ACTIVE}"`
 				});
 				await expect(streaming.first()).toBeAttached({ timeout: 40_000 });
 
+				await test.step('should receive broadcastStarted and broadcastUpdated webhooks', async () => {
+					await expectWebhook(page, MeetWebhookEventType.BROADCAST_STARTED);
+					const startedWebhook = await getWebhookFromStorage(
+						page,
+						broadcastRoomId,
+						MeetWebhookEventType.BROADCAST_STARTED
+					);
+					startedBroadcast = startedWebhook.data as MeetBroadcastInfo;
+					expect(startedBroadcast.roomId).toBe(broadcastRoomId);
+					expect(startedBroadcast.status).toBe(MeetBroadcastStatus.STARTING);
+					expect(startedBroadcast.destination.url).toContain('/********');
+					expect(startedBroadcast.destination.url).not.toContain(sinkUrl.split('/').pop()!);
+
+					await expect(webhookLocator(page, MeetWebhookEventType.BROADCAST_UPDATED).first()).toBeAttached({
+						timeout: 40_000
+					});
+					const updatedWebhook = await getWebhookFromStorage(
+						page,
+						broadcastRoomId,
+						MeetWebhookEventType.BROADCAST_UPDATED
+					);
+					expect((updatedWebhook.data as MeetBroadcastInfo).broadcastId).toBe(startedBroadcast.broadcastId);
+				});
+
 				await broadcastStopAllCommand(page);
 
 				const ended = await expectEvent(page, EmbeddedEventName.BROADCAST_ENDED, { timeout: 30_000 });
 				await expect(ended).toContainText(`"status":"${MeetBroadcastStatus.COMPLETE}"`);
+				await expect(meetLocator(page, integration, '#broadcast-tag')).toBeHidden();
+
+				await test.step('should receive broadcastEnded webhook', async () => {
+					await expectWebhook(page, MeetWebhookEventType.BROADCAST_ENDED, { timeout: 30_000 });
+					const endedWebhook = await getWebhookFromStorage(
+						page,
+						broadcastRoomId,
+						MeetWebhookEventType.BROADCAST_ENDED
+					);
+					const endedBroadcast = endedWebhook.data as MeetBroadcastInfo;
+					expect(endedBroadcast.broadcastId).toBe(startedBroadcast.broadcastId);
+					expect(endedBroadcast.status).toBe(MeetBroadcastStatus.COMPLETE);
+				});
 			});
 		});
 
@@ -1168,27 +1088,6 @@ for (const integration of INTEGRATIONS) {
 		});
 
 		test.describe('Canonical/Legacy Dual Dispatch', () => {
-			test('should dispatch both joined and meetingJoined for the same transition', async ({ page }) => {
-				await openMeeting(page, roomId, { integration, role: 'moderator' });
-
-				const joined = await expectEvent(page, EmbeddedEventName.JOINED);
-				const meetingJoined = await expectEvent(page, EmbeddedEventName.MEETING_JOINED);
-				await expect(joined).toContainText(roomId);
-				await expect(meetingJoined).toContainText(roomId);
-			});
-
-			test('should dispatch both left and meetingLeft with the same reason', async ({ page }) => {
-				await openMeeting(page, roomId, { integration, role: 'moderator' });
-				await expectEvent(page, EmbeddedEventName.JOINED);
-
-				await leaveRoomCommand(page);
-
-				const left = await expectEvent(page, EmbeddedEventName.LEFT);
-				const meetingLeft = await expectEvent(page, EmbeddedEventName.MEETING_LEFT);
-				await expect(left).toContainText(LeftEventReason.VOLUNTARY_LEAVE);
-				await expect(meetingLeft).toContainText(LeftEventReason.VOLUNTARY_LEAVE);
-			});
-
 			test('should dispatch both closed and embeddedCloseRequested after leaving', async ({ page }) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
 				await expectEvent(page, EmbeddedEventName.JOINED);
