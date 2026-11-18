@@ -1,0 +1,11 @@
+type: string
+enum:
+    - user
+    - identified_guest
+    - anonymous
+example: anonymous
+description: |
+    How the participant joined the meeting, or asked to join it, derived by the server from their credential:
+    - `user`: with their own Meet account.
+    - `identified_guest`: with their personal member link.
+    - `anonymous`: with a shared link of the room.

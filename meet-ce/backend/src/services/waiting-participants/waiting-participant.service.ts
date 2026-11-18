@@ -11,7 +11,8 @@ import {
 	MEET_WAITING_PARTICIPANT_STATE_MESSAGE,
 	MeetEventOrigin,
 	MeetWaitingParticipantReason,
-	MeetWaitingParticipantStatus
+	MeetWaitingParticipantStatus,
+	participantTypeOf
 } from '@openvidu-meet/typings';
 import { createHash, randomBytes } from 'crypto';
 import { inject, injectable } from 'inversify';
@@ -54,6 +55,7 @@ const toParticipant = ({
 	participantIdentity,
 	participantName,
 	type,
+	role,
 	externalId,
 	metadata,
 	knockDate
@@ -61,6 +63,7 @@ const toParticipant = ({
 	participantIdentity,
 	participantName,
 	type,
+	role,
 	...(externalId !== undefined && { externalId }),
 	...(metadata !== undefined && { metadata }),
 	knockDate
@@ -104,7 +107,7 @@ export class WaitingParticipantService {
 		request: WaitingKnockRequest
 	): Promise<MeetWaitingTicketResponse> {
 		const { roomId, roomName } = room;
-		const { participantIdentity, participantName, externalId, metadata } = request;
+		const { participantIdentity, participantName, role, externalId, metadata } = request;
 		const waitingTicket = randomBytes(16).toString('base64url');
 		const knock = await this.waitingParticipantStateService.knock(
 			roomId,
@@ -112,7 +115,8 @@ export class WaitingParticipantService {
 			{
 				participantIdentity,
 				participantName,
-				type: this.waitingParticipantAdmissionPolicy.participantTypeOf(request),
+				type: participantTypeOf(request),
+				role,
 				...(externalId !== undefined && { externalId }),
 				...(metadata !== undefined && { metadata }),
 				roomName

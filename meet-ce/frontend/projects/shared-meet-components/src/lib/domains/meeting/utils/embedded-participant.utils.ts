@@ -6,15 +6,12 @@ import type {
 } from '@openvidu-meet/typings';
 import {
 	handRaiseDateOf,
-	MeetRoomMemberRole,
-	MeetRoomMemberUIBadge,
-	participantLeaveReasonOf
+	participantLeaveReasonOf,
+	participantRoleOf,
+	participantTypeOf
 } from '@openvidu-meet/typings';
 import type { Participant } from '../openvidu-components';
 import { DisconnectReason, parseParticipantMetadata } from '../openvidu-components';
-
-export const toParticipantRole = (badge: MeetRoomMemberUIBadge | undefined): MeetRoomMemberRole =>
-	!badge || badge === MeetRoomMemberUIBadge.OTHER ? MeetRoomMemberRole.SPEAKER : MeetRoomMemberRole.MODERATOR;
 
 /**
  * The join date the server stamped, read like the backend's `MeetParticipantHelper.extractJoinDate()`.
@@ -31,7 +28,7 @@ const joinDateOf = (participant: Participant): number => {
 /**
  * Builds the {@link MeetParticipantPayload} lifecycle shape for a participant — the
  * client-side twin of the backend's `MeetParticipantHelper.toParticipantPayload()`: the
- * identity/correlation fields come from the Meet token metadata the participant carries, the role
+ * identity/correlation fields and the type come from the Meet token metadata the participant carries, the role
  * from its badge (`OTHER` or no Meet metadata → speaker), and the join date from the participant
  * info LiveKit holds, 0 until it has applied it.
  *
@@ -43,9 +40,10 @@ export const toEmbeddedParticipantPayload = (participant: Participant): MeetPart
 	return {
 		participantIdentity: participant.identity,
 		participantName: participant.name ?? participant.identity,
+		...(meetingMetadata && { type: participantTypeOf(meetingMetadata) }),
 		externalId: meetingMetadata?.externalId,
 		metadata: meetingMetadata?.metadata,
-		role: toParticipantRole(meetingMetadata?.badge),
+		role: participantRoleOf(meetingMetadata?.badge),
 		joinDate: joinDateOf(participant)
 	};
 };

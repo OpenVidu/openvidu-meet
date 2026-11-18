@@ -2,7 +2,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, jest } from '@j
 import type { MeetRoom, MeetRoomMemberPermissions, MeetRoomRoles } from '@openvidu-meet/typings';
 import {
 	MEET_PERMISSION_KEYS,
-	MeetWaitingParticipantType,
+	MeetParticipantType,
 	MeetWaitingParticipantStatus,
 	MeetRoomMemberRole,
 	MeetRoomMemberUIBadge,
@@ -495,7 +495,8 @@ describe('RoomMemberService.generateRoomMemberToken in a locked room', () => {
 		participant: {
 			participantIdentity: 'ana-1',
 			participantName: 'Ana',
-			type: MeetWaitingParticipantType.ANONYMOUS,
+			type: MeetParticipantType.ANONYMOUS,
+			role: MeetRoomMemberRole.SPEAKER,
 			externalId: 'ext-1',
 			knockDate: 1,
 			roomName: 'Room'
@@ -565,8 +566,11 @@ describe('RoomMemberService.generateRoomMemberToken in a locked room', () => {
 				{ getTokenIssue: async () => ({}) },
 				{},
 				{
-					knock: async (_room: object, request: { participantIdentity: string; memberId?: string }) => {
-						steps.push(`knock:${request.memberId ?? 'anonymous'}`);
+					knock: async (
+						_room: object,
+						request: { participantIdentity: string; memberId?: string; role: MeetRoomMemberRole }
+					) => {
+						steps.push(`knock:${request.memberId ?? 'anonymous'}:${request.role}`);
 						return {
 							waitingTicket: TICKET,
 							participant: { participantIdentity: request.participantIdentity }
@@ -595,7 +599,7 @@ describe('RoomMemberService.generateRoomMemberToken in a locked room', () => {
 			waitingTicket: TICKET,
 			participant: { participantIdentity: 'guest-1' }
 		});
-		expect(steps).toEqual(['knock:guest-1']);
+		expect(steps).toEqual([`knock:guest-1:${MeetRoomMemberRole.SPEAKER}`]);
 	});
 
 	it('gives a holder of accessBypassLock a join token at once', async () => {

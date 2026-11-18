@@ -22,6 +22,7 @@ import {
 	MeetRoomMemberUIBadge,
 	MeetRoomStatus,
 	MeetUserRole,
+	participantRoleOf,
 	TrackSource
 } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
@@ -503,10 +504,11 @@ export class RoomMemberService {
 		const participantIdentity = this.createParticipantIdentity(tokenMetadata, name);
 
 		if (this.waitingParticipantAdmissionPolicy.mustWait(room.access.lock, tokenMetadata.permissions)) {
-			const { memberId, userId, externalId, metadata } = tokenMetadata;
+			const { memberId, userId, badge, externalId, metadata } = tokenMetadata;
 			return this.waitingParticipantService.knock(room, {
 				participantIdentity,
 				participantName: name,
+				role: participantRoleOf(badge),
 				externalId,
 				metadata,
 				memberId,

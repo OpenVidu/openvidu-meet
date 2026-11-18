@@ -1,4 +1,4 @@
-import type { MeetWaitingParticipant, MeetWaitingParticipantStatus } from '@openvidu-meet/typings';
+import type { MeetRoomMemberRole, MeetWaitingParticipant, MeetWaitingParticipantStatus } from '@openvidu-meet/typings';
 
 /** A waiting participant as Redis keeps them, with the name of the room they asked to join. */
 export interface StoredWaitingParticipant extends MeetWaitingParticipant {
@@ -30,6 +30,7 @@ export interface ParticipantWait {
 export interface WaitingKnockRequest {
 	participantIdentity: string;
 	participantName: string;
+	role: MeetRoomMemberRole;
 	externalId?: string;
 	metadata?: string;
 	memberId?: string;

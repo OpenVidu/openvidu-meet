@@ -15,6 +15,14 @@ properties:
         example: 'Alice Smith'
         description: >
             The display name of the participant.
+    type:
+        $ref: '../../meetings/schemas/meet-participant-type.yaml'
+        description: |
+            How the participant joined the meeting, derived by the server from their credential. Absent for a
+            participant that did not join through OpenVidu Meet.
+            - `user`: with their own Meet account.
+            - `identified_guest`: with their personal member link.
+            - `anonymous`: with a shared link of the room.
     externalId:
         type: string
         maxLength: 64

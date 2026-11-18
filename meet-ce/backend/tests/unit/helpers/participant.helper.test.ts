@@ -6,6 +6,7 @@ import {
 	loweredHandAttributes,
 	MEET_PERMISSION_KEYS,
 	MeetEventOrigin,
+	MeetParticipantType,
 	MeetRoomMemberRole,
 	MeetRoomMemberUIBadge,
 	participantLeaveReasonOf,
@@ -53,11 +54,25 @@ describe('MeetParticipantHelper.toParticipantPayload', () => {
 		expect(MeetParticipantHelper.toParticipantPayload(participant)).toEqual({
 			participantIdentity: 'participant-1',
 			participantName: 'Participant One',
+			type: MeetParticipantType.ANONYMOUS,
 			externalId: 'crm-user_42',
 			metadata: '{"plan":"premium"}',
 			role: MeetRoomMemberRole.MODERATOR,
 			joinDate: 1_620_000_000_000
 		});
+	});
+
+	it('tells how the participant joined from the credential in its Meet metadata', () => {
+		const typeOf = (overrides: Record<string, unknown>) =>
+			MeetParticipantHelper.toParticipantPayload(participantWith({ metadata: meetingMetadata(overrides) })).type;
+
+		expect(typeOf({ userId: 'alice', memberId: 'alice' })).toBe(MeetParticipantType.USER);
+		expect(typeOf({ memberId: 'guest-1' })).toBe(MeetParticipantType.IDENTIFIED_GUEST);
+		expect(typeOf({ isPromotedModerator: true })).toBe(MeetParticipantType.ANONYMOUS);
+	});
+
+	it('leaves the type out for a participant that did not join through Meet', () => {
+		expect(MeetParticipantHelper.toParticipantPayload(participantWith({}))).not.toHaveProperty('type');
 	});
 });
 
@@ -72,6 +87,7 @@ describe('MeetParticipantHelper.toDepartedParticipantPayload', () => {
 		expect(MeetParticipantHelper.toDepartedParticipantPayload(participant, 1_620_000_145_400)).toEqual({
 			participantIdentity: 'participant-1',
 			participantName: 'Participant One',
+			type: MeetParticipantType.ANONYMOUS,
 			externalId: 'crm-user_42',
 			metadata: '{"plan":"premium"}',
 			role: MeetRoomMemberRole.MODERATOR,
@@ -94,6 +110,7 @@ describe('MeetParticipantHelper.toParticipantInfo', () => {
 		expect(MeetParticipantHelper.toParticipantInfo(participant)).toEqual({
 			participantIdentity: 'participant-1',
 			participantName: 'Participant One',
+			type: MeetParticipantType.ANONYMOUS,
 			externalId: 'crm-user_42',
 			metadata: '{"plan":"premium"}',
 			role: MeetRoomMemberRole.MODERATOR,
@@ -145,20 +162,14 @@ describe('MeetParticipantHelper.toParticipantInfo', () => {
 });
 
 describe('MeetParticipantHelper.extractRole', () => {
-	it('maps the OTHER badge to speaker and every privileged badge to moderator', () => {
+	it('reads the role from the badge in the Meet metadata', () => {
 		const withBadge = (badge: MeetRoomMemberUIBadge) => participantWith({ metadata: meetingMetadata({ badge }) });
 
-		expect(MeetParticipantHelper.extractRole(withBadge(MeetRoomMemberUIBadge.OTHER))).toBe(
-			MeetRoomMemberRole.SPEAKER
-		);
-		expect(MeetParticipantHelper.extractRole(withBadge(MeetRoomMemberUIBadge.MODERATOR))).toBe(
-			MeetRoomMemberRole.MODERATOR
-		);
-		expect(MeetParticipantHelper.extractRole(withBadge(MeetRoomMemberUIBadge.ADMIN))).toBe(
-			MeetRoomMemberRole.MODERATOR
-		);
 		expect(MeetParticipantHelper.extractRole(withBadge(MeetRoomMemberUIBadge.OWNER))).toBe(
 			MeetRoomMemberRole.MODERATOR
+		);
+		expect(MeetParticipantHelper.extractRole(withBadge(MeetRoomMemberUIBadge.OTHER))).toBe(
+			MeetRoomMemberRole.SPEAKER
 		);
 	});
 

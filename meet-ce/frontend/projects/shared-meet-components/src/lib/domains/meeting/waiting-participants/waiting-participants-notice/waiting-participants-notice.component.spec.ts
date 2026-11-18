@@ -1,6 +1,6 @@
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MeetWaitingParticipantType } from '@openvidu-meet/typings';
+import { MeetParticipantType, MeetRoomMemberRole } from '@openvidu-meet/typings';
 import { Subject } from 'rxjs';
 import { NotificationOptions, ShownNotification } from '../../../../shared/models/notification.model';
 import { LoggerService } from '../../../../shared/services/logger.service';
@@ -40,7 +40,8 @@ const waiter = (identity: string, name = identity): WaitingParticipantView => ({
 	participant: {
 		participantIdentity: identity,
 		participantName: name,
-		type: MeetWaitingParticipantType.ANONYMOUS,
+		type: MeetParticipantType.ANONYMOUS,
+		role: MeetRoomMemberRole.SPEAKER,
 		knockDate: 0
 	},
 	name,

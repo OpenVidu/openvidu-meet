@@ -6,6 +6,7 @@ required:
     - participantIdentity
     - participantName
     - type
+    - role
     - knockDate
 properties:
     participantIdentity:
@@ -21,17 +22,17 @@ properties:
         description: >
             Name the participant gave, made unique only when they join.
     type:
+        $ref: './meet-participant-type.yaml'
+    role:
         type: string
         enum:
-            - user
-            - identified_guest
-            - anonymous
-        example: anonymous
-        description: |
-            How the participant asked to join, derived by the server:
-            - `user`: with their own Meet account.
-            - `identified_guest`: with their personal member link.
-            - `anonymous`: with a shared link of the room.
+            - moderator
+            - speaker
+        example: speaker
+        description: >
+            The role the participant's credential gave when they asked to join, kept while this wait lasts. Their join
+            takes the role their credential gives then, so a change to the member, to the room's roles or to the user
+            made during the wait applies when they join.
     externalId:
         type: string
         maxLength: 64

@@ -5,7 +5,12 @@ import type {
 	MeetRoomConfig,
 	MeetRoomMemberPermissions
 } from '@openvidu-meet/typings';
-import { MEET_PERMISSION_KEYS, MeetRoomMemberRole, MeetRoomMemberUIBadge } from '@openvidu-meet/typings';
+import {
+	MEET_PERMISSION_KEYS,
+	MeetParticipantType,
+	MeetRoomMemberRole,
+	MeetRoomMemberUIBadge
+} from '@openvidu-meet/typings';
 import { Express } from 'express';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
@@ -78,6 +83,17 @@ describe('Meetings API Tests', () => {
 		return roomData;
 	};
 
+	/** The Meet metadata a real join stamps on a participant, with the credential it joined with. */
+	const joinMetadata = (roomId: string, credential: { memberId?: string; userId?: string } = {}) => ({
+		iat: Date.now(),
+		roomId,
+		permissions: Object.fromEntries(
+			MEET_PERMISSION_KEYS.map((key) => [key, true])
+		) as unknown as MeetRoomMemberPermissions,
+		badge: MeetRoomMemberUIBadge.OTHER,
+		...credential
+	});
+
 	beforeAll(async () => {
 		app = await startTestServer();
 
@@ -91,12 +107,7 @@ describe('Meetings API Tests', () => {
 		// Stamp the fake participant with the metadata a real Meet join would carry, including the
 		// app-provided correlation fields.
 		await updateParticipantMetadata(meetingRoom.room.roomId, PARTICIPANT_IDENTITY, {
-			iat: Date.now(),
-			roomId: meetingRoom.room.roomId,
-			permissions: Object.fromEntries(
-				MEET_PERMISSION_KEYS.map((key) => [key, true])
-			) as unknown as MeetRoomMemberPermissions,
-			badge: MeetRoomMemberUIBadge.OTHER,
+			...joinMetadata(meetingRoom.room.roomId),
 			externalId: EXTERNAL_ID,
 			metadata: APP_METADATA
 		});
@@ -278,6 +289,7 @@ describe('Meetings API Tests', () => {
 
 			const participant = participants[0];
 			expect(participant.participantIdentity).toBe(PARTICIPANT_IDENTITY);
+			expect(participant.type).toBe(MeetParticipantType.ANONYMOUS);
 			expect(participant.externalId).toBe(EXTERNAL_ID);
 			expect(participant.metadata).toBe(APP_METADATA);
 			expect(participant.role).toBe(MeetRoomMemberRole.SPEAKER);
@@ -322,12 +334,34 @@ describe('Meetings API Tests', () => {
 			expect(response.status).toBe(200);
 			expect((response.body as MeetMeetingInfo).participantCount).toBe(2);
 
-			// ...and its snapshot degrades gracefully without Meet metadata: speaker role, no
+			// ...and its snapshot degrades gracefully without Meet metadata: speaker role, no type nor
 			// correlation fields.
 			response = await getParticipant(meetingRoom.room.roomId, transientIdentity, meetingRoom.moderatorToken);
 			expect(response.status).toBe(200);
 			expect((response.body as MeetParticipantInfo).role).toBe(MeetRoomMemberRole.SPEAKER);
+			expect(response.body).not.toHaveProperty('type');
 			expect((response.body as MeetParticipantInfo).externalId).toBeUndefined();
+		});
+
+		it('should tell how each participant joined from the credential they joined with', async () => {
+			const roomId = meetingRoom.room.roomId;
+			await joinFakeParticipant(roomId, 'TEST_GUEST');
+			await joinFakeParticipant(roomId, 'TEST_USER');
+			await updateParticipantMetadata(roomId, 'TEST_GUEST', joinMetadata(roomId, { memberId: 'TEST_GUEST' }));
+			await updateParticipantMetadata(
+				roomId,
+				'TEST_USER',
+				joinMetadata(roomId, { memberId: 'TEST_USER', userId: 'TEST_USER' })
+			);
+
+			const response = await getParticipants(roomId, meetingRoom.moderatorToken);
+			expect(response.status).toBe(200);
+			const { participants } = response.body as { participants: MeetParticipantInfo[] };
+			const typeOf = (identity: string) => participants.find((p) => p.participantIdentity === identity)?.type;
+
+			expect(typeOf('TEST_GUEST')).toBe(MeetParticipantType.IDENTIFIED_GUEST);
+			expect(typeOf('TEST_USER')).toBe(MeetParticipantType.USER);
+			expect(typeOf(PARTICIPANT_IDENTITY)).toBe(MeetParticipantType.ANONYMOUS);
 		});
 	});
 });

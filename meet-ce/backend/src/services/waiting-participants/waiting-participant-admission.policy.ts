@@ -1,5 +1,5 @@
 import type { MeetRoomLock, MeetRoomMemberPermissions } from '@openvidu-meet/typings';
-import { MeetWaitingParticipantType, MeetWaitingParticipantStatus } from '@openvidu-meet/typings';
+import { MeetWaitingParticipantStatus } from '@openvidu-meet/typings';
 import { injectable } from 'inversify';
 import { MeetRoomMemberHelper } from '../../helpers/room-member.helper.js';
 import type { ParticipantWait } from '../../models/waiting-participant.model.js';
@@ -63,15 +63,6 @@ export class WaitingParticipantAdmissionPolicy {
 	/** The principal a wait is bound to, so that a ticket presented with another credential is refused. */
 	principalOf({ memberId, userId }: WaitingRequester): string | undefined {
 		return memberId || userId || undefined;
-	}
-
-	/** How the participant asks to join, from the credential of the request, never from what the client says. */
-	participantTypeOf({ memberId, userId }: WaitingRequester): MeetWaitingParticipantType {
-		if (userId) return MeetWaitingParticipantType.USER;
-
-		if (memberId) return MeetWaitingParticipantType.IDENTIFIED_GUEST;
-
-		return MeetWaitingParticipantType.ANONYMOUS;
 	}
 
 	answerTicket(wait: ParticipantWait | null, roomId: string, requester: WaitingRequester): WaitingTicketAnswer {

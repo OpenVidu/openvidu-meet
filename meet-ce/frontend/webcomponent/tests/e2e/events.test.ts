@@ -10,6 +10,7 @@ import {
 	MeetParticipantJoinedPayload,
 	MeetParticipantLeftPayload,
 	MeetParticipantModerationAction,
+	MeetParticipantType,
 	MeetRecordingStatus,
 	MeetRoomConfigOptions,
 	MeetRoomMemberRole,
@@ -549,9 +550,9 @@ for (const integration of INTEGRATIONS) {
 				]);
 				const eventParticipant = async (event: Locator) =>
 					JSON.parse((await event.textContent()) ?? '').participant;
-				expect(await eventParticipant(joined)).toEqual(
-					(joinedWebhook.data as MeetParticipantJoinedPayload).participant
-				);
+				const joinedParticipant = await eventParticipant(joined);
+				expect(joinedParticipant.type).toBe(MeetParticipantType.ANONYMOUS);
+				expect(joinedParticipant).toEqual((joinedWebhook.data as MeetParticipantJoinedPayload).participant);
 				expect((leftWebhook.data as MeetParticipantLeftPayload).participant).toMatchObject(
 					await eventParticipant(left)
 				);
