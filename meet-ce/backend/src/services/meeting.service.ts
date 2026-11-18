@@ -1,6 +1,7 @@
 import { TrackSource } from '@livekit/protocol';
 import type {
 	MeetParticipantHandChangedPayload,
+	MeetMeetingExtraField,
 	MeetMeetingInfo,
 	MeetParticipantInfo,
 	MeetParticipantMuteOptions,
@@ -40,6 +41,7 @@ import { ParticipantTokenRevocationService } from './participant-token-revocatio
 import { RecordingService } from './recording.service.js';
 import { RequestSessionService } from './request-session.service.js';
 import { RoomService } from './room.service.js';
+import { WaitingParticipantService } from './waiting-participants/waiting-participant.service.js';
 import { WebhookDispatcherService } from './webhook-dispatcher.service.js';
 
 /**
@@ -63,28 +65,34 @@ export class MeetingService {
 		@inject(BroadcastService) protected broadcastService: BroadcastService,
 		@inject(RecordingService) protected recordingService: RecordingService,
 		@inject(ParticipantTokenRevocationService)
-		protected participantTokenRevocationService: ParticipantTokenRevocationService
+		protected participantTokenRevocationService: ParticipantTokenRevocationService,
+		@inject(WaitingParticipantService) protected waitingParticipantService: WaitingParticipantService
 	) {}
 
 	/**
 	 * Returns the live info of the meeting currently running in a room.
 	 *
 	 * @param roomId - The ID of the room
+	 * @param extraFields - The lists to add to the info
 	 * @throws A 404 error when the room has no active meeting
 	 */
-	async getMeetingInfo(roomId: string): Promise<MeetMeetingInfo> {
+	async getMeetingInfo(roomId: string, extraFields: MeetMeetingExtraField[]): Promise<MeetMeetingInfo> {
 		// The room's own `numParticipants`/`activeRecording` counters are not used on purpose:
 		// the former counts non-hidden participants (not Meet's kind-STANDARD filter, so it could
 		// diverge from the /participants listing) and the latter flips for ANY egress on the room,
 		// not just Meet recordings.
-		const [room, [participants, activeRecordings, broadcastActive]] = await this.withActiveMeetingRoom(
-			roomId,
-			Promise.all([
-				this.getStandardParticipants(roomId),
-				this.recordingService.getInProgressEgresses(roomId),
-				this.broadcastService.isBroadcastActive(roomId)
-			])
-		);
+		const [room, [participants, activeRecordings, broadcastActive, waitingParticipants]] =
+			await this.withActiveMeetingRoom(
+				roomId,
+				Promise.all([
+					this.getStandardParticipants(roomId),
+					this.recordingService.getInProgressEgresses(roomId),
+					this.broadcastService.isBroadcastActive(roomId),
+					extraFields.includes('waitingParticipants')
+						? this.waitingParticipantService.list(roomId)
+						: undefined
+				])
+			);
 
 		return {
 			roomId,
@@ -97,7 +105,11 @@ export class MeetingService {
 			broadcastActive,
 			// The cap LiveKit is enforcing right now, stamped on the room at creation from
 			// `config.maxParticipants`: the database holds what the *next* meeting will get.
-			maxParticipants: room.maxParticipants || undefined
+			maxParticipants: room.maxParticipants || undefined,
+			participants: extraFields.includes('participants')
+				? participants.map((participant) => MeetParticipantHelper.toParticipantInfo(participant))
+				: undefined,
+			waitingParticipants: waitingParticipants?.participants
 		};
 	}
 

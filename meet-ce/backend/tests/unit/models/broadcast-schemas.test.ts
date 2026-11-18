@@ -431,4 +431,11 @@ describe('mergeFieldsHeaderIntoQuery', () => {
 		expect(merge({ 'x-fields': 5 }, { fields: 'b' })).toEqual({ fields: 'b' });
 		expect(merge({}, { fields: 'b' })).toEqual({ fields: 'b' });
 	});
+
+	it('merges the X-ExtraFields header into extraFields, and leaves fields and X-Fields apart', () => {
+		const query: Record<string, unknown> = { extraFields: 'b', fields: 'c' };
+		mergeFieldsHeaderIntoQuery({ 'x-extrafields': 'a,b,x', 'x-fields': 'a' }, query, allowed, 'extraFields');
+
+		expect(query).toEqual({ extraFields: 'b,a', fields: 'c' });
+	});
 });

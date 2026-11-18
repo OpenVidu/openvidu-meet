@@ -25,7 +25,10 @@ import {
 	deleteAllRooms,
 	generateRoomMemberToken,
 	getFullPath,
+	getMeeting,
+	startRecordingAndWaitUntilActive,
 	startTestServer,
+	stopRecording,
 	updateRoomRoles
 } from '../../../helpers/request-helpers.js';
 import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
@@ -47,9 +50,6 @@ describe('Meetings API Tests', () => {
 	let idleRoom: RoomData;
 	let cappedRoom: RoomData;
 	let limitedRoom: RoomData;
-
-	const getMeeting = (roomId: string, token: string) =>
-		request(app).get(`${MEETINGS_PATH}/${roomId}`).set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, token);
 
 	const getParticipants = (roomId: string, token: string) =>
 		request(app)
@@ -144,6 +144,74 @@ describe('Meetings API Tests', () => {
 			const response = await getMeeting(idleRoom.room.roomId, idleRoom.moderatorToken);
 			expect(response.status).toBe(404);
 			expect(response.body.message).toContain('no active meeting');
+		});
+
+		describe('extra fields', () => {
+			const extraFieldNames = ['participants', 'waitingParticipants'];
+
+			it('should leave the lists out of the default response and list the extra fields', async () => {
+				const response = await getMeeting(meetingRoom.room.roomId, meetingRoom.moderatorToken);
+				expect(response.status).toBe(200);
+
+				const meeting = response.body as MeetMeetingInfo;
+				expect(meeting.participantCount).toBe(1);
+				expect(meeting.participants).toBeUndefined();
+				expect(meeting.waitingParticipants).toBeUndefined();
+				expect(response.body._extraFields).toEqual(extraFieldNames);
+			});
+
+			it('should return the participants participantList returns, and no recorder, when asked for them', async () => {
+				const roomData = await setupSingleRoom(true, 'MEETING_EXTRA_FIELDS_ROOM');
+				const { roomId } = roomData.room;
+				await joinFakeParticipant(roomId, `${PARTICIPANT_IDENTITY}_2`);
+				const recording = await startRecordingAndWaitUntilActive(roomId);
+				expect(recording.status).toBe(201);
+
+				const response = await getMeeting(roomId, roomData.moderatorToken, { query: 'participants' });
+				expect(response.status).toBe(200);
+
+				const meeting = response.body as MeetMeetingInfo;
+				const listed = (await getParticipants(roomId, roomData.moderatorToken)).body.participants;
+				expect(meeting.recordingActive).toBe(true);
+				expect(meeting.participants).toHaveLength(2);
+				expect(meeting.participants).toEqual(expect.arrayContaining(listed));
+				expect(meeting.waitingParticipants).toBeUndefined();
+				expect(response.body._extraFields).toEqual(extraFieldNames);
+
+				await stopRecording(recording.body.recordingId);
+			});
+
+			it('should combine the query and the header, and leave the waiting list empty in an unlocked room', async () => {
+				const response = await getMeeting(meetingRoom.room.roomId, undefined, {
+					query: 'participants',
+					header: 'waitingParticipants'
+				});
+				expect(response.status).toBe(200);
+
+				const meeting = response.body as MeetMeetingInfo;
+				expect(meeting.participants).toHaveLength(1);
+				expect(meeting.participants![0].participantIdentity).toBe(PARTICIPANT_IDENTITY);
+				expect(meeting.waitingParticipants).toEqual([]);
+			});
+
+			it('should ignore the names that are not extra fields of the meeting', async () => {
+				const response = await getMeeting(meetingRoom.room.roomId, meetingRoom.moderatorToken, {
+					query: 'foo'
+				});
+				expect(response.status).toBe(200);
+
+				const meeting = response.body as MeetMeetingInfo;
+				expect(meeting.participants).toBeUndefined();
+				expect(meeting.waitingParticipants).toBeUndefined();
+				expect(response.body._extraFields).toEqual(extraFieldNames);
+			});
+
+			it('should fail with 404 when the room has no active meeting, whatever was asked for', async () => {
+				const response = await getMeeting(idleRoom.room.roomId, idleRoom.moderatorToken, {
+					query: 'participants,waitingParticipants'
+				});
+				expectMeetError(response, errorNoActiveMeeting(idleRoom.room.roomId));
+			});
 		});
 
 		it('should answer 403 to a token of another room even when the room does not exist', async () => {

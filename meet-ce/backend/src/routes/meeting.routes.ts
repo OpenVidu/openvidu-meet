@@ -6,6 +6,7 @@ import { apiKeyValidator, roomMemberTokenValidator, withAuth } from '../middlewa
 import { apiLimiter } from '../middlewares/rate-limit.middleware.js';
 import {
 	validateBulkRejectWaitingParticipantsReq,
+	validateGetMeetingReq,
 	validateWaitingParticipantLeaveReq,
 	validateLowerAllHandsReq,
 	validateMuteParticipantMediaReq,
@@ -26,6 +27,7 @@ meetingRouter.get(
 	'/:roomId',
 	withAuth(apiKeyValidator, roomMemberTokenValidator),
 	withValidRoomId,
+	validateGetMeetingReq,
 	withRoomPermission('meetingRead'),
 	meetingCtrl.getMeeting
 );

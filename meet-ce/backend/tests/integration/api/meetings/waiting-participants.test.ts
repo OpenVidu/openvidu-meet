@@ -44,6 +44,7 @@ import {
 	deleteAllRooms,
 	deleteRoom,
 	endMeeting,
+	getMeeting,
 	getRoom,
 	getWaitingParticipant,
 	getWaitingParticipants,
@@ -72,12 +73,13 @@ const knock = async (roomData: RoomData, name: string, secret = roomData.speaker
 
 const identityOf = (token: string) => jwtDecode<ClaimGrants>(token).sub;
 
+const waitingNames = (participants: MeetWaitingParticipant[]) =>
+	participants.map(({ participantName }) => participantName).sort();
+
 const waiting = async (roomId: string) => {
 	const response = await getWaitingParticipants(roomId);
 	expect(response.status).toBe(200);
-	return (response.body.participants as MeetWaitingParticipant[])
-		.map(({ participantName }) => participantName)
-		.sort();
+	return waitingNames(response.body.participants);
 };
 
 /** Starts the meeting of a room through a holder of accessBypassLock, who joins it, and answers their join token. */
@@ -89,6 +91,21 @@ const startMeetingAsModerator = async (roomData: RoomData) => {
 	await joinFakeParticipant(roomData.room.roomId, sub!, metadata);
 	await waitForMeetingToStart(roomData.room.roomId);
 	return { token: `Bearer ${token}`, identity: sub! };
+};
+
+/** A locked room whose meeting runs with its host and Sam, a speaker admitted into it, and Ana waiting. */
+const setupMeetingWithWaiter = async () => {
+	const roomData = await setupLockedRoom();
+	const { roomId } = roomData.room;
+	const { token: hostToken } = await startMeetingAsModerator(roomData);
+	const sam = await knock(roomData, 'Sam');
+	expect((await admitWaitingParticipant(roomId, sam.participantIdentity)).status).toBe(200);
+	const joined = await askToJoin(roomId, roomData.speakerSecret, 'Sam', sam.waitingTicket);
+	expect(joined.status).toBe(200);
+	const { sub, metadata } = jwtDecode<ClaimGrants>(joined.body.token);
+	await joinFakeParticipant(roomId, sub!, metadata);
+	await knock(roomData, 'Ana');
+	return { roomId, hostToken, speakerToken: `Bearer ${joined.body.token}` };
 };
 
 const deleteMeetingRoom = async (roomId: string) => {
@@ -547,6 +564,62 @@ describe('Waiting participants', () => {
 
 			expect((await leaveWaiting(otherRoom.room.roomId, waitingTicket)).status).toBe(204);
 			expect(await waiting(roomData.room.roomId)).toEqual(['Ana']);
+		});
+	});
+
+	describe('Reading the meeting with the waiting participants', () => {
+		it('returns the participants waiting, as the list returns them, to a holder of waitingParticipantAdmin', async () => {
+			const { roomId, hostToken } = await setupMeetingWithWaiter();
+
+			const response = await getMeeting(roomId, hostToken, { query: 'waitingParticipants' });
+
+			expect(response.status).toBe(200);
+			expect(waitingNames(response.body.waitingParticipants)).toEqual(['Ana']);
+			expect(response.body.waitingParticipants).toEqual((await getWaitingParticipants(roomId)).body.participants);
+			expect(response.body.participants).toBeUndefined();
+		});
+
+		it('answers 200 with the participants and no waiting list to a token without waitingParticipantAdmin', async () => {
+			const { roomId, speakerToken } = await setupMeetingWithWaiter();
+
+			const response = await getMeeting(roomId, speakerToken, { query: 'participants,waitingParticipants' });
+
+			expect(response.status).toBe(200);
+			expect(response.body.participants).toHaveLength(2);
+			expect(response.body).not.toHaveProperty('waitingParticipants');
+			expect(response.body._extraFields).toEqual(['participants', 'waitingParticipants']);
+		});
+
+		it('returns the participants waiting to the API key', async () => {
+			const { roomId } = await setupMeetingWithWaiter();
+
+			const response = await getMeeting(roomId, undefined, { header: 'waitingParticipants' });
+
+			expect(response.status).toBe(200);
+			expect(waitingNames(response.body.waitingParticipants)).toEqual(['Ana']);
+		});
+
+		it('returns an empty list in an unlocked room', async () => {
+			const roomData = await setupSingleRoom(true, 'UNLOCKED_ROOM');
+
+			const response = await getMeeting(roomData.room.roomId, roomData.moderatorToken, {
+				query: 'waitingParticipants'
+			});
+
+			expect(response.status).toBe(200);
+			expect(response.body.waitingParticipants).toEqual([]);
+		});
+
+		it('answers 404 while no meeting runs, although the list returns who waits', async () => {
+			const roomData = await setupLockedRoom();
+			const { roomId } = roomData.room;
+			await knock(roomData, 'Ana');
+
+			const response = await getMeeting(roomId, undefined, { query: 'waitingParticipants' });
+
+			expect(response.status).toBe(404);
+			expect(response.body.message).toContain('no active meeting');
+			expect(await waiting(roomId)).toEqual(['Ana']);
 		});
 	});
 

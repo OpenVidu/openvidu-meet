@@ -1029,6 +1029,33 @@ export const sendParticipantReaction = async (
 	return await req.send(reaction);
 };
 
+/** Reads the meeting of a room with the given room member token, or with the API key without one. */
+export const getMeeting = async (
+	roomId: string,
+	roomMemberToken?: string,
+	extraFields?: { query?: string; header?: string }
+) => {
+	checkAppIsRunning();
+
+	const req = request(app).get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/meetings/${roomId}`));
+
+	if (roomMemberToken) {
+		req.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
+	} else {
+		req.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
+	}
+
+	if (extraFields?.query) {
+		req.query({ extraFields: extraFields.query });
+	}
+
+	if (extraFields?.header) {
+		req.set('x-extrafields', extraFields.header);
+	}
+
+	return await req;
+};
+
 export const getMeetingParticipant = async (roomId: string, participantIdentity: string, roomMemberToken: string) => {
 	checkAppIsRunning();
 

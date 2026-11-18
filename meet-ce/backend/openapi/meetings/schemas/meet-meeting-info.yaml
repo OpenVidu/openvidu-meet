@@ -53,3 +53,18 @@ properties:
             The participant cap in force for this meeting, taken from the room's `maxParticipants` when
             the meeting started (so it does not change mid-meeting). Absent when the meeting admits
             unlimited participants.
+    participants:
+        type: array
+        description: >
+            The participants currently in the meeting, as `participantList` returns them. Present only when
+            requested through `extraFields`.
+        items:
+            $ref: './meet-participant-info.yaml'
+    waitingParticipants:
+        type: array
+        description: >
+            The participants waiting to join the meeting, as `waitingParticipantList` returns them. Present only
+            when requested through `extraFields` by a caller holding `waitingParticipantAdmin`; left out for any
+            other caller. Empty in an unlocked room.
+        items:
+            $ref: './meet-waiting-participant.yaml'

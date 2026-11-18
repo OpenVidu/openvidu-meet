@@ -1,29 +1,42 @@
 import type {
+	MeetMeetingExtraField,
 	MeetParticipantHandOptions,
 	MeetParticipantModerationAction,
 	MeetParticipantMuteOptions,
 	MeetParticipantReactionOptions
 } from '@openvidu-meet/typings';
-import { MeetEventOrigin } from '@openvidu-meet/typings';
+import { MEET_MEETING_EXTRA_FIELDS, MeetEventOrigin } from '@openvidu-meet/typings';
 import type { Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
+import { addHttpResponseMetadata } from '../helpers/field-filter.helper.js';
 import { handleError, rejectRequestFromMeetError } from '../middlewares/error-handler.middleware.js';
 import { errorInsufficientPermissions } from '../models/error.model.js';
 import { LiveKitService } from '../services/livekit.service.js';
 import { WaitingParticipantService } from '../services/waiting-participants/waiting-participant.service.js';
 import { LoggerService } from '../services/logger.service.js';
 import { MeetingService } from '../services/meeting.service.js';
+import { RoomAccessService } from '../services/room-access.service.js';
 import { RequestSessionService } from '../services/request-session.service.js';
 import { RoomMemberService } from '../services/room-member.service.js';
 import { RoomService } from '../services/room.service.js';
 
+const readableExtraFields = async (roomId: string, extraFields: MeetMeetingExtraField[]) => {
+	if (!extraFields.includes('waitingParticipants')) return extraFields;
+
+	const { waitingParticipantAdmin } = await container
+		.get(RoomAccessService)
+		.getAuthenticatedRoomMemberPermissions(roomId);
+	return waitingParticipantAdmin ? extraFields : extraFields.filter((field) => field !== 'waitingParticipants');
+};
+
 export const getMeeting = async (req: Request, res: Response) => {
 	const meetingService = container.get(MeetingService);
 	const { roomId } = req.params as Record<string, string>;
+	const { extraFields = [] } = res.locals.validatedQuery as { extraFields?: MeetMeetingExtraField[] };
 
 	try {
-		const meeting = await meetingService.getMeetingInfo(roomId);
-		res.status(200).json(meeting);
+		const meeting = await meetingService.getMeetingInfo(roomId, await readableExtraFields(roomId, extraFields));
+		res.status(200).json(addHttpResponseMetadata(meeting, MEET_MEETING_EXTRA_FIELDS));
 	} catch (error) {
 		handleError(res, error, `getting meeting in room '${roomId}'`);
 	}

@@ -1,7 +1,10 @@
+import { MEET_MEETING_EXTRA_FIELDS } from '@openvidu-meet/typings';
 import type { NextFunction, Request, Response } from 'express';
+import { mergeFieldsHeaderIntoQuery } from '../../models/zod-schemas/field-selection.schema.js';
 import {
 	BulkRejectWaitingParticipantsReqSchema,
 	WaitingParticipantLeaveReqSchema,
+	GetMeetingQuerySchema,
 	LowerAllHandsReqSchema,
 	MuteParticipantMediaReqSchema,
 	SendParticipantReactionReqSchema,
@@ -9,6 +12,20 @@ import {
 	UpdateParticipantRoleReqSchema
 } from '../../models/zod-schemas/meeting.schema.js';
 import { rejectUnprocessableRequest } from '../error-handler.middleware.js';
+
+export const validateGetMeetingReq = (req: Request, res: Response, next: NextFunction) => {
+	const query = req.query;
+	mergeFieldsHeaderIntoQuery(req.headers, query, MEET_MEETING_EXTRA_FIELDS, 'extraFields');
+
+	const { success, error, data } = GetMeetingQuerySchema.safeParse(query);
+
+	if (!success) {
+		return rejectUnprocessableRequest(res, error);
+	}
+
+	res.locals.validatedQuery = data;
+	next();
+};
 
 export const validateUpdateParticipantRoleReq = (req: Request, res: Response, next: NextFunction) => {
 	const { success, error, data } = UpdateParticipantRoleReqSchema.safeParse(req.body);

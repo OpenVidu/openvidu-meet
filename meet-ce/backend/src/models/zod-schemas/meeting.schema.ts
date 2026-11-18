@@ -1,7 +1,17 @@
 import type { MeetParticipantHandOptions, MeetParticipantReactionOptions } from '@openvidu-meet/typings';
-import { MeetParticipantModerationAction, MeetReaction, MeetWaitingParticipantReason } from '@openvidu-meet/typings';
+import {
+	MEET_MEETING_EXTRA_FIELDS,
+	MeetParticipantModerationAction,
+	MeetReaction,
+	MeetWaitingParticipantReason
+} from '@openvidu-meet/typings';
 import { z } from 'zod';
 import { INTERNAL_CONFIG } from '../../config/internal-config.js';
+import { fieldListSchema } from './field-selection.schema.js';
+
+export const GetMeetingQuerySchema = z.object({
+	extraFields: fieldListSchema(MEET_MEETING_EXTRA_FIELDS)
+});
 
 export const UpdateParticipantRoleReqSchema = z.object({
 	action: z.enum(MeetParticipantModerationAction)

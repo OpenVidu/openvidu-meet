@@ -2,4 +2,53 @@ description: Live info of the meeting currently running in the room
 content:
     application/json:
         schema:
-            $ref: '../../schemas/meet-meeting-info.yaml'
+            allOf:
+                - $ref: '../../schemas/meet-meeting-info.yaml'
+                - type: object
+                  properties:
+                      _extraFields:
+                          type: array
+                          description: >
+                              List of extra fields that can be included in the response based on the `X-ExtraFields` header or `extraFields` query parameter.
+                          items:
+                              type: string
+                              example: participants
+        examples:
+            default_meeting:
+                summary: Meeting without extra fields
+                value:
+                    roomId: 'room-123'
+                    roomName: 'Daily Standup'
+                    startDate: 1620000000000
+                    participantCount: 1
+                    recordingActive: false
+                    broadcastActive: false
+                    _extraFields:
+                        - participants
+                        - waitingParticipants
+            extraFields=participants,waitingParticipants:
+                summary: Meeting with its participants and the participants waiting to join
+                value:
+                    roomId: 'room-123'
+                    roomName: 'Daily Standup'
+                    startDate: 1620000000000
+                    participantCount: 1
+                    recordingActive: false
+                    broadcastActive: false
+                    participants:
+                        - participantIdentity: 'ben_smith'
+                          participantName: 'Ben'
+                          role: moderator
+                          joinDate: 1620000001000
+                          audioActive: true
+                          videoActive: true
+                          screenShareActive: false
+                          handRaised: false
+                    waitingParticipants:
+                        - participantIdentity: 'ana-a1b2c3'
+                          participantName: 'Ana'
+                          type: anonymous
+                          knockDate: 1620000004000
+                    _extraFields:
+                        - participants
+                        - waitingParticipants
