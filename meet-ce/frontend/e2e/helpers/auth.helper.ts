@@ -17,7 +17,7 @@ export interface LoginOptions {
 	userId: string;
 	/** Current password. */
 	password: string;
-	/** New password to set when the app forces a password change on the user's first login. */
+	/** New password of a user's first login, where the app forces a password change. */
 	newPassword?: string;
 }
 
@@ -36,36 +36,18 @@ const READY_PASSWORD = 'changed11';
 
 // ─── Login steps ─────────────────────────────────────────────────────────────
 
-/**
- * Changes the password when the app forces a password change (a user's first login). The step is
- * auto-detected from the change-password form, so this is a no-op when no change is required.
- */
-const performPasswordChange = async (page: Page, login: LoginOptions): Promise<void> => {
-	const newPasswordInput = page.locator('input[formcontrolname="newPassword"]');
-	const passwordChangeRequired = await newPasswordInput
-		.waitFor({ state: 'visible', timeout: 5_000 })
-		.then(() => true)
-		.catch(() => false);
-
-	if (!passwordChangeRequired) {
-		return;
-	}
-
-	if (!login.newPassword) {
-		throw new Error('The user must change their password on first login, but no `newPassword` was provided');
-	}
-
-	await page.locator('input[formcontrolname="currentPassword"]').fill(login.password);
-	await newPasswordInput.fill(login.newPassword);
-	await page.locator('input[formcontrolname="confirmPassword"]').fill(login.newPassword);
+const changePasswordOnFirstLogin = async (page: Page, currentPassword: string, newPassword: string): Promise<void> => {
+	await page.locator('input[formcontrolname="currentPassword"]').fill(currentPassword);
+	await page.locator('input[formcontrolname="newPassword"]').fill(newPassword);
+	await page.locator('input[formcontrolname="confirmPassword"]').fill(newPassword);
 	await click(page.locator('button[type="submit"].primary-button'), 10_000);
 };
 
 /**
  * Logs a registered user in when the app requests it. The login form is auto-detected (the app
  * shows it when authentication is required), so this is a no-op when no login is presented — for
- * example when the user is already authenticated or the room allows anonymous access. Handles the
- * forced password-change step of a first login.
+ * example when the user is already authenticated or the room allows anonymous access. A login with
+ * `newPassword` is a first login: the app forces the password change and this completes it.
  */
 export const performLogin = async (page: Page, login: LoginOptions): Promise<void> => {
 	const loginButton = page.locator('#login-button');
@@ -82,7 +64,9 @@ export const performLogin = async (page: Page, login: LoginOptions): Promise<voi
 	await page.locator('#password-input').fill(login.password);
 	await click(loginButton, 10_000);
 
-	await performPasswordChange(page, login);
+	if (login.newPassword) {
+		await changePasswordOnFirstLogin(page, login.password, login.newPassword);
+	}
 };
 
 /**

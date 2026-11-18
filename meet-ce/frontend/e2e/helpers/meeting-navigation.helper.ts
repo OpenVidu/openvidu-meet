@@ -207,16 +207,23 @@ export const leaveMeeting = async (page: Page, timeoutMs = 10_000): Promise<void
 	await page.locator('#leave-btn').click();
 
 	const leaveOption = page.locator('#leave-option');
-	const leaveDropdownVisible = await leaveOption
-		.waitFor({ state: 'visible', timeout: 3_000 })
-		.then(() => true)
-		.catch(() => false);
+	const layout = page.locator('#layout-container');
+	const leaveDropdownVisible = await Promise.race([
+		leaveOption.waitFor({ state: 'visible', timeout: timeoutMs }).then(
+			() => true,
+			() => false
+		),
+		layout.waitFor({ state: 'detached', timeout: timeoutMs }).then(
+			() => false,
+			() => false
+		)
+	]);
 
 	if (leaveDropdownVisible) {
 		await leaveOption.click();
 	}
 
-	await expect(page.locator('#layout-container')).toHaveCount(0, { timeout: timeoutMs });
+	await expect(layout).toHaveCount(0, { timeout: timeoutMs });
 };
 
 /**
@@ -228,12 +235,10 @@ export const reopenPrejoin = async (page: Page, accessUrl: string): Promise<void
 	await page.goto(accessUrl, { waitUntil: 'domcontentloaded' });
 
 	const nameSubmit = page.locator('#participant-name-submit');
-	const joinScreenShown = await nameSubmit
-		.waitFor({ state: 'visible', timeout: 5_000 })
-		.then(() => true)
-		.catch(() => false);
+	const joinButton = page.locator('#join-button');
+	await expect(nameSubmit.or(joinButton).first()).toBeVisible({ timeout: 15_000 });
 
-	if (joinScreenShown) {
+	if (await nameSubmit.isVisible()) {
 		const nameInput = page.locator('#participant-name-input');
 
 		if (!(await nameInput.inputValue())) {
@@ -243,5 +248,5 @@ export const reopenPrejoin = async (page: Page, accessUrl: string): Promise<void
 		await nameSubmit.click();
 	}
 
-	await expect(page.locator('#join-button')).toBeVisible({ timeout: 15_000 });
+	await expect(joinButton).toBeVisible({ timeout: 15_000 });
 };

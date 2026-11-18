@@ -307,10 +307,18 @@ export const leaveMeeting = async (
 	await meet('#leave-btn').click();
 
 	const leaveOption = meet('#leave-option');
-	const leaveDropdownVisible = await leaveOption
-		.waitFor({ state: 'visible', timeout: 3_000 })
-		.then(() => true)
-		.catch(() => false);
+	const leaveDropdownVisible = await Promise.race([
+		leaveOption.waitFor({ state: 'visible', timeout: 10_000 }).then(
+			() => true,
+			() => false
+		),
+		meet('#layout-container')
+			.waitFor({ state: 'detached', timeout: 10_000 })
+			.then(
+				() => false,
+				() => false
+			)
+	]);
 
 	if (leaveDropdownVisible) {
 		await leaveOption.click();
