@@ -17,7 +17,8 @@ import {
 	MeetRecordingStatus,
 	MeetRecordingUpdatedPayload,
 	MeetRoomMemberRole,
-	MeetSignalType
+	MeetSignalType,
+	participantRoleOf
 } from '@openvidu-meet/typings';
 import type { EmbeddedParticipantHandChangedEvent } from '@openvidu-meet/typings';
 import type { NotificationOptions } from '../../../shared/models/notification.model';
@@ -65,8 +66,7 @@ import {
 import {
 	toEmbeddedDepartedParticipant,
 	toEmbeddedParticipantInfo,
-	toEmbeddedParticipantPayload,
-	toParticipantRole
+	toEmbeddedParticipantPayload
 } from '../utils/embedded-participant.utils';
 import { toMediaStatusChangedEvent } from '../utils/media-status-event.utils';
 import { hasReachedMeetingEnd, parseMeetingEndDate, parseMeetingStartDate } from '../utils/room-metadata.utils';
@@ -710,7 +710,7 @@ export class MeetingEventHandlerService {
 		}
 
 		const promoted = Boolean(metadata.isPromotedModerator);
-		const role = toParticipantRole(metadata.badge);
+		const role = participantRoleOf(metadata.badge);
 		const wasPromoted = this.localPromotedModerator;
 		this.localPromotedModerator = promoted;
 

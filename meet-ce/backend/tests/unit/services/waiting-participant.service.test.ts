@@ -9,7 +9,8 @@ import {
 	MEET_WAITING_PARTICIPANT_STATE_MESSAGE,
 	MeetEventOrigin,
 	MeetRoomMemberUIBadge,
-	MeetWaitingParticipantType,
+	MeetParticipantType,
+	MeetRoomMemberRole,
 	MeetWaitingParticipantReason,
 	MeetWaitingParticipantStatus
 } from '@openvidu-meet/typings';
@@ -35,7 +36,8 @@ const entry = (identity: string, overrides: Partial<WaitingEntry> = {}): Waiting
 	waitId: `wait-${identity}`,
 	participantIdentity: identity,
 	participantName: identity.toUpperCase(),
-	type: MeetWaitingParticipantType.ANONYMOUS,
+	type: MeetParticipantType.ANONYMOUS,
+	role: MeetRoomMemberRole.SPEAKER,
 	knockDate: NOW - 90_000,
 	roomName: 'Room 1',
 	status: MeetWaitingParticipantStatus.WAITING,
@@ -179,20 +181,28 @@ describe('WaitingParticipantService', () => {
 			state.knockResult = {
 				entry: entry('guest-1', {
 					participantName: 'Ana',
-					type: MeetWaitingParticipantType.IDENTIFIED_GUEST,
+					type: MeetParticipantType.IDENTIFIED_GUEST,
+					role: MeetRoomMemberRole.MODERATOR,
 					externalId: 'u-42'
 				})
 			};
 
 			const answer = await service.knock(
 				{ roomId: 'room-1', roomName: 'Room 1' },
-				{ participantIdentity: 'guest-1', participantName: 'Ana', externalId: 'u-42', memberId: 'guest-1' }
+				{
+					participantIdentity: 'guest-1',
+					participantName: 'Ana',
+					role: MeetRoomMemberRole.MODERATOR,
+					externalId: 'u-42',
+					memberId: 'guest-1'
+				}
 			);
 
 			expect(answer.participant).toEqual({
 				participantIdentity: 'guest-1',
 				participantName: 'Ana',
-				type: MeetWaitingParticipantType.IDENTIFIED_GUEST,
+				type: MeetParticipantType.IDENTIFIED_GUEST,
+				role: MeetRoomMemberRole.MODERATOR,
 				externalId: 'u-42',
 				knockDate: NOW - 90_000
 			});
@@ -204,7 +214,8 @@ describe('WaitingParticipantService', () => {
 					{
 						participantIdentity: 'guest-1',
 						participantName: 'Ana',
-						type: MeetWaitingParticipantType.IDENTIFIED_GUEST,
+						type: MeetParticipantType.IDENTIFIED_GUEST,
+						role: MeetRoomMemberRole.MODERATOR,
 						externalId: 'u-42',
 						roomName: 'Room 1'
 					},
@@ -218,7 +229,7 @@ describe('WaitingParticipantService', () => {
 
 			await service.knock(
 				{ roomId: 'room-1', roomName: 'Room 1' },
-				{ participantIdentity: 'ana', participantName: 'Ana' }
+				{ participantIdentity: 'ana', participantName: 'Ana', role: MeetRoomMemberRole.SPEAKER }
 			);
 
 			expect(knocked).toEqual([
@@ -228,7 +239,8 @@ describe('WaitingParticipantService', () => {
 					participant: {
 						participantIdentity: 'ana',
 						participantName: 'ANA',
-						type: MeetWaitingParticipantType.ANONYMOUS,
+						type: MeetParticipantType.ANONYMOUS,
+						role: MeetRoomMemberRole.SPEAKER,
 						knockDate: NOW - 90_000
 					}
 				}
@@ -243,7 +255,7 @@ describe('WaitingParticipantService', () => {
 
 			await service.knock(
 				{ roomId: 'room-1', roomName: 'Room 1' },
-				{ participantIdentity: 'ana', participantName: 'Ana' }
+				{ participantIdentity: 'ana', participantName: 'Ana', role: MeetRoomMemberRole.SPEAKER }
 			);
 
 			expect(stateOf('wait-ana')).toEqual([
@@ -270,7 +282,7 @@ describe('WaitingParticipantService', () => {
 			await expect(
 				service.knock(
 					{ roomId: 'room-1', roomName: 'Room 1' },
-					{ participantIdentity: 'ana', participantName: 'Ana' }
+					{ participantIdentity: 'ana', participantName: 'Ana', role: MeetRoomMemberRole.SPEAKER }
 				)
 			).rejects.toMatchObject({
 				statusCode: 409,
@@ -317,7 +329,8 @@ describe('WaitingParticipantService', () => {
 					{
 						participantIdentity: 'ana',
 						participantName: 'ANA',
-						type: MeetWaitingParticipantType.ANONYMOUS,
+						type: MeetParticipantType.ANONYMOUS,
+						role: MeetRoomMemberRole.SPEAKER,
 						knockDate: NOW - 1
 					}
 				]

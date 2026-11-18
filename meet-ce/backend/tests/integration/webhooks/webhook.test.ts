@@ -3,7 +3,7 @@ import {
 	LeftEventReason,
 	MEET_PERMISSION_KEYS,
 	MeetEventOrigin,
-	MeetWaitingParticipantType,
+	MeetParticipantType,
 	MeetWaitingParticipantStatus,
 	MeetWaitingTicketResponse,
 	MeetWaitingParticipantStatusChangedPayload,
@@ -288,8 +288,9 @@ describe('Webhook Integration Tests', () => {
 			expect(payload.roomName).toBe(roomData.roomName);
 			expect(payload.participant.participantIdentity).toBe('TEST_PARTICIPANT');
 			// The fake CLI participant joins without any Meet room-member token metadata, so it falls
-			// back to the same default a real anonymous non-moderator participant would get.
+			// back to the speaker role and carries no type.
 			expect(payload.participant.role).toBe(MeetRoomMemberRole.SPEAKER);
+			expect(payload.participant).not.toHaveProperty('type');
 			expect(payload.participant.joinDate).toBeLessThanOrEqual(Date.now());
 
 			expectValidSignature(participantJoinedWebhook);
@@ -398,6 +399,7 @@ describe('Webhook Integration Tests', () => {
 			expect(promotion.roomName).toBe(roomData.roomName);
 			expect(promotion.participant.participantIdentity).toBe(participantIdentity);
 			expect(promotion.participant.role).toBe(MeetRoomMemberRole.MODERATOR);
+			expect(promotion.participant.type).toBe(MeetParticipantType.ANONYMOUS);
 			expect(promotion.participant.externalId).toBe('crm-user_42');
 			expect(promotion.participant.audioActive).toEqual(expect.any(Boolean));
 			expect(promotion.participant.handRaised).toBe(false);
@@ -411,6 +413,7 @@ describe('Webhook Integration Tests', () => {
 			const [, demotion] = await roleChangedPayloads(2);
 			expect(demotion.participant.participantIdentity).toBe(participantIdentity);
 			expect(demotion.participant.role).toBe(MeetRoomMemberRole.SPEAKER);
+			expect(demotion.participant.type).toBe(MeetParticipantType.ANONYMOUS);
 		});
 
 		it('should send waitingParticipantKnocked once per wait and waitingParticipantStatusChanged for every later change', async () => {
@@ -450,7 +453,8 @@ describe('Webhook Integration Tests', () => {
 				participant: {
 					participantIdentity: ana.participant.participantIdentity,
 					participantName: 'Ana',
-					type: MeetWaitingParticipantType.ANONYMOUS,
+					type: MeetParticipantType.ANONYMOUS,
+					role: MeetRoomMemberRole.SPEAKER,
 					knockDate: expect.any(Number)
 				}
 			});

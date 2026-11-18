@@ -1,5 +1,6 @@
-import { MeetWaitingParticipantType } from '../database/room-member.entity.js';
+import { MeetRoomMemberRole } from '../database/room-member.entity.js';
 import { MeetEventOrigin } from '../event-origin.js';
+import { MeetParticipantType } from './participant-response.js';
 
 /**
  * Status of a wait to join a locked room, carried by the `waitingParticipantStatusChanged` webhook and embedded event.
@@ -59,8 +60,13 @@ export interface MeetWaitingParticipant {
 	participantIdentity: string;
 	/** Name the participant gave, made unique only when they join */
 	participantName: string;
-	/** How the participant asked to join, derived by the server. See {@link MeetWaitingParticipantType} */
-	type: MeetWaitingParticipantType;
+	/** How the participant asked to join, derived by the server. See {@link MeetParticipantType} */
+	type: MeetParticipantType;
+	/**
+	 * The role the participant's credential gave when they asked to join, kept while this wait lasts. Their join
+	 * takes the role their credential gives then
+	 */
+	role: MeetRoomMemberRole;
 	/**
 	 * `participantExternalId` as sent by the participant's client. Not a proof of identity: trust `type` and the
 	 * `participantIdentity` of a member or user instead.

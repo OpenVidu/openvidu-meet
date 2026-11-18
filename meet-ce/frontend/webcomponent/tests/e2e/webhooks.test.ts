@@ -3,7 +3,7 @@ import {
 	MeetBroadcastInfo,
 	MeetBroadcastStatus,
 	MeetEventOrigin,
-	MeetWaitingParticipantType,
+	MeetParticipantType,
 	MeetWaitingParticipantStatus,
 	MeetParticipantJoinedPayload,
 	MeetParticipantLeftPayload,
@@ -280,7 +280,7 @@ test.describe('Webhooks E2E Tests', () => {
 		const [ana, ben] = [named('Ana'), named('Ben')];
 		expect(ana).toMatchObject({
 			participantName: 'Ana',
-			type: MeetWaitingParticipantType.ANONYMOUS,
+			type: MeetParticipantType.ANONYMOUS,
 			externalId: 'u-42'
 		});
 

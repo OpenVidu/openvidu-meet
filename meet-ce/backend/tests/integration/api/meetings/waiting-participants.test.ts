@@ -7,10 +7,11 @@ import type {
 } from '@openvidu-meet/typings';
 import {
 	MEET_WAITING_PARTICIPANT_STATE_MESSAGE,
-	MeetWaitingParticipantType,
+	MeetParticipantType,
 	MeetWaitingParticipantStatus,
 	MeetRoomMemberRole,
 	MeetRoomStatus,
+	participantRoleOf,
 	MeetWebSocketCloseCode
 } from '@openvidu-meet/typings';
 import express from 'express';
@@ -53,6 +54,7 @@ import {
 	rejectWaitingParticipant,
 	startTestServer,
 	updateRoomAccessConfig,
+	updateRoomMember,
 	updateRoomRoles,
 	updateRoomStatus
 } from '../../../helpers/request-helpers.js';
@@ -147,7 +149,8 @@ describe('Waiting participants', () => {
 					{
 						participantIdentity,
 						participantName: 'Ana',
-						type: MeetWaitingParticipantType.ANONYMOUS,
+						type: MeetParticipantType.ANONYMOUS,
+						role: MeetRoomMemberRole.SPEAKER,
 						knockDate: expect.any(Number)
 					}
 				]
@@ -192,10 +195,23 @@ describe('Waiting participants', () => {
 
 			expect(participantIdentity).toBe(ana!.member.memberId);
 			expect((await getWaitingParticipants(roomId)).body.participants[0].type).toBe(
-				MeetWaitingParticipantType.IDENTIFIED_GUEST
+				MeetParticipantType.IDENTIFIED_GUEST
 			);
 			const withBobsLink = await askToJoin(roomId, guestSecretOf(bob!.member), 'Bob', waitingTicket);
 			expect(withBobsLink.status).toBe(403);
+		});
+
+		it('lists the role of the link the participant asked with', async () => {
+			const roomData = await setupLockedRoom();
+			const { roomId } = roomData.room;
+			const roles = await updateRoomRoles(roomId, { moderator: { permissions: { accessBypassLock: false } } });
+			expect(roles.status).toBe(200);
+
+			const { participantIdentity } = await knock(roomData, 'Host', roomData.moderatorSecret);
+
+			const response = await getWaitingParticipant(roomId, participantIdentity);
+			expect(response.status).toBe(200);
+			expect(response.body.role).toBe(MeetRoomMemberRole.MODERATOR);
 		});
 
 		it('ends the earlier wait of the same identity as left, and starts a new one', async () => {
@@ -302,6 +318,27 @@ describe('Waiting participants', () => {
 				await askToJoin(roomId, roomData.speakerSecret, 'Ana', waitingTicket),
 				MeetWaitingParticipantStatus.ADMITTED
 			);
+		});
+
+		it('keeps the role the participant asked with until they join with the role their credential gives then', async () => {
+			const roomData = await setupLockedRoom();
+			const { roomId } = roomData.room;
+			const { member } = await setupRoomMember(roomId, { name: 'Ana', baseRole: MeetRoomMemberRole.SPEAKER });
+			const { waitingTicket, participantIdentity } = await knock(roomData, 'Ana', guestSecretOf(member));
+
+			const promoted = await updateRoomMember(roomId, member.memberId, {
+				baseRole: MeetRoomMemberRole.MODERATOR
+			});
+			expect(promoted.status).toBe(200);
+			expect((await getWaitingParticipant(roomId, participantIdentity)).body.role).toBe(
+				MeetRoomMemberRole.SPEAKER
+			);
+
+			expect((await admitWaitingParticipant(roomId, participantIdentity)).status).toBe(200);
+			const joined = await askToJoin(roomId, guestSecretOf(member), 'Ana', waitingTicket);
+			expect(joined.status).toBe(200);
+			const { metadata } = jwtDecode<ClaimGrants>(joined.body.token);
+			expect(participantRoleOf(JSON.parse(metadata!).badge)).toBe(MeetRoomMemberRole.MODERATOR);
 		});
 
 		it('makes an admitted participant who finds the meeting full wait again', async () => {

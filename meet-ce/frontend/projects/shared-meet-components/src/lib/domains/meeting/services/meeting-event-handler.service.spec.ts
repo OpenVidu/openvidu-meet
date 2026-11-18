@@ -19,6 +19,7 @@ import {
 	MeetRecordingInfo,
 	MeetRecordingStatus,
 	MeetRecordingUpdatedPayload,
+	MeetParticipantType,
 	MeetRoomMemberRole,
 	MeetRoomMemberUIBadge,
 	MeetSignalPayload,
@@ -586,6 +587,7 @@ describe('MeetingEventHandlerService', () => {
 						participant: {
 							participantIdentity: 'alice',
 							participantName: 'Alice',
+							type: MeetParticipantType.ANONYMOUS,
 							externalId: undefined,
 							metadata: undefined,
 							role: MeetRoomMemberRole.MODERATOR,

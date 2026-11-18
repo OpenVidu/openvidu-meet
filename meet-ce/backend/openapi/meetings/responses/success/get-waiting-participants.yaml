@@ -17,9 +17,11 @@ content:
                 - participantIdentity: 'ana-a1b2c3'
                   participantName: 'Ana'
                   type: anonymous
+                  role: speaker
                   externalId: 'user-42'
                   knockDate: 1620000000000
                 - participantIdentity: 'ben_smith'
                   participantName: 'Ben'
                   type: identified_guest
+                  role: moderator
                   knockDate: 1620000004000

@@ -2,7 +2,7 @@ import { DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MeetWaitingParticipantType } from '@openvidu-meet/typings';
+import { MeetParticipantType } from '@openvidu-meet/typings';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { DialogService } from '../../../../shared/services/dialog.service';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
@@ -44,7 +44,7 @@ export class WaitingParticipantsPanelSectionComponent {
 		return waiting.map((waiter) => ({
 			...waiter,
 			sharesName: names.indexOf(waiter.name) !== names.lastIndexOf(waiter.name),
-			viaSharedLink: waiter.participant.type === MeetWaitingParticipantType.ANONYMOUS
+			viaSharedLink: waiter.participant.type === MeetParticipantType.ANONYMOUS
 		}));
 	});
 

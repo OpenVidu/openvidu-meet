@@ -1,6 +1,6 @@
 import { computed, provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MeetWaitingParticipantType } from '@openvidu-meet/typings';
+import { MeetParticipantType, MeetRoomMemberRole } from '@openvidu-meet/typings';
 import { DialogOptions } from '../../../../shared/models/notification.model';
 import { DialogService } from '../../../../shared/services/dialog.service';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
@@ -14,8 +14,14 @@ class LoggerServiceStub {
 	}
 }
 
-const waiter = (identity: string, name: string, type = MeetWaitingParticipantType.USER): WaitingParticipantView => ({
-	participant: { participantIdentity: identity, participantName: name, type, knockDate: 0 },
+const waiter = (identity: string, name: string, type = MeetParticipantType.USER): WaitingParticipantView => ({
+	participant: {
+		participantIdentity: identity,
+		participantName: name,
+		type,
+		role: MeetRoomMemberRole.SPEAKER,
+		knockDate: 0
+	},
 	name,
 	knockedAt: new Date(2026, 10, 11, 10, 42).getTime(),
 	color: 'hsl(40, 100%, 80%)'
@@ -85,7 +91,7 @@ describe('WaitingParticipantsPanelSectionComponent', () => {
 	});
 
 	it('lists those waiting in the order given, marking the rows of a shared link', async () => {
-		waiting.set([waiter('ana', 'Ana', MeetWaitingParticipantType.ANONYMOUS), waiter('ben', 'Ben')]);
+		waiting.set([waiter('ana', 'Ana', MeetParticipantType.ANONYMOUS), waiter('ben', 'Ben')]);
 		await render();
 
 		expect(rows().map((row) => row.dataset['participantIdentity'])).toEqual(['ana', 'ben']);

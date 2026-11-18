@@ -508,6 +508,7 @@ waitingParticipantKnocked:
                                 participantIdentity: 'ana-a1b2c3'
                                 participantName: 'Ana'
                                 type: anonymous
+                                role: speaker
                                 externalId: 'user-42'
                                 knockDate: 1620000000000
         responses:
@@ -551,6 +552,7 @@ waitingParticipantStatusChanged:
                                 participantIdentity: 'ana-a1b2c3'
                                 participantName: 'Ana'
                                 type: anonymous
+                                role: speaker
                                 externalId: 'user-42'
                                 knockDate: 1620000000000
                             status: admitted

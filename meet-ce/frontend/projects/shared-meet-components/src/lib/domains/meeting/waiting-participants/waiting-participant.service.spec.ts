@@ -6,7 +6,8 @@ import {
 	MeetEventOrigin,
 	MeetWaitingParticipantErrorCode,
 	MeetWaitingParticipant,
-	MeetWaitingParticipantType,
+	MeetParticipantType,
+	MeetRoomMemberRole,
 	MeetWaitingParticipantReason,
 	MeetWaitingParticipantState,
 	MeetWaitingParticipantStatus
@@ -66,7 +67,8 @@ const ROOM_ID = 'room1';
 const PARTICIPANT: MeetWaitingParticipant = {
 	participantIdentity: 'ana-1',
 	participantName: 'Ana',
-	type: MeetWaitingParticipantType.ANONYMOUS,
+	type: MeetParticipantType.ANONYMOUS,
+	role: MeetRoomMemberRole.SPEAKER,
 	knockDate: 1_800_000_000_000
 };
 const TICKET = { waitingTicket: 'ticket/1', participant: PARTICIPANT };

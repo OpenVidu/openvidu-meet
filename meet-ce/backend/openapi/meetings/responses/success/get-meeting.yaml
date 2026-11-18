@@ -38,6 +38,7 @@ content:
                     participants:
                         - participantIdentity: 'ben_smith'
                           participantName: 'Ben'
+                          type: user
                           role: moderator
                           joinDate: 1620000001000
                           audioActive: true
@@ -48,6 +49,7 @@ content:
                         - participantIdentity: 'ana-a1b2c3'
                           participantName: 'Ana'
                           type: anonymous
+                          role: speaker
                           knockDate: 1620000004000
                     _extraFields:
                         - participants

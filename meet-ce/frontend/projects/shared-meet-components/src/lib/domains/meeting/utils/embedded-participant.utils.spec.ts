@@ -1,5 +1,6 @@
 import {
 	LeftEventReason,
+	MeetParticipantType,
 	MeetRoomMemberRole,
 	MeetRoomMemberUIBadge,
 	raisedHandAttributes
@@ -46,6 +47,7 @@ describe('toEmbeddedParticipantPayload', () => {
 		expect(toEmbeddedParticipantPayload(participant)).toEqual({
 			participantIdentity: 'participant-1',
 			participantName: 'Participant One',
+			type: MeetParticipantType.ANONYMOUS,
 			externalId: 'crm-user_42',
 			metadata: '{"plan":"premium"}',
 			role: MeetRoomMemberRole.MODERATOR,
@@ -65,12 +67,22 @@ describe('toEmbeddedParticipantPayload', () => {
 		expect(toEmbeddedParticipantPayload(participant).joinDate).toBe(0);
 	});
 
-	it('downgrades to speaker and omits the correlation fields without Meet metadata', () => {
+	it('downgrades to speaker and omits the type and the correlation fields without Meet metadata', () => {
 		const payload = toEmbeddedParticipantPayload(participantWith({}));
 
 		expect(payload.role).toBe(MeetRoomMemberRole.SPEAKER);
+		expect('type' in payload).toBe(false);
 		expect(payload.externalId).toBeUndefined();
 		expect(payload.metadata).toBeUndefined();
+	});
+
+	it('tells how the participant joined from the credential in its Meet metadata, as the webhooks do', () => {
+		const typeOf = (overrides: Record<string, unknown>) =>
+			toEmbeddedParticipantPayload(participantWith({ metadata: meetingMetadata(overrides) })).type;
+
+		expect(typeOf({ userId: 'alice', memberId: 'alice' })).toBe(MeetParticipantType.USER);
+		expect(typeOf({ memberId: 'guest-1' })).toBe(MeetParticipantType.IDENTIFIED_GUEST);
+		expect(typeOf({})).toBe(MeetParticipantType.ANONYMOUS);
 	});
 
 	it('maps the OTHER badge to speaker and falls back to the identity when the name is absent', () => {

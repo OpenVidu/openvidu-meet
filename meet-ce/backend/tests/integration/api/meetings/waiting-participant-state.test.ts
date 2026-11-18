@@ -1,5 +1,5 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
-import { MeetWaitingParticipantType, MeetWaitingParticipantStatus } from '@openvidu-meet/typings';
+import { MeetParticipantType, MeetRoomMemberRole, MeetWaitingParticipantStatus } from '@openvidu-meet/typings';
 import { randomUUID } from 'crypto';
 import { INTERNAL_CONFIG, setInternalConfig } from '../../../../src/config/internal-config.js';
 import type {
@@ -72,7 +72,8 @@ class TestWaitingParticipantState extends WaitingParticipantStateService {
 const participant = (identity: string): Omit<StoredWaitingParticipant, 'knockDate'> => ({
 	participantIdentity: identity,
 	participantName: identity.toUpperCase(),
-	type: MeetWaitingParticipantType.ANONYMOUS,
+	type: MeetParticipantType.ANONYMOUS,
+	role: MeetRoomMemberRole.SPEAKER,
 	roomName: 'Locked room'
 });
 
@@ -502,7 +503,16 @@ describe('Waiting participant state in Redis', () => {
 		const ana: WaitingEntry = await knock('ana');
 
 		expect(Object.keys(ana).sort()).toEqual(
-			['knockDate', 'participantIdentity', 'participantName', 'roomName', 'status', 'type', 'waitId'].sort()
+			[
+				'knockDate',
+				'participantIdentity',
+				'participantName',
+				'role',
+				'roomName',
+				'status',
+				'type',
+				'waitId'
+			].sort()
 		);
 	});
 });

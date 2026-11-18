@@ -12,9 +12,10 @@ import type {
 import {
 	handRaiseDateOf,
 	MeetRoomMemberRole,
-	MeetRoomMemberUIBadge,
 	normalizePermissions,
-	participantLeaveReasonOf
+	participantLeaveReasonOf,
+	participantRoleOf,
+	participantTypeOf
 } from '@openvidu-meet/typings';
 import type { ParticipantInfo } from 'livekit-server-sdk';
 import { errorParticipantNotRoomMember } from '../models/error.model.js';
@@ -138,9 +139,10 @@ export class MeetParticipantHelper {
 		return {
 			participantIdentity: participant.identity,
 			participantName: participant.name,
+			...(meetingMetadata && { type: participantTypeOf(meetingMetadata) }),
 			externalId: meetingMetadata?.externalId,
 			metadata: meetingMetadata?.metadata,
-			role: MeetParticipantHelper.extractRole(participant),
+			role: participantRoleOf(meetingMetadata?.badge),
 			joinDate: MeetParticipantHelper.extractJoinDate(participant)
 		};
 	}
@@ -183,13 +185,7 @@ export class MeetParticipantHelper {
 	 * @param participant - The LiveKit participant to inspect.
 	 */
 	static extractRole(participant: ParticipantInfo): MeetRoomMemberRole {
-		const badge = MeetParticipantHelper.parseMeetingMetadata(participant)?.badge;
-
-		if (!badge || badge === MeetRoomMemberUIBadge.OTHER) {
-			return MeetRoomMemberRole.SPEAKER;
-		}
-
-		return MeetRoomMemberRole.MODERATOR;
+		return participantRoleOf(MeetParticipantHelper.parseMeetingMetadata(participant)?.badge);
 	}
 
 	/**

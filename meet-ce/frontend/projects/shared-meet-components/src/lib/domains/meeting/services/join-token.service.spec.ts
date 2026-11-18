@@ -4,7 +4,8 @@ import { TestBed } from '@angular/core/testing';
 import {
 	MeetRoomMemberTokenOptions,
 	MeetWaitingParticipantErrorCode,
-	MeetWaitingParticipantType
+	MeetParticipantType,
+	MeetRoomMemberRole
 } from '@openvidu-meet/typings';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import { LoggerService } from '../../../shared/services/logger.service';
@@ -87,7 +88,8 @@ describe('JoinTokenService', () => {
 			participant: {
 				participantIdentity: 'alice-1',
 				participantName: 'Alice',
-				type: MeetWaitingParticipantType.ANONYMOUS,
+				type: MeetParticipantType.ANONYMOUS,
+				role: MeetRoomMemberRole.SPEAKER,
 				knockDate: 1_800_000_000_000
 			}
 		};

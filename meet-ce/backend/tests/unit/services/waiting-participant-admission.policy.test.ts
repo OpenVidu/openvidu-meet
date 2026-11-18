@@ -1,5 +1,10 @@
 import { describe, expect, it } from '@jest/globals';
-import { MEET_PERMISSION_KEYS, MeetWaitingParticipantType, MeetWaitingParticipantStatus } from '@openvidu-meet/typings';
+import {
+	MEET_PERMISSION_KEYS,
+	MeetParticipantType,
+	MeetRoomMemberRole,
+	MeetWaitingParticipantStatus
+} from '@openvidu-meet/typings';
 import { MeetRoomMemberHelper } from '../../../src/helpers/room-member.helper.js';
 import type { ParticipantWait } from '../../../src/models/waiting-participant.model.js';
 import { WaitingParticipantAdmissionPolicy } from '../../../src/services/waiting-participants/waiting-participant-admission.policy.js';
@@ -14,7 +19,8 @@ const wait = (overrides: Partial<ParticipantWait> = {}): ParticipantWait => ({
 	participant: {
 		participantIdentity: 'ana-1',
 		participantName: 'Ana',
-		type: MeetWaitingParticipantType.ANONYMOUS,
+		type: MeetParticipantType.ANONYMOUS,
+		role: MeetRoomMemberRole.SPEAKER,
 		knockDate: 1,
 		roomName: 'Room 1'
 	},
@@ -83,14 +89,6 @@ describe('WaitingParticipantAdmissionPolicy', () => {
 	});
 
 	describe('who asks', () => {
-		it('tells the participant type from the credential, a user first', () => {
-			expect(policy.participantTypeOf({ userId: 'alice', memberId: 'alice' })).toBe(
-				MeetWaitingParticipantType.USER
-			);
-			expect(policy.participantTypeOf({ memberId: 'guest-1' })).toBe(MeetWaitingParticipantType.IDENTIFIED_GUEST);
-			expect(policy.participantTypeOf({})).toBe(MeetWaitingParticipantType.ANONYMOUS);
-		});
-
 		it('binds a wait to the member or user who asked, and an anonymous one to nobody', () => {
 			expect(policy.principalOf({ memberId: 'guest-1' })).toBe('guest-1');
 			expect(policy.principalOf({ userId: 'alice' })).toBe('alice');

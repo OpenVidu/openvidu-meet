@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { MeetWaitingParticipantType } from '@openvidu-meet/typings';
+import { MeetParticipantType, MeetRoomMemberRole } from '@openvidu-meet/typings';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import { LoggerService } from '../../../shared/services/logger.service';
 import { NavigationService } from '../../../shared/services/navigation.service';
@@ -177,7 +177,8 @@ describe('RoomMemberContextService', () => {
 			participant: {
 				participantIdentity: 'ana-1',
 				participantName: 'Ana',
-				type: MeetWaitingParticipantType.ANONYMOUS,
+				type: MeetParticipantType.ANONYMOUS,
+				role: MeetRoomMemberRole.SPEAKER,
 				knockDate: 1_800_000_000_000
 			}
 		};

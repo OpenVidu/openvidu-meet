@@ -1,4 +1,41 @@
 import { MeetRoomMemberRole } from '../database/room-member.entity.js';
+import { MeetRoomMemberUIBadge } from './room-member-response.js';
+
+/**
+ * How a participant joined the meeting or asked to join it, derived by the server from their credential.
+ */
+export enum MeetParticipantType {
+	/** With their own Meet user account */
+	USER = 'user',
+	/** With the personal link of an identified guest */
+	IDENTIFIED_GUEST = 'identified_guest',
+	/** With a shared link of the room, so they are anonymous */
+	ANONYMOUS = 'anonymous'
+}
+
+/**
+ * The {@link MeetParticipantType} of a credential from its `memberId` and `userId`: a user account first, then a
+ * personal member link, otherwise a shared link.
+ */
+export const participantTypeOf = ({
+	memberId,
+	userId
+}: {
+	memberId?: string;
+	userId?: string;
+}): MeetParticipantType => {
+	if (userId) return MeetParticipantType.USER;
+
+	if (memberId) return MeetParticipantType.IDENTIFIED_GUEST;
+
+	return MeetParticipantType.ANONYMOUS;
+};
+
+/**
+ * The role a {@link MeetRoomMemberUIBadge} stands for: speaker for `other` or no badge, moderator for any other.
+ */
+export const participantRoleOf = (badge: MeetRoomMemberUIBadge | undefined): MeetRoomMemberRole =>
+	!badge || badge === MeetRoomMemberUIBadge.OTHER ? MeetRoomMemberRole.SPEAKER : MeetRoomMemberRole.MODERATOR;
 
 /**
  * Identity of a participant in a meeting, carried by the lifecycle events and webhooks
@@ -13,6 +50,11 @@ export interface MeetParticipantPayload {
 	participantIdentity: string;
 	/** Display name of the participant. */
 	participantName: string;
+	/**
+	 * How the participant joined, derived by the server from their credential. Absent for a participant that did
+	 * not join through OpenVidu Meet. See {@link MeetParticipantType}
+	 */
+	type?: MeetParticipantType;
 	/**
 	 * Application-defined identifier echoed from the `participant-external-id` embed attribute /
 	 * `participantExternalId` join option, so the embedding application can correlate the

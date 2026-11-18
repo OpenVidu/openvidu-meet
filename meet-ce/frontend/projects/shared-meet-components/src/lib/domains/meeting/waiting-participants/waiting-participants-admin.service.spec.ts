@@ -8,7 +8,8 @@ import {
 	MeetEventOrigin,
 	MeetWaitingParticipant,
 	MeetWaitingParticipantStatus,
-	MeetWaitingParticipantType,
+	MeetParticipantType,
+	MeetRoomMemberRole,
 	MeetRoomMemberPermissions,
 	MeetSignalType
 } from '@openvidu-meet/typings';
@@ -41,7 +42,8 @@ const WAITING_PATH = `${HttpService.API_PATH_PREFIX}/meetings/${ROOM_ID}/waiting
 const waiter = (identity: string, knockDate = 1000): MeetWaitingParticipant => ({
 	participantIdentity: identity,
 	participantName: identity.toUpperCase(),
-	type: MeetWaitingParticipantType.ANONYMOUS,
+	type: MeetParticipantType.ANONYMOUS,
+	role: MeetRoomMemberRole.SPEAKER,
 	knockDate
 });
 

@@ -8,5 +8,28 @@ content:
             properties:
                 participants:
                     type: array
+                    description: The participants in the meeting, in no particular order.
                     items:
                         $ref: '../../schemas/meet-participant-info.yaml'
+        example:
+            participants:
+                - participantIdentity: 'alice_smith'
+                  participantName: 'Alice Smith'
+                  type: user
+                  role: moderator
+                  joinDate: 1620000000000
+                  audioActive: true
+                  videoActive: true
+                  screenShareActive: false
+                  handRaised: false
+                - participantIdentity: 'ana-a1b2c3'
+                  participantName: 'Ana'
+                  type: anonymous
+                  externalId: 'user-42'
+                  role: speaker
+                  joinDate: 1620000004000
+                  audioActive: false
+                  videoActive: true
+                  screenShareActive: false
+                  handRaised: true
+                  handRaiseDate: 1620000060000

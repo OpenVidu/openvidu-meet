@@ -118,6 +118,9 @@ with no replacement.
 
 - The embedded event `participantLeft` carries the participant's `leaveReason`, the same one the
   [`participantLeft`][3.9-participant-left] webhook carries.
+- [`participantList`][3.10-participant-list], `participantGet`, the webhooks
+  [`participantJoined`][3.9-participant-joined] and [`participantLeft`][3.9-participant-left] and their embedded events
+  carry the participant's `type` (`user`, `identified_guest` or `anonymous`).
 - `chatWrite` lets a participant send chat messages only together with `chatRead`, and
   `mediaChangeVirtualBackground` offers background effects only together with `mediaPublishVideo`. The room
   wizard and the member form disable each of these switches while the permission it needs is off.
@@ -511,6 +514,7 @@ registered on both receives it twice.
 - The `openvidu/openvidu-meet` Docker image resolved its dependencies anew on every build instead of installing the versions in the lockfile. It now installs the locked versions.
 
 [3.10-participant-kick]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/participantKick
+[3.10-participant-list]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/participantList
 [3.10-participant-role-changed]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/participantRoleChangedWebhook
 [3.9-api]: https://openvidu.io/3.9/meet/embedded/reference/api.html
 [3.9-meetings]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/meetingGet
