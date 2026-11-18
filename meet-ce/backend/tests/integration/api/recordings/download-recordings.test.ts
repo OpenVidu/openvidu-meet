@@ -16,12 +16,8 @@ import {
 	startTestServer
 } from '../../../helpers/request-helpers.js';
 
-import {
-	setupMultiRecordingsTestContext,
-	setupRoomMember,
-	setupSingleRoomWithRecording,
-	setupTestUsers
-} from '../../../helpers/test-scenarios.js';
+import { setupRoomMember, setupSingleRoomWithRecording, setupTestUsers } from '../../../helpers/test-scenarios.js';
+import { RoomData } from '../../../interfaces/scenarios.js';
 
 describe('Recording API Tests', () => {
 	beforeAll(async () => {
@@ -48,12 +44,18 @@ describe('Recording API Tests', () => {
 	};
 
 	describe('Download Recordings as ZIP Tests', () => {
-		it('should download a ZIP with multiple recordings', async () => {
-			const testContext = await setupMultiRecordingsTestContext(2, 2, 2);
-			const recordingIds = testContext.rooms.map((room) => room.recordingId!);
-			const roomIds = testContext.rooms.map((roomData) => roomData.room.roomId);
+		let roomData: RoomData;
+		let otherRoomData: RoomData;
 
-			const res = await downloadRecordings(recordingIds);
+		beforeAll(async () => {
+			[roomData, otherRoomData] = await Promise.all([
+				setupSingleRoomWithRecording(true),
+				setupSingleRoomWithRecording(true)
+			]);
+		});
+
+		it('should download a ZIP with multiple recordings', async () => {
+			const res = await downloadRecordings([roomData.recordingId!, otherRoomData.recordingId!]);
 
 			expect(res.status).toBe(200);
 			expect(res.headers['content-type']).toBe('application/zip');
@@ -61,37 +63,34 @@ describe('Recording API Tests', () => {
 
 			const entries = await getZipEntries(res.body);
 			expect(entries.length).toBe(2);
-			// Check that filenames match expected
-			roomIds.forEach((id) => {
-				expect(entries.some((name) => name.includes(id))).toBe(true);
+			[roomData, otherRoomData].forEach(({ room }) => {
+				expect(entries.some((name) => name.includes(room.roomId))).toBe(true);
 			});
 		});
 
 		it('should leave out a recording whose file is no longer in the storage', async () => {
-			const testContext = await setupMultiRecordingsTestContext(2, 2, 2);
-			const [lost, kept] = testContext.rooms;
+			const lost = await setupSingleRoomWithRecording(true);
 			await container.get(BlobStorageService).deleteRecordingMedia(lost.recordingId!);
 
 			try {
-				const res = await downloadRecordings([lost.recordingId!, kept.recordingId!]);
+				const res = await downloadRecordings([lost.recordingId!, roomData.recordingId!]);
 
 				expect(res.status).toBe(200);
-				expect(await getZipEntries(res.body)).toEqual([expect.stringContaining(kept.room.roomId)]);
+				expect(await getZipEntries(res.body)).toEqual([expect.stringContaining(roomData.room.roomId)]);
 			} finally {
 				await container.get(RecordingRepository).deleteByRecordingId(lost.recordingId!);
 			}
 		});
 
 		it('should only include recordings from the room when using a room member token', async () => {
-			const roomData = await setupSingleRoomWithRecording(true);
 			const roomId = roomData.room.roomId;
-			const recordingId = roomData.recordingId!;
 			const roomMemberToken = await generateRoomMemberToken(roomId, { secret: roomData.moderatorSecret });
 
-			const otherRoomData = await setupSingleRoomWithRecording(true);
-			const otherRecordingId = otherRoomData.recordingId!;
-
-			const res = await downloadRecordings([recordingId, otherRecordingId], true, roomMemberToken);
+			const res = await downloadRecordings(
+				[roomData.recordingId!, otherRoomData.recordingId!],
+				true,
+				roomMemberToken
+			);
 
 			expect(res.status).toBe(200);
 			const entries = await getZipEntries(res.body);
@@ -101,13 +100,11 @@ describe('Recording API Tests', () => {
 
 		it('should only include the recordings of the rooms a room manager may download', async () => {
 			const { roomManager } = await setupTestUsers();
-			const roomData = await setupSingleRoomWithRecording(true);
 			await setupRoomMember(
 				roomData.room.roomId,
 				{ userId: roomManager.user.userId, baseRole: MeetRoomMemberRole.MODERATOR },
 				roomManager.accessToken
 			);
-			const otherRoomData = await setupSingleRoomWithRecording(true);
 
 			const res = await downloadRecordings(
 				[otherRoomData.recordingId!, roomData.recordingId!, 'non_existent--EG_000--1234'],
@@ -123,14 +120,11 @@ describe('Recording API Tests', () => {
 		});
 
 		it('should return an error if none of the recordings belong to the room in the token', async () => {
-			const roomData = await setupSingleRoomWithRecording(true);
-			const roomId = roomData.room.roomId;
-			const roomMemberToken = await generateRoomMemberToken(roomId, { secret: roomData.moderatorSecret });
+			const roomMemberToken = await generateRoomMemberToken(roomData.room.roomId, {
+				secret: roomData.moderatorSecret
+			});
 
-			const otherRoomData = await setupSingleRoomWithRecording(true);
-			const otherRecordingId = otherRoomData.recordingId!;
-
-			const res = await downloadRecordings([otherRecordingId], false, roomMemberToken);
+			const res = await downloadRecordings([otherRoomData.recordingId!], false, roomMemberToken);
 
 			expect(res.status).toBe(400);
 			expect(res.body).toHaveProperty('error');
