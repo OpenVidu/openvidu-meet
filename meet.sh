@@ -474,15 +474,9 @@ ensure_playwright_chromium() {
     force_arg="--force"
   fi
 
-  # --with-deps installs system packages through sudo, which only a CI runner can do unattended.
-  local deps_arg=""
-  if [ -n "$CI" ] || [ -n "$GITHUB_ACTIONS" ]; then
-    deps_arg="--with-deps"
-  fi
-
   echo -e "${GREEN}Installing Playwright browsers (chromium)...${NC}"
   # Use a single deterministic CLI path to avoid version-resolution discrepancies.
-  PLAYWRIGHT_BROWSERS_PATH="$PW_BROWSERS_PATH" node ./node_modules/@playwright/test/cli.js install $deps_arg chromium $force_arg
+  PLAYWRIGHT_BROWSERS_PATH="$PW_BROWSERS_PATH" node ./node_modules/@playwright/test/cli.js install chromium $force_arg
   PLAYWRIGHT_VER=$(PLAYWRIGHT_BROWSERS_PATH="$PW_BROWSERS_PATH" node ./node_modules/@playwright/test/cli.js --version 2>/dev/null || true)
 
   echo "installed_at=$(date --iso-8601=seconds)" > "$MARKER_FILE" || true

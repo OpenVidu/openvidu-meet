@@ -137,8 +137,8 @@ pnpm run test:e2e          # Playwright, project `webcomponent`
   testapp and its bridge of this checkout on ports of their own, with the stack's webhook pointed at
   that testapp; then `./meet.sh stack run <name> -- ./meet.sh test-e2e-webcomponent --skip-install --
   <specs>` (it exports `MEET_API_URL`, `MEET_TESTAPP_URL` and `MEET_WEBCOMPONENT_SRC`), and
-  `./meet.sh stack down <name>`. Outside CI the Playwright browser installs without `--with-deps`, so
-  no sudo is needed.
+  `./meet.sh stack down <name>`. The Playwright browser installs without `--with-deps`, so no sudo is
+  needed.
 
   CI splits the specs into three jobs (the `wc-e2e` matrix in `.github/workflows/ci.yaml`, each passing
   its files through `./meet.sh test-e2e-webcomponent -- <args>`); the last one runs every spec the others
