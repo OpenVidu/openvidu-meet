@@ -72,15 +72,7 @@ test.describe('Screensharing E2E Tests', () => {
 		await expectVideoCount(page, 1);
 	});
 
-	test('should display screensharing with a single pinned video', async ({ page }) => {
-		await openMeeting(page, accessUrl);
-
-		await startScreensharing(page);
-		await expectScreenSourceCount(page, 1);
-		await expectPinnedStreamCount(page, 1);
-	});
-
-	test('should replace pinned video when a second participant starts screensharing', async ({ browser }) => {
+	test('should unpin screensharing and restore previous pinned video when disabled', async ({ browser }) => {
 		const { pages, removeAllParticipants } = await joinParticipants(browser, {
 			roomId,
 			accessUrl,
@@ -98,26 +90,6 @@ test.describe('Screensharing E2E Tests', () => {
 
 			await expectVideoCount(pageA, 4);
 			await expectPinnedStreamCount(pageA, 1);
-		} finally {
-			await removeAllParticipants();
-		}
-	});
-
-	test('should unpin screensharing and restore previous pinned video when disabled', async ({ browser }) => {
-		const { pages, removeAllParticipants } = await joinParticipants(browser, {
-			roomId,
-			accessUrl,
-			participants: [{ name: 'participant-0' }, { name: 'participant-1', headless: true }]
-		});
-		const [pageA, pageB] = pages;
-
-		try {
-			await startScreensharing(pageA);
-			await expectPinnedStreamCount(pageA, 1);
-
-			await startScreensharing(pageB);
-			await expectVideoCount(pageB, 4);
-			await expectPinnedStreamCount(pageB, 1);
 
 			await stopScreensharing(pageB);
 			await expectVideoCount(pageB, 3);

@@ -354,67 +354,91 @@ test.describe('Media Devices E2E Tests', () => {
 			await expect(page.locator('#no-video-device-message')).toHaveCount(0);
 		});
 
-		test('opens the prejoin with a single combined getUserMedia', async ({ page }) => {
+		test('opens the prejoin devices once with the shared capture profile, and re-acquires them only when the device changes', async ({
+			page
+		}) => {
 			await installGetUserMediaCounter(page);
 
 			await openPrejoin(page, accessUrl);
 			await expect.poll(() => getFirstVideoTrackDeviceId(page), { timeout: 15_000 }).not.toBeNull();
 
-			const calls = await getGetUserMediaCalls(page);
+			await test.step('opens the prejoin with a single combined getUserMedia', async () => {
+				const calls = await getGetUserMediaCalls(page);
 
-			// Two things are pinned here. There is no throwaway permission probe (LiveKit's
-			// getLocalDevices() with requestPermissions=true would add one before the real tracks), and
-			// the microphone and the camera are asked for together: one request is one browser
-			// permission prompt, where a request per kind costs the participant two.
-			expect(calls.length).toBe(1);
-			expect(calls[0].audio).toBe(true);
-			expect(calls[0].video).toBe(true);
-		});
+				// Two things are pinned here. There is no throwaway permission probe (LiveKit's
+				// getLocalDevices() with requestPermissions=true would add one before the real tracks), and
+				// the microphone and the camera are asked for together: one request is one browser
+				// permission prompt, where a request per kind costs the participant two.
+				expect(calls.length).toBe(1);
+				expect(calls[0].audio).toBe(true);
+				expect(calls[0].video).toBe(true);
+			});
 
-		test('re-selecting the active camera does not re-acquire the track', async ({ page }) => {
-			await installGetUserMediaCounter(page);
+			await test.step('opens both devices with the shared capture profile', async () => {
+				const [videoCall] = await getGetUserMediaCallsFor(page, 'video');
+				const [audioCall] = await getGetUserMediaCallsFor(page, 'audio');
 
-			await openPrejoin(page, accessUrl);
-			await expect.poll(() => getFirstVideoTrackDeviceId(page), { timeout: 15_000 }).not.toBeNull();
+				// Every path that opens the camera restates the capture profile; a path that omits it
+				// captures whatever the browser defaults to, so the published resolution would depend on
+				// how the device happened to be opened.
+				expect(videoCall.videoWidth).toBe(1280);
+				expect(videoCall.videoHeight).toBe(720);
+				expect(audioCall.echoCancellation).toBe(true);
+				expect(audioCall.noiseSuppression).toBe(true);
+				expect(audioCall.autoGainControl).toBe(true);
+			});
 
-			const options = await getVideoDeviceOptions(page);
+			await test.step('re-selecting the active camera does not re-acquire the track', async () => {
+				const options = await getVideoDeviceOptions(page);
 
-			if (options.length === 0) {
-				test.skip(true, 'Device menu unavailable');
-				return;
-			}
+				if (options.length === 0) {
+					test.skip(true, 'Device menu unavailable');
+					return;
+				}
 
-			// Re-select whichever device is currently active (marked selected, or the only option).
-			const active = options.find((option) => option.selected) ?? options[0];
-			const beforeDeviceId = await getFirstVideoTrackDeviceId(page);
-			const callsBefore = await getGetUserMediaCallCount(page);
+				// Re-select whichever device is currently active (marked selected, or the only option).
+				const active = options.find((option) => option.selected) ?? options[0];
+				const beforeDeviceId = await getFirstVideoTrackDeviceId(page);
+				const callsBefore = await getGetUserMediaCallCount(page);
 
-			// Selecting the already-active device must short-circuit: no new
-			// getUserMedia and no track churn. The menu is already open from getVideoDeviceOptions().
-			await page.locator(`#option-${active.label}`).click();
-			await page.waitForTimeout(500);
+				// Selecting the already-active device must short-circuit: no new
+				// getUserMedia and no track churn. The menu is already open from getVideoDeviceOptions().
+				await page.locator(`#option-${active.label}`).click();
+				await page.waitForTimeout(500);
 
-			expect(await getGetUserMediaCallCount(page)).toBe(callsBefore);
-			expect(await getFirstVideoTrackDeviceId(page)).toBe(beforeDeviceId);
-		});
+				expect(await getGetUserMediaCallCount(page)).toBe(callsBefore);
+				expect(await getFirstVideoTrackDeviceId(page)).toBe(beforeDeviceId);
+			});
 
-		test('opens both devices with the shared capture profile', async ({ page }) => {
-			await installGetUserMediaCounter(page);
+			await test.step('switching the microphone opens the chosen device with the capture profile', async () => {
+				const options = await getAudioDeviceOptions(page);
+				const alternate = options.find((option) => !option.selected);
 
-			await openPrejoin(page, accessUrl);
-			await expect.poll(() => getFirstVideoTrackDeviceId(page), { timeout: 15_000 }).not.toBeNull();
+				if (options.length < 2 || !alternate) {
+					test.skip(true, 'Needs at least two distinguishable audio devices to switch between');
+					return;
+				}
 
-			const [videoCall] = await getGetUserMediaCallsFor(page, 'video');
-			const [audioCall] = await getGetUserMediaCallsFor(page, 'audio');
+				const callsBefore = (await getGetUserMediaCallsFor(page, 'audio')).length;
+				await selectAudioDevice(page, alternate.label);
 
-			// Every path that opens the camera restates the capture profile; a path that omits it
-			// captures whatever the browser defaults to, so the published resolution would depend on
-			// how the device happened to be opened.
-			expect(videoCall.videoWidth).toBe(1280);
-			expect(videoCall.videoHeight).toBe(720);
-			expect(audioCall.echoCancellation).toBe(true);
-			expect(audioCall.noiseSuppression).toBe(true);
-			expect(audioCall.autoGainControl).toBe(true);
+				// restartTrack replaces the whole constraint set, so the switch must restate the
+				// microphone capture profile or the new device falls back to the browser defaults.
+				await expect
+					.poll(() => getGetUserMediaCallsFor(page, 'audio').then((calls) => calls.length), {
+						timeout: 15_000
+					})
+					.toBeGreaterThan(callsBefore);
+
+				const switchCall = (await getGetUserMediaCallsFor(page, 'audio')).at(-1)!;
+				expect(switchCall.audioDeviceId).toBeTruthy();
+				expect(switchCall.echoCancellation).toBe(true);
+				expect(switchCall.noiseSuppression).toBe(true);
+				expect(switchCall.autoGainControl).toBe(true);
+
+				// The microphone stays enabled and usable after the switch.
+				expect(await isPrejoinAudioEnabled(page)).toBe(true);
+			});
 		});
 
 		test('turning the camera back on opens the device exactly once', async ({ page }) => {
@@ -443,39 +467,6 @@ test.describe('Media Devices E2E Tests', () => {
 			const videoCalls = await getGetUserMediaCallsFor(page, 'video');
 			expect(videoCalls.length).toBe(1);
 			expect(videoCalls[0].videoWidth).toBe(1280);
-		});
-
-		test('switching the microphone opens the chosen device with the capture profile', async ({ page }) => {
-			await installGetUserMediaCounter(page);
-
-			await openPrejoin(page, accessUrl);
-			await expect.poll(() => getGetUserMediaCallsFor(page, 'audio'), { timeout: 15_000 }).not.toEqual([]);
-
-			const options = await getAudioDeviceOptions(page);
-			const alternate = options.find((option) => !option.selected);
-
-			if (options.length < 2 || !alternate) {
-				test.skip(true, 'Needs at least two distinguishable audio devices to switch between');
-				return;
-			}
-
-			const callsBefore = (await getGetUserMediaCallsFor(page, 'audio')).length;
-			await selectAudioDevice(page, alternate.label);
-
-			// restartTrack replaces the whole constraint set, so the switch must restate the
-			// microphone capture profile or the new device falls back to the browser defaults.
-			await expect
-				.poll(() => getGetUserMediaCallsFor(page, 'audio').then((calls) => calls.length), { timeout: 15_000 })
-				.toBeGreaterThan(callsBefore);
-
-			const switchCall = (await getGetUserMediaCallsFor(page, 'audio')).at(-1)!;
-			expect(switchCall.audioDeviceId).toBeTruthy();
-			expect(switchCall.echoCancellation).toBe(true);
-			expect(switchCall.noiseSuppression).toBe(true);
-			expect(switchCall.autoGainControl).toBe(true);
-
-			// The microphone stays enabled and usable after the switch.
-			expect(await isPrejoinAudioEnabled(page)).toBe(true);
 		});
 	});
 

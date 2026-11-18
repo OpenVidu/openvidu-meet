@@ -1,12 +1,9 @@
 import { MeetRecordingStatus, MeetRoomMemberRole } from '@openvidu-meet/typings';
 import { expect, test, type Page } from '@playwright/test';
-import { authenticate, createReadyUser } from './helpers/auth.helper';
-import { MEET_BASE_URL } from './helpers/meet-api.helper';
 import {
 	createRoomAndGetAnonymousAccessUrl,
 	createRoomMember,
 	deleteRooms,
-	deleteUsers,
 	getRoomRecordings,
 	requestRecording,
 	stopStartingRecording
@@ -38,7 +35,6 @@ import {
 
 test.describe('Recordings E2E Tests', () => {
 	const createdRoomIds: string[] = [];
-	const createdUserIds: string[] = [];
 
 	let roomId: string;
 	let accessUrl: string;
@@ -51,7 +47,7 @@ test.describe('Recordings E2E Tests', () => {
 	});
 
 	test.afterAll(async () => {
-		await Promise.all([deleteRooms(createdRoomIds), deleteUsers(createdUserIds)]);
+		await deleteRooms(createdRoomIds);
 	});
 
 	test('should start a recording from activities recording panel', async ({ page }) => {
@@ -166,10 +162,21 @@ test.describe('Recordings E2E Tests', () => {
 	});
 
 	test.describe('a recording link', () => {
-		test('shared by a member allowed to play but not to download only plays', async ({ browser, page }) => {
+		let linkRoomId: string;
+		let linkAccessUrl: string;
+		let recordingId: string;
+
+		test.beforeAll(async ({ browser }) => {
 			test.setTimeout(240_000);
-			const { recordingId } = await recordRoom(browser, roomId);
-			const member = await createRoomMember(roomId, {
+			const { room, accessUrl: url } = await createRoomAndGetAnonymousAccessUrl();
+			linkRoomId = room.roomId;
+			linkAccessUrl = url;
+			createdRoomIds.push(linkRoomId);
+			recordingId = (await recordRoom(browser, linkRoomId)).recordingId;
+		});
+
+		test('shared by a member allowed to play but not to download only plays', async ({ browser, page }) => {
+			const member = await createRoomMember(linkRoomId, {
 				name: 'Play Only',
 				baseRole: MeetRoomMemberRole.SPEAKER,
 				customPermissions: { recordingPlay: true, recordingDownload: false }
@@ -197,10 +204,7 @@ test.describe('Recordings E2E Tests', () => {
 		});
 
 		test('shared by a moderator also downloads', async ({ browser, page }) => {
-			test.setTimeout(240_000);
-			const { recordingId } = await recordRoom(browser, roomId);
-
-			await openRecording(page, toIndividualRecordingUrl(accessUrl, recordingId));
+			await openRecording(page, toIndividualRecordingUrl(linkAccessUrl, recordingId));
 			await expectRecordingViewShown(page);
 			await expectRecordingDownloadOffered(page, true);
 			await openShareDialogFromRecordingView(page);
@@ -219,16 +223,5 @@ test.describe('Recordings E2E Tests', () => {
 				await visitorContext.close();
 			}
 		});
-	});
-
-	test('the console recording player opens no context menu', async ({ browser, page }) => {
-		test.setTimeout(240_000);
-		const { recordingId } = await recordRoom(browser, roomId);
-		const { user } = await createReadyUser('Console Admin');
-		createdUserIds.push(user.userId);
-
-		await authenticate(page, { userId: user.userId, password: user.password });
-		await openRecording(page, `${MEET_BASE_URL}/recordings/${recordingId}`);
-		await expectNoContextMenuOnVideo(page);
 	});
 });

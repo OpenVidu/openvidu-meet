@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { MeetRoomStatus } from '@openvidu-meet/typings';
 import { createRoomAndGetAnonymousAccessUrl, deleteRooms, getRoomStatus } from './helpers/meet-api.helper';
-import { openMeeting, openPrejoin } from './helpers/meeting-navigation.helper';
+import { clickJoinMeeting, openPrejoin } from './helpers/meeting-navigation.helper';
 
 /**
  * When the meeting starts, which is when Meet creates the LiveKit room. A participant choosing
@@ -25,20 +25,22 @@ test.describe('Meeting start E2E Tests', () => {
 		await deleteRooms(createdRoomIds);
 	});
 
-	test('does not start the meeting while the participant is still choosing devices', async ({ page }) => {
+	test('starts the meeting only when the participant joins from the prejoin', async ({ page }) => {
 		await openPrejoin(page, accessUrl);
 
-		// The dwell is what makes this meaningful: the status is read repeatedly over a window long
-		// enough for a room created at join screen submit to have been reported started.
-		for (let attempt = 0; attempt < 5; attempt++) {
-			expect(await getRoomStatus(roomId)).toBe(MeetRoomStatus.OPEN);
-			await page.waitForTimeout(1_000);
-		}
-	});
+		await test.step('does not start the meeting while the participant is still choosing devices', async () => {
+			// The dwell is what makes this meaningful: the status is read repeatedly over a window long
+			// enough for a room created at join screen submit to have been reported started.
+			for (let attempt = 0; attempt < 5; attempt++) {
+				expect(await getRoomStatus(roomId)).toBe(MeetRoomStatus.OPEN);
+				await page.waitForTimeout(1_000);
+			}
+		});
 
-	test('starts the meeting when the participant joins from the prejoin', async ({ page }) => {
-		await openMeeting(page, accessUrl);
+		await test.step('starts the meeting when the participant joins from the prejoin', async () => {
+			await clickJoinMeeting(page);
 
-		await expect.poll(() => getRoomStatus(roomId), { timeout: 15_000 }).toBe(MeetRoomStatus.ACTIVE_MEETING);
+			await expect.poll(() => getRoomStatus(roomId), { timeout: 15_000 }).toBe(MeetRoomStatus.ACTIVE_MEETING);
+		});
 	});
 });

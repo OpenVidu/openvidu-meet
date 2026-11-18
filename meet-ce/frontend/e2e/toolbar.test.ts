@@ -21,31 +21,29 @@ test.describe('Toolbar Buttons E2E Tests', () => {
 		await deleteRooms(createdRoomIds);
 	});
 
-	test('should toggle mute/unmute on the local microphone and update the icon accordingly', async ({ page }) => {
+	test('should toggle the local microphone and camera and open the layout settings', async ({ page }) => {
 		await openMeeting(page, accessUrl);
 
-		await toggleMicrophone(page);
-		await expect(page.locator('#mic-btn #mic_off')).toBeVisible();
+		await test.step('should toggle mute/unmute on the local camera and update the icon accordingly', async () => {
+			await toggleCamera(page);
+			await expect(page.locator('#camera-btn #videocam_off')).toBeVisible();
 
-		await toggleMicrophone(page);
-		await expect(page.locator('#mic-btn #mic')).toBeVisible();
-	});
+			await toggleCamera(page);
+			await expect(page.locator('#camera-btn #videocam')).toBeVisible();
+		});
 
-	test('should toggle mute/unmute on the local camera and update the icon accordingly', async ({ page }) => {
-		await openMeeting(page, accessUrl);
+		await test.step('should open settings panel clicking layout toolbar button', async () => {
+			await openLayoutSettingsPanel(page);
+			await expect(page.locator('#layout-smart-mosaic')).toBeVisible();
+		});
 
-		await toggleCamera(page);
-		await expect(page.locator('#camera-btn #videocam_off')).toBeVisible();
+		await test.step('should toggle mute/unmute on the local microphone and update the icon accordingly', async () => {
+			await toggleMicrophone(page);
+			await expect(page.locator('#mic-btn #mic_off')).toBeVisible();
 
-		await toggleCamera(page);
-		await expect(page.locator('#camera-btn #videocam')).toBeVisible();
-	});
-
-	test('should open settings panel clicking layout toolbar button', async ({ page }) => {
-		await openMeeting(page, accessUrl);
-
-		await openLayoutSettingsPanel(page);
-		await expect(page.locator('#layout-smart-mosaic')).toBeVisible();
+			await toggleMicrophone(page);
+			await expect(page.locator('#mic-btn #mic')).toBeVisible();
+		});
 	});
 
 	const toolbarButtonsOffScreen = (page: Page) =>

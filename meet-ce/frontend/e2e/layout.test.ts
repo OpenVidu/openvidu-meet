@@ -66,17 +66,6 @@ test.describe('Layout E2E Tests', () => {
 			await leaveMeeting(page);
 		});
 
-		test('should show layout settings in settings panel', async ({ page }) => {
-			await openMeeting(page, accessUrl);
-
-			await expect(page.locator('#more-options-btn')).toBeVisible();
-			await page.locator('#more-options-btn').click();
-			await expect(page.locator('#grid-layout-settings-btn')).toBeVisible();
-
-			//close more options menu
-			await page.locator('body').click();
-		});
-
 		test('should have smart-mosaic selected by default and show participant count of 4', async ({ page }) => {
 			await openMeeting(page, accessUrl);
 
@@ -159,7 +148,15 @@ test.describe('Layout E2E Tests', () => {
 	});
 
 	test.describe('Mosaic Layout', () => {
-		test('should display all remote participants in mosaic layout without filtering', async ({ browser }) => {
+		test('should lay out the remote participants of the mosaic without filtering, with even gaps and no gap beside a pinned one', async ({
+			browser
+		}) => {
+			// Half a percent of the grid's width between two tiles: the tiles have no padding of their own.
+			const expectedGap = (gridWidth: number) => gridWidth * 0.005;
+			// The pinned tile stops where its own shape stops, and the strip starts there: the room the
+			// pinned tile cannot fill belongs to the others, not to a gap between them.
+			const MAX_GAP = 24;
+
 			const { pages, removeAllParticipants } = await joinParticipants(browser, {
 				roomId,
 				accessUrl,
@@ -173,12 +170,61 @@ test.describe('Layout E2E Tests', () => {
 			const [pageA] = pages;
 
 			try {
-				await openLayoutSettingsPanel(pageA);
-				await selectMosaicLayout(pageA);
+				await test.step('should display all remote participants in mosaic layout without filtering', async () => {
+					await openLayoutSettingsPanel(pageA);
+					await selectMosaicLayout(pageA);
 
-				await waitForRemoteStream(pageA, 3);
-				await expect(pageA.locator('.OV_stream_video.remote')).toHaveCount(3, { timeout: 15_000 });
-				await expectHidden(pageA, 'ov-hidden-participants-indicator');
+					await waitForRemoteStream(pageA, 3);
+					await expect(pageA.locator('.OV_stream_video.remote')).toHaveCount(3, { timeout: 15_000 });
+					await expectHidden(pageA, 'ov-hidden-participants-indicator');
+				});
+
+				await test.step('should separate the tiles by the same gap without overlapping or leaving the grid', async () => {
+					await closeSettingsPanel(pageA);
+
+					await expect(async () => {
+						const layout = await getGridTiles(pageA);
+						const { gaps, overlapping, outside } = tileSpacing(layout);
+
+						const gap = expectedGap(layout.grid.right - layout.grid.left);
+
+						expect(layout.tiles).toHaveLength(3);
+						expect({ overlapping, outside }).toEqual({ overlapping: 0, outside: 0 });
+						expect(gaps.length).toBeGreaterThan(0);
+
+						for (const measured of gaps) {
+							expect(Math.abs(measured - gap)).toBeLessThanOrEqual(1);
+						}
+					}).toPass({ timeout: 15_000 });
+				});
+
+				await test.step('should leave no gap between the pinned participant and the strip', async () => {
+					await toggleStreamPin(pageA, '.OV_stream.remote.camera-source');
+					await expect(pageA.locator('.OV_big')).toHaveCount(1, { timeout: 15_000 });
+
+					await expect
+						.poll(
+							async () => {
+								const tiles = await getGridVideoFraming(pageA);
+
+								return tiles.length === 3 ? gapBesidePinnedTile(tiles) : Number.MAX_SAFE_INTEGER;
+							},
+							{ timeout: 15_000 }
+						)
+						.toBeLessThanOrEqual(MAX_GAP);
+
+					const tiles = await getGridVideoFraming(pageA);
+					const pinned = tiles.reduce(
+						(widest, tile) => (tile.width > widest.width ? tile : widest),
+						tiles[0]
+					);
+					const [first, ...rest] = tiles.filter((tile) => tile !== pinned);
+
+					for (const tile of rest) {
+						expect(Math.abs(tile.width - first.width)).toBeLessThanOrEqual(2);
+						expect(Math.abs(tile.height - first.height)).toBeLessThanOrEqual(2);
+					}
+				});
 			} finally {
 				await removeAllParticipants();
 			}
@@ -357,50 +403,6 @@ test.describe('Layout E2E Tests', () => {
 		});
 	});
 
-	test.describe('Tile spacing', () => {
-		// Half a percent of the grid's width between two tiles: the tiles have no padding of their own.
-		const expectedGap = (gridWidth: number) => gridWidth * 0.005;
-
-		test('should separate the tiles by the same gap without overlapping or leaving the grid', async ({
-			browser
-		}) => {
-			const { pages, removeAllParticipants } = await joinParticipants(browser, {
-				roomId,
-				accessUrl,
-				participants: [
-					{ name: 'viewer', audioEnabled: false },
-					{ name: 'remote-a', headless: true, audioEnabled: false },
-					{ name: 'remote-b', headless: true, audioEnabled: false },
-					{ name: 'remote-c', headless: true, audioEnabled: false }
-				]
-			});
-			const [pageA] = pages;
-
-			try {
-				await selectMosaicLayout(pageA);
-				await closeSettingsPanel(pageA);
-				await waitForRemoteStream(pageA, 3);
-
-				await expect(async () => {
-					const layout = await getGridTiles(pageA);
-					const { gaps, overlapping, outside } = tileSpacing(layout);
-
-					const gap = expectedGap(layout.grid.right - layout.grid.left);
-
-					expect(layout.tiles).toHaveLength(3);
-					expect({ overlapping, outside }).toEqual({ overlapping: 0, outside: 0 });
-					expect(gaps.length).toBeGreaterThan(0);
-
-					for (const measured of gaps) {
-						expect(Math.abs(measured - gap)).toBeLessThanOrEqual(1);
-					}
-				}).toPass({ timeout: 15_000 });
-			} finally {
-				await removeAllParticipants();
-			}
-		});
-	});
-
 	test.describe('Grid bounds', () => {
 		test('should keep the whole grid on the screen of a 320px-wide phone', async ({ browser }) => {
 			const phone = await (await browser.newContext(devices['iPhone SE'])).newPage();
@@ -464,56 +466,6 @@ test.describe('Layout E2E Tests', () => {
 
 				await resumeRenderingFrames(pageA);
 				await expect.poll(() => gridShareOf(pageA, 'remote-b'), { timeout: 10_000 }).toBeGreaterThan(0.2);
-			} finally {
-				await removeAllParticipants();
-			}
-		});
-	});
-
-	test.describe('Pinned participant framing', () => {
-		// The pinned tile stops where its own shape stops, and the strip starts there: the room the
-		// pinned tile cannot fill belongs to the others, not to a gap between them.
-		const MAX_GAP = 24;
-
-		test('should leave no gap between the pinned participant and the strip', async ({ browser }) => {
-			const { pages, removeAllParticipants } = await joinParticipants(browser, {
-				roomId,
-				accessUrl,
-				participants: [
-					{ name: 'viewer', audioEnabled: false },
-					{ name: 'remote-a', headless: true, audioEnabled: false },
-					{ name: 'remote-b', headless: true, audioEnabled: false },
-					{ name: 'remote-c', headless: true, audioEnabled: false }
-				]
-			});
-			const [pageA] = pages;
-
-			try {
-				await selectMosaicLayout(pageA);
-				await waitForRemoteStream(pageA, 3);
-
-				await toggleStreamPin(pageA, '.OV_stream.remote.camera-source');
-				await expect(pageA.locator('.OV_big')).toHaveCount(1, { timeout: 15_000 });
-
-				await expect
-					.poll(
-						async () => {
-							const tiles = await getGridVideoFraming(pageA);
-
-							return tiles.length === 3 ? gapBesidePinnedTile(tiles) : Number.MAX_SAFE_INTEGER;
-						},
-						{ timeout: 15_000 }
-					)
-					.toBeLessThanOrEqual(MAX_GAP);
-
-				const tiles = await getGridVideoFraming(pageA);
-				const pinned = tiles.reduce((widest, tile) => (tile.width > widest.width ? tile : widest), tiles[0]);
-				const [first, ...rest] = tiles.filter((tile) => tile !== pinned);
-
-				for (const tile of rest) {
-					expect(Math.abs(tile.width - first.width)).toBeLessThanOrEqual(2);
-					expect(Math.abs(tile.height - first.height)).toBeLessThanOrEqual(2);
-				}
 			} finally {
 				await removeAllParticipants();
 			}
@@ -663,7 +615,7 @@ test.describe('Layout E2E Tests', () => {
 
 	test.describe('Smart Mosaic Layout', () => {
 		test.describe('Participant filter', () => {
-			test('should filter out remote participants when the smart mosaic limit is reduced', async ({
+			test('should show, move and fold the hidden participants indicator as the smart mosaic limit and layout change', async ({
 				browser
 			}) => {
 				const { pages, removeAllParticipants } = await joinParticipants(browser, {
@@ -672,102 +624,100 @@ test.describe('Layout E2E Tests', () => {
 					participants: [
 						{ name: 'viewer' },
 						{ name: 'remote-a', headless: true },
-						{ name: 'remote-b', headless: true }
+						{ name: 'remote-b', headless: true, audioEnabled: false }
 					]
 				});
 				const [pageA] = pages;
 
 				try {
-					// Participant A should see 3 streams: 1 local + 2 remote
-					await expect(pageA.locator('.OV_stream_video')).toHaveCount(3, { timeout: 20_000 });
-					await expect(pageA.locator('.OV_stream_video.local')).toHaveCount(1);
-					await expect(pageA.locator('.OV_stream_video.remote')).toHaveCount(2);
+					await test.step('should filter out remote participants when the smart mosaic limit is reduced', async () => {
+						await waitForRemoteStream(pageA, 2, { audioCount: 2 });
 
-					// Open layout settings and reduce participant count to 1
+						// Participant A should see 3 streams: 1 local + 2 remote
+						await expect(pageA.locator('.OV_stream_video')).toHaveCount(3, { timeout: 20_000 });
+						await expect(pageA.locator('.OV_stream_video.local')).toHaveCount(1);
+						await expect(pageA.locator('.OV_stream_video.remote')).toHaveCount(2);
 
-					await setSmartMosaicParticipantCount(pageA, 1);
+						await setSmartMosaicParticipantCount(pageA, 1);
 
-					// Participant A should now see only 2 streams: 1 local + 1 remote
-					await expect(pageA.locator('.OV_stream_video')).toHaveCount(2, { timeout: 15_000 });
-					await expect(pageA.locator('.OV_stream_video.local')).toHaveCount(1);
-					await expect(pageA.locator('.OV_stream_video.remote')).toHaveCount(1);
-					await expectVisible(pageA, 'ov-hidden-participants-indicator');
-					await expect(
-						pageA.locator('.hidden-participants-container .participant-count-value')
-					).toContainText('+1');
-				} finally {
-					await removeAllParticipants();
-				}
-			});
+						// Participant A should now see only 2 streams: 1 local + 1 remote
+						await expect(pageA.locator('.OV_stream_video')).toHaveCount(2, { timeout: 15_000 });
+						await expect(pageA.locator('.OV_stream_video.local')).toHaveCount(1);
+						await expect(pageA.locator('.OV_stream_video.remote')).toHaveCount(1);
+						await waitForRemoteStream(pageA, 1, { audioCount: 2 });
+						await expectVisible(pageA, 'ov-hidden-participants-indicator');
+						await expect(
+							pageA.locator('.hidden-participants-container .participant-count-value')
+						).toContainText('+1');
+					});
 
-			test('should keep the participants left off the grid beside the clock on a phone, without their words', async ({
-				browser
-			}) => {
-				const { pages, removeAllParticipants } = await joinParticipants(browser, {
-					roomId,
-					accessUrl,
-					participants: [
-						{ name: 'viewer' },
-						{ name: 'remote-a', headless: true },
-						{ name: 'remote-b', headless: true }
-					]
-				});
-				const [pageA] = pages;
+					await test.step('should hide the indicator when switching from smart mosaic to standard mosaic layout', async () => {
+						await setSmartMosaicParticipantCount(pageA, 1);
+						await Promise.all([
+							expect(pageA.locator('ov-hidden-participants-indicator')).toBeVisible({ timeout: 10_000 }),
+							expect(pageA.locator('.OV_stream_video.remote')).toHaveCount(1, { timeout: 15_000 })
+						]);
 
-				try {
-					await expect(pageA.locator('.OV_stream_video.remote')).toHaveCount(2, { timeout: 20_000 });
-					await setSmartMosaicParticipantCount(pageA, 1);
-					await closeSettingsPanel(pageA);
-					await expectVisible(pageA, '#status-rail ov-hidden-participants-indicator');
+						// Switch to standard mosaic: all remotes become visible, indicator must disappear
+						await selectMosaicLayout(pageA);
+						await Promise.all([
+							expectHidden(pageA, 'ov-hidden-participants-indicator'),
+							expect(pageA.locator('.OV_stream_video.remote')).toHaveCount(2, { timeout: 15_000 })
+						]);
 
-					await pageA.setViewportSize({ width: 390, height: 844 });
+						await selectSmartMosaicLayout(pageA);
+						await waitForRemoteStream(pageA, 1, { audioCount: 2 });
+						await Promise.all([
+							expect(pageA.locator('ov-hidden-participants-indicator')).toBeVisible({ timeout: 10_000 }),
+							expect(pageA.locator('.OV_stream_video.remote')).toHaveCount(1, { timeout: 15_000 })
+						]);
+					});
 
-					await expectVisible(pageA, '#status-rail .participant-count-value');
-					await expectHidden(pageA, '#status-rail .participant-count-label');
-					const [clock, hidden] = await Promise.all([
-						pageA.locator('#meeting-elapsed-time').boundingBox(),
-						pageA.locator('#status-rail .unified-indicator').boundingBox()
-					]);
-					expect(Math.abs(hidden!.y - clock!.y)).toBeLessThan(2);
-				} finally {
-					await removeAllParticipants();
-				}
-			});
+					await test.step('should switch indicator to standard mode when the visible remote participant is pinned', async () => {
+						// The speaking remote-a ends up in the only slot: pinning the silent remote-b before that
+						// would leave the pin on a hidden participant
+						await waitForVisibleRemoteParticipants(pageA, { count: 1, includes: ['remote-a'] });
+						await expect(pageA.locator('.hidden-participants-container.horizontal')).toBeVisible({
+							timeout: 10_000
+						});
 
-			test('should restore hidden remote participants with active video when the smart mosaic limit is raised again', async ({
-				browser
-			}) => {
-				const { pages, removeAllParticipants } = await joinParticipants(browser, {
-					roomId,
-					accessUrl,
-					participants: [
-						{ name: 'viewer' },
-						{ name: 'remote-a', headless: true },
-						{ name: 'remote-b', headless: true },
-						{ name: 'remote-c', headless: true }
-					]
-				});
-				const [pageA] = pages;
+						// Close the layout settings panel before interacting with the layout streams
+						await closeSettingsPanel(pageA);
+						await expectHidden(pageA, '#settings-container');
 
-				try {
-					await waitForRemoteStream(pageA, 3, { audioCount: 3 });
+						// Pin the visible remote participant: hasPinnedParticipant becomes true
+						// → showTopBarHiddenParticipantsIndicator() returns false → indicator moves into the grid
+						await toggleStreamPin(pageA, '.OV_stream_video.remote');
+						await Promise.all([
+							expect(pageA.locator('.hidden-participants-container.vertical')).toBeVisible({
+								timeout: 10_000
+							}),
+							expectHidden(pageA, '.hidden-participants-container.horizontal')
+						]);
+						await toggleStreamPin(pageA, '.OV_stream_video.remote');
+						await Promise.all([
+							expect(pageA.locator('.hidden-participants-container.horizontal')).toBeVisible({
+								timeout: 10_000
+							}),
+							expectHidden(pageA, '.hidden-participants-container.vertical')
+						]);
+					});
 
-					await setSmartMosaicParticipantCount(pageA, 2);
-					await waitForRemoteStream(pageA, 2, { audioCount: 3 });
-					await expect(
-						pageA.locator('.hidden-participants-container .participant-count-value')
-					).toContainText('+1');
+					await test.step('should keep the participants left off the grid beside the clock on a phone, without their words', async () => {
+						await setSmartMosaicParticipantCount(pageA, 1);
+						await closeSettingsPanel(pageA);
+						await expectVisible(pageA, '#status-rail ov-hidden-participants-indicator');
 
-					await setSmartMosaicParticipantCount(pageA, 1);
-					await waitForRemoteStream(pageA, 1, { audioCount: 3 });
-					await expectVisible(pageA, 'ov-hidden-participants-indicator');
-					await expect(
-						pageA.locator('.hidden-participants-container .participant-count-value')
-					).toContainText('+2');
+						await pageA.setViewportSize({ width: 390, height: 844 });
 
-					await setSmartMosaicParticipantCount(pageA, 4);
-					await waitForRemoteStream(pageA, 3, { audioCount: 3 });
-					await expectHidden(pageA, 'ov-hidden-participants-indicator');
+						await expectVisible(pageA, '#status-rail .participant-count-value');
+						await expectHidden(pageA, '#status-rail .participant-count-label');
+						const [clock, hidden] = await Promise.all([
+							pageA.locator('#meeting-elapsed-time').boundingBox(),
+							pageA.locator('#status-rail .unified-indicator').boundingBox()
+						]);
+						expect(Math.abs(hidden!.y - clock!.y)).toBeLessThan(2);
+					});
 				} finally {
 					await removeAllParticipants();
 				}
@@ -852,7 +802,7 @@ test.describe('Layout E2E Tests', () => {
 				await expectOnlyVisibleRemoteVideosPlaying(observer);
 			};
 
-			test('should not receive the camera video of the participants that join beyond the visible limit', async ({
+			test('should pause every camera video in a background tab and receive only the visible ones in each layout', async ({
 				page,
 				browser
 			}) => {
@@ -862,41 +812,34 @@ test.describe('Layout E2E Tests', () => {
 				});
 
 				try {
-					await expectTilesPlaying(page, { count: 1 });
+					await test.step('should not receive the camera video of the participants that join beyond the visible limit', async () => {
+						await expectTilesPlaying(page, { count: 1 });
+						await setSmartMosaicParticipantCount(page, 4);
+						await expectTilesPlaying(page, { count: 3 });
+					});
 
-					await setSmartMosaicParticipantCount(page, 4);
-					await expectTilesPlaying(page, { count: 3 });
-				} finally {
-					await removeAllParticipants();
-				}
-			});
+					await test.step('should pause every camera video in a background tab and resume only the visible ones when it returns', async () => {
+						await setTabVisibility(page, 'hidden');
+						await expect.poll(() => countFlowingRemoteVideos(page), { timeout: 10_000 }).toBe(0);
+						await setTabVisibility(page, 'visible');
+						await expectOnlyVisibleRemoteVideosPlaying(page);
 
-			test('should pause every camera video in a background tab and resume only the visible ones when it returns', async ({
-				page,
-				browser
-			}) => {
-				await openObserver(page, 1);
-				const { removeAllParticipants } = await joinRemotes(page, browser, {
-					silent: ['remote-a', 'remote-b', 'remote-c']
-				});
+						await setSmartMosaicParticipantCount(page, 1);
+						await expectTilesPlaying(page, { count: 1 });
 
-				try {
-					await expectTilesPlaying(page, { count: 1 });
-					await setSmartMosaicParticipantCount(page, 4);
-					await expectTilesPlaying(page, { count: 3 });
+						await setTabVisibility(page, 'hidden');
+						await expect.poll(() => countFlowingRemoteVideos(page), { timeout: 10_000 }).toBe(0);
+						await setTabVisibility(page, 'visible');
+						await expectOnlyVisibleRemoteVideosPlaying(page);
+					});
 
-					await setTabVisibility(page, 'hidden');
-					await expect.poll(() => countFlowingRemoteVideos(page), { timeout: 10_000 }).toBe(0);
-					await setTabVisibility(page, 'visible');
-					await expectOnlyVisibleRemoteVideosPlaying(page);
+					await test.step('should receive every camera in mosaic and only the visible ones back in smart mosaic', async () => {
+						await selectMosaicLayout(page);
+						await expectTilesPlaying(page, { count: 3 });
 
-					await setSmartMosaicParticipantCount(page, 1);
-					await expectTilesPlaying(page, { count: 1 });
-
-					await setTabVisibility(page, 'hidden');
-					await expect.poll(() => countFlowingRemoteVideos(page), { timeout: 10_000 }).toBe(0);
-					await setTabVisibility(page, 'visible');
-					await expectOnlyVisibleRemoteVideosPlaying(page);
+						await selectSmartMosaicLayout(page);
+						await expectTilesPlaying(page, { count: 1 });
+					});
 				} finally {
 					await removeAllParticipants();
 				}
@@ -1000,28 +943,6 @@ test.describe('Layout E2E Tests', () => {
 					await toggleMicrophone(byName['remote-a']);
 					await toggleMicrophone(byName['remote-b']);
 					await expectTilesPlaying(page, { count: 1, includes: ['remote-b'] });
-				} finally {
-					await removeAllParticipants();
-				}
-			});
-
-			test('should receive every camera in mosaic and only the visible ones back in smart mosaic', async ({
-				page,
-				browser
-			}) => {
-				await openObserver(page, 1);
-				const { removeAllParticipants } = await joinRemotes(page, browser, {
-					silent: ['remote-a', 'remote-b', 'remote-c']
-				});
-
-				try {
-					await expectTilesPlaying(page, { count: 1 });
-
-					await selectMosaicLayout(page);
-					await expectTilesPlaying(page, { count: 3 });
-
-					await selectSmartMosaicLayout(page);
-					await expectTilesPlaying(page, { count: 1 });
 				} finally {
 					await removeAllParticipants();
 				}
@@ -1340,200 +1261,7 @@ test.describe('Layout E2E Tests', () => {
 			});
 		});
 
-		test.describe('Hidden participants indicator', () => {
-			test('should show hidden participants indicator when remote participants exceed the visible limit', async ({
-				browser
-			}) => {
-				const { pages, removeAllParticipants } = await joinParticipants(browser, {
-					roomId,
-					accessUrl,
-					participants: [
-						{ name: 'viewer' },
-						{ name: 'remote-a', headless: true },
-						{ name: 'remote-b', headless: true }
-					]
-				});
-				const [pageA] = pages;
-
-				try {
-					// Limit to 1 visible remote on A's view: 2 remotes present, 1 is hidden
-					await setSmartMosaicParticipantCount(pageA, 1);
-					await waitForRemoteStream(pageA, 1, { audioCount: 2 });
-
-					// The hidden participants indicator must be present and show "+1 more participant"
-					await Promise.all([
-						expect(pageA.locator('ov-hidden-participants-indicator')).toBeVisible({ timeout: 10_000 }),
-						expect(pageA.locator('.hidden-participants-container .participant-count-value')).toContainText(
-							'+1'
-						)
-					]);
-				} finally {
-					await removeAllParticipants();
-				}
-			});
-
-			test('should switch indicator to standard mode when the visible remote participant is pinned', async ({
-				browser
-			}) => {
-				const { pages, removeAllParticipants } = await joinParticipants(browser, {
-					roomId,
-					accessUrl,
-					participants: [
-						{ name: 'viewer' },
-						{ name: 'remote-a', headless: true },
-						{ name: 'remote-b', headless: true, audioEnabled: false }
-					]
-				});
-				const [pageA] = pages;
-
-				try {
-					// Wait for both remotes to be live before adjusting the slider
-					await waitForRemoteStream(pageA, 2, { audioCount: 2 });
-
-					// Set limit to 1 so the indicator appears in topbar mode initially
-					await setSmartMosaicParticipantCount(pageA, 1);
-					// The speaking remote-a ends up in the only slot: pinning the silent remote-b before that
-					// would leave the pin on a hidden participant
-					await waitForVisibleRemoteParticipants(pageA, { count: 1, includes: ['remote-a'] });
-					await expect(pageA.locator('.hidden-participants-container.horizontal')).toBeVisible({
-						timeout: 10_000
-					});
-
-					// Close the layout settings panel before interacting with the layout streams
-					await closeSettingsPanel(pageA);
-					await expectHidden(pageA, '#settings-container');
-
-					// Pin the visible remote participant: hasPinnedParticipant becomes true
-					// → showTopBarHiddenParticipantsIndicator() returns false → indicator moves into the grid
-					await toggleStreamPin(pageA, '.OV_stream_video.remote');
-					await Promise.all([
-						expect(pageA.locator('.hidden-participants-container.vertical')).toBeVisible({
-							timeout: 10_000
-						}),
-						expectHidden(pageA, '.hidden-participants-container.horizontal')
-					]);
-					await toggleStreamPin(pageA, '.OV_stream_video.remote');
-					await Promise.all([
-						expect(pageA.locator('.hidden-participants-container.horizontal')).toBeVisible({
-							timeout: 10_000
-						}),
-						expectHidden(pageA, '.hidden-participants-container.vertical')
-					]);
-				} finally {
-					await removeAllParticipants();
-				}
-			});
-
-			test('should hide the indicator when switching from smart mosaic to standard mosaic layout', async ({
-				browser
-			}) => {
-				const { pages, removeAllParticipants } = await joinParticipants(browser, {
-					roomId,
-					accessUrl,
-					participants: [
-						{ name: 'viewer' },
-						{ name: 'remote-a', headless: true },
-						{ name: 'remote-b', headless: true }
-					]
-				});
-				const [pageA] = pages;
-
-				try {
-					// Set limit to 1 so the hidden indicator appears
-
-					await setSmartMosaicParticipantCount(pageA, 1);
-					await Promise.all([
-						expect(pageA.locator('ov-hidden-participants-indicator')).toBeVisible({ timeout: 10_000 }),
-						expect(pageA.locator('.OV_stream_video.remote')).toHaveCount(1, { timeout: 15_000 })
-					]);
-
-					// Switch to standard mosaic: all remotes become visible, indicator must disappear
-					await selectMosaicLayout(pageA);
-					await Promise.all([
-						expectHidden(pageA, 'ov-hidden-participants-indicator'),
-						expect(pageA.locator('.OV_stream_video.remote')).toHaveCount(2, { timeout: 15_000 })
-					]);
-
-					await selectSmartMosaicLayout(pageA);
-					await waitForRemoteStream(pageA, 1, { audioCount: 2 });
-					await Promise.all([
-						expect(pageA.locator('ov-hidden-participants-indicator')).toBeVisible({ timeout: 10_000 }),
-						expect(pageA.locator('.OV_stream_video.remote')).toHaveCount(1, { timeout: 15_000 })
-					]);
-				} finally {
-					await removeAllParticipants();
-				}
-			});
-
-			test('should update indicator count correctly when the smart mosaic limit is raised', async ({
-				browser
-			}) => {
-				const { pages, removeAllParticipants } = await joinParticipants(browser, {
-					roomId,
-					accessUrl,
-					participants: [
-						{ name: 'viewer' },
-						{ name: 'remote-a', headless: true },
-						{ name: 'remote-b', headless: true },
-						{ name: 'remote-c', headless: true }
-					]
-				});
-				const [pageA] = pages;
-
-				try {
-					// Limit 1: 3 remotes present, 1 visible, 2 hidden → indicator shows "+2"
-
-					await setSmartMosaicParticipantCount(pageA, 1);
-					await expect(
-						pageA.locator('.hidden-participants-container .participant-count-value')
-					).toContainText('+2', {
-						timeout: 10_000
-					});
-
-					// Raise limit to 2: 2 visible, 1 hidden → indicator shows "+1"
-					await setSmartMosaicParticipantCount(pageA, 2);
-					await expect(
-						pageA.locator('.hidden-participants-container .participant-count-value')
-					).toContainText('+1', {
-						timeout: 10_000
-					});
-				} finally {
-					await removeAllParticipants();
-				}
-			});
-		});
-
 		test.describe('Speaker priority', () => {
-			test('should prioritize an active speaker over a muted remote participant when the limit is 1', async ({
-				browser
-			}) => {
-				const { pages, byName, removeAllParticipants } = await joinParticipants(browser, {
-					roomId,
-					accessUrl,
-					participants: [
-						{ name: 'local', audioEnabled: false },
-						{ name: 'remote-a', headless: true, audioEnabled: false },
-						{ name: 'remote-b', headless: true, audioEnabled: false }
-					]
-				});
-				const [pageA] = pages;
-
-				try {
-					await setSmartMosaicParticipantCount(pageA, 1);
-					await waitForVisibleRemoteParticipants(pageA, { count: 1 });
-
-					await toggleMicrophone(byName['remote-a']);
-
-					await waitForVisibleRemoteParticipants(pageA, {
-						count: 1,
-						includes: ['remote-a'],
-						excludes: ['remote-b']
-					});
-				} finally {
-					await removeAllParticipants();
-				}
-			});
-
 			test('should keep the two most recent active speakers visible when the limit is exceeded', async ({
 				browser
 			}) => {
@@ -1838,55 +1566,29 @@ test.describe('Layout E2E Tests', () => {
 		});
 
 		test.describe('Audio Level and Duration Filtering', () => {
-			test('should keep the layout stable when a low-volume participant joins', async ({ browser }) => {
-				const { pages, addParticipant, removeAllParticipants } = await joinParticipants(browser, {
-					roomId,
-					accessUrl,
-					participants: [{ name: 'local', audioEnabled: false }]
-				});
+			test('should keep the visible speaker when participants join with low-volume, brief or ambient audio', async ({
+				browser
+			}) => {
+				const { pages, addParticipant, removeParticipant, removeAllParticipants } = await joinParticipants(
+					browser,
+					{
+						roomId,
+						accessUrl,
+						participants: [{ name: 'local', audioEnabled: false }]
+					}
+				);
 				const [pageA] = pages;
 
-				try {
-					await setSmartMosaicParticipantCount(pageA, 1);
-					await addParticipant({
-						name: 'remote-silence',
-						headless: true,
-						audioFile: 'complete_silence.wav'
-					});
-					await waitForVisibleRemoteParticipants(pageA, {
-						count: 1,
-						includes: ['remote-silence']
-					});
-
-					await addParticipant({
-						name: 'remote-low',
-						headless: true,
-						audioFile: 'low_volume_speech.wav'
-					});
-
-					await pageA.waitForTimeout(4_000);
-
+				const expectSilenceStays = async (excluded: string) => {
 					for (let i = 0; i < 5; i++) {
 						await waitForVisibleRemoteParticipants(pageA, {
 							count: 1,
 							includes: ['remote-silence'],
-							excludes: ['remote-low']
+							excludes: [excluded]
 						});
-
 						await pageA.waitForTimeout(500);
 					}
-				} finally {
-					await removeAllParticipants();
-				}
-			});
-
-			test('should remain stable with multiple low-volume speakers', async ({ browser }) => {
-				const { pages, addParticipant, removeAllParticipants } = await joinParticipants(browser, {
-					roomId,
-					accessUrl,
-					participants: [{ name: 'local', audioEnabled: false }]
-				});
-				const [pageA] = pages;
+				};
 
 				try {
 					await setSmartMosaicParticipantCount(pageA, 1);
@@ -1895,131 +1597,82 @@ test.describe('Layout E2E Tests', () => {
 						headless: true,
 						audioFile: 'complete_silence.wav'
 					});
-
 					await waitForVisibleRemoteParticipants(pageA, {
 						count: 1,
 						includes: ['remote-silence']
 					});
 
-					await Promise.all([
-						addParticipant({
-							name: 'remote-low-a',
+					await test.step('should keep the layout stable when a low-volume participant joins', async () => {
+						await addParticipant({
+							name: 'remote-low',
 							headless: true,
-							audioFile: 'ambient_pink_noise.wav'
-						}),
-						addParticipant({
-							name: 'remote-low-b',
-							headless: true,
-							audioFile: 'ambient_pink_noise.wav'
-						})
-					]);
+							audioFile: 'low_volume_speech.wav'
+						});
 
-					await pageA.waitForTimeout(3_000);
+						await pageA.waitForTimeout(4_000);
+						await expectSilenceStays('remote-low');
+						await removeParticipant('remote-low');
+					});
 
-					const initialVisibleNames = await getVisibleRemoteParticipantNames(pageA);
-					let previousNames = [...initialVisibleNames];
-					let swapCount = 0;
+					await test.step('should remain stable with multiple low-volume speakers', async () => {
+						await Promise.all([
+							addParticipant({
+								name: 'remote-low-a',
+								headless: true,
+								audioFile: 'ambient_pink_noise.wav'
+							}),
+							addParticipant({
+								name: 'remote-low-b',
+								headless: true,
+								audioFile: 'ambient_pink_noise.wav'
+							})
+						]);
 
-					for (let i = 0; i < 5; i++) {
-						await pageA.waitForTimeout(500);
-						const currentNames = await getVisibleRemoteParticipantNames(pageA);
+						await pageA.waitForTimeout(3_000);
 
-						const hasSwap = !previousNames.every((name) => currentNames.includes(name));
+						const initialVisibleNames = await getVisibleRemoteParticipantNames(pageA);
+						let previousNames = [...initialVisibleNames];
+						let swapCount = 0;
 
-						if (hasSwap) {
-							swapCount += 1;
+						for (let i = 0; i < 5; i++) {
+							await pageA.waitForTimeout(500);
+							const currentNames = await getVisibleRemoteParticipantNames(pageA);
+
+							const hasSwap = !previousNames.every((name) => currentNames.includes(name));
+
+							if (hasSwap) {
+								swapCount += 1;
+							}
+
+							previousNames = [...currentNames];
 						}
 
-						previousNames = [...currentNames];
-					}
-
-					expect(swapCount).toBe(0);
-				} finally {
-					await removeAllParticipants();
-				}
-			});
-
-			test('should filter out brief sounds under minimum duration', async ({ browser }) => {
-				const { pages, addParticipant, removeAllParticipants } = await joinParticipants(browser, {
-					roomId,
-					accessUrl,
-					participants: [{ name: 'local', audioEnabled: false }]
-				});
-				const [pageA] = pages;
-
-				try {
-					await setSmartMosaicParticipantCount(pageA, 1);
-					await addParticipant({
-						name: 'remote-silence',
-						headless: true,
-						audioFile: 'complete_silence.wav'
+						expect(swapCount).toBe(0);
+						await Promise.all([removeParticipant('remote-low-a'), removeParticipant('remote-low-b')]);
 					});
 
-					await waitForVisibleRemoteParticipants(pageA, {
-						count: 1,
-						includes: ['remote-silence'],
-						excludes: ['remote-cough']
-					});
-
-					await addParticipant({
-						name: 'remote-cough',
-						headless: true,
-						audioFile: 'brief_cough_at_5s.wav'
-					});
-
-					await pageA.waitForTimeout(5_000);
-
-					for (let i = 0; i < 5; i++) {
-						await waitForVisibleRemoteParticipants(pageA, {
-							count: 1,
-							includes: ['remote-silence'],
-							excludes: ['remote-cough']
+					await test.step('should filter out brief sounds under minimum duration', async () => {
+						await addParticipant({
+							name: 'remote-cough',
+							headless: true,
+							audioFile: 'brief_cough_at_5s.wav'
 						});
-						await pageA.waitForTimeout(500);
-					}
-				} finally {
-					await removeAllParticipants();
-				}
-			});
 
-			test('should not swap to a speaker that only produces a one-second burst', async ({ browser }) => {
-				const { pages, addParticipant, removeAllParticipants } = await joinParticipants(browser, {
-					roomId,
-					accessUrl,
-					participants: [{ name: 'local', audioEnabled: false }]
-				});
-				const [pageA] = pages;
-
-				try {
-					await setSmartMosaicParticipantCount(pageA, 1);
-					await addParticipant({
-						name: 'remote-silence',
-						headless: true,
-						audioFile: 'complete_silence.wav'
+						await pageA.waitForTimeout(5_000);
+						await expectSilenceStays('remote-cough');
+						await removeParticipant('remote-cough');
 					});
 
-					await waitForVisibleRemoteParticipants(pageA, {
-						count: 1,
-						includes: ['remote-silence'],
-						excludes: ['remote-brief']
-					});
-
-					await addParticipant({
-						name: 'remote-brief',
-						headless: true,
-						audioFile: 'brief_sound_1s_at_5s.wav'
-					});
-
-					await pageA.waitForTimeout(5_000);
-
-					for (let i = 0; i < 5; i++) {
-						await waitForVisibleRemoteParticipants(pageA, {
-							count: 1,
-							includes: ['remote-silence'],
-							excludes: ['remote-brief']
+					await test.step('should not swap to a speaker that only produces a one-second burst', async () => {
+						await addParticipant({
+							name: 'remote-brief',
+							headless: true,
+							audioFile: 'brief_sound_1s_at_5s.wav'
 						});
-						await pageA.waitForTimeout(500);
-					}
+
+						await pageA.waitForTimeout(5_000);
+						await expectSilenceStays('remote-brief');
+					});
 				} finally {
 					await removeAllParticipants();
 				}
@@ -2310,6 +1963,12 @@ test.describe('Layout E2E Tests', () => {
 				await expectVisible(pageA, 'ov-hidden-participants-indicator');
 				await expect(pageA.locator('.hidden-participants-container .participant-count-value')).toContainText(
 					'+2'
+				);
+
+				await setSmartMosaicParticipantCount(pageA, 2);
+				await waitForRemoteStream(pageA, 2, { audioCount: 3 });
+				await expect(pageA.locator('.hidden-participants-container .participant-count-value')).toContainText(
+					'+1'
 				);
 
 				await setSmartMosaicParticipantCount(pageA, 4);

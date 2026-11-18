@@ -31,23 +31,25 @@ test.describe('Connection Quality Indicator E2E Tests', () => {
 		await deleteRooms(createdRoomIds);
 	});
 
-	test('shows the badge on the local video tile, then auto-hides it', async ({ page }) => {
+	test('shows the badge on the local video tile, then auto-hides it, and keeps it off a healthy participants panel row', async ({
+		page
+	}) => {
 		await openMeeting(page, accessUrl, { videoEnabled: true, audioEnabled: true });
 
 		const badge = page.locator('.OV_stream.local #connection-quality-badge');
-		await expect(badge).toBeVisible({ timeout: 15_000 });
-		await expect(badge).toBeHidden({ timeout: 10_000 });
-	});
 
-	test('keeps the badge off a participants panel row while the connection is healthy', async ({ page }) => {
-		await openMeeting(page, accessUrl, { videoEnabled: true, audioEnabled: true });
+		await test.step('shows the badge on the local video tile', async () => {
+			await expect(badge).toBeVisible({ timeout: 15_000 });
+		});
 
-		// The tile badge appearing is what makes the row's silence meaningful: it proves LiveKit
-		// reported a quality at all, so the row is applying the rule rather than waiting for news.
-		await expect(page.locator('.OV_stream.local #connection-quality-badge')).toBeVisible({ timeout: 15_000 });
+		await test.step('keeps the badge off a participants panel row while the connection is healthy', async () => {
+			await toggleParticipantsPanel(page);
 
-		await toggleParticipantsPanel(page);
+			await expect(page.locator('.local-participant-container #connection-quality-badge')).toHaveCount(0);
+		});
 
-		await expect(page.locator('.local-participant-container #connection-quality-badge')).toHaveCount(0);
+		await test.step('auto-hides the badge on the local video tile', async () => {
+			await expect(badge).toBeHidden({ timeout: 10_000 });
+		});
 	});
 });

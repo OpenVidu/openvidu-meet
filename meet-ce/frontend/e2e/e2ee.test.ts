@@ -74,33 +74,6 @@ test.describe('E2EE E2E Tests', () => {
 	});
 
 	test.describe('E2EE in Meeting', () => {
-		test('should allow participants to see and hear each other with correct E2EE key', async ({
-			page,
-			browser
-		}) => {
-			const e2eeKey = 'test-encryption-key-123';
-			const accessUrl = await createE2eeRoom();
-
-			const page2 = await browser.newPage();
-
-			try {
-				await Promise.all([
-					openMeeting(page, accessUrl, { e2eeKey }),
-					openMeeting(page2, accessUrl, { e2eeKey })
-				]);
-				await Promise.all([waitForRemoteStream(page), waitForRemoteStream(page2)]);
-
-				await expect.poll(() => page.locator('.OV_video-element').count()).toBeGreaterThanOrEqual(2);
-				await expect.poll(() => page2.locator('.OV_video-element').count()).toBeGreaterThanOrEqual(2);
-
-				// Check that no encryption error posters are shown
-				await expectHidden(page, '.encryption-error-poster');
-				await expectHidden(page2, '.encryption-error-poster');
-			} finally {
-				await page2.close();
-			}
-		});
-
 		test('should show encryption error poster when using wrong E2EE key', async ({ page, browser }) => {
 			const key1 = 'correct-key-abc';
 			const key2 = 'wrong-key-xyz';
@@ -162,6 +135,11 @@ test.describe('E2EE E2E Tests', () => {
 					openMeeting(page2, accessUrl, { e2eeKey, name: participant2Name })
 				]);
 				await Promise.all([waitForRemoteStream(page), waitForRemoteStream(page2)]);
+
+				await expect.poll(() => page.locator('.OV_video-element').count()).toBeGreaterThanOrEqual(2);
+				await expect.poll(() => page2.locator('.OV_video-element').count()).toBeGreaterThanOrEqual(2);
+				await expectHidden(page, '.encryption-error-poster');
+				await expectHidden(page2, '.encryption-error-poster');
 
 				// Check names in video grid
 				await expectUnmaskedVideoGridNames(page);

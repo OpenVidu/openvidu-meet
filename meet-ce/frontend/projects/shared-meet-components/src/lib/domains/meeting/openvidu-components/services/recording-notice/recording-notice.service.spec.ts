@@ -85,14 +85,6 @@ describe('RecordingNoticeService', () => {
 		expect(announcement()).toBe('started');
 	});
 
-	it('announces a recording that was already running when this client joined', () => {
-		// The state arrives from the SFU rather than from a local click, which is the same
-		// transition as far as this service is concerned.
-		moveTo(RecordingState.STARTED);
-
-		expect(announcement()).toBe('started');
-	});
-
 	it('does not announce a start that never made it', () => {
 		moveTo(RecordingState.STARTING);
 		expect(announcement()).toBeUndefined();

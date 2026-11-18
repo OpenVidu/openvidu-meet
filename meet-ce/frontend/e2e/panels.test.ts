@@ -20,12 +20,29 @@ test.describe('Panels E2E Tests', () => {
 		await deleteRooms(createdRoomIds);
 	});
 
-	test.describe('UI Navigation and Section Switching', () => {
-		test('should switch between PARTICIPANTS and CHAT panels and verify correct content is shown', async ({
-			page
-		}) => {
-			await openMeeting(page, accessUrl);
+	test('should open, close and switch between the meeting panels showing their content', async ({ page }) => {
+		await openMeeting(page, accessUrl);
 
+		await test.step('should open and close the CHAT panel and verify its content', async () => {
+			await toggleChatPanel(page, 'open');
+			await expectVisible(page, '#chat-input');
+			await expectVisible(page, '#chat-container .messages-container');
+
+			await toggleChatPanel(page, 'close');
+		});
+
+		await test.step('should open and close the PARTICIPANTS panel and verify its content', async () => {
+			await toggleParticipantsPanel(page);
+			await expectVisible(page, '.sidenav-menu');
+			await expectVisible(page, '.local-participant-container');
+			await expectVisible(page, 'ov-participant-panel-item');
+
+			await toggleParticipantsPanel(page);
+			await expectHidden(page, '.local-participant-container');
+			await expectHidden(page, 'ov-participant-panel-item');
+		});
+
+		await test.step('should switch between PARTICIPANTS and CHAT panels and verify correct content is shown', async () => {
 			await toggleChatPanel(page);
 			await expectVisible(page, '.sidenav-menu');
 			await expectVisible(page, '#chat-input');
@@ -42,23 +59,27 @@ test.describe('Panels E2E Tests', () => {
 			await expectVisible(page, '#chat-container .messages-container');
 			await expectHidden(page, '.local-participant-container');
 			await expectHidden(page, 'ov-participant-panel-item');
+
+			await toggleChatPanel(page, 'close');
 		});
-	});
 
-	test.describe('Settings Panel', () => {
-		test('should open the SETTINGS panel and verify its content', async ({ page }) => {
-			await openMeeting(page, accessUrl);
+		await test.step('should open and close the ACTIVITIES panel and verify its content', async () => {
+			await toggleActivitiesPanel(page);
+			await expectVisible(page, '.sidenav-menu');
+			await expectVisible(page, '#activities-container');
+			await expectVisible(page, '#recording-activity');
 
+			await toggleActivitiesPanel(page);
+			await expectHidden(page, '#activities-container');
+			await expectHidden(page, '#recording-activity');
+		});
+
+		await test.step('should open the SETTINGS panel and verify its content', async () => {
 			await openSettingsPanel(page);
 			await expectVisible(page, '#default-settings-panel');
 		});
 
-		test('should switch between sections in the SETTINGS panel and verify correct content is shown', async ({
-			page
-		}) => {
-			await openMeeting(page, accessUrl);
-
-			await openSettingsPanel(page);
+		await test.step('should switch between sections in the SETTINGS panel and verify correct content is shown', async () => {
 			await expectVisible(page, '.sidenav-menu');
 
 			await page.locator('#general-opt').click();
@@ -70,48 +91,6 @@ test.describe('Panels E2E Tests', () => {
 			await page.locator('#audio-video-opt').click();
 			await expectVisible(page, 'ov-video-devices-select');
 			await expectVisible(page, 'ov-audio-devices-select');
-		});
-	});
-
-	test.describe('Chat Panel', () => {
-		test('should open and close the CHAT panel and verify its content', async ({ page }) => {
-			await openMeeting(page, accessUrl);
-
-			await toggleChatPanel(page, 'open');
-			await expectVisible(page, '#chat-input');
-			await expectVisible(page, '#chat-container .messages-container');
-
-			await toggleChatPanel(page, 'close');
-		});
-	});
-
-	test.describe('Participants Panel', () => {
-		test('should open and close the PARTICIPANTS panel and verify its content', async ({ page }) => {
-			await openMeeting(page, accessUrl);
-
-			await toggleParticipantsPanel(page);
-			await expectVisible(page, '.sidenav-menu');
-			await expectVisible(page, '.local-participant-container');
-			await expectVisible(page, 'ov-participant-panel-item');
-
-			await toggleParticipantsPanel(page);
-			await expectHidden(page, '.local-participant-container');
-			await expectHidden(page, 'ov-participant-panel-item');
-		});
-	});
-
-	test.describe('Activities Panel', () => {
-		test('should open and close the ACTIVITIES panel and verify its content', async ({ page }) => {
-			await openMeeting(page, accessUrl);
-
-			await toggleActivitiesPanel(page);
-			await expectVisible(page, '.sidenav-menu');
-			await expectVisible(page, '#activities-container');
-			await expectVisible(page, '#recording-activity');
-
-			await toggleActivitiesPanel(page);
-			await expectHidden(page, '#activities-container');
-			await expectHidden(page, '#recording-activity');
 		});
 	});
 });
