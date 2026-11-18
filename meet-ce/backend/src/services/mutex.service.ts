@@ -52,12 +52,7 @@ export class MutexService {
 			return await callback();
 		} finally {
 			clearInterval(keepAlive);
-
-			// If callback process took longer than TTL, the lock may have expired and been released by Redlock automatically.
-			// In that case, we should not attempt to release it again to avoid errors. Instead, we check if the lock still exists before releasing.
-			if (await this.lockExists(key)) {
-				await this.release(lock);
-			}
+			await this.release(lock);
 		}
 	}
 
@@ -299,14 +294,17 @@ export class MutexService {
 	}
 
 	/**
-	 * Releases a lock acquired via {@link acquire}.
+	 * Releases a lock acquired via {@link acquire}. A lock that already expired is left alone: the release
+	 * only removes the key while it still holds this lock's value.
 	 *
 	 * @param lock The Lock instance to release.
 	 */
 	protected async release(lock: RedisDistributedLock): Promise<void> {
 		try {
-			await lock.release();
-			this.logger.verbose(`Local lock for '${lock.resources.join(', ')}' successfully released`);
+			const released = await lock.release();
+			this.logger.verbose(
+				`Local lock for '${lock.resources.join(', ')}' ${released ? 'successfully released' : 'had already expired'}`
+			);
 		} catch (error) {
 			this.logger.error(`Error releasing local lock for '${lock.resources.join(', ')}'`, error);
 		}
