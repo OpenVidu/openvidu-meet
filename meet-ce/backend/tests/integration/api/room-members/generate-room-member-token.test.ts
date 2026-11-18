@@ -790,38 +790,31 @@ describe('Room Members API Tests', () => {
 		});
 
 		it('should generate token when specifying joinMeeting true and participant already exists in the room', async () => {
+			// A room of its own: the shared one may still be clearing the names of the meeting the previous test ended
+			const { room, moderatorSecret } = await setupSingleRoom();
 			const participantName = 'Alice Smith Unique';
-
-			// Create token for the first participant
-			let response = await generateRoomMemberTokenRequest(roomId, {
-				secret: roomData.moderatorSecret,
-				joinMeeting: true,
-				participantName
-			});
-			expectValidRoomMemberTokenResponse(response, {
-				roomId,
+			const expectedToken = {
+				roomId: room.roomId,
 				badge: MeetRoomMemberUIBadge.MODERATOR,
-				permissions: roomRoles.moderator.permissions,
+				permissions: room.roles.moderator.permissions,
 				joinMeeting: true,
-				participantName,
-				participantIdentityPrefix: 'alice_smith_unique'
-			});
-
-			// Create token for the second participant with the same name
-			response = await generateRoomMemberTokenRequest(roomId, {
-				secret: roomData.moderatorSecret,
-				joinMeeting: true,
-				participantName
-			});
-			expectValidRoomMemberTokenResponse(response, {
-				roomId,
-				badge: MeetRoomMemberUIBadge.MODERATOR,
-				permissions: roomRoles.moderator.permissions,
-				joinMeeting: true,
-				participantName: participantName + '_1', // Suffix is added to avoid conflict with the first participant
 				// The identity is chosen before the name is reserved, so it derives from the name asked for
 				participantIdentityPrefix: 'alice_smith_unique'
+			};
+
+			let response = await generateRoomMemberTokenRequest(room.roomId, {
+				secret: moderatorSecret,
+				joinMeeting: true,
+				participantName
 			});
+			expectValidRoomMemberTokenResponse(response, { ...expectedToken, participantName });
+
+			response = await generateRoomMemberTokenRequest(room.roomId, {
+				secret: moderatorSecret,
+				joinMeeting: true,
+				participantName
+			});
+			expectValidRoomMemberTokenResponse(response, { ...expectedToken, participantName: participantName + '_1' });
 		});
 
 		it('should fail to generate token when anonymous user tries to join meeting without meetingJoin permission', async () => {
