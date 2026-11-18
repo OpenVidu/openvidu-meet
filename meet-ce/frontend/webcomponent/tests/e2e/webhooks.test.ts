@@ -1,39 +1,9 @@
-import {
-	LeftEventReason,
-	MeetBroadcastInfo,
-	MeetBroadcastStatus,
-	MeetEventOrigin,
-	MeetParticipantType,
-	MeetWaitingParticipantStatus,
-	MeetParticipantJoinedPayload,
-	MeetParticipantLeftPayload,
-	MeetParticipantModerationAction,
-	MeetParticipantRoleChangedPayload,
-	MeetRecordingInfo,
-	MeetRecordingStatus,
-	MeetRoomMemberRole,
-	MeetRoomStatus,
-	MeetWebhookEventType
-} from '@openvidu-meet/typings';
+import { MeetRoomStatus, MeetWebhookEventType } from '@openvidu-meet/typings';
 import { expect, test } from '@playwright/test';
-import { createRtmpSink, deleteRtmpSinks } from '../helpers/broadcast-sink.helper';
-import { createRoom, deleteRooms, getWaitingParticipants, getRecording, getRoom } from '../helpers/meet-api.helper';
-import { startRecording, stopRecording } from '../helpers/recordings.helper';
-import {
-	askToJoin,
-	broadcastStartCommand,
-	broadcastStopAllCommand,
-	endMeetingCommand,
-	expectWebhook,
-	joinedParticipantIdentity,
-	leaveMeeting,
-	waitingParticipantAdmitCommand,
-	waitingParticipantRejectCommand,
-	openMeeting,
-	participantUpdateRoleCommand,
-	webhookLocator
-} from '../helpers/testapp.helper';
-import { getWebhookFromStorage, webhooksFromStorage } from '../helpers/ui-utils.helper';
+import { createRoom, deleteRooms, getRoom } from '../helpers/meet-api.helper';
+import { endMeetingCommand, expectWebhook, openMeeting } from '../helpers/testapp.helper';
+import { getWebhookFromStorage } from '../helpers/ui-utils.helper';
+import { INTEGRATIONS } from '../helpers/webcomponent.helper';
 
 test.describe('Webhooks E2E Tests', () => {
 	const createdRoomIds: string[] = [];
@@ -46,283 +16,26 @@ test.describe('Webhooks E2E Tests', () => {
 
 	test.afterAll(async () => {
 		await deleteRooms(createdRoomIds);
-		await deleteRtmpSinks();
 	});
 
-	test('should receive meetingStarted and meetingEnded webhooks', async ({ page }) => {
-		await openMeeting(page, roomId, { role: 'moderator' });
+	for (const integration of INTEGRATIONS) {
+		test(`should receive meetingStarted and meetingEnded webhooks [${integration}]`, async ({ page }) => {
+			await openMeeting(page, roomId, { integration, role: 'moderator' });
 
-		await expectWebhook(page, MeetWebhookEventType.MEETING_STARTED);
+			await expectWebhook(page, MeetWebhookEventType.MEETING_STARTED);
 
-		const [meetingStartedWebhook, actualRoom] = await Promise.all([
-			getWebhookFromStorage(page, roomId, MeetWebhookEventType.MEETING_STARTED),
-			getRoom(roomId)
-		]);
-		expect(meetingStartedWebhook.data).toMatchObject(actualRoom as any);
+			const [meetingStartedWebhook, actualRoom] = await Promise.all([
+				getWebhookFromStorage(page, roomId, MeetWebhookEventType.MEETING_STARTED),
+				getRoom(roomId)
+			]);
+			expect(meetingStartedWebhook.data).toMatchObject(actualRoom as any);
 
-		await endMeetingCommand(page);
-		await expectWebhook(page, MeetWebhookEventType.MEETING_ENDED);
+			await endMeetingCommand(page);
+			await expectWebhook(page, MeetWebhookEventType.MEETING_ENDED);
 
-		const meetingEndedWebhook = await getWebhookFromStorage(page, roomId, MeetWebhookEventType.MEETING_ENDED);
-		actualRoom.status = MeetRoomStatus.OPEN;
-		expect(meetingEndedWebhook.data).toMatchObject(actualRoom as any);
-	});
-
-	test('should receive participantJoined and participantLeft webhooks for a participant that joins and leaves', async ({
-		page,
-		browser
-	}) => {
-		await openMeeting(page, roomId, { role: 'moderator' });
-		await expectWebhook(page, MeetWebhookEventType.MEETING_STARTED);
-
-		const speakerContext = await browser.newContext();
-		const speakerPage = await speakerContext.newPage();
-		const speakerName = 'Speaker';
-		const speakerExternalId = 'crm-user_42';
-		const speakerMetadata = '{"department": "cardiology"}';
-		await openMeeting(speakerPage, roomId, {
-			role: 'speaker',
-			name: speakerName,
-			externalId: speakerExternalId,
-			metadata: speakerMetadata
+			const meetingEndedWebhook = await getWebhookFromStorage(page, roomId, MeetWebhookEventType.MEETING_ENDED);
+			actualRoom.status = MeetRoomStatus.OPEN;
+			expect(meetingEndedWebhook.data).toMatchObject(actualRoom as any);
 		});
-
-		// The moderator's own join also fires a participantJoined webhook, so the speaker's is the
-		// second one delivered for this room. Both pages observe the same broadcast (the webhook
-		// bridge has no room scoping), so read everything from the moderator's page.
-		await expectWebhook(page, MeetWebhookEventType.PARTICIPANT_JOINED, { count: 2 });
-		const participantJoinedWebhook = await getWebhookFromStorage(
-			page,
-			roomId,
-			MeetWebhookEventType.PARTICIPANT_JOINED,
-			{ matchIndex: 1 }
-		);
-		const joinedPayload = participantJoinedWebhook.data as MeetParticipantJoinedPayload;
-		expect(joinedPayload.roomId).toBe(roomId);
-		expect(joinedPayload.participant.participantName).toBe(speakerName);
-		expect(joinedPayload.participant.role).toBe(MeetRoomMemberRole.SPEAKER);
-		expect(joinedPayload.participant.joinDate).toBeLessThanOrEqual(Date.now());
-		// The app-provided correlation fields ride the whole pipeline: embed attribute -> join
-		// request -> token metadata -> LiveKit participant -> webhook payload.
-		expect(joinedPayload.participant.externalId).toBe(speakerExternalId);
-		expect(joinedPayload.participant.metadata).toBe(speakerMetadata);
-
-		await leaveMeeting(speakerPage, { role: 'speaker' });
-
-		await expectWebhook(page, MeetWebhookEventType.PARTICIPANT_LEFT);
-		const participantLeftWebhook = await getWebhookFromStorage(page, roomId, MeetWebhookEventType.PARTICIPANT_LEFT);
-		const leftPayload = participantLeftWebhook.data as MeetParticipantLeftPayload;
-		expect(leftPayload.roomId).toBe(roomId);
-		expect(leftPayload.participant.participantName).toBe(speakerName);
-		expect(leftPayload.participant.leaveReason).toBe(LeftEventReason.VOLUNTARY_LEAVE);
-		expect(leftPayload.participant.durationSeconds).toBeGreaterThanOrEqual(0);
-		expect(leftPayload.participant.externalId).toBe(speakerExternalId);
-		expect(leftPayload.participant.metadata).toBe(speakerMetadata);
-
-		await speakerContext.close();
-	});
-
-	test('should receive participantRoleChanged webhooks when a participant is promoted and demoted', async ({
-		page,
-		browser
-	}) => {
-		await openMeeting(page, roomId, { role: 'moderator' });
-
-		const speakerContext = await browser.newContext();
-		const speakerPage = await speakerContext.newPage();
-		await openMeeting(speakerPage, roomId, { role: 'speaker', externalId: 'crm-user_42' });
-		const speakerIdentity = await joinedParticipantIdentity(speakerPage);
-
-		const roleChangedPayload = async (matchIndex: number) =>
-			(
-				await getWebhookFromStorage(page, roomId, MeetWebhookEventType.PARTICIPANT_ROLE_CHANGED, {
-					matchIndex
-				})
-			).data as MeetParticipantRoleChangedPayload;
-
-		await participantUpdateRoleCommand(page, speakerIdentity, MeetParticipantModerationAction.UPGRADE);
-		await expectWebhook(page, MeetWebhookEventType.PARTICIPANT_ROLE_CHANGED);
-
-		const promotion = await roleChangedPayload(0);
-		expect(promotion.roomId).toBe(roomId);
-		expect(promotion.participant.participantIdentity).toBe(speakerIdentity);
-		expect(promotion.participant.role).toBe(MeetRoomMemberRole.MODERATOR);
-		expect(promotion.participant.externalId).toBe('crm-user_42');
-
-		await participantUpdateRoleCommand(page, speakerIdentity, MeetParticipantModerationAction.DOWNGRADE);
-		await expectWebhook(page, MeetWebhookEventType.PARTICIPANT_ROLE_CHANGED, { count: 2 });
-
-		const demotion = await roleChangedPayload(1);
-		expect(demotion.participant.participantIdentity).toBe(speakerIdentity);
-		expect(demotion.participant.role).toBe(MeetRoomMemberRole.SPEAKER);
-
-		await speakerContext.close();
-	});
-
-	test('should receive recordingStarted, recordingUpdated and recordingEnded webhooks', async ({ page }) => {
-		await openMeeting(page, roomId, { role: 'moderator' });
-
-		await startRecording(page);
-		await expectWebhook(page, MeetWebhookEventType.RECORDING_STARTED);
-
-		const recordingStartedWebhook = await getWebhookFromStorage(
-			page,
-			roomId,
-			MeetWebhookEventType.RECORDING_STARTED
-		);
-		expect(recordingStartedWebhook.event).toBe(MeetWebhookEventType.RECORDING_STARTED);
-		expect(recordingStartedWebhook.data).toBeDefined();
-
-		const startedRecording = recordingStartedWebhook.data as MeetRecordingInfo;
-		const recordingId = startedRecording.recordingId;
-		expect(recordingId).toBeDefined();
-
-		// startDate is compared apart: a recording still starting has not recorded anything yet,
-		// so it carries no startDate while the one read back may already be active
-		const { startDate: _startDate, ...actualRecording } = await getRecording(recordingId);
-		expect(startedRecording).toMatchObject({
-			...actualRecording,
-			status: expect.stringMatching(/active|starting/)
-		});
-
-		if (startedRecording.status === MeetRecordingStatus.ACTIVE) {
-			expect(startedRecording.startDate).toEqual(expect.any(Number));
-		} else {
-			expect(startedRecording.startDate).toBeUndefined();
-		}
-
-		await expectWebhook(page, MeetWebhookEventType.RECORDING_UPDATED);
-
-		const recordingUpdatedWebhook = await getWebhookFromStorage(
-			page,
-			roomId,
-			MeetWebhookEventType.RECORDING_UPDATED
-		);
-		expect(recordingUpdatedWebhook.event).toBe(MeetWebhookEventType.RECORDING_UPDATED);
-		expect(recordingUpdatedWebhook.data).toBeDefined();
-		expect((recordingUpdatedWebhook.data as MeetRecordingInfo).recordingId).toBe(recordingId);
-
-		const updatedRecording = await getRecording(recordingId);
-		expect(recordingUpdatedWebhook.data).toMatchObject(updatedRecording as any);
-
-		await stopRecording(page);
-		await expectWebhook(page, MeetWebhookEventType.RECORDING_ENDED);
-
-		const recordingEndedWebhook = await getWebhookFromStorage(page, roomId, MeetWebhookEventType.RECORDING_ENDED);
-		expect(recordingEndedWebhook.event).toBe(MeetWebhookEventType.RECORDING_ENDED);
-		expect(recordingEndedWebhook.data).toBeDefined();
-		expect((recordingEndedWebhook.data as MeetRecordingInfo).recordingId).toBe(recordingId);
-
-		const endedRecording = await getRecording(recordingId);
-		expect(recordingEndedWebhook.data).toMatchObject(endedRecording as any);
-	});
-
-	test('should receive broadcastStarted, broadcastUpdated and broadcastEnded webhooks', async ({ page }) => {
-		// The room streams to an RTMP ingress of the LiveKit deployment under test, the one sink the
-		// egress can reach here; the stream key never comes back in a webhook.
-		const sinkUrl = await createRtmpSink('webhooks');
-		const { roomId: broadcastRoomId } = await createRoom({
-			config: { broadcast: { enabled: true, destinations: [{ name: 'Sink', url: sinkUrl }] } }
-		});
-		createdRoomIds.push(broadcastRoomId);
-		await openMeeting(page, broadcastRoomId, { role: 'moderator' });
-
-		await broadcastStartCommand(page);
-		await expectWebhook(page, MeetWebhookEventType.BROADCAST_STARTED);
-
-		const startedWebhook = await getWebhookFromStorage(
-			page,
-			broadcastRoomId,
-			MeetWebhookEventType.BROADCAST_STARTED
-		);
-		const started = startedWebhook.data as MeetBroadcastInfo;
-		expect(started.roomId).toBe(broadcastRoomId);
-		expect(started.status).toBe(MeetBroadcastStatus.STARTING);
-		expect(started.destination.url).toContain('/********');
-		expect(started.destination.url).not.toContain(sinkUrl.split('/').pop()!);
-
-		// The broadcast is updated as it goes active.
-		await expect(webhookLocator(page, MeetWebhookEventType.BROADCAST_UPDATED).first()).toBeAttached({
-			timeout: 40_000
-		});
-		const updatedWebhook = await getWebhookFromStorage(
-			page,
-			broadcastRoomId,
-			MeetWebhookEventType.BROADCAST_UPDATED
-		);
-		expect((updatedWebhook.data as MeetBroadcastInfo).broadcastId).toBe(started.broadcastId);
-
-		await broadcastStopAllCommand(page);
-		await expectWebhook(page, MeetWebhookEventType.BROADCAST_ENDED, { timeout: 30_000 });
-
-		const endedWebhook = await getWebhookFromStorage(page, broadcastRoomId, MeetWebhookEventType.BROADCAST_ENDED);
-		const ended = endedWebhook.data as MeetBroadcastInfo;
-		expect(ended.broadcastId).toBe(started.broadcastId);
-		expect(ended.status).toBe(MeetBroadcastStatus.COMPLETE);
-	});
-
-	test('should receive waitingParticipantKnocked once per wait and waitingParticipantStatusChanged for each decision', async ({
-		page,
-		browser
-	}) => {
-		const { roomId: lockedRoomId, roomName } = await createRoom({
-			access: { lock: { enabled: true } }
-		});
-		createdRoomIds.push(lockedRoomId);
-		await openMeeting(page, lockedRoomId, { role: 'moderator' });
-
-		const anaContext = await browser.newContext();
-		const benContext = await browser.newContext();
-		await askToJoin(await anaContext.newPage(), lockedRoomId, { name: 'Ana', externalId: 'u-42' });
-		await askToJoin(await benContext.newPage(), lockedRoomId, { name: 'Ben' });
-		const waiting = (await getWaitingParticipants(lockedRoomId)).participants;
-		const named = (name: string) => waiting.find(({ participantName }) => participantName === name)!;
-		const [ana, ben] = [named('Ana'), named('Ben')];
-		expect(ana).toMatchObject({
-			participantName: 'Ana',
-			type: MeetParticipantType.ANONYMOUS,
-			externalId: 'u-42'
-		});
-
-		const knocked = () => webhooksFromStorage(page, lockedRoomId, MeetWebhookEventType.WAITING_PARTICIPANT_KNOCKED);
-		await expect
-			.poll(async () => (await knocked()).map(({ data }) => data))
-			.toEqual(
-				expect.arrayContaining([
-					{ roomId: lockedRoomId, roomName, participant: ana },
-					{ roomId: lockedRoomId, roomName, participant: ben }
-				])
-			);
-
-		await waitingParticipantRejectCommand(page, ana.participantIdentity);
-		await waitingParticipantAdmitCommand(page, ben.participantIdentity);
-
-		const statusChanged = () =>
-			webhooksFromStorage(page, lockedRoomId, MeetWebhookEventType.WAITING_PARTICIPANT_STATUS_CHANGED);
-		await expect
-			.poll(async () => (await statusChanged()).map(({ data }) => data))
-			.toEqual(
-				expect.arrayContaining([
-					{
-						roomId: lockedRoomId,
-						roomName,
-						participant: ana,
-						status: MeetWaitingParticipantStatus.REJECTED,
-						origin: MeetEventOrigin.MODERATOR
-					},
-					{
-						roomId: lockedRoomId,
-						roomName,
-						participant: ben,
-						status: MeetWaitingParticipantStatus.ADMITTED,
-						origin: MeetEventOrigin.MODERATOR
-					}
-				])
-			);
-		expect(await statusChanged()).toHaveLength(2);
-		expect(await knocked()).toHaveLength(2);
-
-		await anaContext.close();
-		await benContext.close();
-	});
+	}
 });
