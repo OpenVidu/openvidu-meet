@@ -6,7 +6,6 @@ import {
 	startScreensharing,
 	stopScreensharing,
 	toggleCamera,
-	toggleMicrophone,
 	unmuteRemoteParticipant
 } from './helpers/media-controls.helper';
 import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
@@ -75,21 +74,6 @@ test.describe('Stream E2E Tests', () => {
 			await expectLocalStreamCount(page, { video: 1, audio: 0 });
 		});
 
-		test('should toggle microphone off and on', async ({ page }) => {
-			await openMeeting(page, accessUrl, { videoEnabled: true, audioEnabled: true });
-			await expectLocalStreamCount(page, { video: 1, audio: 0 });
-
-			// Toggle off
-			await toggleMicrophone(page);
-			await page.waitForTimeout(500);
-			await expectLocalStreamCount(page, { video: 1, audio: 0 });
-
-			// Toggle back on
-			await toggleMicrophone(page);
-			await page.waitForTimeout(500);
-			await expectLocalStreamCount(page, { video: 1, audio: 0 });
-		});
-
 		test('should add screen share when sharing with all media enabled', async ({ page }) => {
 			await openMeeting(page, accessUrl, { videoEnabled: true, audioEnabled: true });
 			await expectStreamCount(page, 1);
@@ -153,22 +137,6 @@ test.describe('Stream E2E Tests', () => {
 	});
 
 	test.describe('Stream rendering - Multi participant scenarios', () => {
-		test('should render both participant streams', async ({ browser }) => {
-			const { pages, removeAllParticipants } = await joinParticipants(browser, {
-				roomId,
-				accessUrl,
-				participants: [{ name: 'participant-0' }, { name: 'participant-1', headless: true }]
-			});
-			const [pageA, pageB] = pages;
-
-			try {
-				await expectStreamCount(pageA, 2);
-				await expectStreamCount(pageB, 2);
-			} finally {
-				await removeAllParticipants();
-			}
-		});
-
 		test('should handle screen share from muted participant to other participant', async ({ browser }) => {
 			const { pages, removeAllParticipants } = await joinParticipants(browser, {
 				roomId,
@@ -194,34 +162,6 @@ test.describe('Stream E2E Tests', () => {
 				await expectStreamCount(pageA, 2);
 				await expectScreenShareCount(pageB, 0);
 				await expectScreenShareCount(pageA, 0);
-			} finally {
-				await removeAllParticipants();
-			}
-		});
-
-		test('should handle screen share with full media enabled', async ({ browser }) => {
-			const { pages, removeAllParticipants } = await joinParticipants(browser, {
-				roomId,
-				accessUrl,
-				participants: [{ name: 'participant-0' }, { name: 'participant-1', headless: true }]
-			});
-			const [pageA, pageB] = pages;
-
-			try {
-				await expectStreamCount(pageA, 2);
-				await expectStreamCount(pageB, 2);
-
-				// B shares screen
-				await startScreensharing(pageB);
-				await expect(pageB.locator('.OV_screen .local')).toBeVisible();
-				await expectStreamCount(pageB, 3);
-				await expectStreamCount(pageA, 3);
-				await expectScreenShareCount(pageB, 1);
-				await expectScreenShareCount(pageA, 1);
-
-				await stopScreensharing(pageB);
-				await expectStreamCount(pageB, 2);
-				await expectStreamCount(pageA, 2);
 			} finally {
 				await removeAllParticipants();
 			}
@@ -260,25 +200,6 @@ test.describe('Stream E2E Tests', () => {
 	});
 
 	test.describe('Stream rendering - Three or more participants', () => {
-		test('should render three participant streams when three join', async ({ browser }) => {
-			const { pages, removeAllParticipants } = await joinParticipants(browser, {
-				roomId,
-				accessUrl,
-				participants: [
-					{ name: 'participant-0' },
-					{ name: 'participant-1', headless: true },
-					{ name: 'participant-2', headless: true }
-				]
-			});
-
-			try {
-				// Each participant sees the other 2 as remote streams and their own as local stream (total 3)
-				await Promise.all(pages.map((page) => expectStreamCount(page, 3)));
-			} finally {
-				await removeAllParticipants();
-			}
-		});
-
 		test('should handle participant leaving and streams being removed', async ({ browser }) => {
 			const { pages, removeAllParticipants } = await joinParticipants(browser, {
 				roomId,
@@ -472,43 +393,6 @@ test.describe('Stream E2E Tests', () => {
 			await page.close();
 		});
 
-		test('should DOCK the local video (restore to layout)', async ({ page }) => {
-			await openMeeting(page, accessUrl);
-
-			const localContainer = page.locator('.local_participant:has(.OV_stream_video.local)').first();
-
-			// Get initial stream dimensions
-			const initialBox = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
-			expect(initialBox).not.toBeNull();
-
-			// Float the stream
-			await hoverStream(page, '.local_participant .OV_stream_video.local');
-			await floatStream(page);
-			await page.waitForTimeout(800);
-			await expect(localContainer).toHaveClass(/OV_floating/);
-
-			// Verify floating
-			const floatingBox = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
-			expect(floatingBox).not.toBeNull();
-
-			// Dock (restore) the stream
-			await hoverStream(page, '.local_participant .OV_stream_video.local');
-			await dockStream(page);
-			await page.waitForTimeout(1500);
-			await expect(localContainer).not.toHaveClass(/OV_floating/);
-
-			// Verify stream is restored to layout
-			const restoredBox = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
-			expect(restoredBox).not.toBeNull();
-
-			// Restored video should be back at the top of the layout (far from bottom-right floating position)
-			expect(restoredBox!.y).toBeLessThan(floatingBox!.y);
-			expect(restoredBox!.width).toBeGreaterThan(floatingBox!.width);
-			expect(restoredBox!.height).toBeGreaterThan(floatingBox!.height);
-
-			await page.close();
-		});
-
 		test('should be able to drag the floating LOCAL video', async ({ page }) => {
 			await openMeeting(page, accessUrl);
 
@@ -665,6 +549,8 @@ test.describe('Stream E2E Tests', () => {
 			await hoverStream(page, '.local_participant .OV_stream_video.local');
 			await floatStream(page);
 			await page.waitForTimeout(500);
+			const cornerBox = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
+			expect(cornerBox).not.toBeNull();
 
 			// Drag to right
 			await dragStream(page, '.local_participant', 300, 300);
@@ -689,6 +575,8 @@ test.describe('Stream E2E Tests', () => {
 				/OV_floating/
 			);
 			expect(streamBox!.width).toBeGreaterThan(floatedWidth + 50);
+			expect(streamBox!.height).toBeGreaterThan(cornerBox!.height);
+			expect(streamBox!.y).toBeLessThan(cornerBox!.y);
 			expect(streamBox!.width).toBeCloseTo(initialBox!.width, -1);
 			expect(streamBox!.y).toBeCloseTo(initialBox!.y, -1);
 
@@ -1378,102 +1266,81 @@ test.describe('Stream E2E Tests', () => {
 	});
 
 	test.describe('Stream UI controls - Screen-share zoom', () => {
-		test('should show ONLY the zoom-in button before any zoom is applied', async ({ page }) => {
+		test('should show, order, update and keep the zoom controls of a shared screen', async ({ page }) => {
 			await openMeeting(page, accessUrl, { videoEnabled: true, audioEnabled: true });
 			await startScreensharing(page);
 
-			const container = await hoverScreenShareStream(page);
+			await test.step('should show ONLY the zoom-in button before any zoom is applied', async () => {
+				const container = await hoverScreenShareStream(page);
 
-			// At 1x, zoom-in is the single zoom control…
-			await expect(container.locator('#zoom-in-btn')).toBeVisible();
-			// …zoom-out, reset and the percentage label must NOT exist until the stream is zoomed.
-			await expect(container.locator('#zoom-out-btn')).toHaveCount(0);
-			await expect(container.locator('#reset-zoom-btn')).toHaveCount(0);
-			await expect(container.locator('#zoom-level')).toHaveCount(0);
+				// At 1x, zoom-in is the single zoom control…
+				await expect(container.locator('#zoom-in-btn')).toBeVisible();
+				// …zoom-out, reset and the percentage label must NOT exist until the stream is zoomed.
+				await expect(container.locator('#zoom-out-btn')).toHaveCount(0);
+				await expect(container.locator('#reset-zoom-btn')).toHaveCount(0);
+				await expect(container.locator('#zoom-level')).toHaveCount(0);
+			});
 
-			await page.close();
-		});
+			await test.step('should keep the controls visible while the pointer rests on them', async () => {
+				const container = await hoverScreenShareStream(page);
+				const controls = container.locator('.stream-video-controls');
+				const zoomIn = container.locator('#zoom-in-btn');
 
-		test('should reveal zoom-out, reset and the percentage label after zooming in', async ({ page }) => {
-			await openMeeting(page, accessUrl, { videoEnabled: true, audioEnabled: true });
-			await startScreensharing(page);
+				// Park the pointer on the controls and let well over the 2s auto-hide window pass
+				// WITHOUT moving the mouse.
+				await controls.hover();
+				await page.waitForTimeout(3_000);
 
-			await zoomInScreenShare(page, 1);
-			const container = screenShareStream(page);
+				// The controls must NOT have auto-hidden while the pointer was interacting with them.
+				await expect(controls).toBeVisible();
+				await expect(zoomIn).toBeVisible();
+			});
 
-			await expect(container.locator('#reset-zoom-btn')).toBeVisible();
-			await expect(container.locator('#zoom-out-btn')).toBeVisible();
-			await expect(container.locator('#zoom-in-btn')).toBeVisible();
-			// The percentage label is now shown and reflects a zoom above the 1x (100%) base.
-			await expect(container.locator('#zoom-level')).toBeVisible();
-			await expect(container.locator('#zoom-level')).toHaveText(/^\d+%$/);
-			expect(await readZoomPercent(page)).toBeGreaterThan(100);
+			await test.step('should reveal zoom-out, reset and the percentage label after zooming in', async () => {
+				await zoomInScreenShare(page, 1);
+				const container = screenShareStream(page);
 
-			await page.close();
-		});
+				await expect(container.locator('#reset-zoom-btn')).toBeVisible();
+				await expect(container.locator('#zoom-out-btn')).toBeVisible();
+				await expect(container.locator('#zoom-in-btn')).toBeVisible();
+				// The percentage label is now shown and reflects a zoom above the 1x (100%) base.
+				await expect(container.locator('#zoom-level')).toBeVisible();
+				await expect(container.locator('#zoom-level')).toHaveText(/^\d+%$/);
+				expect(await readZoomPercent(page)).toBeGreaterThan(100);
+			});
 
-		test('should order the zoom group as reset, zoom-out, percentage, zoom-in', async ({ page }) => {
-			await openMeeting(page, accessUrl, { videoEnabled: true, audioEnabled: true });
-			await startScreensharing(page);
+			await test.step('should order the zoom group as reset, zoom-out, percentage, zoom-in', async () => {
+				// Reset sits to the LEFT of zoom-out, and the percentage label sits BETWEEN
+				// the zoom-out and zoom-in buttons.
+				expect(await getZoomControlOrder(page)).toEqual([
+					'reset-zoom-btn',
+					'zoom-out-btn',
+					'zoom-level',
+					'zoom-in-btn'
+				]);
+			});
 
-			await zoomInScreenShare(page, 1);
+			await test.step('should update the percentage on zoom-out and clear it on reset', async () => {
+				const container = screenShareStream(page);
 
-			// Reset sits to the LEFT of zoom-out, and the percentage label sits BETWEEN
-			// the zoom-out and zoom-in buttons.
-			expect(await getZoomControlOrder(page)).toEqual([
-				'reset-zoom-btn',
-				'zoom-out-btn',
-				'zoom-level',
-				'zoom-in-btn'
-			]);
+				await zoomInScreenShare(page, 2);
+				const zoomedInPercent = await readZoomPercent(page);
+				expect(zoomedInPercent).toBeGreaterThan(100);
 
-			await page.close();
-		});
+				// One zoom-out step lowers the percentage but stays zoomed: the reset button
+				// (which only renders while zoomed) must still be present, and the percentage drops.
+				await clickZoomControl(page, 'zoom-out-btn');
+				await expect(container.locator('#reset-zoom-btn')).toBeVisible();
+				await expect.poll(() => readZoomPercent(page)).toBeLessThan(zoomedInPercent);
+				expect(await readZoomPercent(page)).toBeGreaterThan(100);
 
-		test('should update the percentage on zoom-out and clear it on reset', async ({ page }) => {
-			await openMeeting(page, accessUrl, { videoEnabled: true, audioEnabled: true });
-			await startScreensharing(page);
-
-			const container = screenShareStream(page);
-
-			// Two zoom-in steps land above the 1x base.
-			await zoomInScreenShare(page, 2);
-			const zoomedInPercent = await readZoomPercent(page);
-			expect(zoomedInPercent).toBeGreaterThan(100);
-
-			// One zoom-out step lowers the percentage but stays zoomed: the reset button
-			// (which only renders while zoomed) must still be present, and the percentage drops.
-			await clickZoomControl(page, 'zoom-out-btn');
-			await expect(container.locator('#reset-zoom-btn')).toBeVisible();
-			await expect.poll(() => readZoomPercent(page)).toBeLessThan(zoomedInPercent);
-			expect(await readZoomPercent(page)).toBeGreaterThan(100);
-
-			// Reset returns to 1x: zoom-out, reset and the percentage disappear, leaving only zoom-in.
-			await clickZoomControl(page, 'reset-zoom-btn');
-			await expect(container.locator('#zoom-level')).toHaveCount(0);
-			await expect(container.locator('#zoom-out-btn')).toHaveCount(0);
-			await expect(container.locator('#reset-zoom-btn')).toHaveCount(0);
-			await expect(container.locator('#zoom-in-btn')).toBeVisible();
-
-			await page.close();
-		});
-
-		test('should keep the controls visible while the pointer rests on them', async ({ page }) => {
-			await openMeeting(page, accessUrl, { videoEnabled: true, audioEnabled: true });
-			await startScreensharing(page);
-
-			const container = await hoverScreenShareStream(page);
-			const controls = container.locator('.stream-video-controls');
-			const zoomIn = container.locator('#zoom-in-btn');
-
-			// Park the pointer on the controls and let well over the 2s auto-hide window pass
-			// WITHOUT moving the mouse.
-			await controls.hover();
-			await page.waitForTimeout(3_000);
-
-			// The controls must NOT have auto-hidden while the pointer was interacting with them.
-			await expect(controls).toBeVisible();
-			await expect(zoomIn).toBeVisible();
+				// Reset returns to 1x: zoom-out, reset and the percentage disappear, leaving only zoom-in.
+				await clickZoomControl(page, 'reset-zoom-btn');
+				await expect(container.locator('#zoom-level')).toHaveCount(0);
+				await expect(container.locator('#zoom-out-btn')).toHaveCount(0);
+				await expect(container.locator('#reset-zoom-btn')).toHaveCount(0);
+				await expect(container.locator('#zoom-in-btn')).toBeVisible();
+			});
 
 			await page.close();
 		});

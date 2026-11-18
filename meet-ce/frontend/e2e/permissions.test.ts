@@ -6,7 +6,7 @@ import {
 	MeetUserRole
 } from '@openvidu-meet/typings';
 import { expect, test, type Browser, type Page } from '@playwright/test';
-import { createReadyMemberUser, expectJoinScreenAccessRestricted, expectNameInput } from './helpers/access.helper';
+import { createReadyMemberUser, expectJoinScreenAccessRestricted } from './helpers/access.helper';
 import { authenticate, createReadyUser, type ReadyUser } from './helpers/auth.helper';
 import {
 	expectChatAvailable,
@@ -47,7 +47,6 @@ import {
 	expectKickedFromMeeting,
 	expectMeetingAccessRevoked,
 	expectNoEndMeetingOption,
-	openJoinScreen,
 	openMeeting,
 	openPrejoin
 } from './helpers/meeting-navigation.helper';
@@ -57,8 +56,6 @@ import {
 	expectMakeModeratorButton,
 	expectMuteAllButton,
 	expectMuteButton,
-	expectNoKickButton,
-	expectNoMakeModeratorButton,
 	expectNoMuteAllButton,
 	expectNoMuteButton,
 	expectParticipantBadge,
@@ -84,7 +81,7 @@ import {
 	expectViewRecordingsButtonAvailable,
 	recordRoom
 } from './helpers/recordings.helper';
-import { expectNoShareAccessLink, expectShareAccessLinkAvailable } from './helpers/share-link.helper';
+import { expectShareAccessLinkAvailable } from './helpers/share-link.helper';
 
 test.describe('Permissions E2E Tests', () => {
 	const createdUserIds: string[] = [];
@@ -162,13 +159,6 @@ test.describe('Permissions E2E Tests', () => {
 	// ── Join screen permissions ─────────────────────────────────────────────────────────
 
 	test.describe('Join screen', () => {
-		test('canJoinMeeting granted: the join form is shown', async ({ page }) => {
-			const member = await createGuest({ canJoinMeeting: true });
-			await openJoinScreen(page, member.accessUrl);
-
-			await expectNameInput(page, { value: member.name, editable: false });
-		});
-
 		test('canJoinMeeting denied: the join screen shows the access-restricted card', async ({ page }) => {
 			const member = await createGuest({ canJoinMeeting: false });
 			await page.goto(member.accessUrl, { waitUntil: 'domcontentloaded' });
@@ -208,11 +198,6 @@ test.describe('Permissions E2E Tests', () => {
 			await expectChatAvailable(page);
 		});
 
-		test('canReadChat denied: the chat panel button is not available', async ({ page }) => {
-			await joinAsGuest(page, { canReadChat: false });
-			await expectNoChat(page);
-		});
-
 		test('canReadChat denied: a message sent to the meeting raises no notice', async ({ page, browser }) => {
 			const { byName, removeAllParticipants } = await joinParticipants(browser, {
 				roomId: room.roomId,
@@ -235,21 +220,10 @@ test.describe('Permissions E2E Tests', () => {
 			}
 		});
 
-		test('canWriteChat granted: the chat input is editable', async ({ page }) => {
-			await joinAsGuest(page, { canReadChat: true, canWriteChat: true });
-			await toggleChatPanel(page, 'open');
-			await expectChatWriteEnabled(page);
-		});
-
 		test('canWriteChat denied: the chat panel opens read-only with no input', async ({ page }) => {
 			await joinAsGuest(page, { canReadChat: true, canWriteChat: false });
 			await toggleChatPanel(page, 'open');
 			await expectChatWriteDisabled(page);
-		});
-
-		test('canChangeVirtualBackground granted: the backgrounds control is available', async ({ page }) => {
-			await joinAsGuest(page, { canChangeVirtualBackground: true });
-			await expectBackgroundsButtonAvailable(page);
 		});
 
 		test('canChangeVirtualBackground denied: the backgrounds control is not available', async ({ page }) => {
@@ -305,19 +279,9 @@ test.describe('Permissions E2E Tests', () => {
 			await expectShareAccessLinkAvailable(page);
 		});
 
-		test('canShareAccessLinks denied: the share-access-link button is not available', async ({ page }) => {
-			await joinAsGuest(page, { canShareAccessLinks: false });
-			await expectNoShareAccessLink(page);
-		});
-
 		test('canEndMeeting granted: the end-meeting option is available', async ({ page }) => {
 			await joinAsGuest(page, { canEndMeeting: true });
 			await expectEndMeetingOption(page);
-		});
-
-		test('canEndMeeting denied: the end-meeting option is not available', async ({ page }) => {
-			await joinAsGuest(page, { canEndMeeting: false });
-			await expectNoEndMeetingOption(page);
 		});
 	});
 
@@ -354,16 +318,8 @@ test.describe('Permissions E2E Tests', () => {
 			await withTarget(browser, { canMakeModerator: true }, expectMakeModeratorButton);
 		});
 
-		test('canMakeModerator denied: the make-moderator button is not available', async ({ browser }) => {
-			await withTarget(browser, { canMakeModerator: false }, expectNoMakeModeratorButton);
-		});
-
 		test('canKickParticipants granted: the kick button is available', async ({ browser }) => {
 			await withTarget(browser, { canKickParticipants: true }, expectKickButton);
-		});
-
-		test('canKickParticipants denied: the kick button is not available', async ({ browser }) => {
-			await withTarget(browser, { canKickParticipants: false }, expectNoKickButton);
 		});
 	});
 

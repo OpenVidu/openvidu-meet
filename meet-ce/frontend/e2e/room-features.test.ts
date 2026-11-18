@@ -13,16 +13,6 @@ test.describe('Room UI Features E2E Tests', () => {
 	});
 
 	test.describe('Chat Feature', () => {
-		test('should show chat button when chat is enabled', async ({ page }) => {
-			const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl({
-				config: { chat: { enabled: true } }
-			});
-			createdRoomIds.push(room.roomId);
-
-			await openMeeting(page, accessUrl);
-			await expectVisible(page, '#chat-panel-btn');
-		});
-
 		test('should hide chat button when chat is disabled', async ({ page }) => {
 			const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl({
 				config: { chat: { enabled: false } }
@@ -86,30 +76,6 @@ test.describe('Room UI Features E2E Tests', () => {
 	});
 
 	test.describe('Virtual Background Feature', () => {
-		test('should show virtual background button when enabled', async ({ page }) => {
-			const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl({
-				config: { virtualBackground: { enabled: true } }
-			});
-			createdRoomIds.push(room.roomId);
-
-			await openMeeting(page, accessUrl);
-
-			await openRoomBackgroundsPanel(page);
-			await expectVisible(page, '#background-effects-container');
-		});
-
-		test('should hide virtual background button when disabled', async ({ page }) => {
-			const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl({
-				config: { virtualBackground: { enabled: false } }
-			});
-			createdRoomIds.push(room.roomId);
-
-			await openMeeting(page, accessUrl);
-
-			await openMoreOptionsMenu(page);
-			await expectHidden(page, '#virtual-bg-btn');
-		});
-
 		test('should not apply virtual background when saved in local storage and feature is disabled', async ({
 			page
 		}) => {

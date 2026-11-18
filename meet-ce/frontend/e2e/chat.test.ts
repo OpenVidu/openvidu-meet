@@ -60,34 +60,6 @@ test.describe('Chat E2E Tests', () => {
 		await expectChatMessageCount(page, 0);
 	});
 
-	test('should receive a message', async ({ browser }) => {
-		const senderName = `sender`;
-		const receiverName = `receiver`;
-		const { byName, removeAllParticipants } = await joinParticipants(browser, {
-			roomId,
-			accessUrl,
-			participants: [
-				{ name: receiverName, headless: false },
-				{ name: senderName, headless: true }
-			]
-		});
-		const senderPage = byName[senderName];
-		const receiverPage = byName[receiverName];
-
-		try {
-			const message = 'hello from sender';
-			await toggleChatPanel(senderPage);
-			await sendChatMessage(senderPage, message);
-
-			await toggleChatPanel(receiverPage);
-			await expectChatMessageCount(receiverPage, 1);
-			await expectChatMessageTextAt(receiverPage, 0, message);
-			await expectFirstMessageSender(receiverPage, senderName);
-		} finally {
-			await removeAllParticipants();
-		}
-	});
-
 	test('should auto-scroll when receiving new messages with chat panel open', async ({ browser }) => {
 		const senderName = `sender`;
 		const receiverName = `receiver`;
@@ -189,6 +161,7 @@ test.describe('Chat E2E Tests', () => {
 			await openChatFromNotification(receiverPage);
 			await expectChatMessageCount(receiverPage, 1);
 			await expectChatMessageTextAt(receiverPage, 0, message);
+			await expectFirstMessageSender(receiverPage, senderName);
 		} finally {
 			await removeAllParticipants();
 		}

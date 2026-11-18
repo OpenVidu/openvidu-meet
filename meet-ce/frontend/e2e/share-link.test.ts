@@ -76,29 +76,6 @@ test.describe('Share Link E2E Tests', () => {
 	});
 
 	test.describe('In-meeting share points', () => {
-		test('should render the toolbar button, layout overlay and invite panel when member can share access links', async ({
-			page
-		}) => {
-			const accessUrl = await createMemberAccessUrl(true);
-
-			await openMeeting(page, accessUrl);
-
-			// Toolbar copy-link button
-			await expectVisible(page, '#copy-speaker-link');
-
-			// Layout overlay (only shown while the member is alone in the room)
-			const shareOverlay = page.locator('#invite-overlay');
-			await expect(shareOverlay).toBeVisible();
-			await expect(shareOverlay.locator('.main-share-room-access-link')).toBeVisible();
-			await expect(shareOverlay.locator('.copy-url-btn')).toBeVisible();
-
-			// Invite panel inside the participants panel
-			await toggleParticipantsPanel(page);
-			const invitePanel = page.locator('#invite-panel');
-			await expect(invitePanel).toBeVisible();
-			await expect(invitePanel.locator('ov-share-room-access-link')).toBeVisible();
-		});
-
 		test('should not render the toolbar button, layout overlay or invite panel when member cannot share access links', async ({
 			page
 		}) => {
@@ -178,7 +155,10 @@ test.describe('Share Link E2E Tests', () => {
 			await expectHidden(page, '#invite-overlay .copy-url-btn');
 		});
 
-		test('should hide the layout overlay when another participant joins the meeting', async ({ page, browser }) => {
+		test('should render every share point for a member who can share, and hide the layout overlay when another participant joins', async ({
+			page,
+			browser
+		}) => {
 			const moderatorAccessUrl = await createMemberAccessUrl(true);
 			const speaker = await createRoomMember(roomId, {
 				name: 'Speaker',
@@ -186,18 +166,40 @@ test.describe('Share Link E2E Tests', () => {
 			});
 
 			await openMeeting(page, moderatorAccessUrl);
-			await expectVisible(page, '#invite-overlay');
 
-			const speakerContext = await browser.newContext();
-			const speakerPage = await speakerContext.newPage();
-			await openMeeting(speakerPage, speaker.accessUrl, { name: 'Speaker' });
+			await test.step('should render the toolbar button, layout overlay and invite panel when member can share access links', async () => {
+				// Toolbar copy-link button
+				await expectVisible(page, '#copy-speaker-link');
 
-			await waitForRemoteStream(page);
-			await expectHidden(page, '#invite-overlay');
+				// Layout overlay (only shown while the member is alone in the room)
+				const shareOverlay = page.locator('#invite-overlay');
+				await expect(shareOverlay).toBeVisible();
+				await expect(shareOverlay.locator('.main-share-room-access-link')).toBeVisible();
+				await expect(shareOverlay.locator('.copy-url-btn')).toBeVisible();
 
-			await leaveMeeting(speakerPage);
-			await speakerPage.close();
-			await speakerContext.close();
+				// Invite panel inside the participants panel
+				await toggleParticipantsPanel(page);
+				const invitePanel = page.locator('#invite-panel');
+				await expect(invitePanel).toBeVisible();
+				await expect(invitePanel.locator('ov-share-room-access-link')).toBeVisible();
+			});
+
+			await test.step('should hide the layout overlay when another participant joins the meeting', async () => {
+				const speakerContext = await browser.newContext();
+
+				try {
+					const speakerPage = await speakerContext.newPage();
+					await openMeeting(speakerPage, speaker.accessUrl, { name: 'Speaker' });
+
+					await waitForRemoteStream(page);
+					await expectHidden(page, '#invite-overlay');
+
+					await leaveMeeting(speakerPage);
+					await speakerPage.close();
+				} finally {
+					await speakerContext.close();
+				}
+			});
 		});
 	});
 
