@@ -45,7 +45,6 @@ import {
 	eventPayloads,
 	eventSequence,
 	expectEvent,
-	expectWebhook,
 	participantHandChangedLocator,
 	participantRaiseHandCommand,
 	joinedParticipantIdentity,
@@ -60,8 +59,7 @@ import {
 	recordHostEvents,
 	recordingEventLocator,
 	recordingStartCommand,
-	removeEmbeddedMeeting,
-	webhookLocator
+	removeEmbeddedMeeting
 } from '../helpers/testapp.helper';
 import { getWebhookFromStorage, webhooksFromStorage } from '../helpers/ui-utils.helper';
 
@@ -483,7 +481,6 @@ for (const integration of INTEGRATIONS) {
 			}) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
 				await expectEvent(page, EmbeddedEventName.MEETING_JOINED);
-				await expectWebhook(page, MeetWebhookEventType.MEETING_STARTED);
 
 				const speakerContext = await browser.newContext();
 				const speakerPage = await speakerContext.newPage();
@@ -510,11 +507,6 @@ for (const integration of INTEGRATIONS) {
 				await expect(left).toContainText('crm-user_42');
 				await expect(left).toContainText(`"leaveReason":"${LeftEventReason.VOLUNTARY_LEAVE}"`);
 
-				await test.step('should receive participantJoined and participantLeft webhooks for a participant that joins and leaves', async () => {
-					await expectWebhook(page, MeetWebhookEventType.PARTICIPANT_JOINED, { count: 2 });
-					await expectWebhook(page, MeetWebhookEventType.PARTICIPANT_LEFT);
-				});
-
 				// Each event carries the participant its webhook carries, minus what only the server knows.
 				const [joinedWebhook, leftWebhook] = await Promise.all([
 					getWebhookFromStorage(page, roomId, MeetWebhookEventType.PARTICIPANT_JOINED, { matchIndex: 1 }),
@@ -528,6 +520,15 @@ for (const integration of INTEGRATIONS) {
 				expect((leftWebhook.data as MeetParticipantLeftPayload).participant).toMatchObject(
 					await eventParticipant(left)
 				);
+
+				await test.step('should receive participantJoined and participantLeft webhooks for a participant that joins and leaves', async () => {
+					expect(
+						await webhooksFromStorage(page, roomId, MeetWebhookEventType.PARTICIPANT_JOINED)
+					).toHaveLength(2);
+					expect(await webhooksFromStorage(page, roomId, MeetWebhookEventType.PARTICIPANT_LEFT)).toHaveLength(
+						1
+					);
+				});
 
 				await test.step('should carry the correlation fields through the participantJoined webhook', async () => {
 					const joinedPayload = joinedWebhook.data as MeetParticipantJoinedPayload;
@@ -770,7 +771,6 @@ for (const integration of INTEGRATIONS) {
 				await expect(streaming.first()).toBeAttached({ timeout: 40_000 });
 
 				await test.step('should receive broadcastStarted and broadcastUpdated webhooks', async () => {
-					await expectWebhook(page, MeetWebhookEventType.BROADCAST_STARTED);
 					const startedWebhook = await getWebhookFromStorage(
 						page,
 						broadcastRoomId,
@@ -782,13 +782,11 @@ for (const integration of INTEGRATIONS) {
 					expect(startedBroadcast.destination.url).toContain('/********');
 					expect(startedBroadcast.destination.url).not.toContain(sinkUrl.split('/').pop()!);
 
-					await expect(webhookLocator(page, MeetWebhookEventType.BROADCAST_UPDATED).first()).toBeAttached({
-						timeout: 40_000
-					});
 					const updatedWebhook = await getWebhookFromStorage(
 						page,
 						broadcastRoomId,
-						MeetWebhookEventType.BROADCAST_UPDATED
+						MeetWebhookEventType.BROADCAST_UPDATED,
+						{ timeout: 40_000 }
 					);
 					expect((updatedWebhook.data as MeetBroadcastInfo).broadcastId).toBe(startedBroadcast.broadcastId);
 				});
@@ -800,11 +798,11 @@ for (const integration of INTEGRATIONS) {
 				await expect(meetLocator(page, integration, '#broadcast-tag')).toBeHidden();
 
 				await test.step('should receive broadcastEnded webhook', async () => {
-					await expectWebhook(page, MeetWebhookEventType.BROADCAST_ENDED, { timeout: 30_000 });
 					const endedWebhook = await getWebhookFromStorage(
 						page,
 						broadcastRoomId,
-						MeetWebhookEventType.BROADCAST_ENDED
+						MeetWebhookEventType.BROADCAST_ENDED,
+						{ timeout: 30_000 }
 					);
 					const endedBroadcast = endedWebhook.data as MeetBroadcastInfo;
 					expect(endedBroadcast.broadcastId).toBe(startedBroadcast.broadcastId);

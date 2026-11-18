@@ -407,8 +407,6 @@ for (const integration of INTEGRATIONS) {
 				});
 
 				await test.step('should receive recordingStarted and recordingUpdated webhooks', async () => {
-					await expectWebhook(page, MeetWebhookEventType.RECORDING_STARTED);
-
 					const recordingStartedWebhook = await getWebhookFromStorage(
 						page,
 						roomId,
@@ -433,8 +431,6 @@ for (const integration of INTEGRATIONS) {
 					} else {
 						expect(startedRecording.startDate).toBeUndefined();
 					}
-
-					await expectWebhook(page, MeetWebhookEventType.RECORDING_UPDATED);
 
 					const recordingUpdatedWebhook = await getWebhookFromStorage(
 						page,
