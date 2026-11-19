@@ -76,6 +76,7 @@
 }
 
 .input-container {
+	box-sizing: content-box;
 	height: 65px;
 	display: flex;
 	border: 1px solid var(--ov-secondary-action-color);
