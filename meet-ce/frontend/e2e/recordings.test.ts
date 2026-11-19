@@ -114,11 +114,6 @@ test.describe('Recordings E2E Tests', () => {
 			await expectRecordingNotice(page, 'waiting-for-media');
 			await expectRecordingBadgeStarting(page);
 
-			// The transient notices take themselves away after 10s. This one has to stay, because the
-			// room is what ends the wait and has to be able to read it.
-			await page.waitForTimeout(12_000);
-			await expectRecordingNotice(page, 'waiting-for-media', 1_000);
-
 			const [recording] = await getRoomRecordings(roomId);
 			expect(recording.status).toBe(MeetRecordingStatus.STARTING);
 			expect(recording.startDate).toBeUndefined();

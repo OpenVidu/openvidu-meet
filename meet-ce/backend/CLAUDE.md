@@ -195,3 +195,9 @@ pnpm run lint                      # --max-warnings 0
   `--runInBand`, which ran out of heap in CI.
 - `@openvidu-meet/typings` is mapped to the typings *source* in `jest.config.mjs`, so unit tests do
   not need a typings build.
+- No test waits out a product time bound in real time. `environment.ts` loads `.env.test` under
+  `NODE_ENV` `test` or `ci`, so the integration tests and the backends of the e2e suites run with the
+  bounds a test has to see pass shortened (the meeting departure timeout, the WebSocket ping, the waiting
+  participant timeouts and sweep), which `internal-config.ts` reads from `process.env`. A unit test
+  imports no environment, keeps the production values and moves the clock instead; an integration test
+  may also shrink a constant with `setInternalConfig()`.
