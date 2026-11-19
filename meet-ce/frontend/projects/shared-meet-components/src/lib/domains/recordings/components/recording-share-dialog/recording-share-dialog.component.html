@@ -7,10 +7,10 @@
 	<mat-dialog-content class="dialog-content ov-theme-transition">
 		@if (!recordingUrl()) {
 			<div class="content-section fade-in">
-				@if (erroMessage()) {
+				@if (errorMessage()) {
 					<div class="error-message">
 						<mat-icon class="error-icon">error</mat-icon>
-						<span class="error-text">{{ erroMessage() }}</span>
+						<span class="error-text">{{ errorMessage() }}</span>
 					</div>
 				}
 

@@ -31,12 +31,7 @@ export class RecordingService {
 	 * @return A promise that resolves to the recording information
 	 */
 	async startRecording(roomId: string): Promise<MeetRecordingInfo> {
-		try {
-			return this.httpService.postRequest(this.RECORDINGS_API, { roomId });
-		} catch (error) {
-			console.error('Error starting recording:', error);
-			throw error;
-		}
+		return this.httpService.postRequest(this.RECORDINGS_API, { roomId });
 	}
 
 	/**
@@ -50,13 +45,7 @@ export class RecordingService {
 			throw new Error('Recording ID not found when stopping recording');
 		}
 
-		try {
-			const path = `${this.RECORDINGS_API}/${recordingId}/stop`;
-			return this.httpService.postRequest(path, {});
-		} catch (error) {
-			console.error('Error stopping recording:', error);
-			throw error;
-		}
+		return this.httpService.postRequest(`${this.RECORDINGS_API}/${recordingId}/stop`, {});
 	}
 
 	/**
@@ -166,7 +155,12 @@ export class RecordingService {
 			params.append('recordingSecret', recordingSecret);
 		}
 
-		// Also use access and/or room member token if available
+		this.appendAccessTokens(params);
+		params.append('t', Date.now().toString());
+		return params;
+	}
+
+	private appendAccessTokens(params: URLSearchParams): void {
 		const accessToken = this.tokenStorageService.getAccessToken();
 
 		if (accessToken) {
@@ -178,10 +172,6 @@ export class RecordingService {
 		if (roomMemberToken) {
 			params.append('roomMemberToken', roomMemberToken);
 		}
-
-		const now = Date.now();
-		params.append('t', now.toString());
-		return params;
 	}
 
 	/**
@@ -304,30 +294,14 @@ export class RecordingService {
 			throw new Error('No recordings IDs provided for download');
 		}
 
-		const params = new URLSearchParams();
-		params.append('recordingIds', recordingIds.join(','));
-
-		// Try to add access and/or room member token if available
-		const accessToken = this.tokenStorageService.getAccessToken();
-
-		if (accessToken) {
-			params.append('accessToken', accessToken);
-		}
-
-		const roomMemberToken = this.roomMemberContextService.roomMemberToken();
-
-		if (roomMemberToken) {
-			params.append('roomMemberToken', roomMemberToken);
-		}
+		const params = new URLSearchParams({ recordingIds: recordingIds.join(',') });
+		this.appendAccessTokens(params);
 
 		// Resolve against the Meet server URL for webcomponent embedding (no-op in the SPA).
 		const downloadUrl = this.runtimeConfigService.resolveUrl(
 			`${this.RECORDINGS_API}/download?${params.toString()}`
 		);
-		const link = document.createElement('a');
-		link.href = downloadUrl;
-		link.download = 'recordings.zip';
-		link.click();
+		this.clickDownloadLink(downloadUrl, 'recordings.zip');
 	}
 
 	/**
