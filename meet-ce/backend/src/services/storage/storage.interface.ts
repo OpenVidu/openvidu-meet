@@ -21,23 +21,6 @@ export interface StorageProvider {
 	getKeyPrefix(): string;
 
 	/**
-	 * Retrieves an object from storage as a JSON object.
-	 *
-	 * @param key - The storage key/path of the object
-	 * @returns A promise that resolves to the parsed JSON object, or null if not found
-	 */
-	getObject<T = Record<string, unknown>>(key: string): Promise<T | null>;
-
-	/**
-	 * Stores an object in storage as JSON.
-	 *
-	 * @param key - The storage key/path where the object should be stored
-	 * @param data - The object to store (will be serialized to JSON)
-	 * @returns A promise that resolves when the object is successfully stored
-	 */
-	putObject<T = Record<string, unknown>>(key: string, data: T): Promise<void>;
-
-	/**
 	 * Deletes a single object from storage.
 	 *
 	 * @param key - The storage key/path of the object to delete
@@ -52,37 +35,6 @@ export interface StorageProvider {
 	 * @returns A promise that resolves when all objects are successfully deleted
 	 */
 	deleteObjects(keys: string[]): Promise<void>;
-
-	/**
-	 * Checks if an object exists in storage.
-	 *
-	 * @param key - The storage key/path to check
-	 * @returns A promise that resolves to true if the object exists, false otherwise
-	 */
-	exists(key: string): Promise<boolean>;
-
-	/**
-	 * Lists objects in storage with a given prefix (acts like a folder).
-	 *
-	 * @param prefix - The prefix to filter objects by
-	 * @param maxItems - Maximum number of items to return (optional)
-	 * @param continuationToken - Token for pagination (optional)
-	 * @returns A promise that resolves to a paginated list of objects
-	 */
-	listObjects(
-		prefix: string,
-		maxItems?: number,
-		continuationToken?: string
-	): Promise<{
-		Contents?: Array<{
-			Key?: string;
-			LastModified?: Date;
-			Size?: number;
-			ETag?: string;
-		}>;
-		IsTruncated?: boolean;
-		NextContinuationToken?: string;
-	}>;
 
 	/**
 	 * Retrieves metadata headers for an object without downloading the content.

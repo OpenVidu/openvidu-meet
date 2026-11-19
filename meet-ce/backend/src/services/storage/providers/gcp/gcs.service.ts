@@ -1,4 +1,4 @@
-import type { Bucket, CreateReadStreamOptions, File, FileMetadata, GetFilesOptions } from '@google-cloud/storage';
+import type { Bucket, CreateReadStreamOptions, FileMetadata } from '@google-cloud/storage';
 import { Storage } from '@google-cloud/storage';
 import { inject, injectable } from 'inversify';
 import type { Readable } from 'stream';
@@ -25,21 +25,6 @@ function getErrorCode(error: unknown): string | number | undefined {
 	return undefined;
 }
 
-/**
- * Extracts the `nextPageToken` from the raw GCS getFiles API response, if present.
- */
-function getNextPageToken(response: unknown): string | undefined {
-	if (typeof response === 'object' && response !== null && 'nextPageToken' in response) {
-		const token: unknown = (response as Record<string, unknown>).nextPageToken;
-
-		if (typeof token === 'string') {
-			return token;
-		}
-	}
-
-	return undefined;
-}
-
 @injectable()
 export class GCSService {
 	protected storage: Storage;
@@ -49,69 +34,6 @@ export class GCSService {
 		this.storage = new Storage();
 		this.bucket = this.storage.bucket(MEET_ENV.S3_BUCKET); // Use S3_BUCKET as GCS bucket name
 		this.logger.debug('GCS Storage Client initialized');
-	}
-
-	/**
-	 * Checks if a file exists in the specified GCS bucket.
-	 */
-	async exists(name: string, bucket: string = MEET_ENV.S3_BUCKET): Promise<boolean> {
-		try {
-			const bucketObj = bucket === MEET_ENV.S3_BUCKET ? this.bucket : this.storage.bucket(bucket);
-			const file = bucketObj.file(this.getFullKey(name));
-			const [exists] = await file.exists();
-
-			if (exists) {
-				this.logger.verbose(`GCS exists: file '${this.getFullKey(name)}' found in bucket '${bucket}'`);
-			} else {
-				this.logger.debug(`GCS exists: file '${this.getFullKey(name)}' not found in bucket '${bucket}'`);
-			}
-
-			return exists;
-		} catch (error) {
-			this.logger.warn(
-				`GCS exists: error checking file '${this.getFullKey(name)}' in bucket '${bucket}'`,
-				error
-			);
-			return false;
-		}
-	}
-
-	/**
-	 * Saves an object to a GCS bucket.
-	 * Uses an internal retry mechanism in case of errors.
-	 */
-	async saveObject(
-		name: string,
-		body: Record<string, unknown>,
-		bucket: string = MEET_ENV.S3_BUCKET
-	): Promise<{ success: boolean }> {
-		const fullKey = this.getFullKey(name);
-
-		try {
-			const bucketObj = bucket === MEET_ENV.S3_BUCKET ? this.bucket : this.storage.bucket(bucket);
-			const file = bucketObj.file(fullKey);
-			const result = await this.retryOperation(async () => {
-				await file.save(JSON.stringify(body), {
-					metadata: {
-						contentType: 'application/json'
-					}
-				});
-				return { success: true };
-			});
-
-			this.logger.verbose(`GCS saveObject: successfully saved object '${fullKey}' in bucket '${bucket}'`);
-			return result;
-		} catch (error) {
-			this.logger.error(`Error saving object '${fullKey}' in bucket '${bucket}'`, error);
-
-			const code = getErrorCode(error);
-
-			if (code === 'ECONNREFUSED' || code === 'ENOTFOUND') {
-				throw errorS3NotAvailable(error); // Reuse S3 error for compatibility
-			}
-
-			throw internalError('saving object to GCS Storage');
-		}
 	}
 
 	/**
@@ -148,119 +70,6 @@ export class GCSService {
 		} catch (error) {
 			this.logger.error(`Error deleting objects in bucket '${bucket}'`, error);
 			throw internalError('deleting objects from GCS Storage');
-		}
-	}
-
-	/**
-	 * List objects with pagination.
-	 *
-	 * @param additionalPrefix Additional prefix relative to the subbucket.
-	 * @param maxKeys Maximum number of objects to return. Defaults to 50.
-	 * @param continuationToken Token to retrieve the next page.
-	 * @param bucket Optional bucket name. Defaults to S3_BUCKET.
-	 *
-	 * @returns S3-compatible response object.
-	 */
-	async listObjectsPaginated(
-		additionalPrefix = '',
-		maxResults = 50,
-		continuationToken?: string,
-		bucket: string = MEET_ENV.S3_BUCKET
-	): Promise<{
-		items: Array<{ Key?: string; LastModified?: Date; Size?: number; ETag?: string }>;
-		continuationToken?: string;
-		isTruncated?: boolean;
-	}> {
-		const basePrefix = this.getFullKey(additionalPrefix);
-		this.logger.verbose(`GCS listObjectsPaginated: listing objects with prefix '${basePrefix}'`);
-
-		try {
-			maxResults = Number(maxResults);
-			const bucketObj = bucket === MEET_ENV.S3_BUCKET ? this.bucket : this.storage.bucket(bucket);
-
-			const options: GetFilesOptions = {
-				prefix: basePrefix,
-				maxResults: maxResults,
-				autoPaginate: false
-			};
-
-			if (continuationToken && continuationToken !== 'undefined') {
-				options.pageToken = continuationToken;
-			}
-
-			const [files, , response] = await bucketObj.getFiles(options);
-
-			const items = files.map((file: File) => ({
-				Key: file.name,
-				LastModified: file.metadata.updated ? new Date(file.metadata.updated) : undefined,
-				Size: file.metadata.size ? parseInt(file.metadata.size as string) : undefined,
-				ETag: file.metadata.etag || undefined
-			}));
-
-			let NextContinuationToken = getNextPageToken(response);
-			let isTruncated = NextContinuationToken !== undefined;
-
-			// Check if next page has items, similar to ABS implementation
-			if (NextContinuationToken) {
-				const nextOptions: GetFilesOptions = {
-					prefix: basePrefix,
-					maxResults: 1,
-					autoPaginate: false,
-					pageToken: NextContinuationToken
-				};
-
-				const [nextFiles] = await bucketObj.getFiles(nextOptions);
-
-				if (nextFiles.length === 0) {
-					NextContinuationToken = undefined;
-					isTruncated = false;
-				}
-			}
-
-			return {
-				items: items,
-				continuationToken: NextContinuationToken,
-				isTruncated: isTruncated
-			};
-		} catch (error) {
-			this.logger.error(`Error listing objects with prefix '${basePrefix}'`, error);
-			throw internalError('listing objects from GCS Storage');
-		}
-	}
-
-	async getObjectAsJson(name: string, bucket: string = MEET_ENV.S3_BUCKET): Promise<object | undefined> {
-		try {
-			const bucketObj = bucket === MEET_ENV.S3_BUCKET ? this.bucket : this.storage.bucket(bucket);
-			const file = bucketObj.file(this.getFullKey(name));
-
-			const [exists] = await file.exists();
-
-			if (!exists) {
-				this.logger.debug(`Object '${name}' does not exist in bucket '${bucket}'`);
-				return undefined;
-			}
-
-			const [content] = await file.download();
-			const parsed = JSON.parse(content.toString()) as object;
-
-			this.logger.verbose(
-				`Successfully retrieved and parsed object '${name}' from bucket '${bucket}'`
-			);
-			return parsed;
-		} catch (error) {
-			const code = getErrorCode(error);
-
-			if (code === 404) {
-				this.logger.debug(`Object '${name}' does not exist in bucket '${bucket}'`);
-				return undefined;
-			}
-
-			if (code === 'ECONNREFUSED' || code === 'ENOTFOUND') {
-				throw errorS3NotAvailable(error); // Reuse S3 error for compatibility
-			}
-
-			this.logger.error(`Error retrieving object '${name}' from bucket '${bucket}'`, error);
-			throw internalError('getting object as JSON from GCS Storage');
 		}
 	}
 
@@ -369,42 +178,5 @@ export class GCSService {
 
 	protected getFullKey(name: string): string {
 		return withKeyPrefix(this.getKeyPrefix(), name);
-	}
-
-	/**
-	 * Retries a given asynchronous operation with exponential backoff.
-	 */
-	protected async retryOperation<T>(operation: () => Promise<T>): Promise<T> {
-		let attempt = 0;
-		let delayMs = Number(INTERNAL_CONFIG.S3_INITIAL_RETRY_DELAY_MS); // Reuse S3 config
-		const maxRetries = Number(INTERNAL_CONFIG.S3_MAX_RETRIES_ATTEMPTS_ON_SAVE_ERROR);
-
-		while (attempt < maxRetries) {
-			try {
-				this.logger.verbose(`GCS operation: attempt ${attempt + 1}`);
-				return await operation();
-			} catch (error) {
-				attempt++;
-
-				if (attempt >= maxRetries) {
-					this.logger.error(`GCS retryOperation: operation failed after ${maxRetries} attempts`, error);
-					throw error;
-				}
-
-				this.logger.warn(`GCS retryOperation: attempt ${attempt} failed. Retrying in ${delayMs}ms...`);
-				await this.sleep(delayMs);
-				// Exponential back off: delay increases by a factor of 2
-				delayMs *= 2;
-			}
-		}
-
-		throw new Error('GCS retryOperation: exceeded maximum retry attempts without success');
-	}
-
-	/**
-	 * Internal helper to delay execution.
-	 */
-	protected sleep(ms: number): Promise<void> {
-		return new Promise((resolve) => setTimeout(resolve, ms));
 	}
 }
