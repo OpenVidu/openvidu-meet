@@ -171,26 +171,10 @@ export class UsersListsComponent implements OnInit {
 	showFilterPanel = signal(false);
 
 	nameMatchModeOptions = [
-		{
-			value: TextMatchMode.PREFIX,
-			label: this.translateService.translate('USERS.LIST.MATCH_MODE_STARTS_WITH'),
-			icon: 'first_page'
-		},
-		{
-			value: TextMatchMode.PARTIAL,
-			label: this.translateService.translate('USERS.LIST.MATCH_MODE_CONTAINS'),
-			icon: 'more_horiz'
-		},
-		{
-			value: TextMatchMode.EXACT,
-			label: this.translateService.translate('USERS.LIST.MATCH_MODE_EXACT'),
-			icon: 'format_quote'
-		},
-		{
-			value: TextMatchMode.REGEX,
-			label: this.translateService.translate('USERS.LIST.MATCH_MODE_REGEX'),
-			icon: 'code'
-		}
+		{ value: TextMatchMode.PREFIX, label: this.translateService.translate('USERS.LIST.MATCH_MODE_STARTS_WITH'), icon: 'first_page' },
+		{ value: TextMatchMode.PARTIAL, label: this.translateService.translate('USERS.LIST.MATCH_MODE_CONTAINS'), icon: 'more_horiz' },
+		{ value: TextMatchMode.EXACT, label: this.translateService.translate('USERS.LIST.MATCH_MODE_EXACT'), icon: 'format_quote' },
+		{ value: TextMatchMode.REGEX, label: this.translateService.translate('USERS.LIST.MATCH_MODE_REGEX'), icon: 'code' }
 	];
 
 	// Currently selected match mode option (drives the search-box trigger button)
@@ -241,14 +225,8 @@ export class UsersListsComponent implements OnInit {
 	roleOptions = [
 		{ value: '', label: this.translateService.translate('USERS.LIST.ROLE_FILTER_ALL') },
 		{ value: MeetUserRole.ADMIN, label: this.translateService.translate('USERS.LIST.ROLE_FILTER_ADMIN') },
-		{
-			value: MeetUserRole.ROOM_MANAGER,
-			label: this.translateService.translate('USERS.LIST.ROLE_FILTER_ROOM_MANAGER')
-		},
-		{
-			value: MeetUserRole.ROOM_MEMBER,
-			label: this.translateService.translate('USERS.LIST.ROLE_FILTER_ROOM_MEMBER')
-		}
+		{ value: MeetUserRole.ROOM_MANAGER, label: this.translateService.translate('USERS.LIST.ROLE_FILTER_ROOM_MANAGER') },
+		{ value: MeetUserRole.ROOM_MEMBER, label: this.translateService.translate('USERS.LIST.ROLE_FILTER_ROOM_MEMBER') }
 	];
 	protected readonly UsersUiUtils = UsersUiUtils;
 

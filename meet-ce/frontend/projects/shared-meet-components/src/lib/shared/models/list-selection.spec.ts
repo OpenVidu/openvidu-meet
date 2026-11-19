@@ -67,6 +67,19 @@ describe('ListSelection', () => {
 		expect(ids()).toEqual(['a', 'b', 'c']);
 	});
 
+	it('stops reporting all selected once more rows are listed, and the select all box then ticks them too', () => {
+		selection.toggleAll();
+
+		items.set(rows('a', 'b', 'c', 'd'));
+
+		expect(selection.allSelected()).toBeFalse();
+		expect(selection.someSelected()).toBeTrue();
+
+		selection.toggleAll();
+
+		expect(ids()).toEqual(['a', 'b', 'c', 'd']);
+	});
+
 	it('drops the rows that leave the list and keeps the ones that stay', () => {
 		selection.toggleAll();
 

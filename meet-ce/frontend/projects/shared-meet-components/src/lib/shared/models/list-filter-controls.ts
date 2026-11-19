@@ -27,6 +27,8 @@ export class ListFilterControls<TControls extends NameSearchControls & { [K in k
 	remove(key: string) {
 		const control = (this.form.controls as Record<string, FormControl>)[key];
 
-		control?.setValue(typeof control.value === 'boolean' ? false : '');
+		if (!control) return;
+
+		control.setValue(typeof control.value === 'boolean' ? false : '');
 	}
 }
