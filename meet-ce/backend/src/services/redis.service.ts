@@ -232,29 +232,19 @@ export class RedisService extends EventEmitter {
 	/**
 	 * Sets a value in Redis with a specified TTL (time-to-live) in milliseconds.
 	 * @param key - The key under which the value will be stored.
-	 * @param value - The value to be stored. Can be a string, number, boolean, or object.
+	 * @param value - The value to be stored.
 	 * @param ttlMs TTL in milliseconds for the key. If not provided, the key will not expire.
 	 * @returns A promise that resolves to 'OK' if the operation is successful.
 	 * @throws Error if there is an issue setting the value in Redis.
 	 */
-	async set(key: string, value: string | number | boolean | object, ttlMs?: number): Promise<string> {
+	async set(key: string, value: string | number | boolean, ttlMs?: number): Promise<string> {
 		try {
-			const hasTTL = ttlMs !== undefined;
+			const stringValue = value.toString();
 
-			if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-				const stringValue = value.toString();
-
-				if (hasTTL) {
-					await this.client.set(key, stringValue, 'PX', ttlMs);
-				} else {
-					await this.client.set(key, stringValue);
-				}
+			if (ttlMs !== undefined) {
+				await this.client.set(key, stringValue, 'PX', ttlMs);
 			} else {
-				await this.client.hmset(key, value as Record<string, string | number>);
-
-				if (hasTTL) {
-					await this.client.pexpire(key, ttlMs);
-				}
+				await this.client.set(key, stringValue);
 			}
 
 			return 'OK';
