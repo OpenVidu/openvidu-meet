@@ -7,7 +7,7 @@ delivered and shown, and how a room turns it off. Participants and the room mana
 role may do rely on it.
 
 Surfaces: the meeting's chat panel and its toolbar button, the room config field `chat.enabled`
-(`createRoom`, `updateRoomConfig`, `getRoomConfig`; `meet-ce/backend/openapi/rooms/`) and its toggle in the
+(`roomCreate`, `roomUpdateConfig`, `roomGetConfig`; `meet-ce/backend/openapi/rooms/`) and its toggle in the
 console room wizard, and the permissions `chatRead` and `chatWrite` (deprecated `canReadChat` and
 `canWriteChat` until 3.12.0, see `permissions`). Chat has no REST operation, webhook or embedded command or
 event of its own. Documented in openvidu.io `docs/meet/features/meetings/configuration.md`,
@@ -16,14 +16,17 @@ event of its own. Documented in openvidu.io `docs/meet/features/meetings/configu
 ## Requirements
 
 ### Requirement: Room chat switch
+
 A room's `config.chat.enabled` SHALL turn the chat on or off for every participant of its meetings, whatever their permissions, and SHALL default to `true` when a room is created without it. When it can be changed is defined in `room-config`.
 
 #### Scenario: Room created without chat config
-- **GIVEN** a room created through `createRoom` without `config.chat`
-- **WHEN** its config is read with `getRoomConfig`
+
+- **GIVEN** a room created through `roomCreate` without `config.chat`
+- **WHEN** its config is read with `roomGetConfig`
 - **THEN** `chat.enabled` is `true`
 
 #### Scenario: Chat disabled
+
 - **GIVEN** a room with `config.chat.enabled` false
 - **WHEN** a moderator holding `chatRead` and `chatWrite` joins its meeting
 - **THEN** the toolbar shows no chat button and no chat panel can be opened

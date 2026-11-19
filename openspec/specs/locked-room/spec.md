@@ -4,7 +4,7 @@
 
 A locked room makes the participants who ask to join wait until a participant with `waitingParticipantAdmin` admits or rejects them, so the host sees who asks before letting anyone in. This capability covers the lock as a room access setting, who waits, the wait itself and how it ends, the waiting list, admitting and rejecting, the places an admission holds, and what a participant who was not let in can do, relied on by room managers through the console, by moderators in the meeting and by integrators through the REST API, webhooks and the embedded API.
 
-Surfaces: REST API (`access.lock` of `createRoom` and `updateRoomAccess`, and `/meetings/{roomId}/waiting-participants`; `meet-ce/backend/openapi/meetings/`), webhooks (`waitingParticipantKnocked`, `waitingParticipantStatusChanged`), embedded API (the `waitingParticipant*` events and commands; `meet-ce/typings/src/embedded/`), console (Room Access step of the room wizard), meeting UI (Ask to join on the join screen, the waiting screen, the Waiting to join section of the participants panel). The access settings as a whole are specified in `room-access`, the two permissions and their defaults in `permissions`, the join checks in `meeting-join`. Documented in openvidu.io `docs/meet/features/meetings/locked-room.md` and `docs/meet/features/rooms/access.md`.
+Surfaces: REST API (`access.lock` of `roomCreate` and `roomUpdateAccess`, and `/meetings/{roomId}/waiting-participants`; `meet-ce/backend/openapi/meetings/`), webhooks (`waitingParticipantKnocked`, `waitingParticipantStatusChanged`), embedded API (the `waitingParticipant*` events and commands; `meet-ce/typings/src/embedded/`), console (Room Access step of the room wizard), meeting UI (Ask to join on the join screen, the waiting screen, the Waiting to join section of the participants panel). The access settings as a whole are specified in `room-access`, the two permissions and their defaults in `permissions`, the join checks in `meeting-join`. Documented in openvidu.io `docs/meet/features/meetings/locked-room.md` and `docs/meet/features/rooms/access.md`.
 
 ## Requirements
 
@@ -15,17 +15,17 @@ The room access field `access.lock.enabled` SHALL decide whether a room makes th
 #### Scenario: Room created unlocked
 
 - **WHEN** a client creates a room without `access.lock`
-- **THEN** `getRoom` returns `access.lock.enabled` false and every participant joins directly
+- **THEN** `roomGet` returns `access.lock.enabled` false and every participant joins directly
 
 #### Scenario: Message too long
 
-- **WHEN** a client calls `updateRoomAccess` with an `access.lock.message` of 501 characters
+- **WHEN** a client calls `roomUpdateAccess` with an `access.lock.message` of 501 characters
 - **THEN** the server answers `422` and the access settings are unchanged
 
 #### Scenario: Unlocking during a meeting
 
 - **GIVEN** a locked room and a meeting running
-- **WHEN** its owner calls `updateRoomAccess` with `access.lock.enabled` false
+- **WHEN** its owner calls `roomUpdateAccess` with `access.lock.enabled` false
 - **THEN** the server answers `409` and the room stays locked
 
 ### Requirement: Who waits
@@ -433,23 +433,23 @@ A refused request about waiting participants SHALL carry in `error` a code that 
 
 ### Requirement: Rejecting waiting participants in bulk
 
-`DELETE /api/v1/meetings/{roomId}/waiting-participants?participantIdentities=a,b` (`bulkRejectWaitingParticipants`) SHALL require `waitingParticipantAdmin` (`403`) and reject each participant named on their own. It SHALL answer `200` when all were rejected and `400` when any was not, with `deleted` and `failed` listing each side. It SHALL answer `422` for no identity or more than 100 distinct ones.
+`DELETE /api/v1/meetings/{roomId}/waiting-participants?participantIdentities=a,b` (`waitingParticipantBulkReject`) SHALL require `waitingParticipantAdmin` (`403`) and reject each participant named on their own. It SHALL answer `200` when all were rejected and `400` when any was not, with `deleted` and `failed` listing each side. It SHALL answer `422` for no identity or more than 100 distinct ones.
 
 #### Scenario: Rejecting everyone named
 
 - **GIVEN** Ana, Ben and Zoe waiting
-- **WHEN** a client holding `waitingParticipantAdmin` calls `bulkRejectWaitingParticipants` naming Ana and Ben
+- **WHEN** a client holding `waitingParticipantAdmin` calls `waitingParticipantBulkReject` naming Ana and Ben
 - **THEN** the server answers `200` with Ana and Ben in `deleted` and `failed` empty, both are told they weren't let in, and Zoe keeps waiting
 
 #### Scenario: Naming someone who no longer waits
 
 - **GIVEN** Ana waiting and Ben admitted
-- **WHEN** a client calls `bulkRejectWaitingParticipants` naming Ana and Ben
+- **WHEN** a client calls `waitingParticipantBulkReject` naming Ana and Ben
 - **THEN** the server answers `400` with Ana in `deleted` and Ben in `failed`, and Ana is rejected
 
 #### Scenario: Too many or no identities
 
-- **WHEN** a client calls `bulkRejectWaitingParticipants` naming nobody, or 101 distinct identities
+- **WHEN** a client calls `waitingParticipantBulkReject` naming nobody, or 101 distinct identities
 - **THEN** the server answers `422` and nobody is rejected
 
 ### Requirement: One decision per participant across replicas
@@ -701,7 +701,7 @@ Turning `access.lock.enabled` off between meetings SHALL let everyone waiting in
 #### Scenario: Room unlocked between meetings
 
 - **GIVEN** a room with no meeting running and two participants waiting
-- **WHEN** its owner calls `updateRoomAccess` with `access.lock.enabled` false
+- **WHEN** its owner calls `roomUpdateAccess` with `access.lock.enabled` false
 - **THEN** both participants are let in and enter the meeting
 
 #### Scenario: Reconnecting when it is turned off
@@ -1098,7 +1098,7 @@ The embedded element of each participant holding `waitingParticipantAdmin` in th
 
 ### Requirement: Commands on waiting participants
 
-`waitingParticipantAdmit`, `waitingParticipantReject` (given a `participantIdentity`) and `waitingParticipantAdmitAll` SHALL run the REST operation of the same name. `waitingParticipantRejectAll` SHALL call `bulkRejectWaitingParticipants` with everyone the meeting shows waiting, nothing when nobody, and SHALL not fail for those who stopped waiting. All four SHALL require `waitingParticipantAdmin` and the local participant in the meeting.
+`waitingParticipantAdmit`, `waitingParticipantReject` (given a `participantIdentity`) and `waitingParticipantAdmitAll` SHALL run the REST operation of the same name. `waitingParticipantRejectAll` SHALL call `waitingParticipantBulkReject` with everyone the meeting shows waiting, nothing when nobody, and SHALL not fail for those who stopped waiting. All four SHALL require `waitingParticipantAdmin` and the local participant in the meeting.
 
 #### Scenario: Admit from the host
 

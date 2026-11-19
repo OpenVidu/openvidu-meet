@@ -4,28 +4,33 @@
 
 Room members are the registered users and identified guests explicitly granted access to one room, each with a base role and optional permission overrides, and this capability issues the room member tokens every participant uses. Room managers and integrators rely on it to give named people controlled, individually revocable access to a room.
 
-Surfaces: REST API (`addRoomMember`, `getRoomMembers`, `getRoomMember`, `updateRoomMember`, `deleteRoomMember`, `bulkDeleteRoomMembers`; `meet-ce/backend/openapi/room-members/`), internal API (`generateRoomMemberToken`, `refreshRoomMemberToken`; `meet-ce/backend/openapi/room-members/internal/`), typings TSDoc of `MeetRoomMember` and `MeetRoomMemberTokenOptions` (`meet-ce/typings/src/database/room-member.entity.ts`, `meet-ce/typings/src/request/room-member-request.ts`), console (Room Members tab of the room detail page, add and edit member pages, members queued in the room wizard). Documented in openvidu.io `docs/meet/features/room-members/` and `docs/meet/features/rooms/access.md`.
+Surfaces: REST API (`roomAddMember`, `roomListMembers`, `roomGetMember`, `roomUpdateMember`, `roomDeleteMember`, `roomBulkDeleteMembers`; `meet-ce/backend/openapi/room-members/`), internal API (`roomGenerateMemberToken`, `roomRefreshMemberToken`; `meet-ce/backend/openapi/room-members/internal/`), typings TSDoc of `MeetRoomMember` and `MeetRoomMemberTokenOptions` (`meet-ce/typings/src/database/room-member.entity.ts`, `meet-ce/typings/src/request/room-member-request.ts`), console (Room Members tab of the room detail page, add and edit member pages, members queued in the room wizard). Documented in openvidu.io `docs/meet/features/room-members/` and `docs/meet/features/rooms/access.md`.
 
 ## Requirements
 
 ### Requirement: Adding a member
-The server SHALL add a member to a room through `addRoomMember` as either a user, named by `userId`, or an identified guest, named by `name`, never both and never neither, with a `baseRole` of `moderator` or `speaker` and optional `customPermissions`, answering `201` with the member and a `Location` header that points to it.
+
+The server SHALL add a member to a room through `roomAddMember` as either a user, named by `userId`, or an identified guest, named by `name`, never both and never neither, with a `baseRole` of `moderator` or `speaker` and optional `customPermissions`, answering `201` with the member and a `Location` header that points to it.
 
 #### Scenario: Add an identified guest
+
 - **GIVEN** a room the caller manages
-- **WHEN** the caller calls `addRoomMember` with `name` "Alice Smith" and `baseRole` `speaker`
+- **WHEN** the caller calls `roomAddMember` with `name` "Alice Smith" and `baseRole` `speaker`
 - **THEN** the server answers `201` with a member of `type` `identified_guest` named "Alice Smith"
 - **AND** the `Location` header is the member's URL, ending with `/api/v1/rooms/{roomId}/members/{memberId}`
 
 #### Scenario: Both identities or none
+
 - **WHEN** the request carries both `userId` and `name`, or neither of them
 - **THEN** the server answers `422` and adds no member
 
 #### Scenario: Invalid fields
+
 - **WHEN** `name` is empty or longer than 50 characters, `userId` holds characters other than lowercase letters, digits and underscores, or `baseRole` is missing or unknown
 - **THEN** the server answers `422`
 
 #### Scenario: Room does not exist
+
 - **WHEN** the caller adds a member to a room that does not exist
 - **THEN** the server answers `404`
 
@@ -52,175 +57,215 @@ A user member SHALL take the user's `userId` as its `memberId` and the user's na
 - **THEN** the server answers `409` saying they cannot be added because they are the room owner or an admin
 
 ### Requirement: Identified guest members
+
 An identified guest SHALL get a generated `memberId` that starts with `guest-`, and an `accessUrl` that is the room URL carrying as its `secret` that `memberId`, a hyphen and random characters: a personal link that grants access to the room without any login while the member exists. Updating the member SHALL keep the same `accessUrl`.
 
 #### Scenario: Personal access link
+
 - **WHEN** a manager adds an identified guest to room `room-123`
 - **THEN** the member's `memberId` starts with `guest-`
 - **AND** its `accessUrl` ends with `/room/room-123?secret=` followed by the `memberId`, a `-` and random characters
 
 #### Scenario: Two guests get unrelated links
+
 - **WHEN** a manager adds two identified guests to the same room
 - **THEN** the two `accessUrl` values carry different random parts
 
 #### Scenario: Update keeps the link
+
 - **GIVEN** an identified guest of the room
-- **WHEN** a manager changes the guest's `baseRole` with `updateRoomMember`
+- **WHEN** a manager changes the guest's `baseRole` with `roomUpdateMember`
 - **THEN** the guest's `accessUrl` is the same as before the update
 
 ### Requirement: Effective permissions
-The server SHALL compute a member's `effectivePermissions` as the permission set of its base role in the room (see `room-access`) with every key of `customPermissions` overriding the role's value, and SHALL set `permissionsUpdatedAt` when it first computes them and each time they change; an `updateRoomMember` that leaves them as they were SHALL NOT advance it.
+
+The server SHALL compute a member's `effectivePermissions` as the permission set of its base role in the room (see `room-access`) with every key of `customPermissions` overriding the role's value, and SHALL set `permissionsUpdatedAt` when it first computes them and each time they change; an `roomUpdateMember` that leaves them as they were SHALL NOT advance it.
 
 #### Scenario: Override on top of the role
+
 - **GIVEN** a room whose speaker role denies `recordingControl` and grants `mediaShareScreen`
 - **WHEN** a manager adds a member with `baseRole` `speaker` and `customPermissions` granting `recordingControl` and denying `mediaShareScreen`
 - **THEN** the member's `effectivePermissions` grant `recordingControl`, deny `mediaShareScreen` and match the speaker role for every other key
 
 #### Scenario: No overrides
+
 - **WHEN** a manager adds a member with `baseRole` `moderator` and no `customPermissions`
 - **THEN** the member's `effectivePermissions` equal the room's moderator role permissions
 
 #### Scenario: Update without effect
+
 - **GIVEN** a speaker member without overrides in a room whose speaker role grants `chatWrite`
-- **WHEN** a manager calls `updateRoomMember` with `customPermissions` granting `chatWrite`
+- **WHEN** a manager calls `roomUpdateMember` with `customPermissions` granting `chatWrite`
 - **THEN** the member's `customPermissions` hold `chatWrite` and its `permissionsUpdatedAt` is unchanged
 
 ### Requirement: Members follow their room role
-When the permission set of a room role changes through `updateRoomRoles` (see `room-access`), the server SHALL recompute the `effectivePermissions` of every member of the room from the new role sets, keeping each member's `customPermissions`, and SHALL advance their `permissionsUpdatedAt`.
+
+When the permission set of a room role changes through `roomUpdateRoles` (see `room-access`), the server SHALL recompute the `effectivePermissions` of every member of the room from the new role sets, keeping each member's `customPermissions`, and SHALL advance their `permissionsUpdatedAt`.
 
 #### Scenario: Role permission changed
+
 - **GIVEN** a speaker member with `customPermissions` granting `recordingControl`
 - **WHEN** a manager denies `chatWrite` to the room's speaker role
 - **THEN** the member's `effectivePermissions` deny `chatWrite` and still grant `recordingControl`
 
 ### Requirement: Effective permissions on request only
-The server SHALL leave `effectivePermissions` out of every member response unless the request names it in the `extraFields` query parameter or the `X-ExtraFields` header, on `addRoomMember`, `getRoomMembers`, `getRoomMember` and `updateRoomMember` alike; `fields` or `X-Fields` SHALL restrict a response to the fields they name, ignoring unknown names.
+
+The server SHALL leave `effectivePermissions` out of every member response unless the request names it in the `extraFields` query parameter or the `X-ExtraFields` header, on `roomAddMember`, `roomListMembers`, `roomGetMember` and `roomUpdateMember` alike; `fields` or `X-Fields` SHALL restrict a response to the fields they name, ignoring unknown names.
 
 #### Scenario: Default response
-- **WHEN** a manager calls `getRoomMember` without `extraFields`
+
+- **WHEN** a manager calls `roomGetMember` without `extraFields`
 - **THEN** the member carries `customPermissions` but no `effectivePermissions`
 
 #### Scenario: Requested on an update
-- **WHEN** a manager calls `updateRoomMember` with the header `X-ExtraFields: effectivePermissions`
+
+- **WHEN** a manager calls `roomUpdateMember` with the header `X-ExtraFields: effectivePermissions`
 - **THEN** the returned member carries `effectivePermissions`
 
 #### Scenario: Field selection
-- **WHEN** a manager calls `getRoomMembers` with `fields=accessUrl,baseRole,unknownField`
+
+- **WHEN** a manager calls `roomListMembers` with `fields=accessUrl,baseRole,unknownField`
 - **THEN** every member in the page carries only `accessUrl` and `baseRole`
 
 ### Requirement: Who manages members
-The server SHALL allow `addRoomMember`, `getRoomMembers`, `updateRoomMember`, `deleteRoomMember` and `bulkDeleteRoomMembers` only with an API key or the access token of an admin or of the room's owner. It SHALL answer `401` to a request without either credential, a room member token not being one, and `403` to any other user, including members of the room.
+
+The server SHALL allow `roomAddMember`, `roomListMembers`, `roomUpdateMember`, `roomDeleteMember` and `roomBulkDeleteMembers` only with an API key or the access token of an admin or of the room's owner. It SHALL answer `401` to a request without either credential, a room member token not being one, and `403` to any other user, including members of the room.
 
 #### Scenario: Owner manages members
+
 - **GIVEN** a `room_manager` who owns a room
 - **WHEN** they add, list, update and delete members of that room
 - **THEN** every request succeeds
 
 #### Scenario: Manager who is only a member
+
 - **GIVEN** a `room_manager` who is a member, not the owner, of a room
-- **WHEN** they call `addRoomMember` on that room
+- **WHEN** they call `roomAddMember` on that room
 - **THEN** the server answers `403`
 
 #### Scenario: Room member token
-- **WHEN** a client calls `getRoomMembers` with only a room member token of that room, even a moderator's
+
+- **WHEN** a client calls `roomListMembers` with only a room member token of that room, even a moderator's
 - **THEN** the server answers `401`
 
 ### Requirement: Reading one member
-`getRoomMember` SHALL be allowed with an API key, to an admin, to the room's owner, to a `room_manager` reading their own membership, and with a room member token of that member. A token of another room SHALL get `403` whether or not the room exists; other callers SHALL get `404` for a missing room. Any other caller SHALL get `403` whether or not the member exists, and only a caller allowed to read it SHALL get `404` for a missing member.
+
+`roomGetMember` SHALL be allowed with an API key, to an admin, to the room's owner, to a `room_manager` reading their own membership, and with a room member token of that member. A token of another room SHALL get `403` whether or not the room exists; other callers SHALL get `404` for a missing room. Any other caller SHALL get `403` whether or not the member exists, and only a caller allowed to read it SHALL get `404` for a missing member.
 
 #### Scenario: Own member through a room member token
+
 - **GIVEN** an identified guest holding a room member token obtained with their personal link
-- **WHEN** they call `getRoomMember` for their own `memberId`
+- **WHEN** they call `roomGetMember` for their own `memberId`
 - **THEN** the server answers `200` with their member
 
 #### Scenario: Another member's data
+
 - **GIVEN** a room member token obtained with the room's anonymous moderator link
-- **WHEN** its holder calls `getRoomMember` for any member
+- **WHEN** its holder calls `roomGetMember` for any member
 - **THEN** the server answers `403`
 
 #### Scenario: User with role room_member
+
 - **GIVEN** a user with role `room_member` who is a member of the room
-- **WHEN** they call `getRoomMember` for their own membership with their access token
+- **WHEN** they call `roomGetMember` for their own membership with their access token
 - **THEN** the server answers `403`
 
 #### Scenario: Unknown member
-- **WHEN** a manager of the room calls `getRoomMember` for a `memberId` that is not a member of it
+
+- **WHEN** a manager of the room calls `roomGetMember` for a `memberId` that is not a member of it
 - **THEN** the server answers `404`
 
 #### Scenario: Probing for members without access
+
 - **GIVEN** a room member token obtained with the room's anonymous speaker link
-- **WHEN** its holder calls `getRoomMember` for an existing `memberId` and for one that is not a member of the room
+- **WHEN** its holder calls `roomGetMember` for an existing `memberId` and for one that is not a member of the room
 - **THEN** the server answers `403` to both
 
 #### Scenario: Probing for rooms with another room's token
+
 - **GIVEN** a room member token of room A
-- **WHEN** its holder calls `getRoomMember` for room B, once with an existing room and once with a room that does not exist
+- **WHEN** its holder calls `roomGetMember` for room B, once with an existing room and once with a room that does not exist
 - **THEN** the server answers `403` to both
 
 #### Scenario: Unknown room for a manager
-- **WHEN** a user with access to read members calls `getRoomMember` for a room that does not exist
+
+- **WHEN** a user with access to read members calls `roomGetMember` for a room that does not exist
 - **THEN** the server answers `404`
 
 ### Requirement: Listing members
-`getRoomMembers` SHALL return a page of the room's members filtered by `name` (match mode `exact` by default, or `prefix`, `partial` or `regex`, case-sensitive unless `nameCaseInsensitive` is `true`), `baseRole` and `type`, sorted by `membershipDate` (the default) or `name`, in descending order unless `sortOrder` says otherwise, with `maxItems` defaulting to 10 and capped at 100. Every page SHALL apply the same filters as the first, whatever `fields` holds.
+
+`roomListMembers` SHALL return a page of the room's members filtered by `name` (match mode `exact` by default, or `prefix`, `partial` or `regex`, case-sensitive unless `nameCaseInsensitive` is `true`), `baseRole` and `type`, sorted by `membershipDate` (the default) or `name`, in descending order unless `sortOrder` says otherwise, with `maxItems` defaulting to 10 and capped at 100. Every page SHALL apply the same filters as the first, whatever `fields` holds.
 
 #### Scenario: Default order
+
 - **GIVEN** a room with members added one after another
-- **WHEN** a manager calls `getRoomMembers` with no parameters
+- **WHEN** a manager calls `roomListMembers` with no parameters
 - **THEN** the server returns up to 10 members, the most recently added first
 
 #### Scenario: Next page
+
 - **GIVEN** a room with 15 members
-- **WHEN** a manager calls `getRoomMembers` with `maxItems=10` and then with the returned `nextPageToken`
+- **WHEN** a manager calls `roomListMembers` with `maxItems=10` and then with the returned `nextPageToken`
 - **THEN** the first page holds 10 members and reports `isTruncated` true, and the second holds the other 5
 
 #### Scenario: Next page with a field selection
+
 - **GIVEN** a room with 5 members
-- **WHEN** a manager pages through `getRoomMembers` with `fields=memberId` and `maxItems=2`
+- **WHEN** a manager pages through `roomListMembers` with `fields=memberId` and `maxItems=2`
 - **THEN** the pages together hold the 5 members, each carrying only `memberId`
 
 #### Scenario: Oversized page
-- **WHEN** a manager calls `getRoomMembers` with `maxItems=500`
+
+- **WHEN** a manager calls `roomListMembers` with `maxItems=500`
 - **THEN** the page holds at most 100 members
 
 #### Scenario: Filter by type
-- **WHEN** a manager calls `getRoomMembers` with `type=identified_guest`
+
+- **WHEN** a manager calls `roomListMembers` with `type=identified_guest`
 - **THEN** only identified guests are returned
 
 #### Scenario: Invalid query
+
 - **WHEN** `maxItems` is zero or negative, `nameMatchMode` or `sortField` is unknown, or `name` is an invalid regular expression with `nameMatchMode=regex`
 - **THEN** the server answers `422`
 
 #### Scenario: Invalid page token
+
 - **WHEN** a manager passes a `nextPageToken` the server did not issue
 - **THEN** the server answers `400`
 
 ### Requirement: Updating a member
-`updateRoomMember` SHALL change the member's `baseRole`, its `customPermissions`, or both, recompute its `effectivePermissions` and answer `200` with the member; a `customPermissions` object SHALL replace the previous overrides as a whole, so an override it leaves out falls back to the base role. When the `effectivePermissions` change, the member's earlier room member tokens stop being accepted (see `authentication`); otherwise they stay valid.
+
+`roomUpdateMember` SHALL change the member's `baseRole`, its `customPermissions`, or both, recompute its `effectivePermissions` and answer `200` with the member; a `customPermissions` object SHALL replace the previous overrides as a whole, so an override it leaves out falls back to the base role. When the `effectivePermissions` change, the member's earlier room member tokens stop being accepted (see `authentication`); otherwise they stay valid.
 
 #### Scenario: Change the base role
+
 - **GIVEN** a speaker member without overrides
-- **WHEN** a manager calls `updateRoomMember` with `baseRole` `moderator`
+- **WHEN** a manager calls `roomUpdateMember` with `baseRole` `moderator`
 - **THEN** the member's `effectivePermissions` equal the room's moderator role permissions
 
 #### Scenario: Overrides replaced
+
 - **GIVEN** a speaker member whose overrides grant `recordingControl` and `recordingDelete`
 - **WHEN** a manager updates it with `customPermissions` granting only `participantKick` and `meetingEnd`
 - **THEN** the member's `customPermissions` hold only `participantKick` and `meetingEnd`
 - **AND** its `effectivePermissions` deny `recordingControl` and `recordingDelete`, as the speaker role does
 
 #### Scenario: Overrides cleared
+
 - **WHEN** a manager updates a member with an empty `customPermissions` object
 - **THEN** the member's `effectivePermissions` equal its base role permissions
 
 #### Scenario: Empty body
+
 - **GIVEN** an identified guest taking part in the room's meeting
-- **WHEN** a manager calls `updateRoomMember` with an empty body
+- **WHEN** a manager calls `roomUpdateMember` with an empty body
 - **THEN** the server answers `200` and the member keeps its role and overrides
 - **AND** the room member tokens issued to the member before the call are still accepted
 - **AND** the guest gets no notice that their permissions were updated
 
 #### Scenario: Unknown member
+
 - **WHEN** a manager updates a member that does not exist in the room
 - **THEN** the server answers `404`
 
@@ -265,102 +310,125 @@ When a participant promoted to moderator during the meeting (see `meeting-modera
 - **THEN** the participant holds every permission as an admin and is no longer marked as promoted
 
 ### Requirement: Deleting a member
-`deleteRoomMember` SHALL remove the member, remove them from the room's meeting if they are in it, and answer `200`; from then on the member's identified guest link SHALL no longer grant access and their room member tokens stop being accepted (see `authentication`). A member that does not exist SHALL give `404`.
+
+`roomDeleteMember` SHALL remove the member, remove them from the room's meeting if they are in it, and answer `200`; from then on the member's identified guest link SHALL no longer grant access and their room member tokens stop being accepted (see `authentication`). A member that does not exist SHALL give `404`.
 
 #### Scenario: Guest link revoked
+
 - **GIVEN** an identified guest with a personal access link
 - **WHEN** a manager deletes the member
 - **THEN** a token requested with that link's `secret` is refused with `404`
 
 #### Scenario: Member in the meeting
+
 - **GIVEN** a user member taking part in the room's meeting
 - **WHEN** a manager deletes the member
 - **THEN** the user leaves the meeting with reason `participant_kicked`
 
 #### Scenario: Unknown member
+
 - **WHEN** a manager deletes a member that does not exist in the room
 - **THEN** the server answers `404`
 
 ### Requirement: Concurrent deletions of one member
+
 When several deletions of the same member arrive at once, on one Meet replica or several, exactly one SHALL answer `200` and every other one `404`, never `500`.
 
 #### Scenario: Two replicas delete the same member
+
 - **GIVEN** two Meet replicas sharing the same database and a member of a room
-- **WHEN** each replica receives `deleteRoomMember` for that member at the same time
+- **WHEN** each replica receives `roomDeleteMember` for that member at the same time
 - **THEN** one answers `200` and the other `404`
 
 ### Requirement: Bulk deletion of members
-`bulkDeleteRoomMembers` SHALL take a comma-separated `memberIds` query parameter with at least one id, delete the named members that exist, removing them from the room's meeting, and answer `200` with `deleted` and an empty `failed` when every id was deleted, or `400` with both lists when an id named no member of the room, each failure carrying `Room member not found`.
+
+`roomBulkDeleteMembers` SHALL take a comma-separated `memberIds` query parameter with at least one id, delete the named members that exist, removing them from the room's meeting, and answer `200` with `deleted` and an empty `failed` when every id was deleted, or `400` with both lists when an id named no member of the room, each failure carrying `Room member not found`.
 
 #### Scenario: All deleted
+
 - **GIVEN** a room with an identified guest and a user member
-- **WHEN** a manager calls `bulkDeleteRoomMembers` with both ids
+- **WHEN** a manager calls `roomBulkDeleteMembers` with both ids
 - **THEN** the server answers `200` with both ids in `deleted` and an empty `failed`
 
 #### Scenario: Partial result
-- **WHEN** a manager calls `bulkDeleteRoomMembers` with one existing id and one unknown id
+
+- **WHEN** a manager calls `roomBulkDeleteMembers` with one existing id and one unknown id
 - **THEN** the server answers `400` with the existing id in `deleted` and the unknown one in `failed`
 - **AND** the existing member is deleted
 
 #### Scenario: No id
-- **WHEN** a manager calls `bulkDeleteRoomMembers` with an empty `memberIds`
+
+- **WHEN** a manager calls `roomBulkDeleteMembers` with an empty `memberIds`
 - **THEN** the server answers `422`
 
 #### Scenario: Concurrent bulk deletion
+
 - **GIVEN** two members that another request deletes while a bulk deletion of both is running
 - **WHEN** the bulk deletion completes
 - **THEN** it answers `200` with both ids in `deleted`
 
 ### Requirement: Room member token credentials
-`generateRoomMemberToken` SHALL issue a room member token for an existing room when the request carries a `secret`, which authenticates on its own, or, without one, the access token of a user who can access the room: an admin, its owner, one of its members, or any user while registered-user access is enabled (see `room-access`). It SHALL answer `401` without either credential, an API key not being one, `403` to a user without access, and `404` for a room that does not exist.
+
+`roomGenerateMemberToken` SHALL issue a room member token for an existing room when the request carries a `secret`, which authenticates on its own, or, without one, the access token of a user who can access the room: an admin, its owner, one of its members, or any user while registered-user access is enabled (see `room-access`). It SHALL answer `401` without either credential, an API key not being one, `403` to a user without access, and `404` for a room that does not exist.
 
 #### Scenario: Member user without secret
+
 - **GIVEN** a user who is a member of a room
-- **WHEN** they call `generateRoomMemberToken` with their access token and no `secret`
+- **WHEN** they call `roomGenerateMemberToken` with their access token and no `secret`
 - **THEN** the server answers `200` with a token
 
 #### Scenario: User without access
+
 - **GIVEN** a `room_manager` who neither owns nor is a member of a room without registered-user access
-- **WHEN** they call `generateRoomMemberToken` without a `secret`
+- **WHEN** they call `roomGenerateMemberToken` without a `secret`
 - **THEN** the server answers `403`
 
 #### Scenario: API key only
-- **WHEN** a client calls `generateRoomMemberToken` with an API key and no `secret`
+
+- **WHEN** a client calls `roomGenerateMemberToken` with an API key and no `secret`
 - **THEN** the server answers `401`
 
 #### Scenario: Room does not exist
+
 - **WHEN** a client asks for a token of a room that does not exist
 - **THEN** the server answers `404`
 
 ### Requirement: Secrets that authenticate
+
 A `secret` SHALL be either one of the room's anonymous access secrets (see `room-access`) or exactly the secret stored in the `accessUrl` of an identified guest of the room, which authenticates as that guest. A `guest-` secret that is not the stored secret of a guest's link of the room SHALL give `404`, and any other secret the room does not recognize `400`.
 
 #### Scenario: Identified guest link
+
 - **GIVEN** an identified guest of the room
-- **WHEN** a client calls `generateRoomMemberToken` with `secret` set to the secret of that guest's `accessUrl`
+- **WHEN** a client calls `roomGenerateMemberToken` with `secret` set to the secret of that guest's `accessUrl`
 - **THEN** the server answers `200` with a token bound to that member
 
 #### Scenario: A member id does not authenticate
+
 - **GIVEN** an identified guest whose `baseRole` is `moderator`, added by 3.10.0 and taking part in the room's meeting
 - **AND** another participant who reads that guest's `participantIdentity` from the participant list
-- **WHEN** that participant calls `generateRoomMemberToken` with `secret` set to that identity
+- **WHEN** that participant calls `roomGenerateMemberToken` with `secret` set to that identity
 - **THEN** the server answers `404` and issues no token
 
 #### Scenario: Wrong random part
+
 - **GIVEN** an identified guest added by 3.10.0
 - **WHEN** a client sends as `secret` the guest's `memberId`, a `-` and random characters other than those of the guest's link
 - **THEN** the server answers `404` with the same response as for a guest that does not exist
 
 #### Scenario: Unknown guest
+
 - **WHEN** a client sends `secret` `guest-nonexistent`
 - **THEN** the server answers `404` saying the room member was not found
 
 #### Scenario: Guest link of another room
+
 - **GIVEN** an identified guest of room A
-- **WHEN** a client calls `generateRoomMemberToken` for room B with the secret of that guest's `accessUrl`
+- **WHEN** a client calls `roomGenerateMemberToken` for room B with the secret of that guest's `accessUrl`
 - **THEN** the server answers `404`
 
 #### Scenario: Unrecognized secret
+
 - **WHEN** a client sends a `secret` that matches no access link of the room
 - **THEN** the server answers `400`
 
@@ -468,94 +536,113 @@ When a join token request carries, as `X-Room-Member-Token`, the join token of a
 - **THEN** the server answers `404`
 
 ### Requirement: Refreshing a join token
-`refreshRoomMemberToken` SHALL reissue, for a participant in the room's meeting, a token with the permissions and role they hold there at that moment, a promotion included, keeping their identity, name and correlation fields. It SHALL require in `X-Room-Member-Token` a join token expired at most 10 seconds ago that no later change but a demotion invalidated (see `authentication`), answering `401` otherwise, `403` for another room's token and `404` when the participant is not in the meeting.
+
+`roomRefreshMemberToken` SHALL reissue, for a participant in the room's meeting, a token with the permissions and role they hold there at that moment, a promotion included, keeping their identity, name and correlation fields. It SHALL require in `X-Room-Member-Token` a join token expired at most 10 seconds ago that no later change but a demotion invalidated (see `authentication`), answering `401` otherwise, `403` for another room's token and `404` when the participant is not in the meeting.
 
 #### Scenario: Refresh after a promotion
+
 - **GIVEN** a speaker promoted to moderator in the meeting
-- **WHEN** their client calls `refreshRoomMemberToken` with its join token
+- **WHEN** their client calls `roomRefreshMemberToken` with its join token
 - **THEN** the new token carries the moderator permissions and the promoted moderator role
 
 #### Scenario: Just expired
+
 - **GIVEN** a join token that expired 2 seconds ago for a participant in the meeting
 - **WHEN** the client refreshes it
 - **THEN** the server answers `200`
 
 #### Scenario: Long expired
+
 - **GIVEN** a join token that expired more than 10 seconds ago
 - **WHEN** the client refreshes it
 - **THEN** the server answers `401`
 
 #### Scenario: Token that does not join
-- **WHEN** a client calls `refreshRoomMemberToken` with a token issued without `joinMeeting`
+
+- **WHEN** a client calls `roomRefreshMemberToken` with a token issued without `joinMeeting`
 - **THEN** the server answers `401`
 
 #### Scenario: Another room
-- **WHEN** a client calls `refreshRoomMemberToken` for a room with a join token of a different room
+
+- **WHEN** a client calls `roomRefreshMemberToken` for a room with a join token of a different room
 - **THEN** the server answers `403`
 
 #### Scenario: Member permissions changed after the token
+
 - **GIVEN** a user member in the meeting whose join token grants `participantKick`
 - **WHEN** a manager updates the member to deny `participantKick`
-- **AND** the member's client calls `refreshRoomMemberToken` with the join token issued before the update
+- **AND** the member's client calls `roomRefreshMemberToken` with the join token issued before the update
 - **THEN** the server answers `401` with message `Invalid token`
 
 #### Scenario: Account role changed after the token
+
 - **GIVEN** an admin in the meeting of a room they neither own nor belong to
 - **WHEN** an administrator changes that user's role to `room_manager`
-- **AND** the participant's client calls `refreshRoomMemberToken` with the join token issued before the change
+- **AND** the participant's client calls `roomRefreshMemberToken` with the join token issued before the change
 - **THEN** the server answers `401` with message `Invalid token`
 
 #### Scenario: Demoted after the token
+
 - **GIVEN** a participant promoted to moderator who holds a join token issued during the promotion
 - **WHEN** a moderator demotes them
-- **AND** their client calls `refreshRoomMemberToken` with that token
+- **AND** their client calls `roomRefreshMemberToken` with that token
 - **THEN** the server answers `200` with a token carrying the permissions they had before the promotion, without the promoted moderator role
 
 #### Scenario: Change made through another replica
+
 - **GIVEN** two Meet replicas and a user member in the meeting
 - **WHEN** a manager updates the member's permissions through the first replica
-- **AND** the member's client calls `refreshRoomMemberToken` through the second replica with the join token issued before the update
+- **AND** the member's client calls `roomRefreshMemberToken` through the second replica with the join token issued before the update
 - **THEN** the second replica answers `401`
 
 ### Requirement: One change at a time per participant
+
 The server SHALL apply the join token regenerations and refreshes of a participant one after the other with that participant's role changes (see `meeting-moderation`), across every Meet replica, and SHALL answer `409` to a regeneration or refresh that cannot start within about 3 seconds because another change of that participant is still in progress.
 
 #### Scenario: Refresh and promotion on two replicas
+
 - **GIVEN** two Meet replicas and a speaker in the meeting
 - **WHEN** one replica promotes the speaker while the other regenerates the speaker's join token
 - **THEN** the two changes apply one after the other and the regeneration does not undo the promotion
 - **AND** the participant ends up a moderator
 
 #### Scenario: Change still in progress
+
 - **GIVEN** a participant held by another change for longer than about 3 seconds
-- **WHEN** their client calls `refreshRoomMemberToken`
+- **WHEN** their client calls `roomRefreshMemberToken`
 - **THEN** the server answers `409` saying the participant is already being updated
 
 ### Requirement: The meeting keeps its token current
-The meeting SHALL renew the participant's join token through `refreshRoomMemberToken` shortly before it expires, repeating one that fails without an access refusal up to six attempts with a growing delay, keeping the current token meanwhile. After a refresh refused with `401` it SHALL request a new join token with the credentials the participant entered with; a refusal of that request, or a refresh refused with `403` or `404`, ends as specified in `meeting-join` (Access lost during the meeting).
+
+The meeting SHALL renew the participant's join token through `roomRefreshMemberToken` shortly before it expires, repeating one that fails without an access refusal up to six attempts with a growing delay, keeping the current token meanwhile. After a refresh refused with `401` it SHALL request a new join token with the credentials the participant entered with; a refusal of that request, or a refresh refused with `403` or `404`, ends as specified in `meeting-join` (Access lost during the meeting).
 
 #### Scenario: Meeting longer than the token lifetime
+
 - **GIVEN** a participant who stays in a meeting longer than `MEET_ROOM_MEMBER_TOKEN_EXPIRATION`
 - **WHEN** their token is about to expire
 - **THEN** the meeting obtains a new one and the participant stays in the meeting
 
 #### Scenario: Server briefly unreachable
+
 - **GIVEN** a participant whose token renewal fails because the server is unreachable
 - **WHEN** the server is back before the attempts run out
 - **THEN** the participant stays in the meeting with a renewed token
 
 #### Scenario: Permissions notice missed
+
 - **GIVEN** a member in the meeting whose client did not receive the notice that a manager denied them `chatWrite`
-- **WHEN** their next renewal through `refreshRoomMemberToken` is refused with `401`
+- **WHEN** their next renewal through `roomRefreshMemberToken` is refused with `401`
 - **THEN** the meeting obtains a new join token with the credentials the member entered with
 - **AND** the member stays in the meeting with a read-only chat
 
 #### Scenario: Demoted participant
+
 - **GIVEN** a participant promoted to moderator in the meeting
 - **WHEN** a moderator demotes them
 - **THEN** they stay in the meeting with the permissions they had before the promotion
 
 #### Scenario: Access withdrawn while the notice was missed
+
 - **GIVEN** an admin in the meeting of a room they neither own nor belong to, whose client did not receive the notice of a change of their role to `room_manager`
 - **WHEN** their next renewal is refused with `401` and the new join token request with `403`
 - **THEN** they are taken to the "Room access revoked" error screen
@@ -643,15 +730,18 @@ When creating a room, the console wizard SHALL let the user queue members in the
 - **THEN** the room's Room Members tab lists both members
 
 ### Requirement: Guest links issued before 3.10.0
+
 An identified guest added before 3.10.0 SHALL keep the `accessUrl` it has, whose `secret` is its `memberId`, and that link SHALL keep granting access while the member exists. This form is deprecated and works alongside the current one until 3.13.0, which replaces it through its own change. Removing the guest and adding them again SHALL give a link of the current form.
 
 #### Scenario: Guest added by 3.9 after the upgrade
+
 - **GIVEN** an identified guest added by a 3.9 server, whose `accessUrl` carries their `memberId`
-- **WHEN** the server runs 3.10.0 and a client calls `generateRoomMemberToken` with that `secret`
+- **WHEN** the server runs 3.10.0 and a client calls `roomGenerateMemberToken` with that `secret`
 - **THEN** the server answers `200` with a token bound to that member
 - **AND** a manager reading the member gets the same `accessUrl` as before the upgrade
 
 #### Scenario: Re-adding a guest closes the old link
+
 - **GIVEN** an identified guest added by a 3.9 server
 - **WHEN** a manager removes the guest and adds them again
 - **THEN** the new member's `accessUrl` carries their new `memberId`, a `-` and random characters

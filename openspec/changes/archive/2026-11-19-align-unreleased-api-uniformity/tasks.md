@@ -27,7 +27,7 @@
 ## 4. Release surfaces
 
 - [x] 4.1 `CHANGELOG.md`: none; every change touches an unreleased feature.
-- [ ] 4.2 openvidu.io `next`: regenerate the REST and embedded references, from this change on top of `stop-broadcast-by-id`, rename the identifiers on the raise hand, reactions and permissions pages, and every `#/operations/<id>` link.
+- [x] 4.2 openvidu.io `next`: regenerate the REST and embedded references, from this change on top of `stop-broadcast-by-id`, rename the identifiers on the raise hand, reactions and permissions pages, and every `#/operations/<id>` link.
 
 ## Workflow follow-up
 

@@ -4,7 +4,7 @@
 
 Lets participants holding moderation permissions, and host applications and backends through the REST and embedded APIs, act on other participants of a live meeting: remove them, turn off their devices and promote them to moderator or demote them back.
 
-Surfaces: REST API (`participantKick`, `participantMute`, `participantMuteAll`, `participantRoleUpdate`; `meet-ce/backend/openapi/meetings/`), webhook `participantRoleChanged` (`meet-ce/backend/openapi/webhooks/`), embedded commands `participantKick` (deprecated alias `kickParticipant`), `participantMute`, `participantMuteAll`, `participantUpdateRole` and event `participantRoleChanged` (`meet-ce/typings/src/embedded/`), permissions `participantKick`, `participantMute`, `participantPromote`, the participants panel of the meeting UI and its notices. Documented in openvidu.io `docs/meet/features/meetings/moderation.md` and `role-management.md`.
+Surfaces: REST API (`participantKick`, `participantMute`, `participantMuteAll`, `participantUpdateRole`; `meet-ce/backend/openapi/meetings/`), webhook `participantRoleChanged` (`meet-ce/backend/openapi/webhooks/`), embedded commands `participantKick` (deprecated alias `kickParticipant`), `participantMute`, `participantMuteAll`, `participantUpdateRole` and event `participantRoleChanged` (`meet-ce/typings/src/embedded/`), permissions `participantKick`, `participantMute`, `participantPromote`, the participants panel of the meeting UI and its notices. Documented in openvidu.io `docs/meet/features/meetings/moderation.md` and `role-management.md`.
 
 ## Requirements
 
@@ -176,44 +176,54 @@ The participants panel SHALL show each participant's microphone, camera and scre
 - **THEN** no "Turn off for everyone" group is shown
 
 ### Requirement: Promote a participant
-`PUT /api/v1/meetings/{roomId}/participants/{participantIdentity}/role` (`participantRoleUpdate`) with `action: upgrade` SHALL make a participant whose role is `speaker` a moderator, adding every moderator permission they lack to their own, for the rest of their session: after leaving or reloading they rejoin with their original permissions. Promoting a participant whose role is already moderator (original, promoted, owner or administrator) SHALL answer 409.
+
+`PUT /api/v1/meetings/{roomId}/participants/{participantIdentity}/role` (`participantUpdateRole`) with `action: upgrade` SHALL make a participant whose role is `speaker` a moderator, adding every moderator permission they lack to their own, for the rest of their session: after leaving or reloading they rejoin with their original permissions. Promoting a participant whose role is already moderator (original, promoted, owner or administrator) SHALL answer 409.
 
 #### Scenario: Speaker promoted
+
 - **GIVEN** a speaker in a running meeting
 - **WHEN** a client holding `participantPromote` sends `action: upgrade` for them
 - **THEN** the request answers 200 and the participant's role becomes moderator
 
 #### Scenario: Already a moderator
+
 - **GIVEN** a participant who joined as moderator
 - **WHEN** a client sends `action: upgrade` for them
 - **THEN** the request answers 409
 
 #### Scenario: Promotion lost on reload
+
 - **GIVEN** a speaker promoted during the meeting
 - **WHEN** they reload the page and join again
 - **THEN** they join with their original speaker permissions
 
 ### Requirement: Demote a participant
-`participantRoleUpdate` with `action: downgrade` SHALL restore the permissions a participant had before being promoted during the meeting. Only participants promoted during the meeting SHALL be demotable; demoting anyone else, original moderators included, SHALL answer 409.
+
+`participantUpdateRole` with `action: downgrade` SHALL restore the permissions a participant had before being promoted during the meeting. Only participants promoted during the meeting SHALL be demotable; demoting anyone else, original moderators included, SHALL answer 409.
 
 #### Scenario: Promoted participant demoted
+
 - **GIVEN** a speaker promoted during the meeting
 - **WHEN** a client holding `participantPromote` sends `action: downgrade` for them
 - **THEN** the request answers 200 and they have their original permissions again
 
 #### Scenario: Original moderator cannot be demoted
+
 - **GIVEN** a participant who joined as moderator
 - **WHEN** a client sends `action: downgrade` for them
 - **THEN** the request answers 409
 
 ### Requirement: Role change failures
-`participantRoleUpdate` SHALL answer 404 when the participant is not in the meeting, 409 when the participant did not join through Meet, and 422 when `action` is missing or is neither `upgrade` nor `downgrade`.
+
+`participantUpdateRole` SHALL answer 404 when the participant is not in the meeting, 409 when the participant did not join through Meet, and 422 when `action` is missing or is neither `upgrade` nor `downgrade`.
 
 #### Scenario: Invalid action
+
 - **WHEN** a client sends `action: promote`
 - **THEN** the request answers 422
 
 #### Scenario: Participant that did not join through Meet
+
 - **GIVEN** an agent connected to the meeting without Meet's join
 - **WHEN** a client sends `action: upgrade` for it
 - **THEN** the request answers 409

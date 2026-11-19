@@ -13,7 +13,7 @@ element `<openvidu-meet>` with the attributes `room-url`, `participant-name`, `p
 `participant-metadata`, `initial-audio-active`, `initial-video-active`, `e2ee-key` and `leave-redirect-url`,
 the command `meetingLeave` and the events `meetingJoined`, `meetingLeft` and `embeddedCloseRequested`
 (TSDoc in `meet-ce/typings/src/embedded/`), the room config fields `initialAudioActive` and
-`initialVideoActive`, and the internal operation `generateRoomMemberToken`
+`initialVideoActive`, and the internal operation `roomGenerateMemberToken`
 (`meet-ce/backend/openapi/room-members/internal/`). Documented in openvidu.io
 `docs/meet/features/meetings/overview.md`, `docs/meet/features/meetings/lifecycle.md`,
 `docs/meet/embedded/reference/direct-link.md`, `docs/meet/embedded/reference/iframe.md`,
