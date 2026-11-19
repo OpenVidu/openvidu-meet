@@ -19,33 +19,6 @@ export class ABSStorageProvider implements StorageProvider {
 	}
 
 	/**
-	 * Retrieves an object from ABS as a JSON object.
-	 */
-	async getObject<T = Record<string, unknown>>(key: string): Promise<T | null> {
-		try {
-			this.logger.debug(`Getting object from ABS: ${key}`);
-			const result = await this.azureBlobService.getObjectAsJson(key);
-			return result as T;
-		} catch (error) {
-			this.logger.debug(`Failed to get object '${key}' from ABS, treating as not found`, error);
-			return null;
-		}
-	}
-
-	/**
-	 * Stores an object in ABS as JSON.
-	 */
-	async putObject<T = Record<string, unknown>>(key: string, data: T): Promise<void> {
-		try {
-			this.logger.debug(`Storing object in ABS: ${key}`);
-			await this.azureBlobService.saveObject(key, data as Record<string, unknown>);
-		} catch (error) {
-			this.logger.debug(`Error storing object in ABS ${key}`, error);
-			throw error;
-		}
-	}
-
-	/**
 	 * Deletes a single object from ABS.
 	 */
 	async deleteObject(key: string): Promise<void> {
@@ -67,56 +40,6 @@ export class ABSStorageProvider implements StorageProvider {
 			await this.azureBlobService.deleteObjects(keys);
 		} catch (error) {
 			this.logger.debug('Error deleting objects from ABS', error);
-			throw error;
-		}
-	}
-
-	/**
-	 * Checks if an object exists in ABS.
-	 */
-	async exists(key: string): Promise<boolean> {
-		try {
-			this.logger.debug(`Checking if object exists in ABS: ${key}`);
-			return await this.azureBlobService.exists(key);
-		} catch (error) {
-			this.logger.debug(`Error checking object existence in ABS ${key}`, error);
-			return false;
-		}
-	}
-
-	/**
-	 * Lists objects in ABS with a given prefix.
-	 */
-	async listObjects(
-		prefix: string,
-		maxItems?: number,
-		continuationToken?: string
-	): Promise<{
-		Contents?: Array<{
-			Key?: string;
-			LastModified?: Date;
-			Size?: number;
-			ETag?: string;
-		}>;
-		IsTruncated?: boolean;
-		NextContinuationToken?: string;
-	}> {
-		try {
-			this.logger.debug(`Listing objects in ABS with prefix: ${prefix}`);
-			const response = await this.azureBlobService.listObjectsPaginated(prefix, maxItems, continuationToken);
-			const contents = response.items.map((blob) => ({
-				Key: blob.name,
-				LastModified: blob.properties.lastModified,
-				Size: blob.properties.contentLength,
-				ETag: blob.properties.etag
-			})) as object[];
-			return {
-				Contents: contents,
-				IsTruncated: response.isTruncated,
-				NextContinuationToken: response.continuationToken
-			};
-		} catch (error) {
-			this.logger.debug(`Error listing objects in ABS with prefix ${prefix}`, error);
 			throw error;
 		}
 	}

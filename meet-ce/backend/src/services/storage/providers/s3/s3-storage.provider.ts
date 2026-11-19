@@ -19,33 +19,6 @@ export class S3StorageProvider implements StorageProvider {
 	}
 
 	/**
-	 * Retrieves an object from S3 as a JSON object.
-	 */
-	async getObject<T = Record<string, unknown>>(key: string): Promise<T | null> {
-		try {
-			this.logger.debug(`Getting object from S3: ${key}`);
-			const result = await this.s3Service.getObjectAsJson(key);
-			return result as T;
-		} catch (error) {
-			this.logger.debug(`Failed to get object '${key}' from S3, treating as not found`, error);
-			return null;
-		}
-	}
-
-	/**
-	 * Stores an object in S3 as JSON.
-	 */
-	async putObject<T = Record<string, unknown>>(key: string, data: T): Promise<void> {
-		try {
-			this.logger.debug(`Storing object in S3: ${key}`);
-			await this.s3Service.saveObject(key, data as Record<string, unknown>);
-		} catch (error) {
-			this.logger.debug(`Error storing object in S3 ${key}`, error);
-			throw error;
-		}
-	}
-
-	/**
 	 * Deletes a single object from S3.
 	 */
 	async deleteObject(key: string): Promise<void> {
@@ -67,45 +40,6 @@ export class S3StorageProvider implements StorageProvider {
 			await this.s3Service.deleteObjects(keys);
 		} catch (error) {
 			this.logger.debug('Error deleting objects from S3', error);
-			throw error;
-		}
-	}
-
-	/**
-	 * Checks if an object exists in S3.
-	 */
-	async exists(key: string): Promise<boolean> {
-		try {
-			this.logger.debug(`Checking if object exists in S3: ${key}`);
-			return await this.s3Service.exists(key);
-		} catch (error) {
-			this.logger.debug(`Error checking object existence in S3 ${key}`, error);
-			return false;
-		}
-	}
-
-	/**
-	 * Lists objects in S3 with a given prefix.
-	 */
-	async listObjects(
-		prefix: string,
-		maxItems?: number,
-		continuationToken?: string
-	): Promise<{
-		Contents?: Array<{
-			Key?: string;
-			LastModified?: Date;
-			Size?: number;
-			ETag?: string;
-		}>;
-		IsTruncated?: boolean;
-		NextContinuationToken?: string;
-	}> {
-		try {
-			this.logger.debug(`Listing objects in S3 with prefix: ${prefix}`);
-			return await this.s3Service.listObjectsPaginated(prefix, maxItems, continuationToken);
-		} catch (error) {
-			this.logger.debug(`Error listing objects in S3 with prefix ${prefix}`, error);
 			throw error;
 		}
 	}

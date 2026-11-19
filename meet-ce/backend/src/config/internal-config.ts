@@ -18,10 +18,6 @@ export const INTERNAL_CONFIG = {
 	// Token verification settings
 	REFRESH_CLOCK_TOLERANCE_SECONDS: 10, // Time in seconds to allow for clock skew when validating token expiration
 
-	// S3 configuration
-	S3_MAX_RETRIES_ATTEMPTS_ON_SAVE_ERROR: '5',
-	S3_INITIAL_RETRY_DELAY_MS: '100',
-
 	// Cron job configuration
 	CRON_JOB_LOCK_TTL: '59s' as StringValue, // Default TTL for cron job locks to avoid overlapping executions
 

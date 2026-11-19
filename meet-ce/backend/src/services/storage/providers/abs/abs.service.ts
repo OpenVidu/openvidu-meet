@@ -1,11 +1,5 @@
 import { ManagedIdentityCredential } from '@azure/identity';
-import type {
-	BlobItem,
-	BlockBlobClient,
-	BlockBlobUploadResponse,
-	ContainerClient,
-	ContainerListBlobFlatSegmentResponse
-} from '@azure/storage-blob';
+import type { ContainerClient, ContainerListBlobFlatSegmentResponse } from '@azure/storage-blob';
 import { BlobServiceClient, StorageSharedKeyCredential } from '@azure/storage-blob';
 import { inject, injectable } from 'inversify';
 import type { Readable } from 'stream';
@@ -41,53 +35,6 @@ export class ABSService {
 		);
 
 		this.logger.debug('Azure Client initialized');
-	}
-
-	/**
-	 * Checks if a file exists in the ABS container.
-	 *
-	 * @param blobName - The name of the blob to be checked.
-	 * @returns A boolean indicating whether the file exists or not.
-	 */
-	async exists(blobName: string): Promise<boolean> {
-		const fullKey = this.getFullKey(blobName);
-
-		try {
-			const blobClient = this.containerClient.getBlobClient(fullKey);
-			const exists = await blobClient.exists();
-			this.logger.verbose(`ABS exists: file '${fullKey}' ${exists ? 'found' : 'not found'}`);
-			return exists;
-		} catch (error) {
-			this.logger.warn(`ABS exists: error checking file '${fullKey}'`, error);
-			return false;
-		}
-	}
-
-	/**
-	 * Saves an object to the ABS container.
-	 *
-	 * @param blobName - The name of the blob to be saved.
-	 * @param body - The object to be saved as a blob.
-	 * @returns A promise that resolves to the result of the upload operation.
-	 */
-	async saveObject(blobName: string, body: Record<string, unknown>): Promise<BlockBlobUploadResponse> {
-		const fullKey = this.getFullKey(blobName);
-
-		try {
-			const blockBlob: BlockBlobClient = this.containerClient.getBlockBlobClient(fullKey);
-			const data = JSON.stringify(body);
-			const result = await blockBlob.upload(data, Buffer.byteLength(data));
-			this.logger.verbose(`ABS saveObject: successfully saved object '${fullKey}'`);
-			return result;
-		} catch (error) {
-			this.logger.error(`Error saving object '${fullKey}'`, error);
-
-			if (hasErrorCode(error, 'ECONNREFUSED')) {
-				throw errorAzureNotAvailable(error);
-			}
-
-			throw internalError('saving object to ABS');
-		}
 	}
 
 	/**
@@ -137,67 +84,6 @@ export class ABSService {
 	}
 
 	/**
-	 * Lists objects in the ABS container with a specific prefix.
-	 *
-	 * @param additionalPrefix - Additional prefix relative to the subcontainer.
-	 * @param maxResults - Maximum number of objects to return. Defaults to 50.
-	 * @param continuationToken - Token to retrieve the next page of results.
-	 * @returns An object containing the list of blobs, continuation token and truncation status.
-	 */
-	async listObjectsPaginated(
-		additionalPrefix = '',
-		maxResults = 50,
-		continuationToken?: string
-	): Promise<{
-		items: BlobItem[];
-		continuationToken?: string;
-		isTruncated?: boolean;
-	}> {
-		const basePrefix = this.getFullKey(additionalPrefix);
-		this.logger.verbose(`ABS listObjectsPaginated: listing objects with prefix '${basePrefix}'`);
-
-		try {
-			maxResults = Number(maxResults);
-			const iterator = this.containerClient.listBlobsFlat({ prefix: basePrefix }).byPage({
-				maxPageSize: maxResults,
-				continuationToken:
-					continuationToken && continuationToken !== 'undefined' ? continuationToken : undefined
-			});
-
-			const segment = await this.getFirstPage(iterator);
-
-			let NextContinuationToken =
-				segment?.continuationToken === ''
-					? undefined
-					: segment?.continuationToken === continuationToken
-						? undefined
-						: segment?.continuationToken;
-			let isTruncated = NextContinuationToken !== undefined;
-
-			// We need to check if the next page has items, if not we set isTruncated to false
-			const iterator2 = this.containerClient
-				.listBlobsFlat({ prefix: basePrefix })
-				.byPage({ maxPageSize: maxResults, continuationToken: NextContinuationToken });
-
-			const segment2 = await this.getFirstPage(iterator2);
-
-			if (segment2?.segment.blobItems.length === 0) {
-				NextContinuationToken = undefined;
-				isTruncated = false;
-			}
-
-			return {
-				items: segment?.segment.blobItems ?? [],
-				continuationToken: NextContinuationToken,
-				isTruncated: isTruncated
-			};
-		} catch (error) {
-			this.logger.error(`Error listing objects with prefix '${basePrefix}'`, error);
-			throw internalError('listing objects from ABS');
-		}
-	}
-
-	/**
 	 * Reads the first page from a paged blob-listing iterator, preserving the strongly-typed
 	 * segment shape (the raw `IteratorResult.value` is typed as `any`, which we avoid here).
 	 *
@@ -208,33 +94,6 @@ export class ABSService {
 	): Promise<ContainerListBlobFlatSegmentResponse | undefined> {
 		const result = await iterator.next();
 		return result.done ? undefined : result.value;
-	}
-
-	async getObjectAsJson(blobName: string): Promise<object | undefined> {
-		try {
-			const fullKey = this.getFullKey(blobName);
-			const blobClient = this.containerClient.getBlobClient(fullKey);
-			const exists = await blobClient.exists();
-
-			if (!exists) {
-				this.logger.debug(`ABS getObjectAsJson: object '${fullKey}' does not exist`);
-				return undefined;
-			}
-
-			const downloadResp = await blobClient.download();
-			const downloaded = await this.streamToString(downloadResp.readableStreamBody!);
-			const parsed = JSON.parse(downloaded) as Record<string, unknown>;
-			this.logger.verbose(`ABS getObjectAsJson: successfully retrieved and parsed object '${fullKey}'`);
-			return parsed;
-		} catch (error) {
-			this.logger.error(`Error retrieving object '${blobName}'`, error);
-
-			if (hasErrorCode(error, 'ECONNREFUSED')) {
-				throw errorAzureNotAvailable(error);
-			}
-
-			throw internalError('getting object as JSON from ABS');
-		}
 	}
 
 	async getObjectAsStream(blobName: string, range?: { start: number; end: number }): Promise<Readable> {
@@ -294,15 +153,6 @@ export class ABSService {
 			this.logger.error(`Error retrieving headers for object '${blobName}'`, error);
 			throw internalError('getting object headers from ABS');
 		}
-	}
-
-	protected async streamToString(readable: NodeJS.ReadableStream): Promise<string> {
-		return new Promise((resolve, reject) => {
-			const chunks: Buffer[] = [];
-			readable.on('data', (data: string | Buffer) => chunks.push(Buffer.isBuffer(data) ? data : Buffer.from(data)));
-			readable.on('end', () => resolve(Buffer.concat(chunks).toString('utf-8')));
-			readable.on('error', reject);
-		});
 	}
 
 	getKeyPrefix(): string {
