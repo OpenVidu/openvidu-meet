@@ -53,6 +53,7 @@ export class MeetingParticipantItemContentComponent {
 	protected log = this.loggerService.get('OpenVidu Meet - MeetingParticipantItemContent');
 
 	protected readonly RoomMemberUiUtils = RoomMemberUiUtils;
+	protected readonly MeetParticipantModerationAction = MeetParticipantModerationAction;
 
 	/**
 	 * Reactive display properties for this participant. Reads the participant's signal-backed
@@ -132,7 +133,7 @@ export class MeetingParticipantItemContentComponent {
 		}
 	}
 
-	async onMakeModeratorClick(): Promise<void> {
+	async onModeratorRoleClick(action: MeetParticipantModerationAction): Promise<void> {
 		if (!this.roomMemberContextService.hasPermission('participantPromote')) return;
 
 		const roomId = this.meetingContextService.roomId();
@@ -143,36 +144,10 @@ export class MeetingParticipantItemContentComponent {
 		}
 
 		try {
-			await this.meetingModerationService.changeParticipantRole(
-				roomId,
-				this.participant().identity,
-				MeetParticipantModerationAction.UPGRADE
-			);
-			this.log.d('Moderator assigned successfully');
+			await this.meetingModerationService.changeParticipantRole(roomId, this.participant().identity, action);
+			this.log.d('Participant role changed successfully');
 		} catch (error) {
-			this.log.e('Error assigning moderator:', error);
-		}
-	}
-
-	async onUnmakeModeratorClick(): Promise<void> {
-		if (!this.roomMemberContextService.hasPermission('participantPromote')) return;
-
-		const roomId = this.meetingContextService.roomId();
-
-		if (!roomId) {
-			this.log.e('Cannot change participant role: room ID is undefined');
-			return;
-		}
-
-		try {
-			await this.meetingModerationService.changeParticipantRole(
-				roomId,
-				this.participant().identity,
-				MeetParticipantModerationAction.DOWNGRADE
-			);
-			this.log.d('Moderator unassigned successfully');
-		} catch (error) {
-			this.log.e('Error unassigning moderator:', error);
+			this.log.e('Error changing participant role:', error);
 		}
 	}
 
