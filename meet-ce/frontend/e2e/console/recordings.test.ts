@@ -1,11 +1,25 @@
-import { expect, test } from '@playwright/test';
+import { MeetRecordingInfo, MeetRoom, MeetRoomMemberRole, MeetUserRole } from '@openvidu-meet/typings';
+import { expect, test, type Page } from '@playwright/test';
+import { createReadyUser, type ReadyUser } from '../helpers/auth.helper';
 import {
+	asUser,
 	chooseRecordingStatuses,
+	cleanupRooms,
+	cleanupUsers,
 	figure,
 	figureCount,
 	gotoConsolePage,
+	gotoRoomDetail,
+	newRunId,
 	signInAdminBeforeEach
 } from '../helpers/console.helper';
+import { createRoom, createRoomMember, MEET_BASE_URL } from '../helpers/meet-api.helper';
+import {
+	expectRecordingDeletable,
+	expectRecordingNotDeletable,
+	expectRecordingPlayAndShare,
+	recordRoom
+} from '../helpers/recordings.helper';
 
 signInAdminBeforeEach();
 
@@ -123,5 +137,118 @@ test.describe('Console Recordings list E2E Tests', () => {
 
 		await expect(page.locator('ov-recording-lists')).toBeVisible({ timeout: 20_000 });
 		await expect(page.locator('ov-list-figures')).toHaveCount(0);
+	});
+});
+
+test.describe('Console Recordings page by permission E2E Tests', () => {
+	const RUN_ID = newRunId();
+	let room: MeetRoom;
+	let recording: MeetRecordingInfo;
+	let viewer: ReadyUser;
+	let listener: ReadyUser;
+
+	const recordingRow = (page: Page) => page.locator(`[id="table-row-${recording.recordingId}"]`);
+
+	test.beforeAll(async ({ browser }) => {
+		room = await createRoom({ roomName: `${RUN_ID}-recorded` });
+		const [viewerCreated, listenerCreated] = await Promise.all([
+			createReadyUser('Console viewer', MeetUserRole.ROOM_MEMBER),
+			createReadyUser('Console listener', MeetUserRole.ROOM_MEMBER)
+		]);
+		viewer = viewerCreated.user;
+		listener = listenerCreated.user;
+		await createRoomMember(room.roomId, { userId: viewer.userId, baseRole: MeetRoomMemberRole.SPEAKER });
+		await createRoomMember(room.roomId, {
+			userId: listener.userId,
+			baseRole: MeetRoomMemberRole.SPEAKER,
+			customPermissions: { recordingPlay: false }
+		});
+		recording = await recordRoom(browser, room.roomId);
+	});
+
+	test.afterAll(async () => {
+		await cleanupRooms([room.roomId]);
+		await cleanupUsers([viewer.userId, listener.userId]);
+	});
+
+	test('an admin sees the recording with download and delete offered', async ({ page }) => {
+		await gotoConsolePage(page, 'recordings', 'ov-recording-lists');
+
+		await expect(recordingRow(page)).toBeVisible({ timeout: 20_000 });
+		await expect(page.locator(`[id="download-recording-btn-${recording.recordingId}"]`)).toBeEnabled();
+		await expectRecordingDeletable(page, recording.recordingId);
+	});
+
+	test('clicking the row of a recording opens it, while a button in the row does not', async ({ page }) => {
+		await gotoConsolePage(page, 'recordings', 'ov-recording-lists');
+		await expect(recordingRow(page)).toBeVisible({ timeout: 20_000 });
+
+		await page.locator(`[id="more-actions-btn-${recording.recordingId}"]`).click();
+		await expect(page.locator(`[id="delete-recording-btn-${recording.recordingId}"]`)).toBeVisible();
+		await page.keyboard.press('Escape');
+		await expect(page).toHaveURL(/\/recordings$/);
+
+		await recordingRow(page).locator('.room-name').click();
+
+		await expect(page).toHaveURL(new RegExp(`/recordings/${recording.recordingId}$`));
+		await expect(page.locator('ov-recording-detail')).toBeVisible({ timeout: 20_000 });
+	});
+
+	test('going back from a recording restores the filter and reloads the list', async ({ page }) => {
+		await gotoConsolePage(page, 'recordings', 'ov-recording-lists');
+		await chooseRecordingStatuses(page, ['Complete']);
+		await expect(page).toHaveURL(/status=complete/);
+		await recordingRow(page).locator('.room-name').click();
+		await expect(page.locator('ov-recording-detail')).toBeVisible({ timeout: 20_000 });
+		const reload = page.waitForRequest((request) => /\/api\/v1\/recordings\?/.test(request.url()));
+
+		await page.goBack();
+
+		await reload;
+		await expect(page).toHaveURL(/status=complete/);
+		await expect(page.locator('ov-recording-lists .ov-active-filters .filter-chip')).toContainText('Complete');
+		await expect(recordingRow(page)).toBeVisible({ timeout: 20_000 });
+	});
+
+	test('a member without recordingDelete lists the recording without delete, and its room id opens the room', async ({
+		browser
+	}) => {
+		await asUser(browser, viewer, async (page) => {
+			await gotoConsolePage(page, 'recordings', 'ov-recording-lists');
+
+			await expect(recordingRow(page)).toBeVisible({ timeout: 20_000 });
+			await expectRecordingNotDeletable(page, recording.recordingId);
+			await expect(page.locator(`[id="download-recording-btn-${recording.recordingId}"]`)).toBeEnabled();
+
+			await recordingRow(page).locator('a.room-id').click();
+
+			await expect(page.locator('ov-room-detail')).toBeVisible({ timeout: 20_000 });
+			await expect(page).toHaveURL(new RegExp(`/rooms/${room.roomId}$`));
+		});
+	});
+
+	test('a member without recordingPlay has play and share disabled, with a tooltip naming the permission', async ({
+		browser
+	}) => {
+		await asUser(browser, listener, async (page) => {
+			await gotoConsolePage(page, 'recordings', 'ov-recording-lists');
+			await expect(recordingRow(page)).toBeVisible({ timeout: 20_000 });
+
+			await expectRecordingPlayAndShare(page, recording.recordingId, false);
+			await page.locator(`[id="play-recording-btn-${recording.recordingId}"]`).locator('..').hover();
+			await expect(page.locator('.mat-mdc-tooltip')).toContainText('recordingPlay');
+
+			await gotoRoomDetail(page, room.roomId);
+			await expectRecordingPlayAndShare(page, recording.recordingId, false);
+		});
+	});
+
+	test('the detail of a recording the user may not play returns to the Recordings page', async ({ browser }) => {
+		await asUser(browser, listener, async (page) => {
+			await page.goto(`${MEET_BASE_URL}/recordings/${recording.recordingId}`, { waitUntil: 'domcontentloaded' });
+
+			await expect(page).toHaveURL(/\/recordings$/, { timeout: 20_000 });
+			await expect(page.locator('ov-recording-lists')).toBeVisible({ timeout: 20_000 });
+		});
 	});
 });

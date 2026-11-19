@@ -354,6 +354,33 @@ export const updateRoomMemberPermissions = async (
 };
 
 /**
+ * Removes a member from the specified room.
+ */
+export const deleteRoomMember = async (roomId: string, memberId: string): Promise<void> => {
+	const response = await fetch(
+		withApiPath(`/rooms/${encodeURIComponent(roomId)}/members/${encodeURIComponent(memberId)}`),
+		{ method: 'DELETE', headers: { 'x-api-key': API_KEY } }
+	);
+
+	assertOk(response, await response.text(), 'delete room member');
+};
+
+/**
+ * Lists the members of the specified room.
+ */
+export const getRoomMembers = async (roomId: string): Promise<MeetRoomMember[]> => {
+	const response = await fetch(withApiPath(`/rooms/${encodeURIComponent(roomId)}/members`), {
+		method: 'GET',
+		headers: { 'x-api-key': API_KEY }
+	});
+
+	const responseText = await response.text();
+	assertOk(response, responseText, 'list room members');
+
+	return (JSON.parse(responseText) as { members: MeetRoomMember[] }).members;
+};
+
+/**
  * Convenience helper that creates a room, adds one member, and returns the
  * member's fully-qualified access URL.
  */

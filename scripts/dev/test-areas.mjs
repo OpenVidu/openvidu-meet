@@ -39,7 +39,8 @@ export const NO_TESTS_OF_THEIR_OWN = ['deployment'];
 export const AREAS = {
 	appearance: {
 		paths: [`${BACKEND}**/*global-config*`, `${BACKEND}**/config-validator*`, `${TYPINGS}**/global-config*`],
-		backend: ['global-config', 'api/security/global-config-security.test.ts']
+		backend: ['global-config', 'api/security/global-config-security.test.ts'],
+		console: ['appearance.test.ts']
 	},
 	authentication: {
 		paths: [
@@ -52,7 +53,8 @@ export const AREAS = {
 			`${LIBRARY}shared/**/*api-key*`
 		],
 		backend: ['auth', 'api-keys', 'security'],
-		frontend: ['token-refresh.test.ts']
+		frontend: ['token-refresh.test.ts'],
+		console: ['auth.test.ts', ['embedded.test.ts', 'API key'], ['users.test.ts', 'password']]
 	},
 	console: {
 		paths: [
@@ -62,7 +64,14 @@ export const AREAS = {
 			`${TYPINGS}analytics.ts`
 		],
 		backend: ['analytics', 'api/security/analytics-security.test.ts'],
-		console: ['rooms.test.ts', 'users.test.ts', 'recordings.test.ts', 'room-detail.test.ts']
+		console: [
+			'navigation.test.ts',
+			'embedded.test.ts',
+			'appearance.test.ts',
+			'rooms.test.ts',
+			'users.test.ts',
+			'recordings.test.ts'
+		]
 	},
 	e2ee: {
 		specs: [],
@@ -115,6 +124,11 @@ export const AREAS = {
 	},
 	localization: {
 		paths: [`${LIBRARY}**/lang/**`, `${LIBRARY}**/i18n/**`, `${LIBRARY}**/*lang*`, `${LIBRARY}**/*translate*`],
+		console: [
+			['navigation.test.ts', 'language'],
+			['rooms.test.ts', 'selected language'],
+			['room-detail.test.ts', 'selected language']
+		],
 		wc: [['attributes.test.ts', 'with language']]
 	},
 	'locked-room': {
@@ -318,6 +332,7 @@ export const AREAS = {
 			`${TYPINGS}event-origin.ts`
 		],
 		backend: ['webhooks'],
+		console: [['embedded.test.ts', 'webhook']],
 		wc: ['webhooks.test.ts']
 	}
 };

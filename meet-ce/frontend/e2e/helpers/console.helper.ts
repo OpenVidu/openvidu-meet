@@ -1,7 +1,15 @@
-import { MeetUserRole } from '@openvidu-meet/typings';
-import { expect, test, type Locator, type Page } from '@playwright/test';
-import { authenticate, createReadyUser, type ReadyUser } from './auth.helper';
-import { deleteRooms, deleteUsers, MEET_BASE_URL } from './meet-api.helper';
+import { MeetRoom, MeetRoomStatus, MeetUserRole } from '@openvidu-meet/typings';
+import { expect, test, type Browser, type Locator, type Page } from '@playwright/test';
+import { authenticate, createReadyUser, openSignedInPage, type ReadyUser } from './auth.helper';
+import {
+	deleteRooms,
+	deleteUsers,
+	endMeeting,
+	getRoomStatus,
+	MEET_BASE_URL,
+	waitForNoActiveMeeting
+} from './meet-api.helper';
+import { openMeeting } from './meeting-navigation.helper';
 
 /**
  * Helpers for the console pages. They assert only on observable behaviour (rendered rows, the
@@ -157,4 +165,40 @@ export const chooseRecordingStatuses = async (page: Page, labels: string[]): Pro
 	}
 
 	await page.keyboard.press('Escape');
+};
+
+/** Runs `body` on a page of its own browser context signed in as `user`, next to the admin's page of the test. */
+export const asUser = async (browser: Browser, user: ReadyUser, body: (page: Page) => Promise<void>): Promise<void> => {
+	const page = await openSignedInPage(browser, user);
+
+	try {
+		await body(page);
+	} finally {
+		await page.context().close();
+	}
+};
+
+/**
+ * Starts a meeting in the room: a guest joins through its speaker link, and the room is `active_meeting`
+ * once LiveKit reports the meeting. `end` ends the meeting and waits until it is gone, so the room can be
+ * changed or deleted again; it tolerates a room the test already deleted.
+ */
+export const startMeeting = async (browser: Browser, room: MeetRoom): Promise<{ end: () => Promise<void> }> => {
+	const page = await browser.newPage();
+
+	const end = async () => {
+		await endMeeting(room.roomId).catch(() => {});
+		await waitForNoActiveMeeting(room.roomId).catch(() => {});
+		await page.context().close();
+	};
+
+	try {
+		await openMeeting(page, room.access.anonymous.speaker.url, { name: 'Guest' });
+		await expect.poll(() => getRoomStatus(room.roomId), { timeout: 20_000 }).toBe(MeetRoomStatus.ACTIVE_MEETING);
+	} catch (error) {
+		await end();
+		throw error;
+	}
+
+	return { end };
 };

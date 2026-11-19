@@ -1,12 +1,20 @@
-import { MeetRecordingAutoStartMode, MeetRecordingLayout } from '@openvidu-meet/typings';
+import {
+	MeetRecordingAutoStartMode,
+	MeetRecordingLayout,
+	MeetRoomMemberRole,
+	MeetUserRole
+} from '@openvidu-meet/typings';
 import { expect, test, type Page } from '@playwright/test';
 import { authenticate, createReadyUser, type ReadyUser } from '../helpers/auth.helper';
+import { asUser, gotoRoomDetail, startMeeting } from '../helpers/console.helper';
 import {
 	createRoom,
+	createRoomMember,
 	deleteRooms,
 	deleteUsers,
 	getRoomAccess,
 	getRoomConfig,
+	getRoomMembers,
 	getRoomRoles,
 	MEET_BASE_URL
 } from '../helpers/meet-api.helper';
@@ -583,5 +591,90 @@ test.describe('Room wizard E2E Tests', () => {
 			{ ...charlie, name: 'Charlie main' },
 			delta
 		]);
+	});
+
+	// ── Edit and creation guards, read-only properties, queued members ──────────
+
+	test('edit mode: the room name and the auto-deletion settings are read-only', async ({ page }) => {
+		const room = await createRoom({
+			roomName: 'wizard-read-only',
+			autoDeletionDate: Date.now() + 2 * 60 * 60 * 1000
+		});
+		createdRoomIds.push(room.roomId);
+
+		await page.goto(`${MEET_BASE_URL}/rooms/${room.roomId}/edit`, { waitUntil: 'domcontentloaded' });
+		await gotoStep(page, 0);
+
+		await expect(page.locator('input[formcontrolname="roomName"]')).toHaveValue('wizard-read-only');
+		await expect(page.locator('input[formcontrolname="roomName"]')).toBeDisabled();
+		await expect(page.locator('input[formcontrolname="autoDeletionDate"]')).toBeDisabled();
+		await expect(page.locator('.clear-date-button')).toBeDisabled();
+	});
+
+	test('the edit URL of a room with a meeting redirects to the Rooms page', async ({ page, browser }) => {
+		const room = await createRoom({ roomName: 'wizard-edit-in-meeting' });
+		createdRoomIds.push(room.roomId);
+		const meeting = await startMeeting(browser, room);
+
+		try {
+			await page.goto(`${MEET_BASE_URL}/rooms/${room.roomId}/edit`, { waitUntil: 'domcontentloaded' });
+
+			await expect(page).toHaveURL(/\/rooms$/, { timeout: 20_000 });
+			await expect(page.locator('ov-rooms-lists')).toBeVisible({ timeout: 20_000 });
+		} finally {
+			await meeting.end();
+		}
+	});
+
+	test('the edit URL of a room the user does not own redirects to the Rooms page', async ({ browser }) => {
+		const { user: manager } = await createReadyUser('Wizard manager', MeetUserRole.ROOM_MANAGER);
+		createdUserIds.push(manager.userId);
+		const room = await createRoom({ roomName: 'wizard-edit-not-owner' });
+		createdRoomIds.push(room.roomId);
+		await createRoomMember(room.roomId, { userId: manager.userId, baseRole: MeetRoomMemberRole.MODERATOR });
+
+		await asUser(browser, manager, async (page) => {
+			await gotoRoomDetail(page, room.roomId);
+			await page.goto(`${MEET_BASE_URL}/rooms/${room.roomId}/edit`, { waitUntil: 'domcontentloaded' });
+
+			await expect(page).toHaveURL(/\/rooms$/, { timeout: 20_000 });
+			await expect(page.locator('ov-rooms-lists')).toBeVisible({ timeout: 20_000 });
+		});
+	});
+
+	test('create mode: the members queued in the Room Access step are added once the room is created', async ({
+		page
+	}) => {
+		const { user: member } = await createReadyUser('Queued member', MeetUserRole.ROOM_MEMBER);
+		createdUserIds.push(member.userId);
+		const dialog = page.locator('mat-dialog-container');
+		await openAdvancedWizard(page);
+		await page.locator('input[formcontrolname="roomName"]').fill('wizard-queued-members');
+		await gotoRoomAccess(page);
+
+		await page.getByRole('button', { name: 'Add Member' }).click();
+		await dialog.getByRole('radio', { name: 'Identified Guest' }).click();
+		await dialog.locator('input[formcontrolname="memberName"]').fill('Queued guest');
+		await dialog.locator('.submit-button').click();
+		await expect(dialog).toHaveCount(0);
+
+		await page.getByRole('button', { name: 'Add Member' }).click();
+		await dialog.locator('input[formcontrolname="userId"]').fill(member.userId);
+		await page.getByRole('option', { name: new RegExp(member.userId) }).click();
+		await dialog.locator('.submit-button').click();
+		await expect(dialog).toHaveCount(0);
+		await expect(page.locator('.pending-member-row')).toHaveCount(2);
+
+		await page.locator('#wizard-finish-btn').click();
+		await page.waitForURL(/\/room\/[^/?]+/);
+		const roomId = /\/room\/([^/?]+)/.exec(page.url())![1];
+		createdRoomIds.push(roomId);
+
+		expect((await getRoomMembers(roomId)).map(({ name }) => name).sort()).toEqual(
+			['Queued guest', member.name].sort()
+		);
+		await page.goto(`${MEET_BASE_URL}/rooms/${roomId}?tab=members`, { waitUntil: 'domcontentloaded' });
+		await expect(page.locator('ov-room-members-list')).toContainText('Queued guest', { timeout: 20_000 });
+		await expect(page.locator('ov-room-members-list')).toContainText(member.name);
 	});
 });
