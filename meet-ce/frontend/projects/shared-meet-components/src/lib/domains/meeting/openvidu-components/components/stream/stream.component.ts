@@ -7,7 +7,6 @@ import { AvatarView, DEFAULT_AVATAR_VIEW } from '../../models/avatar-view.model'
 import { ParticipantStream } from '../../models/participant.model';
 import { REACTION_NAME_KEYS } from '../../models/reaction.model';
 import { TranslatePipe } from '../../pipes/translate.pipe';
-import { CdkOverlayService } from '../../services/cdk-overlay/cdk-overlay.service';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
 import { SmartLayoutService } from '../../services/layout/smart-layout.service';
 import { StreamLayoutStateService } from '../../services/layout/stream-layout-state.service';
@@ -40,7 +39,6 @@ export class StreamComponent implements OnDestroy {
 	private readonly layoutService = inject(SmartLayoutService);
 	private readonly streamLayoutService = inject(StreamLayoutStateService);
 	private readonly participantService = inject(ParticipantService);
-	private readonly cdkSrv = inject(CdkOverlayService);
 	private readonly libService = inject(MeetingUiConfigService);
 	private readonly reactionsService = inject(MeetingReactionsService);
 	readonly stream = input<ParticipantStream | undefined>(undefined);
@@ -132,7 +130,6 @@ export class StreamComponent implements OnDestroy {
 		}
 
 		this.hoverBoundElement?.removeEventListener('mousemove', this.onContainerMouseMove);
-		this.cdkSrv.setSelector('body');
 	}
 
 	/**

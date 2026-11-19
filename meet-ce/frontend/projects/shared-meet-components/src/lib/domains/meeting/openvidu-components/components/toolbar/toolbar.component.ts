@@ -30,7 +30,6 @@ import {
 } from '../../models/recording.model';
 import { DialogService } from '../../../../../shared/services/dialog.service';
 import { BroadcastStateService } from '../../services/broadcast/broadcast-state.service';
-import { CdkOverlayService } from '../../services/cdk-overlay/cdk-overlay.service';
 import { ChatService } from '../../services/chat/chat.service';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
 import { DeviceService } from '../../services/device/device.service';
@@ -87,7 +86,6 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	private readonly broadcastState = inject(BroadcastStateService);
 	private readonly meetingContext = inject(MeetingContextService);
 	private readonly translateService = inject(MeetingTranslateService);
-	private readonly cdkOverlayService = inject(CdkOverlayService);
 	private readonly libService = inject(MeetingUiConfigService);
 	private readonly platformService = inject(PlatformService);
 	private readonly destroyRef = inject(DestroyRef);
@@ -394,7 +392,6 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 		this.toolbarMutations.disconnect();
 		this.panelService.clear();
 		this.isFullscreenActive.set(false);
-		this.cdkOverlayService.setSelector('body');
 	}
 
 	private toolbarElement(): HTMLElement {
@@ -571,7 +568,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	 * @ignore
 	 */
 	toggleFullscreen() {
-		this.documentService.toggleFullscreen('meeting-stage');
+		this.documentService.toggleFullscreen(this.host.closest('#meeting-stage'));
 	}
 
 	/**
@@ -586,15 +583,8 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 		fromEvent(document, 'fullscreenchange')
 			.pipe(takeUntilDestroyed(this.destroyRef))
 			.subscribe(() => {
-				const isFullscreen = Boolean(document.fullscreenElement);
-
-				if (isFullscreen) {
-					this.cdkOverlayService.setSelector('#meeting-stage');
-				} else {
-					this.cdkOverlayService.setSelector('body');
-				}
-
-				this.isFullscreenActive.set(isFullscreen);
+				const root = this.host.getRootNode() as Document | ShadowRoot;
+				this.isFullscreenActive.set(Boolean(root.fullscreenElement));
 				this.onFullscreenEnabledChanged.emit(this.isFullscreenActive());
 			});
 	}

@@ -1,9 +1,8 @@
-import { OverlayContainer } from '@angular/cdk/overlay';
+import { FullscreenOverlayContainer, OverlayContainer } from '@angular/cdk/overlay';
 import { EnvironmentProviders, makeEnvironmentProviders } from '@angular/core';
 
 import { provideTranslations } from '../../../shared/models';
 import { MEETING_TRANSLATIONS } from '../lang/meeting-translations';
-import { CdkOverlayContainer } from './config/custom-cdk-overlay';
 
 /**
  * Provides the OpenVidu Components root-level overrides for the meeting feature.
@@ -23,7 +22,7 @@ import { CdkOverlayContainer } from './config/custom-cdk-overlay';
  */
 export function provideOpenViduComponents(): EnvironmentProviders {
 	return makeEnvironmentProviders([
-		{ provide: OverlayContainer, useExisting: CdkOverlayContainer },
+		{ provide: OverlayContainer, useClass: FullscreenOverlayContainer },
 		provideTranslations(MEETING_TRANSLATIONS)
 	]);
 }

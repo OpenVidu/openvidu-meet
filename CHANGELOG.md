@@ -276,6 +276,8 @@ with no replacement.
   console.
 - Inside `<openvidu-meet>`, `F11` pressed anywhere on the host page was taken by the meeting, and the browser did not
   toggle its own fullscreen. The meeting now takes it only with the focus inside the element.
+- **Fullscreen** in More options and `F11` did nothing in `<openvidu-meet>`. They now put the meeting in fullscreen, with
+  its menus and dialogs visible.
 - The styles of `<openvidu-meet>` reached the host page, restyling its own elements such as Angular Material
   components, and the host page's `<style>` rules reached inside the element. Each side's styles now stay on its side
   of the element's shadow root.
@@ -338,6 +340,7 @@ with no replacement.
   the camera button.
 - The notifications in the top corner of a meeting covered the header of an open side panel, its close button
   included. They now sit beside the panel, or below its header when the panel fills the screen.
+- In a meeting in fullscreen, menus and dialogs were no longer shown once a participant left. They stay visible.
 - The record button of the toolbar and **Start recording** in the activities panel stayed disabled when a participant
   already in the meeting published their first track while nobody else was publishing. They are enabled as soon as a
   track is published.

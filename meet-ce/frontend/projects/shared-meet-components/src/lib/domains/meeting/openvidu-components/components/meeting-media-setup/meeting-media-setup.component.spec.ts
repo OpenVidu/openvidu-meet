@@ -2,7 +2,6 @@ import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 import { NotificationService } from '../../../../../shared/services/notification.service';
-import { CdkOverlayService } from '../../services/cdk-overlay/cdk-overlay.service';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
 import { DeviceService } from '../../services/device/device.service';
 import { LocalAudioTrack, LocalTrack, LocalVideoTrack, Track } from '../../services/livekit';
@@ -144,7 +143,6 @@ describe('MeetingMediaSetupComponent', () => {
 						participantNameSignal: signal('')
 					} as unknown as MeetingUiConfigService
 				},
-				{ provide: CdkOverlayService, useValue: { setSelector: () => {} } as unknown as CdkOverlayService },
 				{
 					provide: VirtualBackgroundService,
 					useValue: {

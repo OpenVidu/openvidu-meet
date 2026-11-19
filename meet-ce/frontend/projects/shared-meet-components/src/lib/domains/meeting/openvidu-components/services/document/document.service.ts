@@ -7,14 +7,13 @@ import { Service } from '@angular/core';
 export class DocumentService {
 	constructor() {}
 
-	toggleFullscreen(elementId: string) {
-		const document: any = this.getDocument();
-		const fs = this.getElementById(elementId);
+	toggleFullscreen(element: Element | null) {
+		const root = element?.getRootNode() as Document | ShadowRoot | undefined;
 
-		if (this.isInFullscreen()) {
-			this.exitFullscreen(document);
+		if (root?.fullscreenElement) {
+			this.exitFullscreen(this.getDocument());
 		} else {
-			this.requestFullscreen(fs);
+			this.requestFullscreen(element);
 		}
 	}
 
@@ -24,28 +23,6 @@ export class DocumentService {
 	 */
 	protected getDocument(): any {
 		return window.document;
-	}
-
-	/**
-	 * @internal
-	 * Get element by ID (can be overridden for testing)
-	 */
-	protected getElementById(elementId: string): any {
-		return this.getDocument().getElementById(elementId);
-	}
-
-	/**
-	 * @internal
-	 * Check if currently in fullscreen mode
-	 */
-	protected isInFullscreen(): boolean {
-		const document: any = this.getDocument();
-		return !!(
-			document.fullscreenElement ||
-			document.mozFullScreenElement ||
-			document.webkitFullscreenElement ||
-			document.msFullscreenElement
-		);
 	}
 
 	/**

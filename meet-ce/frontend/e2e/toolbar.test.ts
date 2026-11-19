@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { toggleCamera, toggleMicrophone } from './helpers/media-controls.helper';
 import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
-import { openMeeting } from './helpers/meeting-navigation.helper';
+import { leaveMeeting, openMeeting } from './helpers/meeting-navigation.helper';
 import { openLayoutSettingsPanel, openMoreOptionsMenu } from './helpers/panels.helper';
 
 test.describe('Toolbar Buttons E2E Tests', () => {
@@ -77,11 +77,8 @@ test.describe('Toolbar Buttons E2E Tests', () => {
 		});
 	}
 
-	// Guards the only two DOM anchors in the app that are addressed by *string* id, both from
-	// `toolbar.component.ts`: `documentService.toggleFullscreen('meeting-stage')` and
-	// `cdkOverlayService.setSelector('#meeting-stage')`. Neither is visible to the compiler, and
-	// until this test nothing covered them — renaming the id silently broke fullscreen and left
-	// every overlay (menus, dialogs, tooltips) invisible behind the fullscreened element.
+	// The toolbar finds the stage by its id, which the compiler does not see, and the overlays (menus,
+	// dialogs, tooltips) have to follow it into fullscreen: left on <body> they render behind it.
 	test('should fullscreen the meeting stage and move CDK overlays inside it', async ({ page }) => {
 		await openMeeting(page, accessUrl);
 
@@ -99,5 +96,34 @@ test.describe('Toolbar Buttons E2E Tests', () => {
 		// behind the fullscreened element instead of inside it.
 		await openMoreOptionsMenu(page);
 		await expect(page.locator('#fullscreen-btn mat-icon')).toHaveText('fullscreen_exit');
+	});
+
+	test('should keep the menus inside the fullscreen stage after another participant leaves, and return them to the page after leaving', async ({
+		page,
+		browser
+	}) => {
+		const other = await browser.newPage();
+
+		try {
+			await openMeeting(page, accessUrl);
+			await openMeeting(other, accessUrl);
+			await expect(page.locator('.OV_stream.remote')).toHaveCount(1);
+
+			await openMoreOptionsMenu(page);
+			await page.locator('#fullscreen-btn').click();
+			await expect(page.locator('#meeting-stage:fullscreen')).toHaveCount(1);
+
+			await leaveMeeting(other);
+			await expect(page.locator('.OV_stream.remote')).toHaveCount(0);
+
+			await openMoreOptionsMenu(page);
+			await expect(page.locator('#meeting-stage > .cdk-overlay-container #fullscreen-btn')).toBeVisible();
+
+			await page.keyboard.press('Escape');
+			await leaveMeeting(page);
+			await expect(page.locator('body > .cdk-overlay-container')).toHaveCount(1);
+		} finally {
+			await other.close();
+		}
 	});
 });
