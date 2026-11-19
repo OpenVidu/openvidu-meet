@@ -1,5 +1,5 @@
 import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
-import { MeetRoomAccessConfig, MeetRoomConfigOptions } from '@openvidu-meet/typings';
+import { MeetRoomAccess, MeetRoomAccessConfig, MeetRoomConfigOptions } from '@openvidu-meet/typings';
 import { MeetRecordingModel } from '../../../../src/models/mongoose-schemas/recording.schema.js';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
 import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
@@ -76,6 +76,26 @@ describe('Room API Tests', () => {
 			expect(getResponse.body.access.anonymous.speaker.enabled).toBe(false);
 			expect(getResponse.body.access.anonymous.recording.enabled).toBe(true);
 			expect(getResponse.body.access.user.enabled).toBe(true);
+		});
+
+		it('should keep every access link as created when a link is disabled and enabled again', async () => {
+			const linksOf = (access: MeetRoomAccess) =>
+				[access.anonymous.moderator, access.anonymous.speaker, access.anonymous.recording, access.user].map(
+					({ url }) => {
+						const { pathname, search } = new URL(url);
+						return pathname + search;
+					}
+				);
+			const createdRoom = await createRoom({ roomName: 'access-links-test' });
+
+			await updateRoomAccessConfig(createdRoom.roomId, { anonymous: { speaker: { enabled: false } } });
+			const updateResponse = await updateRoomAccessConfig(createdRoom.roomId, {
+				anonymous: { speaker: { enabled: true } }
+			});
+			expect(updateResponse.status).toBe(200);
+
+			const getResponse = await getRoom(createdRoom.roomId, 'access');
+			expect(linksOf(getResponse.body.access)).toEqual(linksOf(createdRoom.access));
 		});
 
 		it('should update recording roomUserAccess when user access changes', async () => {
