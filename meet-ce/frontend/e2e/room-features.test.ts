@@ -1,15 +1,24 @@
+import { MeetRoomThemeMode } from '@openvidu-meet/typings';
 import { expect, test } from '@playwright/test';
+import { createReadyUser } from './helpers/auth.helper';
 import { applyBackgroundEffect, openRoomBackgroundsPanel } from './helpers/media-controls.helper';
-import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
+import {
+	createRoomAndGetAnonymousAccessUrl,
+	deleteRooms,
+	deleteUsers,
+	updateRoomsAppearance
+} from './helpers/meet-api.helper';
+import { openJoinScreen } from './helpers/meeting-navigation.helper';
 import { leaveMeeting, openMeeting } from './helpers/meeting-navigation.helper';
 import { openMoreOptionsMenu, toggleActivitiesPanel } from './helpers/panels.helper';
 import { expectHidden, expectVisible } from './helpers/ui-utils.helper';
 
 test.describe('Room UI Features E2E Tests', () => {
 	const createdRoomIds: string[] = [];
+	const createdUserIds: string[] = [];
 
 	test.afterAll(async () => {
-		await deleteRooms(createdRoomIds);
+		await Promise.all([deleteRooms(createdRoomIds), deleteUsers(createdUserIds)]);
 	});
 
 	test.describe('Chat Feature', () => {
@@ -101,6 +110,37 @@ test.describe('Room UI Features E2E Tests', () => {
 
 			await openMoreOptionsMenu(page);
 			await expectHidden(page, '#virtual-bg-btn');
+		});
+	});
+
+	test.describe('Appearance Feature', () => {
+		test('should paint the join screen with the base and colors of the enabled theme', async ({ page }) => {
+			const { user, accessToken } = await createReadyUser('Appearance Admin');
+			createdUserIds.push(user.userId);
+			const theme = {
+				name: 'brand',
+				enabled: true,
+				baseTheme: MeetRoomThemeMode.DARK,
+				primaryColor: '#e30613'
+			};
+			const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
+			createdRoomIds.push(room.roomId);
+			const themeVariable = (name: string) =>
+				page.evaluate(
+					(variable) => getComputedStyle(document.documentElement).getPropertyValue(variable).trim(),
+					name
+				);
+
+			try {
+				await updateRoomsAppearance(accessToken, theme);
+				await openJoinScreen(page, accessUrl);
+
+				await expect.poll(() => themeVariable('--ov-primary-action-color')).toBe('#e30613');
+				await expect(page.locator('html')).toHaveAttribute('data-ov-theme', 'dark');
+				await expect.poll(() => themeVariable('--ov-background-color')).toBe('#1f2020');
+			} finally {
+				await updateRoomsAppearance(accessToken, { ...theme, enabled: false });
+			}
 		});
 	});
 });

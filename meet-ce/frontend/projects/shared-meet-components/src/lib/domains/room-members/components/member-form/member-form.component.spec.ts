@@ -2,9 +2,12 @@ import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import {
 	MEET_ROOM_MEMBER_PERMISSIONS_FIELDS,
+	MeetRoomMemberOptions,
 	MeetRoomMemberPermissions,
 	MeetRoomMemberRole,
-	MeetRoomRoles
+	MeetRoomRoles,
+	MeetUserDTO,
+	MeetUserRole
 } from '@openvidu-meet/typings';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { UserService } from '../../../users/services/user.service';
@@ -75,5 +78,82 @@ describe('MemberFormComponent (locked room permissions)', () => {
 		await switchRoleTo(MeetRoomMemberRole.MODERATOR);
 
 		expect(state()).toEqual(['true', 'true']);
+	});
+});
+
+describe('MemberFormComponent (who can be picked and what an edit keeps)', () => {
+	let fixture: ComponentFixture<MemberFormComponent>;
+
+	const create = async (inputs: { initialData?: MeetRoomMemberOptions; lockIdentity?: boolean } = {}) => {
+		TestBed.configureTestingModule({
+			providers: [
+				provideZonelessChangeDetection(),
+				{ provide: UserService, useValue: {} },
+				{
+					provide: TranslateService,
+					useValue: { translationsLoaded: () => true, translate: (key: string) => key }
+				}
+			]
+		});
+
+		fixture = TestBed.createComponent(MemberFormComponent);
+		fixture.componentRef.setInput('roomRoles', roomRoles);
+		fixture.componentRef.setInput('roomOwner', 'owner');
+
+		for (const [name, value] of Object.entries(inputs)) {
+			fixture.componentRef.setInput(name, value);
+		}
+
+		fixture.detectChanges();
+		await fixture.whenStable();
+
+		return fixture.componentInstance;
+	};
+
+	const user = (userId: string, role: MeetUserRole): MeetUserDTO => ({ userId, name: userId, role }) as MeetUserDTO;
+
+	it('shows an admin and the room owner disabled, each with the reason they cannot be added', async () => {
+		const form = await create();
+		const admin = user('root', MeetUserRole.ADMIN);
+		const owner = user('owner', MeetUserRole.ROOM_MANAGER);
+		const other = user('ana', MeetUserRole.ROOM_MEMBER);
+
+		expect(form.isUserDisabled(admin)).toBeTrue();
+		expect(form.getDisabledReason(admin)).toBe('ROOM_MEMBERS.FORM.DISABLED_REASON_ADMIN');
+		expect(form.isUserDisabled(owner)).toBeTrue();
+		expect(form.getDisabledReason(owner)).toBe('ROOM_MEMBERS.FORM.DISABLED_REASON_OWNER');
+		expect(form.isUserDisabled(other)).toBeFalse();
+		expect(form.getDisabledReason(other)).toBeNull();
+	});
+
+	it('keeps the type and the name of an edited guest fixed while the role stays editable', async () => {
+		const form = await create({
+			initialData: { name: 'Ana', baseRole: MeetRoomMemberRole.SPEAKER },
+			lockIdentity: true
+		});
+		const submitted: MeetRoomMemberOptions[] = [];
+		form.memberSubmitted.subscribe((options) => submitted.push(options));
+
+		expect(form.form.controls.memberType.disabled).toBeTrue();
+		expect(form.form.controls.memberName.disabled).toBeTrue();
+		expect(form.form.controls.role.enabled).toBeTrue();
+
+		form.form.controls.role.setValue(MeetRoomMemberRole.MODERATOR);
+		form.onSubmit();
+
+		expect(submitted).toEqual([
+			{ name: 'Ana', baseRole: MeetRoomMemberRole.MODERATOR, customPermissions: undefined }
+		]);
+	});
+
+	it('keeps the user of an edited member fixed', async () => {
+		const form = await create({
+			initialData: { userId: 'ana', baseRole: MeetRoomMemberRole.SPEAKER },
+			lockIdentity: true
+		});
+
+		expect(form.form.controls.memberType.disabled).toBeTrue();
+		expect(form.form.controls.userId.disabled).toBeTrue();
+		expect(form.form.controls.role.enabled).toBeTrue();
 	});
 });

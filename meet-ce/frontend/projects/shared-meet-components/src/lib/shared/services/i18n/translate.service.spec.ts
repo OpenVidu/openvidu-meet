@@ -382,3 +382,40 @@ describe('LanguageService', () => {
 		expect(languageService.selectorVisible()).toBeTrue();
 	});
 });
+
+describe('LanguageService without a stored choice', () => {
+	const serviceFor = (browserLanguages: string[]): LanguageService => {
+		spyOnProperty(navigator, 'languages').and.returnValue(browserLanguages);
+		TestBed.configureTestingModule({
+			providers: [
+				provideZonelessChangeDetection(),
+				{ provide: MeetStorageService, useValue: { getLang: () => undefined, setLang: () => {} } }
+			]
+		});
+
+		return TestBed.inject(LanguageService);
+	};
+
+	it('shows English to a German browser that never chose a language', () => {
+		const languageService = serviceFor(['de-DE', 'de']);
+
+		expect(languageService.selectedLanguage().lang).toBe('en');
+	});
+
+	it('shows English again once an embedding application stops asking for a language', () => {
+		const languageService = serviceFor(['de-DE', 'de']);
+
+		languageService.setEmbeddedLanguage('es');
+		languageService.setEmbeddedLanguage(undefined);
+
+		expect(languageService.selectedLanguage().lang).toBe('en');
+	});
+
+	it('follows the browser only when the host asks for auto', () => {
+		const languageService = serviceFor(['de-DE', 'de']);
+
+		languageService.setEmbeddedLanguage('auto');
+
+		expect(languageService.selectedLanguage().lang).toBe('de');
+	});
+});

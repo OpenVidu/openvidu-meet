@@ -1,15 +1,24 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { MEETING_DARK_THEME, MeetingThemeService, THEME_ROOT_ELEMENT } from '../../domains/meeting/openvidu-components';
+import {
+	MEETING_DARK_THEME,
+	MeetingThemeMode,
+	MeetingThemeService,
+	THEME_ROOT_ELEMENT
+} from '../../domains/meeting/openvidu-components';
 import { MeetStorageService } from './storage.service';
 import { ThemeService } from './theme.service';
 
 class MeetStorageServiceStub {
+	stored: MeetingThemeMode | null = null;
+
 	getTheme() {
-		return null;
+		return this.stored;
 	}
 
-	setTheme() {}
+	setTheme(theme: MeetingThemeMode) {
+		this.stored = theme;
+	}
 }
 
 /**
@@ -19,13 +28,14 @@ class MeetStorageServiceStub {
  */
 describe('ThemeService', () => {
 	const html = document.documentElement;
+	let storage: MeetStorageServiceStub;
 
 	const createServices = (root?: HTMLElement | null) => {
 		TestBed.resetTestingModule();
 		TestBed.configureTestingModule({
 			providers: [
 				provideZonelessChangeDetection(),
-				{ provide: MeetStorageService, useClass: MeetStorageServiceStub },
+				{ provide: MeetStorageService, useValue: storage },
 				...(root === undefined ? [] : [{ provide: THEME_ROOT_ELEMENT, useValue: root }])
 			]
 		});
@@ -42,7 +52,18 @@ describe('ThemeService', () => {
 	const htmlAttributes = () => [...html.attributes].map(({ name, value }) => `${name}=${value}`);
 	let untouchedHtml: string[];
 
+	const mockSystemTheme = (dark: boolean) => {
+		const listeners: ((event: { matches: boolean }) => void)[] = [];
+		spyOn(window, 'matchMedia').and.returnValue({
+			matches: dark,
+			addEventListener: (_: string, listener: (event: { matches: boolean }) => void) => listeners.push(listener)
+		} as unknown as MediaQueryList);
+
+		return { switchTo: (matches: boolean) => listeners.forEach((listener) => listener({ matches })) };
+	};
+
 	beforeEach(() => {
+		storage = new MeetStorageServiceStub();
 		cleanHtml();
 		untouchedHtml = htmlAttributes();
 	});
@@ -93,5 +114,60 @@ describe('ThemeService', () => {
 				'--ov-primary-action-color': '#123456'
 			})
 		);
+	});
+
+	it('remembers the chosen theme for the next load', () => {
+		mockSystemTheme(false);
+		createServices().theme.toggleTheme();
+
+		const { theme } = createServices();
+		theme.init();
+
+		expect(theme.isDark()).toBeTrue();
+	});
+
+	it('keeps the stored choice over the operating system preference', () => {
+		mockSystemTheme(false);
+		storage.stored = MeetingThemeMode.Dark;
+		const { theme } = createServices();
+
+		theme.init();
+
+		expect(theme.isDark()).toBeTrue();
+	});
+
+	it('follows the operating system while no choice is stored, without storing it', () => {
+		const system = mockSystemTheme(false);
+		const { theme } = createServices();
+		theme.init();
+
+		expect(theme.isDark()).toBeFalse();
+
+		system.switchTo(true);
+
+		expect(theme.isDark()).toBeTrue();
+		expect(storage.stored).toBeNull();
+	});
+
+	it('ignores the operating system once a choice is stored', () => {
+		const system = mockSystemTheme(false);
+		storage.stored = MeetingThemeMode.Light;
+		const { theme } = createServices();
+		theme.init();
+
+		system.switchTo(true);
+
+		expect(theme.isDark()).toBeFalse();
+	});
+
+	it('shares its preference with the meeting theme selector', () => {
+		mockSystemTheme(false);
+		const { theme, meetingTheme } = createServices();
+		theme.init();
+
+		theme.toggleTheme();
+
+		expect(meetingTheme.currentTheme()).toBe(MeetingThemeMode.Dark);
+		expect(storage.stored).toBe(MeetingThemeMode.Dark);
 	});
 });

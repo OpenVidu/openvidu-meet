@@ -405,6 +405,94 @@ describe('RoomWizardStateService.getStepById (maxDurationMinutes control bounds)
 	});
 });
 
+describe('RoomWizardStateService.getStepById (maxParticipants control bounds)', () => {
+	let service: RoomWizardStateService;
+
+	beforeEach(() => {
+		TestBed.configureTestingModule({
+			providers: [
+				provideZonelessChangeDetection(),
+				RoomWizardStateService,
+				{ provide: TranslateService, useValue: { translate: (key: string) => key } }
+			]
+		});
+		service = TestBed.inject(RoomWizardStateService);
+		service.initializeWizard(false);
+	});
+
+	const maxParticipantsControl = () => service.getStepById(WizardStepId.MEETING)!.formGroup.controls.maxParticipants;
+
+	[0, 31, 2.5].forEach((limit) => {
+		it(`rejects ${limit} participants and blocks Finish`, () => {
+			maxParticipantsControl().setValue(limit);
+
+			expect(maxParticipantsControl().valid).toBe(false);
+			expect(service.getNavigationConfig().disableFinish).toBe(true);
+		});
+	});
+
+	[1, 30].forEach((limit) => {
+		it(`accepts ${limit} participants, the edge of the range`, () => {
+			maxParticipantsControl().setValue(limit);
+
+			expect(maxParticipantsControl().valid).toBe(true);
+			expect(service.getNavigationConfig().disableFinish).toBe(false);
+		});
+	});
+
+	it('accepts an empty value as unlimited', () => {
+		maxParticipantsControl().setValue(null);
+
+		expect(maxParticipantsControl().valid).toBe(true);
+	});
+});
+
+describe('RoomWizardStateService.getStepById (auto-deletion date bound)', () => {
+	const MINUTE_MS = 60_000;
+	let service: RoomWizardStateService;
+
+	beforeEach(() => {
+		TestBed.configureTestingModule({
+			providers: [
+				provideZonelessChangeDetection(),
+				RoomWizardStateService,
+				{ provide: TranslateService, useValue: { translate: (key: string) => key } }
+			]
+		});
+		service = TestBed.inject(RoomWizardStateService);
+		service.initializeWizard(false);
+	});
+
+	const detailsForm = () => service.getStepById(WizardStepId.ROOM_DETAILS)!.formGroup;
+
+	const deleteIn = (minutes: number) => {
+		const at = new Date(Date.now() + minutes * MINUTE_MS);
+		detailsForm().patchValue({
+			autoDeletionDate: at,
+			autoDeletionHour: at.getHours(),
+			autoDeletionMinute: at.getMinutes()
+		});
+	};
+
+	it('rejects a date less than an hour ahead and blocks Finish', () => {
+		deleteIn(30);
+
+		expect(detailsForm().hasError('minFutureDateTime')).toBe(true);
+		expect(service.getNavigationConfig().disableFinish).toBe(true);
+	});
+
+	it('accepts a date more than an hour ahead', () => {
+		deleteIn(120);
+
+		expect(detailsForm().valid).toBe(true);
+		expect(service.getNavigationConfig().disableFinish).toBe(false);
+	});
+
+	it('accepts no date', () => {
+		expect(detailsForm().valid).toBe(true);
+	});
+});
+
 describe('RoomWizardStateService.getStepById (initial media state controls)', () => {
 	let service: RoomWizardStateService;
 

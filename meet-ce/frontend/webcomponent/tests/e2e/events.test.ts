@@ -28,6 +28,7 @@ import {
 	getWaitingParticipants,
 	getRecordingUrl,
 	getRoom,
+	listMeetingParticipants,
 	listRecordingsByRoomId,
 	updateParticipantRole,
 	waitForMeetingParticipant
@@ -190,6 +191,23 @@ for (const integration of INTEGRATIONS) {
 				const left = await expectEvent(page, EmbeddedEventName.LEFT);
 				await expect(left).toContainText('reason');
 				await expect(left).toContainText(LeftEventReason.VOLUNTARY_LEAVE);
+			});
+
+			test(`should end the meeting of the participant and receive no event when the host removes the ${integration === 'iframe' ? 'iframe' : 'element'}`, async ({
+				page
+			}) => {
+				await openMeeting(page, roomId, { integration, role: 'moderator' });
+				const identity = await joinedParticipantIdentity(page);
+				const hostEvents = await recordHostEvents(page);
+
+				await removeEmbeddedMeeting(page, integration);
+
+				await expect
+					.poll(async () => (await listMeetingParticipants(roomId)).map((p) => p.participantIdentity))
+					.not.toContain(identity);
+				expect(await hostEvents()).toEqual([]);
+				await expect(eventLocator(page, EmbeddedEventName.LEFT)).toHaveCount(0);
+				await expect(eventLocator(page, EmbeddedEventName.MEETING_LEFT)).toHaveCount(0);
 			});
 
 			test('should receive left event when speaker leaves room', async ({ page }) => {

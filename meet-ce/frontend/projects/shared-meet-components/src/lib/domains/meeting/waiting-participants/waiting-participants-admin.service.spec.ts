@@ -67,6 +67,7 @@ describe('WaitingParticipantsAdminService', () => {
 	let eventBus: EmbeddedEventBusService;
 	let arrivals: WaitingParticipantView[][];
 	let showNotification: jasmine.Spy;
+	let decryptOrMask: jasmine.Spy;
 
 	beforeEach(() => {
 		jasmine.clock().install();
@@ -83,6 +84,7 @@ describe('WaitingParticipantsAdminService', () => {
 		participantsInMeeting = signal(1);
 		signals = new Subject<MeetSignal>();
 		showNotification = jasmine.createSpy('showNotification');
+		decryptOrMask = jasmine.createSpy('decryptOrMask').and.callFake(async (text: string) => text);
 
 		TestBed.configureTestingModule({
 			providers: [
@@ -110,7 +112,7 @@ describe('WaitingParticipantsAdminService', () => {
 					useValue: { isSessionActive: sessionActive, isConnected: connected }
 				},
 				{ provide: ParticipantService, useValue: { totalParticipantsSignal: participantsInMeeting } },
-				{ provide: E2eeService, useValue: { decryptOrMask: async (text: string) => text } },
+				{ provide: E2eeService, useValue: { decryptOrMask } },
 				{ provide: MeetingEventsService, useValue: { meetSignals$: signals.asObservable() } },
 				{ provide: RuntimeConfigService, useValue: { isEmbeddedMode: () => true } },
 				{ provide: NotificationService, useValue: { showNotification } }
@@ -154,6 +156,21 @@ describe('WaitingParticipantsAdminService', () => {
 
 			expect(http.getRequest).toHaveBeenCalledOnceWith(WAITING_PATH);
 			expect(identities()).toEqual(['ana', 'ben']);
+		});
+
+		it('shows the names decrypted with the viewer key or masked, and tells the host the names as sent', async () => {
+			decryptOrMask.and.callFake(async (_text: string, identity: string) =>
+				identity === 'ana' ? 'Ana' : '******'
+			);
+			listed = list([waiter('ana'), waiter('ben', 2000)]);
+
+			await join();
+
+			expect(decryptOrMask).toHaveBeenCalledWith('ANA', 'ana');
+			expect(service.waiting().map(({ name }) => name)).toEqual(['Ana', '******']);
+			expect(hostEvents(EmbeddedEventName.WAITING_PARTICIPANT_LIST_UPDATED)).toEqual([
+				{ roomId: ROOM_ID, participants: [waiter('ana'), waiter('ben', 2000)] }
+			]);
 		});
 
 		it('groups the signals of 300 ms into one request', async () => {

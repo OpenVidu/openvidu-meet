@@ -1,5 +1,5 @@
 import { MeetRoom, MeetRoomMember, MeetRoomMemberRole, MeetUserRole } from '@openvidu-meet/typings';
-import { test, type Page } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { createReadyMemberUser, expectNameInput, expectRoomAccessDenied } from './helpers/access.helper';
 import {
 	authenticate,
@@ -508,6 +508,37 @@ test.describe('Access E2E Tests', () => {
 			await page.goto(room.access.user.url, { waitUntil: 'domcontentloaded' });
 
 			await expectLoginPage(page);
+		});
+
+		test('secret and key leave the address bar once the room is entered, and a reload enters it again', async ({
+			page
+		}) => {
+			const encryptedRoom = await createRoom({ config: { e2ee: { enabled: true } } });
+			createdRoomIds.push(encryptedRoom.roomId);
+			const entryUrl = new URL(encryptedRoom.access.anonymous.speaker.url);
+			entryUrl.searchParams.set('e2ee-key', 'shared-key-123');
+			const expectCleanAddressBar = () =>
+				expect(page).toHaveURL(
+					(url) =>
+						url.pathname.endsWith(`/room/${encryptedRoom.roomId}`) &&
+						!url.searchParams.has('secret') &&
+						!url.searchParams.has('e2ee-key')
+				);
+
+			await test.step('entering the room removes both from the address bar', async () => {
+				await openJoinScreen(page, entryUrl.toString());
+
+				await expectCleanAddressBar();
+			});
+
+			await test.step('reloading shows the join screen of the same room, still holding the access and the key', async () => {
+				await page.reload({ waitUntil: 'domcontentloaded' });
+
+				await expectNameInput(page, { value: '', editable: true });
+				await expect(page.locator('.encryption-badge')).toBeVisible();
+				await expect(page.locator('#participant-e2eekey-input')).toHaveCount(0);
+				await expectCleanAddressBar();
+			});
 		});
 	});
 
