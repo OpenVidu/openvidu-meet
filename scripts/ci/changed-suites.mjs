@@ -8,8 +8,9 @@ import { readFileSync } from 'node:fs';
 //   --without-backend the e2e suites ignore changes that only touch the backend
 // Patterns follow GitHub's `paths` filters: evaluated in order, `!` excludes, a later pattern re-includes.
 
+const DOMAINS = 'meet-ce/frontend/projects/shared-meet-components/src/lib/domains';
 // Only the SPA routes reach the console, so the web component bundle never contains it.
-const CONSOLE_DOMAIN = '!meet-ce/frontend/projects/shared-meet-components/src/lib/domains/console/**';
+const CONSOLE_DOMAIN = `!${DOMAINS}/console/**`;
 
 const SUITES = {
 	'backend-unit': [
@@ -60,7 +61,23 @@ const SUITES = {
 		'meet-ce/frontend/**',
 		'!meet-ce/frontend/webcomponent/**',
 		'!meet-ce/frontend/projects/**/*.spec.ts',
+		'!meet-ce/frontend/e2e/console/**',
 		'meet-ce/typings/**',
+		'meet.sh',
+		'!**/*.md'
+	],
+	// The console renders no meeting and is never embedded.
+	'console-e2e': [
+		'meet-ce/frontend/**',
+		'!meet-ce/frontend/webcomponent/**',
+		'!meet-ce/frontend/projects/**/*.spec.ts',
+		`!${DOMAINS}/meeting/**`,
+		`!${DOMAINS}/embedded/**`,
+		'!meet-ce/frontend/e2e/**',
+		'meet-ce/frontend/e2e/console/**',
+		'meet-ce/frontend/e2e/helpers/**',
+		'meet-ce/typings/**',
+		'!meet-ce/typings/src/embedded/**',
 		'meet.sh',
 		'!**/*.md'
 	],
@@ -85,7 +102,7 @@ const E2E_SERVER = [
 	'!meet-ce/backend/nodemon*.json',
 	'!**/*.md'
 ];
-const E2E_SUITES = ['frontend-e2e', 'wc-e2e'];
+const E2E_SUITES = ['frontend-e2e', 'console-e2e', 'wc-e2e'];
 
 const CI_FILES = ['.github/workflows/ci.yaml', 'scripts/ci/changed-suites.mjs'];
 

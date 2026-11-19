@@ -5,6 +5,7 @@
 // folders). Per heavy suite, the tests that cover it:
 //   backend:  a folder of tests/integration (a key of BACKEND_FOLDER_SCRIPTS) or a test file relative to tests/integration
 //   frontend: a spec file of meet-ce/frontend/e2e, or [file, grep] to run only its matching tests
+//   console:  a spec file of meet-ce/frontend/e2e/console, or [file, grep]
 //   wc:       a spec file of meet-ce/frontend/webcomponent/tests/e2e, or [file, grep]
 //
 // A source file shared by every area (configuration, errors, Redis, the server) belongs to none: `affected`
@@ -61,7 +62,7 @@ export const AREAS = {
 			`${TYPINGS}analytics.ts`
 		],
 		backend: ['analytics', 'api/security/analytics-security.test.ts'],
-		frontend: ['console.test.ts']
+		console: ['rooms.test.ts', 'users.test.ts', 'recordings.test.ts', 'room-detail.test.ts']
 	},
 	e2ee: {
 		specs: [],
@@ -256,6 +257,7 @@ export const AREAS = {
 		],
 		backend: ['recordings', 'api/security/recording-security.test.ts', 'webhooks/webhook.test.ts'],
 		frontend: ['recordings.test.ts', ['permissions.test.ts', 'Recordings']],
+		console: ['recordings.test.ts'],
 		wc: [
 			['events.test.ts', 'RECORDING'],
 			['commands.test.ts', 'RECORDING']
@@ -278,12 +280,13 @@ export const AREAS = {
 			'api/rooms/broadcast-room-config.test.ts',
 			'api/rooms/recording-layout-room-config.test.ts'
 		],
-		frontend: ['room-features.test.ts', 'e2ee.test.ts', 'room-wizard.test.ts']
+		frontend: ['room-features.test.ts', 'e2ee.test.ts'],
+		console: ['room-wizard.test.ts']
 	},
 	'room-members': {
 		paths: [`${BACKEND}**/room-member*`, `${DOMAINS}room-members/**`, `${TYPINGS}**/room-member*`],
 		backend: ['room-members', 'api/security/room-members-security.test.ts'],
-		frontend: ['console.test.ts'],
+		console: ['room-detail.test.ts'],
 		wc: ['identified-guest-state.test.ts']
 	},
 	rooms: {
@@ -300,12 +303,12 @@ export const AREAS = {
 			`${DOMAINS}rooms/**`
 		],
 		backend: ['rooms', 'api/security/room-security.test.ts'],
-		frontend: ['room-wizard.test.ts', 'console.test.ts']
+		console: ['room-wizard.test.ts', 'rooms.test.ts', 'room-detail.test.ts']
 	},
 	users: {
 		paths: [`${BACKEND}**/*user*`, `${TYPINGS}**/user*`, `${DOMAINS}users/**`],
 		backend: ['users', 'api/security/user-security.test.ts'],
-		frontend: ['console.test.ts']
+		console: ['users.test.ts']
 	},
 	webhooks: {
 		paths: [

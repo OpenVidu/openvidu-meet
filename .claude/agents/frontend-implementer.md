@@ -45,7 +45,8 @@ it: that work needs an OpenSpec change.
    backend serves (`pnpm run build:frontend`, and `./meet.sh build-webcomponent --skip-install` for the
    webcomponent), start it with `./meet.sh stack up <name>` and drive the page at its `URL`, or run the
    Playwright spec that covers it with
-   `./meet.sh stack run <name> -- ./meet.sh test-e2e-frontend --skip-install -- <spec>`. Finish with
+   `./meet.sh stack run <name> -- ./meet.sh test-e2e-frontend --skip-install -- <spec>` (`test-e2e-console` for a
+   console page). Finish with
    `./meet.sh stack down <name>`. When `./meet.sh doctor` says the deployment is not usable, say that the
    running app was not checked.
 3. An end-to-end test you wrote or rewrote is run before you report it done, the same way; a webcomponent

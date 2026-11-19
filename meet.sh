@@ -158,6 +158,10 @@ show_help() {
   echo -e "             ${NC} --skip-install-browsers     Skip Playwright browsers installation"
   echo -e "             ${NC} -- <args>                   Pass the rest to Playwright (spec files, --grep...)"
   echo
+  echo -e "  ${BLUE}test-e2e-console${NC}"
+  echo "    Run end-to-end tests of the console pages (Playwright '--project=console')"
+  echo -e "    ${YELLOW}Options:${NC} same as test-e2e-frontend"
+  echo
   echo -e "  ${BLUE}dev${NC}"
   echo "    Start development mode with watchers"
   echo -e "    ${YELLOW}Options:${NC} --testapp            Include testapp + webhook bridge (:5080/:5081) and webcomponent watcher"
@@ -483,14 +487,16 @@ ensure_playwright_chromium() {
   echo "playwright_version=$PLAYWRIGHT_VER" >> "$MARKER_FILE" || true
 }
 
-# Run e2e tests for the webcomponent
-test_e2e_webcomponent() {
+# Runs a Playwright suite of the frontend package: run_e2e <title> <package script> [flags] [-- <playwright args>]
+run_e2e() {
+  local title="$1" script="$2"
+  shift 2
+
   echo -e "${BLUE}=====================================${NC}"
-  echo -e "${BLUE}   Running Webcomponent E2E Tests${NC}"
+  echo -e "${BLUE}   Running ${title} Tests${NC}"
   echo -e "${BLUE}=====================================${NC}"
   echo
 
-  # Parse optional flags
   FORCE_INSTALL=false
   SKIP_INSTALL_BROWSERS=false
   PLAYWRIGHT_ARGS=()
@@ -515,44 +521,7 @@ test_e2e_webcomponent() {
 
   ensure_playwright_chromium "$FORCE_INSTALL" "$SKIP_INSTALL_BROWSERS"
 
-  echo -e "${GREEN}Running webcomponent E2E tests...${NC}"
-  pnpm --filter @openvidu-meet/frontend run e2e:playwright:wc "${PLAYWRIGHT_ARGS[@]}"
-}
-
-# Run migrated e2e tests for frontend
-test_e2e_frontend() {
-  echo -e "${BLUE}=====================================${NC}"
-  echo -e "${BLUE}   Running Frontend E2E Components Tests${NC}"
-  echo -e "${BLUE}=====================================${NC}"
-  echo
-
-  # Parse optional flags
-  FORCE_INSTALL=false
-  SKIP_INSTALL_BROWSERS=false
-  PLAYWRIGHT_ARGS=()
-  while [ $# -gt 0 ]; do
-    case "$1" in
-      --force-install-browsers|--force-install|-f)
-        FORCE_INSTALL=true
-        ;;
-      --skip-install-browsers)
-        SKIP_INSTALL_BROWSERS=true
-        ;;
-      --)
-        shift
-        PLAYWRIGHT_ARGS=("$@")
-        break
-        ;;
-    esac
-    shift
-  done
-
-  install_dependencies
-
-  ensure_playwright_chromium "$FORCE_INSTALL" "$SKIP_INSTALL_BROWSERS"
-
-  echo -e "${GREEN}Running frontend E2E tests...${NC}"
-  pnpm --filter @openvidu-meet/frontend run e2e:playwright:spa "${PLAYWRIGHT_ARGS[@]}"
+  pnpm --filter @openvidu-meet/frontend run "$script" "${PLAYWRIGHT_ARGS[@]}"
 }
 
 # Start OpenVidu Meet services in prod or ci mode
@@ -936,10 +905,13 @@ main() {
       lint_webcomponent
       ;;
     test-e2e-webcomponent)
-      test_e2e_webcomponent "$@"
+      run_e2e "Webcomponent E2E" e2e:playwright:wc "$@"
       ;;
     test-e2e-frontend)
-      test_e2e_frontend "$@"
+      run_e2e "Frontend E2E" e2e:playwright:spa "$@"
+      ;;
+    test-e2e-console)
+      run_e2e "Console E2E" e2e:playwright:console "$@"
       ;;
     dev)
       # "$@" must be forwarded: dev() parses its own --testapp flag,

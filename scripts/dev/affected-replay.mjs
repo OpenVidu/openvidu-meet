@@ -13,6 +13,7 @@ import { plan } from './affected-tests.mjs';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const FOLDERS = {
 	'backend-integration': 'meet-ce/backend/tests/integration/',
+	'console-e2e': 'meet-ce/frontend/e2e/console/',
 	'frontend-e2e': 'meet-ce/frontend/e2e/',
 	'wc-e2e': 'meet-ce/frontend/webcomponent/tests/e2e/'
 };

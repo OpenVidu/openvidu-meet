@@ -193,7 +193,7 @@ Single suites (each domain's `CLAUDE.md` documents what they cover):
 
 ```bash
 ./meet.sh test-unit-{backend,frontend,webcomponent}   # Jest, Karma (shared-meet-components), Jest
-./meet.sh test-e2e-{frontend,webcomponent}            # Playwright: spa project, webcomponent project
+./meet.sh test-e2e-{frontend,console,webcomponent}    # Playwright: spa, console and webcomponent projects
 ./meet.sh lint-{backend,frontend,webcomponent}        # ESLint, fails on any warning
 ```
 
@@ -293,7 +293,7 @@ open `CHANGELOG.md`.
 One workflow, `Tests` (`.github/workflows/ci.yaml`), ending in `All tests passed`, the only required
 check of `main`. It runs on pull requests (a draft is enough), on pushes to `main`, nightly and on
 dispatch, and only the suites a change affects: the static checks and the unit suites first, through
-`scripts/verify.mjs`, then backend integration and both e2e suites. Suite selection, storage
+`scripts/verify.mjs`, then backend integration and the e2e suites. Suite selection, storage
 providers, version pins and runners are in `.claude/rules/ci.md`, which loads when you open the
 workflow, `scripts/ci/` or `scripts/verify.mjs`.
 

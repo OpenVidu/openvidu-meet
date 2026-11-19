@@ -45,7 +45,7 @@ const UNIT_SUITES = {
 	]
 };
 
-const SUITES_NOT_RUN_HERE = ['backend-integration', 'frontend-e2e', 'wc-e2e'];
+const SUITES_NOT_RUN_HERE = ['backend-integration', 'frontend-e2e', 'console-e2e', 'wc-e2e'];
 const NOT_RUN_HERE = 'needs the local deployment (./meet.sh doctor): ./meet.sh affected lists the tests to run';
 
 const SUITES = [...Object.keys(UNIT_SUITES), ...SUITES_NOT_RUN_HERE];

@@ -12,7 +12,7 @@ paths:
   the semantics of GitHub `paths` filters). `Static checks` (`verify --only static`) runs on every
   change. The unit suites (backend, frontend, webcomponent; tests and lint) run first, each as
   `verify --only <suite>`, so `scripts/verify.mjs` is the one definition of their steps; backend
-  integration and both e2e suites start only if none of them failed. It ends
+  integration and the e2e suites start only if none of them failed. It ends
   in `All tests passed`, the only required status check of `main`: renaming, splitting or adding jobs
   never touches the ruleset. Repeated steps are YAML anchors defined at their first use, so a version
   is pinned in one place. Suites use Node `24.22.1` (same pin as `meet-ce/docker/Dockerfile`) and pnpm

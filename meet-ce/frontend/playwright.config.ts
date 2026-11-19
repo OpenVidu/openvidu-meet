@@ -41,11 +41,16 @@ const resolveFakeAudioPath = (): string => {
 const fakeAudioPath = resolveFakeAudioPath();
 const isCI = process.env['RUN_MODE'] === 'CI';
 
-const commonArgs = [
-	'--use-fake-ui-for-media-stream',
-	'--use-fake-device-for-media-stream',
-	'--enable-gpu'
-];
+const commonArgs = ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', '--enable-gpu'];
+
+const desktopChrome = {
+	...devices['Desktop Chrome'],
+	viewport: { width: 1366, height: 900 },
+	video: 'off' as const,
+	launchOptions: {
+		args: [...commonArgs, `--use-file-for-fake-audio-capture=${fakeAudioPath}`, '--window-size=1366,900']
+	}
+};
 
 export default defineConfig({
 	tsconfig: './tsconfig.test.json',
@@ -71,19 +76,14 @@ export default defineConfig({
 			name: 'spa',
 			testDir: './e2e',
 			testMatch: ['**/*.test.ts'],
-			testIgnore: ['**/selenium/**'],
-			use: {
-				...devices['Desktop Chrome'],
-				viewport: { width: 1366, height: 900 },
-				video: 'off',
-				launchOptions: {
-					args: [
-						...commonArgs,
-						`--use-file-for-fake-audio-capture=${fakeAudioPath}`,
-						'--window-size=1366,900'
-					]
-				}
-			}
+			testIgnore: ['**/selenium/**', '**/e2e/console/**'],
+			use: desktopChrome
+		},
+		{
+			name: 'console',
+			testDir: './e2e/console',
+			testMatch: ['**/*.test.ts'],
+			use: desktopChrome
 		}
 	]
 });
