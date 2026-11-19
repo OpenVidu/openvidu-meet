@@ -30,7 +30,8 @@ export class FrontendEventService {
 	) {}
 
 	/**
-	 * Sends a signal to notify participants about the latest recording state in a room.
+	 * Sends a signal to notify participants about the latest recording state in a room, or one participant who
+	 * just joined it.
 	 */
 	async sendRecordingUpdatedSignal(
 		roomId: string,
@@ -49,7 +50,7 @@ export class FrontendEventService {
 			...(participantSid ? { destinationSids: [participantSid] } : {})
 		};
 
-		await this.sendSignal(roomId, payload, options, { onlyIfRoomExists: true });
+		await this.sendSignal(roomId, payload, options, { onlyIfRoomExists: !participantSid });
 	}
 
 	/**

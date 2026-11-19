@@ -62,6 +62,18 @@ describe('FrontendEventService recording updated signal', () => {
 		expect(sendData).toHaveBeenCalledTimes(1);
 	});
 
+	it('reaches a participant who just joined without asking the media server for their room', async () => {
+		const livekit = { roomExists: jest.fn(async () => true), sendData: jest.fn(async () => {}) };
+		const service = new FrontendEventService(
+			...([noopLogger, livekit] as unknown as ConstructorParameters<typeof FrontendEventService>)
+		);
+
+		await service.sendRecordingUpdatedSignal('room-1', recording, 'PA_1');
+
+		expect(livekit.sendData).toHaveBeenCalledTimes(1);
+		expect(livekit.roomExists).not.toHaveBeenCalled();
+	});
+
 	it('resolves when the media server cannot say whether the room exists', async () => {
 		const livekit = { roomExists: async () => Promise.reject(new Error('LiveKit unreachable')) };
 		const service = new FrontendEventService(
