@@ -120,10 +120,10 @@ export class AiAssistantService {
 		const capability = MeetAssistantCapabilityName.LIVE_CAPTIONS;
 
 		try {
-			if (!participantIdentity) {
-				await this.cleanupRoom(roomId, capability);
-			} else if ((await this.getParticipantCountByCapability(roomId, capability)) > 0) {
+			if (participantIdentity) {
 				await this.deactivateParticipant(roomId, participantIdentity, capability);
+			} else {
+				await this.cleanupRoom(roomId, capability);
 			}
 		} catch (error) {
 			this.logger.error(`Error occurred while cleaning up assistant state for room '${roomId}'`, error);
