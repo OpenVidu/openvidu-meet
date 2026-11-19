@@ -57,7 +57,14 @@
       "LOADING_TITLE": "Loading Users",
       "LOADING_SUBTITLE": "Please wait while we fetch users...",
       "PAGE_TITLE": "Users",
-      "PAGE_SUBTITLE": "Manage your users, control access, and register new accounts."
+      "PAGE_SUBTITLE": "Manage your users, control access, and register new accounts.",
+      "FIGURES": {
+        "ALL": "All users",
+        "ADMINS": "Admins",
+        "ROOM_MANAGERS": "Room managers",
+        "ROOM_MEMBERS": "Room members",
+        "UNIT": "users"
+      }
     },
     "PROFILE": {
       "TITLE_OWN": "Profile",

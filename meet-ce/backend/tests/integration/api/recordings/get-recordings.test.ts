@@ -13,6 +13,7 @@ import {
 	generateRoomMemberToken,
 	getAllRecordings,
 	getAllRecordingsFromRoom,
+	getListSummary,
 	startTestServer,
 	stopRecording
 } from '../../../helpers/request-helpers.js';
@@ -282,6 +283,39 @@ describe('Recordings API Tests', () => {
 			);
 		});
 
+		it('should filter recordings by several statuses', async () => {
+			let response = await getAllRecordings({
+				status: `${MeetRecordingStatus.COMPLETE},${MeetRecordingStatus.ACTIVE}`
+			});
+			expectSuccessListRecordingResponse(response, 3, false, false);
+			expect(roomNamesOf(response.body.recordings)).toEqual(['Room A', 'Room B', 'Room C']);
+
+			response = await getAllRecordings({
+				status: `${MeetRecordingStatus.STARTING},${MeetRecordingStatus.ACTIVE},${MeetRecordingStatus.ENDING}`
+			});
+			expectSuccessListRecordingResponse(response, 1, false, false);
+			expect(roomNamesOf(response.body.recordings)).toEqual(['Room C']);
+		});
+
+		it('should treat a repeated status as one', async () => {
+			const response = await getAllRecordings({
+				status: `${MeetRecordingStatus.COMPLETE},${MeetRecordingStatus.COMPLETE}`
+			});
+			expectSuccessListRecordingResponse(response, 2, false, false);
+		});
+
+		it('should count the recordings by status in the summary', async () => {
+			const response = await getListSummary('recordings');
+
+			expect(response.status).toBe(200);
+			expect(response.body).toEqual({
+				totalRecordings: 3,
+				recordingsInProgress: 1,
+				completeRecordings: 2,
+				failedRecordings: 0
+			});
+		});
+
 		it('should sort recordings by startDate ascending and descending', async () => {
 			// Test ascending
 			let response = await getAllRecordings({ sortField: 'startDate', sortOrder: 'asc' });
@@ -425,6 +459,11 @@ describe('Recordings API Tests', () => {
 
 		it('should fail when status is invalid', async () => {
 			const response = await getAllRecordings({ status: 'invalid_status' });
+			expectValidationError(response, 'status', 'Invalid enum value');
+		});
+
+		it('should fail when one status of the list is invalid', async () => {
+			const response = await getAllRecordings({ status: `${MeetRecordingStatus.COMPLETE},invalid_status` });
 			expectValidationError(response, 'status', 'Invalid enum value');
 		});
 	});

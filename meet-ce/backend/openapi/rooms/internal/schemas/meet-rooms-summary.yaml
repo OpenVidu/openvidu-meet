@@ -1,0 +1,21 @@
+type: object
+description: Figures of the rooms the authenticated user can list
+properties:
+    totalRooms:
+        $ref: '../../../analytics/schemas/meet-analytics.yaml#/properties/totalRooms'
+    activeRooms:
+        $ref: '../../../analytics/schemas/meet-analytics.yaml#/properties/activeRooms'
+    openRooms:
+        $ref: '../../../analytics/schemas/meet-analytics.yaml#/properties/openRooms'
+    closedRooms:
+        $ref: '../../../analytics/schemas/meet-analytics.yaml#/properties/closedRooms'
+    roomsExpiringSoon:
+        $ref: '../../../analytics/schemas/meet-analytics.yaml#/properties/roomsExpiringSoon'
+    nextExpiringRoom:
+        $ref: '../../../analytics/schemas/meet-analytics.yaml#/properties/nextExpiringRoom'
+required:
+    - totalRooms
+    - activeRooms
+    - openRooms
+    - closedRooms
+    - roomsExpiringSoon

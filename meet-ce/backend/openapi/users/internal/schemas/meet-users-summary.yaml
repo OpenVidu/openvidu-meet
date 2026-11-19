@@ -1,0 +1,24 @@
+type: object
+description: Figures of the user accounts, by role
+properties:
+    totalUsers:
+        type: integer
+        description: Number of user accounts
+        example: 12
+    adminUsers:
+        type: integer
+        description: Number of users whose role is `admin`
+        example: 2
+    roomManagerUsers:
+        type: integer
+        description: Number of users whose role is `room_manager`
+        example: 4
+    roomMemberUsers:
+        type: integer
+        description: Number of users whose role is `room_member`
+        example: 6
+required:
+    - totalUsers
+    - adminUsers
+    - roomManagerUsers
+    - roomMemberUsers

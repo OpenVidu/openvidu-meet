@@ -38,7 +38,7 @@
       "DOWNLOAD_OF_SELECTED_INFIX": " of ",
       "DOWNLOAD_OF_SELECTED_SUFFIX": " selected",
       "FILTER_BY_STATUS": "Filter by Status",
-      "FILTER_BY_STATUS_DESCRIPTION": "Narrows the result to recordings with the selected status.",
+      "FILTER_BY_STATUS_DESCRIPTION": "Narrows the result to recordings with any of the selected statuses.",
       "FILTERS_LABEL": "Filters:",
       "CLEAR_ALL": "Clear all",
       "CLEAR_FILTERS": "Clear Filters",
@@ -58,7 +58,6 @@
       "MATCH_MODE_CONTAINS": "Contains",
       "MATCH_MODE_EXACT": "Exact match",
       "MATCH_MODE_REGEX": "Regex",
-      "STATUS_ALL": "All statuses",
       "STATUS_STARTING": "Starting",
       "STATUS_ACTIVE": "Active",
       "STATUS_ENDING": "Ending",
@@ -67,7 +66,14 @@
       "STATUS_ABORTED": "Aborted",
       "STATUS_LIMIT_REACHED": "Limit Reached",
       "PLAY_PERMISSION_REQUIRED": "Playing and sharing recordings requires the recordingPlay permission",
-      "BULK_LIMIT_EXCEEDED": "At most {count} recordings can be processed at once"
+      "BULK_LIMIT_EXCEEDED": "At most {count} recordings can be processed at once",
+      "FIGURES": {
+        "ALL": "All recordings",
+        "IN_PROGRESS": "In progress",
+        "COMPLETE": "Complete",
+        "FAILED": "Failed",
+        "UNIT": "recordings"
+      }
     },
     "DETAIL": {
       "LOADING_TITLE": "Loading Recording Details",

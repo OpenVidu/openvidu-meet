@@ -1,0 +1,16 @@
+type: object
+description: Figures of the recordings the authenticated user can list
+properties:
+    totalRecordings:
+        $ref: '../../../analytics/schemas/meet-analytics.yaml#/properties/totalRecordings'
+    recordingsInProgress:
+        $ref: '../../../analytics/schemas/meet-analytics.yaml#/properties/recordingsInProgress'
+    completeRecordings:
+        $ref: '../../../analytics/schemas/meet-analytics.yaml#/properties/completeRecordings'
+    failedRecordings:
+        $ref: '../../../analytics/schemas/meet-analytics.yaml#/properties/failedRecordings'
+required:
+    - totalRecordings
+    - recordingsInProgress
+    - completeRecordings
+    - failedRecordings

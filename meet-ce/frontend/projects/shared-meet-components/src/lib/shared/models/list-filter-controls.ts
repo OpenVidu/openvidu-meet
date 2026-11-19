@@ -29,6 +29,7 @@ export class ListFilterControls<TControls extends NameSearchControls & { [K in k
 
 		if (!control) return;
 
-		control.setValue(typeof control.value === 'boolean' ? false : '');
+		if (typeof control.value === 'boolean') control.setValue(false);
+		else control.setValue(Array.isArray(control.value) ? [] : '');
 	}
 }

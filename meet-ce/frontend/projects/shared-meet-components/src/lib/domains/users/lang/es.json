@@ -57,7 +57,14 @@
       "LOADING_TITLE": "Cargando usuarios",
       "LOADING_SUBTITLE": "Por favor, espera mientras obtenemos los usuarios...",
       "PAGE_TITLE": "Usuarios",
-      "PAGE_SUBTITLE": "Gestiona tus usuarios, controla el acceso y registra nuevas cuentas."
+      "PAGE_SUBTITLE": "Gestiona tus usuarios, controla el acceso y registra nuevas cuentas.",
+      "FIGURES": {
+        "ALL": "Todos los usuarios",
+        "ADMINS": "Administradores",
+        "ROOM_MANAGERS": "Gestores de salas",
+        "ROOM_MEMBERS": "Miembros de sala",
+        "UNIT": "usuarios"
+      }
     },
     "PROFILE": {
       "TITLE_OWN": "Perfil",

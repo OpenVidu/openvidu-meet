@@ -1,0 +1,5 @@
+description: Recordings summary retrieved successfully
+content:
+    application/json:
+        schema:
+            $ref: '../../schemas/meet-recordings-summary.yaml'

@@ -3,10 +3,13 @@ import { expect, test } from '@playwright/test';
 import { authenticate, createReadyUser, expectNoLoginPage, type ReadyUser } from './helpers/auth.helper';
 import {
 	bulkDelete,
+	chooseRecordingStatuses,
 	clearSearchAndExpectAtLeast,
 	confirmDialog,
 	expectNotification,
 	failBulkDelete,
+	figure,
+	figureCount,
 	gotoConsolePage,
 	gotoRoomDetail,
 	listRows,
@@ -14,6 +17,7 @@ import {
 	searchAndExpectRows
 } from './helpers/console-lists.helper';
 import {
+	closeRoom,
 	createRoom,
 	createRoomMember,
 	createUser,
@@ -133,6 +137,54 @@ test.describe('Console Rooms list E2E Tests', () => {
 		await expect(page.locator(`[id="select-room-${rooms[1].roomId}"]`)).toHaveCount(0);
 		await expect(page.locator(`[id="select-room-${rooms[2].roomId}"]`)).toBeVisible();
 	});
+
+	test('selecting a figure filters the list and selecting it again clears the filter', async ({ page }) => {
+		await closeRoom(rooms[0].roomId);
+		await gotoConsolePage(page, 'rooms', 'ov-rooms-lists');
+
+		await figure(page, 'closed').click();
+
+		await expect(figure(page, 'closed')).toHaveAttribute('aria-pressed', 'true');
+		await expect(page).toHaveURL(/status=closed/);
+		await expect(page.locator(`[id="select-room-${rooms[0].roomId}"]`)).toBeVisible({ timeout: 20_000 });
+		await expect(page.locator(`[id="select-room-${rooms[1].roomId}"]`)).toHaveCount(0);
+		await expect(page.locator('ov-rooms-lists .ov-active-filters .filter-chip')).toContainText('Closed');
+		await page.locator('ov-rooms-lists .ov-filters-trigger').click();
+		await expect(page.locator('#status-filter-select')).toContainText('Closed');
+
+		await figure(page, 'closed').click();
+
+		await expect(figure(page, 'all')).toHaveAttribute('aria-pressed', 'true');
+		await expect(page).not.toHaveURL(/status=/);
+		await expect(page.locator(`[id="select-room-${rooms[1].roomId}"]`)).toBeVisible({ timeout: 20_000 });
+	});
+
+	test('searching leaves the figures as they are and deleting a room updates them', async ({ page }) => {
+		await gotoConsolePage(page, 'rooms', 'ov-rooms-lists');
+		await expect(figureCount(page, 'all')).toBeVisible();
+		const total = Number(await figureCount(page, 'all').innerText());
+
+		await searchAndExpectRows(page, `${RUN_ID}-room-a`, 1);
+		await expect(figureCount(page, 'all')).toHaveText(String(total));
+
+		await page.locator(`[id="more-actions-btn-${rooms[0].roomId}"]`).click();
+		await page.locator(`[id="delete-room-btn-${rooms[0].roomId}"]`).click();
+		await confirmDialog(page);
+
+		await expect(figureCount(page, 'all')).toHaveText(String(total - 1), { timeout: 20_000 });
+	});
+
+	test('filtering by status in the filter panel selects the matching figure', async ({ page }) => {
+		await gotoConsolePage(page, 'rooms', 'ov-rooms-lists');
+		await expect(figure(page, 'all')).toHaveAttribute('aria-pressed', 'true');
+
+		await page.locator('ov-rooms-lists .ov-filters-trigger').click();
+		await page.locator('#status-filter-select').click();
+		await page.locator('#status-option-closed').click();
+
+		await expect(figure(page, 'closed')).toHaveAttribute('aria-pressed', 'true');
+		await expect(figure(page, 'all')).toHaveAttribute('aria-pressed', 'false');
+	});
 });
 
 // ─── Users list ──────────────────────────────────────────────────────────────
@@ -173,6 +225,18 @@ test.describe('Console Users list E2E Tests', () => {
 
 		await expect(page.locator(`[id="select-user-${users[0].userId}"]`)).toHaveCount(0, { timeout: 20_000 });
 		await expect(page.locator(`[id="select-user-${users[1].userId}"]`)).toBeVisible();
+	});
+
+	test('selecting a role figure lists only the users with that role', async ({ page }) => {
+		await gotoConsolePage(page, 'users', 'ov-users-lists');
+		await expect(page.locator(`[id="select-user-${users[0].userId}"]`)).toBeVisible({ timeout: 20_000 });
+
+		await figure(page, 'roomManagers').click();
+
+		await expect(figure(page, 'roomManagers')).toHaveAttribute('aria-pressed', 'true');
+		await expect(page).toHaveURL(/role=room_manager/);
+		await expect(page.locator(`[id="user-name-cell-${admin.userId}"]`)).toHaveCount(0, { timeout: 20_000 });
+		await expect(page.locator(`[id="select-user-${users[0].userId}"]`)).toBeVisible();
 	});
 
 	test('marks and protects the root admin the server names, not the earliest registered user', async ({ page }) => {
@@ -224,10 +288,119 @@ test.describe('Console Users list E2E Tests', () => {
 // ─── Recordings list ─────────────────────────────────────────────────────────
 
 test.describe('Console Recordings list E2E Tests', () => {
+	const emptyList = { recordings: [], pagination: { isTruncated: false, maxItems: 50 } };
+	/** The list hides its toolbar and filter panel while it is empty and unfiltered. */
+	const oneRecording = {
+		recordings: [
+			{
+				recordingId: 'room--EG_1--x',
+				roomId: 'room',
+				roomName: 'room',
+				status: 'complete',
+				startDate: 1_700_000_000_000,
+				duration: 10,
+				size: 1024
+			}
+		],
+		pagination: { isTruncated: false, maxItems: 50 }
+	};
+
 	test('renders the recordings list rather than an error page', async ({ page }) => {
 		await gotoConsolePage(page, 'recordings', 'ov-recording-lists');
 
 		await expect(page.locator('.error-page')).toHaveCount(0);
+	});
+
+	test('the failed figure filters by its three statuses and clears when selected again', async ({ page }) => {
+		const statusesRequested: (string | null)[] = [];
+		await page.route('**/internal-api/v1/recordings/summary', (route) =>
+			route.fulfill({
+				json: { totalRecordings: 5, completeRecordings: 2, recordingsInProgress: 1, failedRecordings: 2 }
+			})
+		);
+		await page.route('**/api/v1/recordings?*', (route) => {
+			statusesRequested.push(new URL(route.request().url()).searchParams.get('status'));
+			return route.fulfill({ json: emptyList });
+		});
+		await gotoConsolePage(page, 'recordings', 'ov-recording-lists');
+		await expect(figureCount(page, 'failed')).toHaveText('2');
+
+		await figure(page, 'failed').click();
+
+		await expect(figure(page, 'failed')).toHaveAttribute('aria-pressed', 'true');
+		await expect(page).toHaveURL(/status=failed,aborted,limit_reached/);
+		await expect.poll(() => statusesRequested.at(-1)).toBe('failed,aborted,limit_reached');
+		await expect(page.locator('.ov-active-filters .filter-chip')).toContainText('Failed, Aborted, Limit Reached');
+
+		await figure(page, 'failed').click();
+
+		await expect(figure(page, 'all')).toHaveAttribute('aria-pressed', 'true');
+		await expect.poll(() => statusesRequested.at(-1)).toBeNull();
+	});
+
+	test('choosing several statuses in the status filter lists them all', async ({ page }) => {
+		const statusesRequested: (string | null)[] = [];
+		await page.route('**/api/v1/recordings?*', (route) => {
+			statusesRequested.push(new URL(route.request().url()).searchParams.get('status'));
+			return route.fulfill({ json: oneRecording });
+		});
+		await gotoConsolePage(page, 'recordings', 'ov-recording-lists');
+
+		await chooseRecordingStatuses(page, ['Failed', 'Aborted']);
+
+		await expect.poll(() => statusesRequested.at(-1)).toBe('failed,aborted');
+		await expect(page).toHaveURL(/status=failed,aborted/);
+	});
+
+	test('on a phone the figures are one card whose chips filter the list', async ({ page }) => {
+		const statusesRequested: (string | null)[] = [];
+		await page.route('**/internal-api/v1/recordings/summary', (route) =>
+			route.fulfill({
+				json: { totalRecordings: 5, completeRecordings: 2, recordingsInProgress: 1, failedRecordings: 2 }
+			})
+		);
+		await page.route('**/api/v1/recordings?*', (route) => {
+			statusesRequested.push(new URL(route.request().url()).searchParams.get('status'));
+			return route.fulfill({ json: emptyList });
+		});
+		await page.setViewportSize({ width: 390, height: 844 });
+		await gotoConsolePage(page, 'recordings', 'ov-recording-lists');
+
+		await expect(page.locator('ov-list-figures .tile')).toHaveCount(0);
+		await expect(page.locator('ov-list-figures .card-total-count')).toHaveText('5');
+		await expect(page.locator('ov-list-figures .bar .segment')).toHaveCount(3);
+		await expect(page.locator('ov-list-figures .card-chip')).toHaveCount(4);
+		await expect(figure(page, 'all')).toHaveAttribute('aria-pressed', 'true');
+
+		await figure(page, 'failed').click();
+
+		await expect(figure(page, 'failed')).toHaveAttribute('aria-pressed', 'true');
+		await expect.poll(() => statusesRequested.at(-1)).toBe('failed,aborted,limit_reached');
+
+		await figure(page, 'all').click();
+
+		await expect(figure(page, 'all')).toHaveAttribute('aria-pressed', 'true');
+		await expect.poll(() => statusesRequested.at(-1)).toBeNull();
+	});
+
+	test('shows no figures when there is nothing to count or the figures cannot be read', async ({ page }) => {
+		await page.route('**/api/v1/recordings?*', (route) => route.fulfill({ json: emptyList }));
+		await page.route('**/internal-api/v1/recordings/summary', (route) =>
+			route.fulfill({
+				json: { totalRecordings: 0, completeRecordings: 0, recordingsInProgress: 0, failedRecordings: 0 }
+			})
+		);
+		await gotoConsolePage(page, 'recordings', 'ov-recording-lists');
+		await expect(page.locator('ov-list-figures')).toHaveCount(0);
+
+		await page.unroute('**/internal-api/v1/recordings/summary');
+		await page.route('**/internal-api/v1/recordings/summary', (route) =>
+			route.fulfill({ status: 500, body: '{}' })
+		);
+		await page.reload();
+
+		await expect(page.locator('ov-recording-lists')).toBeVisible({ timeout: 20_000 });
+		await expect(page.locator('ov-list-figures')).toHaveCount(0);
 	});
 });
 
@@ -257,6 +430,32 @@ test.describe('Console Room detail E2E Tests', () => {
 			.click();
 
 		await expect(page.locator('ov-room-members-list')).toBeVisible({ timeout: 20_000 });
+	});
+
+	test('the recordings tab filters by several statuses', async ({ page }) => {
+		const statusesRequested: (string | null)[] = [];
+		await page.route('**/api/v1/recordings?*', (route) => {
+			statusesRequested.push(new URL(route.request().url()).searchParams.get('status'));
+			return route.fulfill({
+				json: {
+					recordings: [
+						{
+							recordingId: 'room--EG_1--x',
+							roomId: room.roomId,
+							roomName: room.roomName,
+							status: 'complete'
+						}
+					],
+					pagination: { isTruncated: false, maxItems: 50 }
+				}
+			});
+		});
+		await gotoRoomDetail(page, room.roomId);
+		await expect(page.locator('ov-recording-lists')).toBeVisible({ timeout: 20_000 });
+
+		await chooseRecordingStatuses(page, ['Failed', 'Aborted']);
+
+		await expect.poll(() => statusesRequested.at(-1)).toBe('failed,aborted');
 	});
 
 	test('the member form disables a permission while the one it needs is off', async ({ page }) => {

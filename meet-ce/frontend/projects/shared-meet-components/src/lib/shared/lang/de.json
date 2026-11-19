@@ -79,5 +79,10 @@
       "TITLE": "Interner Fehler",
       "MESSAGE": "Ein unerwarteter Fehler ist aufgetreten, bitte versuchen Sie es später erneut"
     }
+  },
+  "LIST_FIGURES": {
+    "LABEL": "Kennzahlen",
+    "NEXT": "Als Nächstes:",
+    "SHARE": "{percent}% der {unit}"
   }
 }

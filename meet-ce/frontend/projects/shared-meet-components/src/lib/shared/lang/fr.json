@@ -79,5 +79,10 @@
       "TITLE": "Erreur interne",
       "MESSAGE": "Une erreur inattendue s'est produite, veuillez réessayer plus tard"
     }
+  },
+  "LIST_FIGURES": {
+    "LABEL": "Chiffres clés",
+    "NEXT": "Prochaine :",
+    "SHARE": "{percent}% des {unit}"
   }
 }

@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
@@ -24,10 +24,14 @@ import {
 	MeetUserRole
 } from '@openvidu-meet/typings';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
-import { TranslateService } from '../../../../shared/services/i18n/translate.service';
+import { TranslateParams, TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { bulkDeleteRoomsDialogPreset } from '../../utils/dialog-presets';
 import { EntityListState } from '../../../../shared/models/entity-list.model';
 import { ListUrlState } from '../../../../shared/models/list-url-state';
+import { SummaryState } from '../../../../shared/models/summary-state';
+import { ListFigure, selectedFigureKey } from '../../../../shared/components/list-figures/list-figure.model';
+import { ListFiguresComponent } from '../../../../shared/components/list-figures/list-figures.component';
+import { daysUntil } from '../../../../shared/utils/format.utils';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { DialogService } from '../../../../shared/services/dialog.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
@@ -67,6 +71,7 @@ import type { ILogger } from '../../../../shared/models/logger.model';
 		MatFormFieldModule,
 		MatInputModule,
 		RoomsListsComponent,
+		ListFiguresComponent,
 		TranslatePipe
 	],
 	templateUrl: './rooms.component.html',
@@ -100,16 +105,94 @@ export class RoomsComponent implements OnInit {
 		}
 	});
 
+	protected readonly summary = new SummaryState({
+		read: () => this.roomService.getRoomsSummary(),
+		onError: (error) => this.log.e('Error loading rooms summary:', error)
+	});
+
+	protected readonly figures = computed<ListFigure<MeetRoomStatus>[]>(() => {
+		const summary = this.summary.value();
+		this.translateService.translationsLoaded();
+
+		if (!summary?.totalRooms) return [];
+
+		const t = (key: string, params?: TranslateParams) =>
+			this.translateService.translate(`ROOMS.LIST.FIGURES.${key}`, params);
+		const next = summary.nextExpiringRoom;
+
+		return [
+			{
+				key: 'all',
+				label: t('ALL'),
+				count: summary.totalRooms,
+				color: 'var(--ov-meet-icon-rooms)',
+				icon: 'video_chat',
+				filter: null
+			},
+			{
+				key: 'meeting',
+				label: t('ACTIVE_MEETING'),
+				count: summary.activeRooms,
+				color: 'var(--ov-meet-color-primary)',
+				icon: 'videocam',
+				filter: MeetRoomStatus.ACTIVE_MEETING
+			},
+			{
+				key: 'open',
+				label: t('OPEN'),
+				count: summary.openRooms,
+				color: 'var(--ov-meet-color-success)',
+				icon: 'meeting_room',
+				filter: MeetRoomStatus.OPEN
+			},
+			{
+				key: 'closed',
+				label: t('CLOSED'),
+				count: summary.closedRooms,
+				color: 'var(--ov-meet-color-secondary-light)',
+				icon: 'lock',
+				filter: MeetRoomStatus.CLOSED
+			},
+			{
+				key: 'expiring',
+				label: t('EXPIRING'),
+				count: summary.roomsExpiringSoon,
+				color: 'var(--ov-meet-color-warning)',
+				icon: 'schedule',
+				sentence: t('EXPIRING_SENTENCE', { count: summary.roomsExpiringSoon }),
+				next: next && {
+					name: next.roomName,
+					link: ['/rooms', next.roomId],
+					when: t('EXPIRES_WHEN', { days: Math.max(daysUntil(next.autoDeletionDate, new Date()), 0) })
+				}
+			}
+		];
+	});
+
+	protected readonly selectedFigure = computed(() =>
+		selectedFigureKey(this.figures(), this.initialFilters().statusFilter)
+	);
+
 	async ngOnInit() {
 		const [userId, role] = await Promise.all([this.authService.getUserId(), this.authService.getUserRole()]);
 		this.currentUserId.set(userId ?? '');
 		this.currentUserRole.set(role);
 
+		void this.summary.refresh();
 		await this.list.initialize(this.initialFilters());
 		this.urlState.onChange((filters) => {
 			this.initialFilters.set(filters);
 			void this.list.refresh(filters);
 		});
+	}
+
+	protected onFigureSelect(status: MeetRoomStatus | null) {
+		this.urlState.write({ ...this.initialFilters(), statusFilter: status ?? '' });
+	}
+
+	protected async onRefresh(filters: RoomTableFilter) {
+		void this.summary.refresh();
+		await this.list.refresh(filters);
 	}
 
 	async onRoomAction(action: RoomTableAction) {
@@ -230,6 +313,7 @@ export class RoomsComponent implements OnInit {
 
 			// Update room in the list
 			this.list.update((rooms) => rooms.map((r) => (r.roomId === updatedRoom.roomId ? updatedRoom : r)));
+			void this.summary.refresh();
 			this.notificationService.showMessage(this.translateService.translate('ROOMS.ERRORS.ROOM_REOPENED'));
 		} catch (error) {
 			this.notificationService.showMessage(this.translateService.translate('ROOMS.ERRORS.FAILED_REOPEN_ROOM'));
@@ -243,6 +327,7 @@ export class RoomsComponent implements OnInit {
 
 			// Update room in the list
 			this.list.update((rooms) => rooms.map((r) => (r.roomId === updatedRoom.roomId ? updatedRoom : r)));
+			void this.summary.refresh();
 
 			// The close is applied immediately unless a meeting is still active, in which case
 			// it is scheduled to take effect when the meeting ends.
@@ -286,6 +371,7 @@ export class RoomsComponent implements OnInit {
 			await this.list.autoLoadIfEmpty();
 		}
 
+		void this.summary.refresh();
 		this.notificationService.showMessage(message);
 	}
 
@@ -372,6 +458,7 @@ export class RoomsComponent implements OnInit {
 
 			return updatedRooms;
 		});
+		void this.summary.refresh();
 	}
 
 	private showBulkDeletionErrorDialogWithOptions(

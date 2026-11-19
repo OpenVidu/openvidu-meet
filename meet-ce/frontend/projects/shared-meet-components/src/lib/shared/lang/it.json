@@ -79,5 +79,10 @@
       "TITLE": "Errore interno",
       "MESSAGE": "Si è verificato un errore imprevisto, riprova più tardi"
     }
+  },
+  "LIST_FIGURES": {
+    "LABEL": "Dati principali",
+    "NEXT": "Prossima:",
+    "SHARE": "{percent}% di {unit}"
   }
 }

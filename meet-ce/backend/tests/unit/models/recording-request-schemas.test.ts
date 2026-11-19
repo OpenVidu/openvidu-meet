@@ -169,12 +169,22 @@ describe('RecordingFiltersSchema', () => {
 			roomName: 'Standup',
 			roomNameMatchMode: 'prefix',
 			roomNameCaseInsensitive: false,
-			status: 'complete',
+			status: ['complete'],
 			nextPageToken: 'token',
 			maxItems: 10,
 			sortField: 'startDate',
 			sortOrder: 'desc'
 		});
+	});
+
+	it('reads the status as a list without repeated statuses', () => {
+		expect(parse({ status: 'starting, active,starting,ending' }).status).toEqual(['starting', 'active', 'ending']);
+	});
+
+	it('rejects a list with a status that does not exist', () => {
+		expect(issues(RecordingFiltersSchema, { status: 'active,done' })).toEqual([
+			expect.stringMatching(/^status: Invalid enum value\. Expected 'starting' \| 'active'.*received 'done'$/)
+		]);
 	});
 
 	it('sanitizes the room id filter', () => {

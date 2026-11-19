@@ -38,7 +38,7 @@
       "DOWNLOAD_OF_SELECTED_INFIX": " de ",
       "DOWNLOAD_OF_SELECTED_SUFFIX": " seleccionadas",
       "FILTER_BY_STATUS": "Filtrar por estado",
-      "FILTER_BY_STATUS_DESCRIPTION": "Limita el resultado a las grabaciones con el estado seleccionado.",
+      "FILTER_BY_STATUS_DESCRIPTION": "Limita el resultado a las grabaciones con alguno de los estados seleccionados.",
       "FILTERS_LABEL": "Filtros:",
       "CLEAR_ALL": "Limpiar todo",
       "CLEAR_FILTERS": "Limpiar filtros",
@@ -58,7 +58,6 @@
       "MATCH_MODE_CONTAINS": "Contiene",
       "MATCH_MODE_EXACT": "Coincidencia exacta",
       "MATCH_MODE_REGEX": "Regex",
-      "STATUS_ALL": "Todos los estados",
       "STATUS_STARTING": "Iniciando",
       "STATUS_ACTIVE": "Activa",
       "STATUS_ENDING": "Finalizando",
@@ -67,7 +66,14 @@
       "STATUS_ABORTED": "Cancelada",
       "STATUS_LIMIT_REACHED": "Límite alcanzado",
       "PLAY_PERMISSION_REQUIRED": "Reproducir y compartir grabaciones requiere el permiso recordingPlay",
-      "BULK_LIMIT_EXCEEDED": "Se pueden procesar como máximo {count} grabaciones a la vez"
+      "BULK_LIMIT_EXCEEDED": "Se pueden procesar como máximo {count} grabaciones a la vez",
+      "FIGURES": {
+        "ALL": "Todas las grabaciones",
+        "IN_PROGRESS": "En curso",
+        "COMPLETE": "Completadas",
+        "FAILED": "Fallidas",
+        "UNIT": "grabaciones"
+      }
     },
     "DETAIL": {
       "LOADING_TITLE": "Cargando detalles de la grabación",

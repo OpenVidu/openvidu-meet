@@ -75,7 +75,17 @@
       "MATCH_MODE_STARTS_WITH": "前方一致",
       "MATCH_MODE_CONTAINS": "部分一致",
       "MATCH_MODE_EXACT": "完全一致",
-      "MATCH_MODE_REGEX": "正規表現"
+      "MATCH_MODE_REGEX": "正規表現",
+      "FIGURES": {
+        "ALL": "すべてのルーム",
+        "ACTIVE_MEETING": "会議中",
+        "OPEN": "オープン",
+        "CLOSED": "クローズ",
+        "EXPIRING": "7日以内に期限切れ",
+        "EXPIRING_SENTENCE": "{count, plural, other {#件のルームが7日以内に期限切れになります}}",
+        "EXPIRES_WHEN": "{days, plural, =0 {今日} =1 {明日} other {#日後}}",
+        "UNIT": "ルーム"
+      }
     },
     "DETAIL": {
       "LOADING_TITLE": "ルームの詳細を読み込んでいます",

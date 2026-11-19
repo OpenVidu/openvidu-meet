@@ -75,7 +75,17 @@
       "MATCH_MODE_STARTS_WITH": "इससे शुरू होता है",
       "MATCH_MODE_CONTAINS": "शामिल है",
       "MATCH_MODE_EXACT": "सटीक",
-      "MATCH_MODE_REGEX": "Regex"
+      "MATCH_MODE_REGEX": "Regex",
+      "FIGURES": {
+        "ALL": "सभी कक्ष",
+        "ACTIVE_MEETING": "अभी मीटिंग में",
+        "OPEN": "खुले",
+        "CLOSED": "बंद",
+        "EXPIRING": "7 दिनों में समाप्त",
+        "EXPIRING_SENTENCE": "{count, plural, one {# कक्ष 7 दिनों में समाप्त हो रहा है} other {# कक्ष 7 दिनों में समाप्त हो रहे हैं}}",
+        "EXPIRES_WHEN": "{days, plural, =0 {आज} =1 {कल} other {# दिनों में}}",
+        "UNIT": "कक्ष"
+      }
     },
     "DETAIL": {
       "LOADING_TITLE": "कक्ष विवरण लोड हो रहा है",

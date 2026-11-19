@@ -57,7 +57,14 @@
       "LOADING_TITLE": "Caricamento degli utenti",
       "LOADING_SUBTITLE": "Attendi mentre recuperiamo gli utenti...",
       "PAGE_TITLE": "Utenti",
-      "PAGE_SUBTITLE": "Gestisci i tuoi utenti, controlla gli accessi e registra nuovi account."
+      "PAGE_SUBTITLE": "Gestisci i tuoi utenti, controlla gli accessi e registra nuovi account.",
+      "FIGURES": {
+        "ALL": "Tutti gli utenti",
+        "ADMINS": "Amministratori",
+        "ROOM_MANAGERS": "Gestori delle stanze",
+        "ROOM_MEMBERS": "Membri della stanza",
+        "UNIT": "utenti"
+      }
     },
     "PROFILE": {
       "TITLE_OWN": "Profilo",

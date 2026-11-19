@@ -101,3 +101,22 @@ export const failBulkDelete = async (page: Page, urlPattern: string): Promise<vo
 		await route.fulfill({ status: 500, contentType: 'application/json', body: '{}' });
 	});
 };
+
+/** A key figure (tile on wide screens, chip on a phone) of a console list page. */
+export const figure = (page: Page, key: string): Locator => page.locator(`ov-list-figures [data-figure="${key}"]`);
+
+/** The number a figure's tile shows. */
+export const figureCount = (page: Page, key: string): Locator => figure(page, key).locator('.tile-count');
+
+/** Opens the filter panel of the recordings list on the page and chooses `labels` in its multiple status select. */
+export const chooseRecordingStatuses = async (page: Page, labels: string[]): Promise<void> => {
+	const list = page.locator('ov-recording-lists');
+	await list.locator('.ov-filters-trigger').click();
+	await list.locator('mat-select').click();
+
+	for (const label of labels) {
+		await page.getByRole('option', { name: label, exact: true }).click();
+	}
+
+	await page.keyboard.press('Escape');
+};

@@ -79,5 +79,10 @@
       "TITLE": "Interne fout",
       "MESSAGE": "Er is een onverwachte fout opgetreden, probeer het later opnieuw"
     }
+  },
+  "LIST_FIGURES": {
+    "LABEL": "Kerncijfers",
+    "NEXT": "Eerstvolgende:",
+    "SHARE": "{percent}% van de {unit}"
   }
 }

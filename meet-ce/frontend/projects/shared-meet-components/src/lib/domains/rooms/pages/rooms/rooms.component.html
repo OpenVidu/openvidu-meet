@@ -36,6 +36,16 @@
 
 		<!-- Content -->
 		<div class="page-content" id="rooms-content">
+			@if (figures().length > 0) {
+				<ov-list-figures
+					id="rooms-figures"
+					[figures]="figures()"
+					[selectedKey]="selectedFigure()"
+					[unit]="'ROOMS.LIST.FIGURES.UNIT' | translate"
+					(figureSelect)="onFigureSelect($event)"
+				/>
+			}
+
 			<ov-rooms-lists
 				id="rooms-list"
 				[rooms]="list.items()"
@@ -49,7 +59,7 @@
 				[currentUserRole]="currentUserRole()"
 				(roomAction)="onRoomAction($event)"
 				(loadMore)="list.loadMore($event)"
-				(refresh)="list.refresh($event)"
+				(refresh)="onRefresh($event)"
 				(filterChange)="urlState.write($event)"
 			/>
 		</div>

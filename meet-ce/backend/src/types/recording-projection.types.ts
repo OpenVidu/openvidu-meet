@@ -8,12 +8,15 @@ import type {
 /** Base query inputs without the fields selector. */
 type RecordingQueryBase = Omit<MeetRecordingFilters, 'fields'>;
 
-/** Base repository query inputs with internal access-control scope. */
-type RecordingRepositoryQueryBase = RecordingQueryBase & {
+/** The access scope a list is restricted to: the recordings of the rooms owned by, joined by or open to user access of the caller. */
+export type RecordingAccessScope = {
 	roomOwner?: string;
 	roomMember?: string;
 	roomUserAccess?: boolean;
 };
+
+/** Base repository query inputs with internal access-control scope. */
+type RecordingRepositoryQueryBase = RecordingQueryBase & RecordingAccessScope;
 
 /** Full recordings, no projection. */
 export type RecordingQuery = RecordingRepositoryQueryBase & { fields?: undefined };

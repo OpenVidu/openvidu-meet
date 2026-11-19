@@ -75,7 +75,17 @@
       "MATCH_MODE_STARTS_WITH": "Starts with",
       "MATCH_MODE_CONTAINS": "Contains",
       "MATCH_MODE_EXACT": "Exact",
-      "MATCH_MODE_REGEX": "Regex"
+      "MATCH_MODE_REGEX": "Regex",
+      "FIGURES": {
+        "ALL": "All rooms",
+        "ACTIVE_MEETING": "In a meeting now",
+        "OPEN": "Open",
+        "CLOSED": "Closed",
+        "EXPIRING": "Expiring in 7 days",
+        "EXPIRING_SENTENCE": "{count, plural, one {# room expires in 7 days} other {# rooms expire in 7 days}}",
+        "EXPIRES_WHEN": "{days, plural, =0 {today} =1 {tomorrow} other {in # days}}",
+        "UNIT": "rooms"
+      }
     },
     "DETAIL": {
       "LOADING_TITLE": "Loading Room Details",

@@ -12,12 +12,9 @@ import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { AnalyticsService } from '../../../../shared/services/analytics.service';
 import { TranslateParams } from '../../../../shared/services/i18n/translate.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
+import { daysUntil } from '../../../../shared/utils/format.utils';
 
 export const OVERVIEW_REFRESH_INTERVAL_MS = 30_000;
-
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-const startOfDay = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
 
 interface StatusSegment {
 	key: string;
@@ -93,7 +90,7 @@ export class OverviewComponent {
 
 		if (!next || !readAt) return null;
 
-		const days = Math.round((startOfDay(new Date(next.autoDeletionDate)) - startOfDay(readAt)) / DAY_MS);
+		const days = daysUntil(next.autoDeletionDate, readAt);
 
 		if (days <= 0) return { key: 'OVERVIEW.EXPIRING_TODAY', params: { days } };
 

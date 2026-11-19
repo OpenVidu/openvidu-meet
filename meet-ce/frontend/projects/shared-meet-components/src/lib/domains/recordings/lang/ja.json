@@ -38,7 +38,7 @@
       "DOWNLOAD_OF_SELECTED_INFIX": " / ",
       "DOWNLOAD_OF_SELECTED_SUFFIX": " 件選択中",
       "FILTER_BY_STATUS": "ステータスで絞り込む",
-      "FILTER_BY_STATUS_DESCRIPTION": "選択したステータスの録画に結果を絞り込みます。",
+      "FILTER_BY_STATUS_DESCRIPTION": "選択したいずれかのステータスの録画に絞り込みます。",
       "FILTERS_LABEL": "フィルター：",
       "CLEAR_ALL": "すべてクリア",
       "CLEAR_FILTERS": "フィルターをクリア",
@@ -58,7 +58,6 @@
       "MATCH_MODE_CONTAINS": "部分一致",
       "MATCH_MODE_EXACT": "完全一致",
       "MATCH_MODE_REGEX": "正規表現",
-      "STATUS_ALL": "すべてのステータス",
       "STATUS_STARTING": "開始中",
       "STATUS_ACTIVE": "進行中",
       "STATUS_ENDING": "終了中",
@@ -67,7 +66,14 @@
       "STATUS_ABORTED": "中止",
       "STATUS_LIMIT_REACHED": "上限到達",
       "PLAY_PERMISSION_REQUIRED": "録画の再生と共有には recordingPlay 権限が必要です",
-      "BULK_LIMIT_EXCEEDED": "一度に処理できる録画は最大 {count} 件です"
+      "BULK_LIMIT_EXCEEDED": "一度に処理できる録画は最大 {count} 件です",
+      "FIGURES": {
+        "ALL": "すべての録画",
+        "IN_PROGRESS": "進行中",
+        "COMPLETE": "完了",
+        "FAILED": "失敗",
+        "UNIT": "録画"
+      }
     },
     "DETAIL": {
       "LOADING_TITLE": "録画の詳細を読み込んでいます",

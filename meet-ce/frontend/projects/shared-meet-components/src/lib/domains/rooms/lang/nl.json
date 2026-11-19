@@ -75,7 +75,17 @@
       "MATCH_MODE_STARTS_WITH": "Begint met",
       "MATCH_MODE_CONTAINS": "Bevat",
       "MATCH_MODE_EXACT": "Exact",
-      "MATCH_MODE_REGEX": "Regex"
+      "MATCH_MODE_REGEX": "Regex",
+      "FIGURES": {
+        "ALL": "Alle kamers",
+        "ACTIVE_MEETING": "Nu in een meeting",
+        "OPEN": "Open",
+        "CLOSED": "Gesloten",
+        "EXPIRING": "Verloopt binnen 7 dagen",
+        "EXPIRING_SENTENCE": "{count, plural, one {# kamer verloopt binnen 7 dagen} other {# kamers verlopen binnen 7 dagen}}",
+        "EXPIRES_WHEN": "{days, plural, =0 {vandaag} =1 {morgen} other {over # dagen}}",
+        "UNIT": "kamers"
+      }
     },
     "DETAIL": {
       "LOADING_TITLE": "Kamerdetails laden",

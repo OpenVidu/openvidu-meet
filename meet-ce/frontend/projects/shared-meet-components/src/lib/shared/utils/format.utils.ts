@@ -23,3 +23,11 @@ export const formatBytes = (bytes?: number): string => {
 
 	return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
 };
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+const startOfDay = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+
+/** Calendar days from `from` to `date`: 0 for the same day, negative for a day before it. */
+export const daysUntil = (date: number | Date, from: Date): number =>
+	Math.round((startOfDay(new Date(date)) - startOfDay(from)) / DAY_MS);

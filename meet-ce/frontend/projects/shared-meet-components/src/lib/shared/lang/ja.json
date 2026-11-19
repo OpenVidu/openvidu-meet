@@ -79,5 +79,10 @@
       "TITLE": "内部エラー",
       "MESSAGE": "予期しないエラーが発生しました。後でもう一度お試しください"
     }
+  },
+  "LIST_FIGURES": {
+    "LABEL": "主な数値",
+    "NEXT": "次:",
+    "SHARE": "{unit}の{percent}%"
   }
 }

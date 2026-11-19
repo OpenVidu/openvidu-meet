@@ -1,6 +1,6 @@
 import { inject, Service } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
-import { MeetRecordingFilters, MeetRecordingInfo } from '@openvidu-meet/typings';
+import { MeetRecordingFilters, MeetRecordingInfo, MeetRecordingsSummary } from '@openvidu-meet/typings';
 import { HttpService } from '../../../shared/services/http.service';
 import { NavigationService } from '../../../shared/services/navigation.service';
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
@@ -82,6 +82,15 @@ export class RecordingService {
 		}
 
 		return this.httpService.getRequest(path);
+	}
+
+	/**
+	 * Gets the key figures of the recordings the caller can list
+	 *
+	 * @return A promise that resolves to the recordings summary
+	 */
+	async getRecordingsSummary(): Promise<MeetRecordingsSummary> {
+		return this.httpService.getRequest(`${this.INTERNAL_RECORDINGS_API}/summary`);
 	}
 
 	/**

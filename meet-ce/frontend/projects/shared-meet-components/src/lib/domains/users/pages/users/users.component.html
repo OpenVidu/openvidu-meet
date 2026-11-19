@@ -29,6 +29,16 @@
 
 		<!-- Content -->
 		<div class="page-content" id="users-content">
+			@if (figures().length > 0) {
+				<ov-list-figures
+					id="users-figures"
+					[figures]="figures()"
+					[selectedKey]="selectedFigure()"
+					[unit]="'USERS.LIST.FIGURES.UNIT' | translate"
+					(figureSelect)="onFigureSelect($event)"
+				/>
+			}
+
 			<ov-users-lists
 				id="users-list"
 				[users]="list.items()"
@@ -41,7 +51,7 @@
 				[initialFilters]="initialFilters()"
 				(userAction)="onUserAction($event)"
 				(loadMore)="list.loadMore($event)"
-				(refresh)="list.refresh($event)"
+				(refresh)="onRefresh($event)"
 				(filterChange)="urlState.write($event)"
 			/>
 		</div>

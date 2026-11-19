@@ -1,5 +1,5 @@
 import { inject, Service } from '@angular/core';
-import { MeetUserDTO, MeetUserFilters, MeetUserOptions, MeetUserRole } from '@openvidu-meet/typings';
+import { MeetUserDTO, MeetUserFilters, MeetUserOptions, MeetUserRole, MeetUsersSummary } from '@openvidu-meet/typings';
 import { HttpService } from '../../../shared/services/http.service';
 
 @Service()
@@ -53,6 +53,15 @@ export class UserService {
 		}
 
 		return this.httpService.getRequest(path);
+	}
+
+	/**
+	 * Gets the key figures of the user accounts, by role.
+	 *
+	 * @returns A promise that resolves to the users summary
+	 */
+	async getUsersSummary(): Promise<MeetUsersSummary> {
+		return this.httpService.getRequest(`${this.INTERNAL_USERS_API}/summary`);
 	}
 
 	/**

@@ -66,9 +66,9 @@ export interface MeetRecordingFilters extends SortAndPagination<MeetRecordingSor
 	 */
 	roomNameCaseInsensitive?: boolean;
 	/**
-	 * Filter recordings by status
+	 * Filter recordings by status. One status, or several matched with OR (sent comma-separated).
 	 */
-	status?: MeetRecordingStatus;
+	status?: MeetRecordingStatus | MeetRecordingStatus[];
 	/**
 	 * Array of fields to include in the response
 	 */

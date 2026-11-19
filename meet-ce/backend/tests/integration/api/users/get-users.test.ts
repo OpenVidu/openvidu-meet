@@ -2,7 +2,13 @@ import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { MeetUser, MeetUserDTO, MeetUserRole } from '@openvidu-meet/typings';
 import { MEET_ENV } from '../../../../src/environment.js';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
-import { createUser, deleteAllUsers, getUsers, startTestServer } from '../../../helpers/request-helpers.js';
+import {
+	createUser,
+	deleteAllUsers,
+	getListSummary,
+	getUsers,
+	startTestServer
+} from '../../../helpers/request-helpers.js';
 
 describe('Users API Tests', () => {
 	beforeAll(async () => {
@@ -46,6 +52,20 @@ describe('Users API Tests', () => {
 
 	afterAll(async () => {
 		await deleteAllUsers();
+	});
+
+	describe('Get Users Summary Tests', () => {
+		it('should count the users by role, the root admin included', async () => {
+			const response = await getListSummary('users');
+
+			expect(response.status).toBe(200);
+			expect(response.body).toEqual({
+				totalUsers: 6,
+				adminUsers: 3,
+				roomManagerUsers: 2,
+				roomMemberUsers: 1
+			});
+		});
 	});
 
 	describe('Get Users Tests', () => {

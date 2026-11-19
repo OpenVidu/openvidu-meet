@@ -57,7 +57,14 @@
       "LOADING_TITLE": "正在加载用户",
       "LOADING_SUBTITLE": "正在获取用户，请稍候...",
       "PAGE_TITLE": "用户",
-      "PAGE_SUBTITLE": "管理您的用户、控制访问权限并注册新账户。"
+      "PAGE_SUBTITLE": "管理您的用户、控制访问权限并注册新账户。",
+      "FIGURES": {
+        "ALL": "全部用户",
+        "ADMINS": "管理员",
+        "ROOM_MANAGERS": "房间管理者",
+        "ROOM_MEMBERS": "房间成员",
+        "UNIT": "用户"
+      }
     },
     "PROFILE": {
       "TITLE_OWN": "个人资料",

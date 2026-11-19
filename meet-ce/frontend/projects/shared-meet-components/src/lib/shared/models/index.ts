@@ -10,6 +10,7 @@ export * from './navigation.model';
 export * from './notification.model';
 export * from './sidenav.model';
 export * from './storage.model';
+export * from './summary-state';
 export * from './translation-bundle.model';
 
 export * from './logger.model';

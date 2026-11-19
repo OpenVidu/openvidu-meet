@@ -2,9 +2,19 @@ import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute } from '@angular/router';
-import { MeetRecordingFilters, MeetRecordingInfo, MeetUserRole } from '@openvidu-meet/typings';
+import {
+	MEET_RECORDING_STATUS_FIGURE,
+	MeetRecordingFilters,
+	MeetRecordingInfo,
+	MeetRecordingStatus,
+	MeetRecordingsSummary,
+	MeetUserRole
+} from '@openvidu-meet/typings';
 import { EntityListState } from '../../../../shared/models/entity-list.model';
 import { ListUrlState } from '../../../../shared/models/list-url-state';
+import { SummaryState } from '../../../../shared/models/summary-state';
+import { ListFigure, selectedFigureKey } from '../../../../shared/components/list-figures/list-figure.model';
+import { ListFiguresComponent } from '../../../../shared/components/list-figures/list-figures.component';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
@@ -24,9 +34,14 @@ import { RecordingService } from '../../services/recording.service';
 import { LoggerService } from '../../../../shared/services/logger.service';
 import type { ILogger } from '../../../../shared/models/logger.model';
 
+const statusesOf = (figure: keyof MeetRecordingsSummary): MeetRecordingStatus[] =>
+	(Object.keys(MEET_RECORDING_STATUS_FIGURE) as MeetRecordingStatus[]).filter(
+		(status) => MEET_RECORDING_STATUS_FIGURE[status] === figure
+	);
+
 @Component({
 	selector: 'ov-recordings',
-	imports: [RecordingListsComponent, MatIconModule, MatProgressSpinnerModule, TranslatePipe],
+	imports: [RecordingListsComponent, ListFiguresComponent, MatIconModule, MatProgressSpinnerModule, TranslatePipe],
 	templateUrl: './recordings.component.html',
 	styleUrl: './recordings.component.scss'
 })
@@ -70,9 +85,63 @@ export class RecordingsComponent implements OnInit {
 		}
 	});
 
+	protected readonly summary = new SummaryState({
+		read: () => this.recordingService.getRecordingsSummary(),
+		onError: (error) => this.log.e('Error loading recordings summary:', error)
+	});
+
+	protected readonly figures = computed<ListFigure<MeetRecordingStatus[]>[]>(() => {
+		const summary = this.summary.value();
+		this.translateService.translationsLoaded();
+
+		if (!summary?.totalRecordings) return [];
+
+		const t = (key: string) => this.translateService.translate(`RECORDINGS.LIST.FIGURES.${key}`);
+
+		return [
+			{
+				key: 'all',
+				label: t('ALL'),
+				count: summary.totalRecordings,
+				color: 'var(--ov-meet-icon-recordings)',
+				icon: 'video_library',
+				filter: null
+			},
+			{
+				key: 'inProgress',
+				label: t('IN_PROGRESS'),
+				count: summary.recordingsInProgress,
+				color: 'var(--ov-meet-color-primary)',
+				icon: 'radio_button_checked',
+				filter: statusesOf('recordingsInProgress')
+			},
+			{
+				key: 'complete',
+				label: t('COMPLETE'),
+				count: summary.completeRecordings,
+				color: 'var(--ov-meet-color-success)',
+				icon: 'check_circle',
+				filter: statusesOf('completeRecordings')
+			},
+			{
+				key: 'failed',
+				label: t('FAILED'),
+				count: summary.failedRecordings,
+				color: 'var(--ov-meet-color-error)',
+				icon: 'error',
+				filter: statusesOf('failedRecordings')
+			}
+		];
+	});
+
+	protected readonly selectedFigure = computed(() =>
+		selectedFigureKey(this.figures(), this.initialFilters().statusFilter)
+	);
+
 	async ngOnInit() {
 		this.currentUserRole.set(await this.authService.getUserRole());
 
+		void this.summary.refresh();
 		await this.list.initialize(this.initialFilters());
 		this.urlState.onChange((filters) => {
 			this.initialFilters.set(filters);
@@ -80,10 +149,20 @@ export class RecordingsComponent implements OnInit {
 		});
 	}
 
+	protected onFigureSelect(statuses: MeetRecordingStatus[] | null) {
+		this.urlState.write({ ...this.initialFilters(), statusFilter: statuses ?? [] });
+	}
+
+	protected async onRefresh(filters: RecordingTableFilter) {
+		void this.summary.refresh();
+		await this.list.refresh(filters);
+	}
+
 	async onRecordingAction(action: RecordingTableAction) {
 		await this.recordingActions.handle(action, {
 			list: this.list,
 			log: this.log,
+			onDeleted: () => void this.summary.refresh(),
 			canPlayRecording: ({ roomId }) => this.canPlayRecordings() || this.playableRoomIds().has(roomId)
 		});
 	}
@@ -104,7 +183,7 @@ export class RecordingsComponent implements OnInit {
 		}
 
 		// Apply status filter if provided
-		if (filters.statusFilter) {
+		if (filters.statusFilter.length) {
 			recordingFilters.status = filters.statusFilter;
 		}
 

@@ -502,7 +502,7 @@ export class RoomDetailComponent implements OnInit {
 		};
 
 		// Apply status filter if provided
-		if (filters.statusFilter) {
+		if (filters.statusFilter.length) {
 			recordingFilters.status = filters.statusFilter;
 		}
 

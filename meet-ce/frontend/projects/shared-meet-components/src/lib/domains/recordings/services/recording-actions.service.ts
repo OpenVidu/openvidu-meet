@@ -24,6 +24,8 @@ export interface RecordingListContext {
 	 * request a signed link. Omitted by the room-member view, whose dialog reads its own permissions.
 	 */
 	canPlayRecording?: (recording: MeetRecordingInfo) => boolean;
+	/** Called after a delete flow, for hosts that show figures about the list. */
+	onDeleted?: () => void;
 }
 
 /**
@@ -65,12 +67,13 @@ export class RecordingActionsService {
 		}
 	}
 
-	private deleteRecording(recording: MeetRecordingInfo, { list, log }: RecordingListContext): void {
+	private deleteRecording(recording: MeetRecordingInfo, { list, log, onDeleted }: RecordingListContext): void {
 		const deleteCallback = async () => {
 			try {
 				await this.recordingService.deleteRecording(recording.recordingId);
 
 				list.remove((r) => r.recordingId === recording.recordingId);
+				onDeleted?.();
 				this.notificationService.showMessage(
 					this.translateService.translate('RECORDINGS.ERRORS.RECORDING_DELETED')
 				);
@@ -89,13 +92,17 @@ export class RecordingActionsService {
 		});
 	}
 
-	private bulkDeleteRecordings(recordings: MeetRecordingInfo[], { list, log }: RecordingListContext): void {
+	private bulkDeleteRecordings(
+		recordings: MeetRecordingInfo[],
+		{ list, log, onDeleted }: RecordingListContext
+	): void {
 		const bulkDeleteCallback = async () => {
 			try {
 				const recordingIds = recordings.map((r) => r.recordingId);
 				const { deleted } = await this.recordingService.bulkDeleteRecordings(recordingIds);
 
 				list.remove((r) => deleted.includes(r.recordingId));
+				onDeleted?.();
 				this.notificationService.showMessage(
 					`${deleted.length} ${this.translateService.translate(
 						deleted.length > 1
@@ -119,6 +126,7 @@ export class RecordingActionsService {
 
 				// Partial result: some recordings were deleted, some not.
 				list.remove((r) => deleted.includes(r.recordingId));
+				onDeleted?.();
 
 				let msg = '';
 

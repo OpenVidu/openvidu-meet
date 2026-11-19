@@ -22,6 +22,7 @@ import { setupSingleRoom, setupTestUsers, setupTestUsersForRoom } from '../../..
 import { RoomData, RoomTestUsers, TestUsers } from '../../../interfaces/scenarios.js';
 
 const ROOMS_PATH = getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`);
+const ROOMS_SUMMARY_PATH = getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms/summary`);
 
 describe('Room API Security Tests', () => {
 	let app: Express;
@@ -219,6 +220,33 @@ describe('Room API Security Tests', () => {
 			const response = await request(app)
 				.get(ROOMS_PATH)
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.moderatorToken);
+			expectMeetError(response, errorUnauthorized());
+		});
+	});
+
+	describe('Get Rooms Summary Tests', () => {
+		let roomData: RoomData;
+
+		beforeAll(async () => {
+			roomData = await setupSingleRoom();
+		});
+
+		it('should fail when request includes API key', async () => {
+			const response = await request(app)
+				.get(ROOMS_SUMMARY_PATH)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
+			expectMeetError(response, errorUnauthorized());
+		});
+
+		it('should fail when using room member token', async () => {
+			const response = await request(app)
+				.get(ROOMS_SUMMARY_PATH)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.moderatorToken);
+			expectMeetError(response, errorUnauthorized());
+		});
+
+		it('should fail when user is not authenticated', async () => {
+			const response = await request(app).get(ROOMS_SUMMARY_PATH);
 			expectMeetError(response, errorUnauthorized());
 		});
 	});

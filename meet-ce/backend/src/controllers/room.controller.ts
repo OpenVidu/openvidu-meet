@@ -18,6 +18,7 @@ import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
 import { handleError } from '../middlewares/error-handler.middleware.js';
 import type { MeetRoomDeletionOptions } from '../models/request-context.model.js';
+import { AnalyticsService } from '../services/analytics.service.js';
 import { LoggerService } from '../services/logger.service.js';
 import type { RoomAccessFacts } from '../services/room-access.service.js';
 import { ROOM_ACCESS_FIELDS, RoomAccessService } from '../services/room-access.service.js';
@@ -92,6 +93,18 @@ export const getRooms = async (_req: Request, res: Response) => {
 		return res.status(200).json(response);
 	} catch (error) {
 		handleError(res, error, 'getting rooms');
+	}
+};
+
+export const getRoomsSummary = async (_req: Request, res: Response) => {
+	const logger = container.get(LoggerService);
+	logger.verbose('Getting rooms summary');
+
+	try {
+		const summary = await container.get(AnalyticsService).getRoomsSummary(res.locals.validatedQuery);
+		return res.status(200).json(summary);
+	} catch (error) {
+		handleError(res, error, 'getting rooms summary');
 	}
 };
 

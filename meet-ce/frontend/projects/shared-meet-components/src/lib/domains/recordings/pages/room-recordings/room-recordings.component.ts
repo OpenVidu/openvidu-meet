@@ -64,7 +64,7 @@ export class RoomRecordingsComponent implements OnInit {
 		nameFilter: '',
 		nameMatchMode: TextMatchMode.PREFIX,
 		nameCaseInsensitive: false,
-		statusFilter: '',
+		statusFilter: [],
 		sortField: 'startDate',
 		sortOrder: SortOrder.DESC
 	});
@@ -123,7 +123,7 @@ export class RoomRecordingsComponent implements OnInit {
 		};
 
 		// Apply status filter if provided
-		if (filters.statusFilter) {
+		if (filters.statusFilter.length) {
 			recordingFilters.status = filters.statusFilter;
 		}
 

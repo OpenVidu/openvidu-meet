@@ -136,6 +136,13 @@ internalRecordingRouter.use(bodyParser.urlencoded({ extended: true }));
 internalRecordingRouter.use(bodyParser.json());
 internalRecordingRouter.use(apiLimiter);
 
+internalRecordingRouter.get(
+	'/summary',
+	withAuth(accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.ROOM_MANAGER, MeetUserRole.ROOM_MEMBER)),
+	applyRecordingListAccessFilters,
+	recordingCtrl.getRecordingsSummary
+);
+
 // Tells the recording view page whether the link it was opened with downloads or only plays.
 internalRecordingRouter.get(
 	'/:recordingId/link',

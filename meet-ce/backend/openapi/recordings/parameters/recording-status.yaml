@@ -1,14 +1,21 @@
 name: status
 in: query
 required: false
-description: Filter recordings by their status.
+description: >
+    Filter recordings by their status. Takes one status, or several separated by commas, in which case a recording
+    matches when it is in any of them (for example `starting,active,ending`). Repeated statuses count once and an
+    unknown one is answered with `422`.
+style: form
+explode: false
 schema:
-    type: string
-    enum:
-        - starting
-        - active
-        - ending
-        - complete
-        - failed
-        - aborted
-        - limit_reached
+    type: array
+    items:
+        type: string
+        enum:
+            - starting
+            - active
+            - ending
+            - complete
+            - failed
+            - aborted
+            - limit_reached
