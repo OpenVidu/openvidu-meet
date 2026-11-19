@@ -48,12 +48,12 @@ import {
 } from './helpers/waiting-participants.helper';
 import { click } from './helpers/ui-utils.helper';
 
-/** The server forgets a waiter whose connection has been gone for a minute; its sweep runs every 5 s. */
-const PLACE_LOST_TIMEOUT = 90_000;
+/** The test backend forgets a waiter whose connection has been gone for 20 s, and its sweep runs every second (`.env.test`). */
+const PLACE_LOST_TIMEOUT = 35_000;
 /** A waiter whose page closed is dropped as soon as the page tells the server. */
 const PAGE_CLOSED_TIMEOUT = 10_000;
-/** A waiter's state is sent again at every answered ping, every 20 s. */
-const NEXT_PING_TIMEOUT = 30_000;
+/** A waiter's state is sent again at every answered ping, every 4 s on the test backend. */
+const NEXT_PING_TIMEOUT = 15_000;
 
 test.describe('Locked room E2E Tests', () => {
 	const createdRoomIds: string[] = [];
@@ -309,7 +309,7 @@ test.describe('Locked room E2E Tests', () => {
 			const realtime = await routeRealtimeChannel(ana);
 			await askToJoin(ana, speakerUrl, 'Ana');
 			await expectWaitingScreen(ana);
-			await expect.poll(waitingNames).toEqual(['Ana']);
+			await expect(ana.locator('#waiting-screen-not-started')).toBeVisible();
 
 			await realtime.cut();
 			await expect(ana.locator('#waiting-screen-subtitle')).toContainText('Reconnecting', { timeout: 10_000 });
@@ -444,10 +444,9 @@ test.describe('Locked room E2E Tests', () => {
 	});
 
 	test.describe('Capacity', () => {
-		test('should refuse a second admission for the last place while the first participant connects, and free it a minute after', async ({
+		test('should refuse a second admission for the last place while the first participant connects, and free it when their admission expires', async ({
 			browser
 		}) => {
-			test.setTimeout(PLACE_LOST_TIMEOUT + 60_000);
 			await createLockedRoom({ maxParticipants: 2 });
 			const hostPage = await host(browser);
 			await openParticipantsPanel(hostPage);
@@ -469,7 +468,7 @@ test.describe('Locked room E2E Tests', () => {
 			await expect
 				.poll(async () => (await admitWaitingParticipants(roomId, benIdentity)).status, {
 					timeout: PLACE_LOST_TIMEOUT,
-					intervals: [5_000]
+					intervals: [1_000]
 				})
 				.toBe(200);
 			await expectInMeeting(ben);
@@ -516,11 +515,11 @@ test.describe('Locked room E2E Tests', () => {
 			await holdBackLiveKitConnection(ana);
 			await askToJoin(ana, speakerUrl, 'Ana');
 			await expectWaitingScreen(ana);
+			const ben = await waiter(browser, 'Ben');
+			const cleo = await waiter(browser, 'Cleo');
 			await admitFromPanel(hostPage, 'Ana');
 			await expect(waitingParticipantRow(hostPage, 'Ana')).toBeHidden({ timeout: 10_000 });
 
-			const ben = await waiter(browser, 'Ben');
-			const cleo = await waiter(browser, 'Cleo');
 			const admitAll = hostPage.locator('#waiting-participants-admit-all-btn');
 			await expect(admitAll).toBeEnabled({ timeout: 10_000 });
 			await click(admitAll);

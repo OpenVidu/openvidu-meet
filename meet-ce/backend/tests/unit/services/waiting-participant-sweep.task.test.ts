@@ -1,4 +1,5 @@
 import { describe, expect, it, jest } from '@jest/globals';
+import { INTERNAL_CONFIG } from '../../../src/config/internal-config.js';
 import type { WaitingSweepTick } from '../../../src/models/waiting-participant.model.js';
 import type { IScheduledTask } from '../../../src/models/task-scheduler.model.js';
 import { WaitingParticipantSweepTask } from '../../../src/services/waiting-participants/waiting-participant-sweep.task.js';
@@ -78,11 +79,15 @@ const build = () => {
 };
 
 describe('WaitingParticipantSweepTask', () => {
-	it('runs every 5 seconds through the scheduler, once per cluster', () => {
+	it('runs at its interval through the scheduler, once per cluster', () => {
 		const { tasks } = build();
 
 		expect(tasks).toEqual([
-			expect.objectContaining({ name: 'waitingParticipantSweep', type: 'cron', scheduleOrDelay: '5s' })
+			expect.objectContaining({
+				name: 'waitingParticipantSweep',
+				type: 'cron',
+				scheduleOrDelay: INTERNAL_CONFIG.WAITING_PARTICIPANT_SWEEP_INTERVAL
+			})
 		]);
 	});
 

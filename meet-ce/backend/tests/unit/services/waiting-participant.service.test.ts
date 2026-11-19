@@ -15,6 +15,7 @@ import {
 	MeetWaitingParticipantStatus
 } from '@openvidu-meet/typings';
 import { createHash } from 'crypto';
+import ms from 'ms';
 import type {
 	WaitingDecisionResult,
 	WaitingEndOptions,
@@ -23,6 +24,7 @@ import type {
 	WaitingKnockResult,
 	ParticipantWait
 } from '../../../src/models/waiting-participant.model.js';
+import { INTERNAL_CONFIG } from '../../../src/config/internal-config.js';
 import { MeetRoomMemberHelper } from '../../../src/helpers/room-member.helper.js';
 import { WaitingParticipantAdmissionPolicy } from '../../../src/services/waiting-participants/waiting-participant-admission.policy.js';
 import { WaitingParticipantService } from '../../../src/services/waiting-participants/waiting-participant.service.js';
@@ -593,7 +595,11 @@ describe('WaitingParticipantService', () => {
 				[
 					'room-1',
 					MeetWaitingParticipantStatus.EXPIRED,
-					{ waitIds: ['wait-ana', 'wait-ben'], includeUsed: true, unseenFor: 60_000 }
+					{
+						waitIds: ['wait-ana', 'wait-ben'],
+						includeUsed: true,
+						unseenFor: ms(INTERNAL_CONFIG.WAITING_PARTICIPANT_UNSEEN_TIMEOUT)
+					}
 				]
 			]);
 			expect(changed).toEqual([

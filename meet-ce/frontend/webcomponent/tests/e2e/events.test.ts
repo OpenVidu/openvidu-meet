@@ -67,11 +67,11 @@ const LEAVE_REDIRECT_URL = `${MEET_TESTAPP_URL.replace(/\/$/, '')}/?left`;
 
 /** The realtime connection of a waiting screen to Meet. */
 const REALTIME_CHANNEL = /\/internal-api\/v1\/ws\?/;
-/** Meet forgets a knock whose waiting screen never connects 15 s after it; its sweep runs every 5 s. */
-const UNCONNECTED_KNOCK_TIMEOUT = 40_000;
-/** Meet forgets a waiter whose connection has been gone for a minute; its sweep runs every 5 s. */
-const PLACE_LOST_TIMEOUT = 90_000;
-/** A waiter's state is sent again at every answered ping, every 20 s, and the waiting list read every 30 s. */
+/** The test backend forgets a knock whose waiting screen never connects 5 s after it; its sweep runs every second (`.env.test`). */
+const UNCONNECTED_KNOCK_TIMEOUT = 20_000;
+/** The test backend forgets a waiter whose connection has been gone for 20 s. */
+const PLACE_LOST_TIMEOUT = 35_000;
+/** A waiter's state is sent again at every answered ping, every 4 s on the test backend, and the waiting list read every 30 s. */
 const NEXT_STATE_TIMEOUT = 40_000;
 
 type WaitingParticipantStatusChangedPayload =
@@ -959,10 +959,9 @@ for (const integration of INTEGRATIONS) {
 				});
 			});
 
-			test(`should end the wait as expired, never left, about a minute after the host removes the ${integration === 'iframe' ? 'iframe' : 'element'}`, async ({
+			test(`should end the wait as expired, never left, once the host removes the ${integration === 'iframe' ? 'iframe' : 'element'}`, async ({
 				page
 			}) => {
-				test.setTimeout(PLACE_LOST_TIMEOUT + 60_000);
 				await createLockedRoom();
 				await askToJoin(page, lockedRoomId, { integration, name: 'Ben' });
 				const ben = await waitingIdentityOf('Ben');
@@ -970,7 +969,7 @@ for (const integration of INTEGRATIONS) {
 
 				await removeEmbeddedMeeting(page, integration);
 
-				await expect.poll(waitingNames, { timeout: PLACE_LOST_TIMEOUT, intervals: [2_000] }).toEqual([]);
+				await expect.poll(waitingNames, { timeout: PLACE_LOST_TIMEOUT, intervals: [1_000] }).toEqual([]);
 				const ended = await getWebhookFromStorage(
 					page,
 					lockedRoomId,
@@ -1063,10 +1062,14 @@ for (const integration of INTEGRATIONS) {
 				const [zoe] = await waiting();
 				await expect.poll(() => knocks(page)).toEqual([{ roomId: lockedRoomId, participant: zoe }]);
 				await expect.poll(() => waitingStates(zoePage)).toHaveLength(1);
+				const lastPlaceTaker = await openMeetingAtMediaSetup(await otherPage(browser), lockedRoomId, {
+					role: 'moderator'
+				});
 
 				await decideOnWaitingParticipants(lockedRoomId, 'admit', zoe.participantIdentity);
 				await held;
-				await openMeeting(await otherPage(browser), lockedRoomId, { role: 'moderator' });
+				await lastPlaceTaker.meet('#join-button').click();
+				await expect(lastPlaceTaker.meet('#layout-container')).toBeVisible({ timeout: 15_000 });
 				releaseTokenRequest();
 
 				await expect

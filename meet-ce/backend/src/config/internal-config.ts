@@ -56,7 +56,7 @@ export const INTERNAL_CONFIG = {
 
 	// WebSocket channel
 	WEBSOCKET_PATH: '/ws', // Under INTERNAL_API_BASE_PATH_V1
-	WEBSOCKET_PING_INTERVAL: '20s' as StringValue, // Each connection is pinged and sent a heartbeat this often, and terminated when the previous ping went unanswered; below the 60 s idle timeout of common load balancers
+	WEBSOCKET_PING_INTERVAL: (process.env.WEBSOCKET_PING_INTERVAL || '20s') as StringValue, // Each connection is pinged and sent a heartbeat this often, and terminated when the previous ping went unanswered; below the 60 s idle timeout of common load balancers
 	WEBSOCKET_CREDENTIAL_TIMEOUT: '5s' as StringValue, // How long a feature may take to resolve a connection's credential before the connection closes with 1013 (try again later)
 	WEBSOCKET_MAX_PENDING_HANDSHAKES: 100, // Handshakes one replica resolves at once; beyond it a handshake answers 429
 	WEBSOCKET_MAX_CONNECTIONS_PER_ADDRESS: 5, // Connections one replica keeps per room and address; a newer one closes the oldest with 1008
@@ -64,10 +64,11 @@ export const INTERNAL_CONFIG = {
 
 	// Waiting participants of a locked room
 	WAITING_PARTICIPANT_MAX_ENTRIES: 100, // Participants a locked room holds waiting, admitted ones not joined yet included; one more asking answers 409
-	WAITING_PARTICIPANT_UNSEEN_TIMEOUT: '60s' as StringValue, // A waiting participant unseen this long, or an admission not used by joining within it, expires
-	WAITING_PARTICIPANT_UNCONNECTED_KNOCK_TIMEOUT: '15s' as StringValue, // A knock whose waiting screen never connects expires this long after it, through the same rule as WAITING_PARTICIPANT_UNSEEN_TIMEOUT
+	WAITING_PARTICIPANT_UNSEEN_TIMEOUT: (process.env.WAITING_PARTICIPANT_UNSEEN_TIMEOUT || '60s') as StringValue, // A waiting participant unseen this long, or an admission not used by joining within it, expires
+	WAITING_PARTICIPANT_UNCONNECTED_KNOCK_TIMEOUT: (process.env.WAITING_PARTICIPANT_UNCONNECTED_KNOCK_TIMEOUT ||
+		'15s') as StringValue, // A knock whose waiting screen never connects expires this long after it, through the same rule as WAITING_PARTICIPANT_UNSEEN_TIMEOUT
 	WAITING_PARTICIPANT_ENDED_WAIT_TTL: '5m' as StringValue, // How long an ended wait remembers its outcome, so a client that reconnects learns how it ended
-	WAITING_PARTICIPANT_SWEEP_INTERVAL: '5s' as StringValue, // Interval of the sweep that expires the waits of WAITING_PARTICIPANT_UNSEEN_TIMEOUT
+	WAITING_PARTICIPANT_SWEEP_INTERVAL: (process.env.WAITING_PARTICIPANT_SWEEP_INTERVAL || '5s') as StringValue, // Interval of the sweep that expires the waits of WAITING_PARTICIPANT_UNSEEN_TIMEOUT
 	WAITING_PARTICIPANT_SWEEP_MAX_GAP: '15s' as StringValue, // A sweep run following a longer pause since the previous one (a Redis outage, a stalled replica) expires nobody
 	WAITING_PARTICIPANT_SWEEP_GAP_GRACE: '25s' as StringValue, // Nor do the runs within this long after such a pause: one ping cycle plus margin, so every connection has refreshed its presence
 
