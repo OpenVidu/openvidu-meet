@@ -2,13 +2,12 @@ import type { MeetParticipantHandOptions, MeetRoomMemberPermissions } from '@ope
 import { MeetUserRole } from '@openvidu-meet/typings';
 import type { NextFunction, Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
-import { INTERNAL_CONFIG } from '../config/internal-config.js';
-import { errorInsufficientPermissions, errorRoomNotFound, toMeetError } from '../models/error.model.js';
+import type { OpenViduMeetError } from '../models/error.model.js';
+import { errorInsufficientPermissions, errorRoomNotFound } from '../models/error.model.js';
 import { RequestSessionService } from '../services/request-session.service.js';
 import { RoomAccessService } from '../services/room-access.service.js';
 import { RoomService } from '../services/room.service.js';
 import { RoomQueryWithFields } from '../types/room-projection.types.js';
-import { runConcurrently } from '../utils/concurrency.utils.js';
 import { handleError, rejectRequestFromMeetError } from './error-handler.middleware.js';
 
 /**
@@ -87,25 +86,15 @@ export const authorizeRoomAccess = async (req: Request, res: Response, next: Nex
 		return rejectRequestFromMeetError(res, forbiddenError);
 	}
 
-	const roomService = container.get(RoomService);
-	const roomExists = await roomService.meetRoomExists(roomId);
-
-	// Fail fast if room does not exist
-	if (!roomExists) {
-		const error = errorRoomNotFound(roomId);
-		return rejectRequestFromMeetError(res, error);
-	}
-
 	const requestSessionService = container.get(RequestSessionService);
-	const memberRoomId = requestSessionService.getRoomIdFromMember();
-	const user = requestSessionService.getAuthenticatedUser();
 
-	// Room Member Token of this room
-	if (memberRoomId) {
+	// The room member token validator already proved that its room exists
+	if (requestSessionService.getRoomIdFromMember()) {
 		return next();
 	}
 
-	// Authenticated user
+	const user = requestSessionService.getAuthenticatedUser();
+
 	if (user) {
 		try {
 			const canAccess = await container.get(RoomAccessService).canUserAccessRoom(roomId, user);
@@ -200,33 +189,12 @@ export const withHandUpdatePermission = (req: Request, res: Response, next: Next
 export const authorizeRoomManagement = async (req: Request, res: Response, next: NextFunction) => {
 	const roomId = req.params.roomId as string;
 
-	const roomService = container.get(RoomService);
-	const roomExists = await roomService.meetRoomExists(roomId);
-
-	// Fail fast if room does not exist
-	if (!roomExists) {
-		const error = errorRoomNotFound(roomId);
-		return rejectRequestFromMeetError(res, error);
-	}
-
-	const requestSessionService = container.get(RequestSessionService);
-	const user = requestSessionService.getAuthenticatedUser();
-
-	const forbiddenError = errorInsufficientPermissions();
-
-	if (!user) {
-		return rejectRequestFromMeetError(res, forbiddenError);
-	}
-
-	if (user.role === MeetUserRole.ADMIN) {
-		return next();
-	}
-
 	try {
-		const isOwner = await roomService.isRoomOwner(roomId, user.userId);
+		const { owner } = await container.get(RoomService).getMeetRoom(roomId, ['owner']);
+		const user = container.get(RequestSessionService).getAuthenticatedUser();
 
-		if (!isOwner) {
-			return rejectRequestFromMeetError(res, forbiddenError);
+		if (!user || (user.role !== MeetUserRole.ADMIN && owner !== user.userId)) {
+			return rejectRequestFromMeetError(res, errorInsufficientPermissions());
 		}
 
 		return next();
@@ -243,57 +211,34 @@ export const authorizeRoomManagement = async (req: Request, res: Response, next:
  * - Rooms the authenticated non-admin user cannot manage.
  */
 export const validateBulkDeleteRoomManagement = async (_req: Request, res: Response, next: NextFunction) => {
-	const roomService = container.get(RoomService);
-	const requestSessionService = container.get(RequestSessionService);
-	const user = requestSessionService.getAuthenticatedUser();
+	const user = container.get(RequestSessionService).getAuthenticatedUser();
 	const { roomIds } = res.locals.validatedQuery as { roomIds: string[] };
 
-	type BulkDeleteRoomFailed = {
-		roomId: string;
-		error: string;
-		message: string;
+	const owners =
+		user && user.role !== MeetUserRole.ADMIN ? await container.get(RoomService).getRoomOwners(roomIds) : undefined;
+
+	const findManagementError = (roomId: string): OpenViduMeetError | undefined => {
+		if (!owners) {
+			return undefined;
+		}
+
+		if (!owners.has(roomId)) {
+			return errorRoomNotFound(roomId);
+		}
+
+		return owners.get(roomId) === user?.userId ? undefined : errorInsufficientPermissions();
 	};
 
-	const settledResults = await runConcurrently(
-		roomIds,
-		async (roomId): Promise<{ ok: true; roomId: string } | { ok: false; failed: BulkDeleteRoomFailed }> => {
-			try {
-				// Check that user is admin or owner of the room
-				if (user && user.role !== MeetUserRole.ADMIN) {
-					const isOwner = await roomService.isRoomOwner(roomId, user.userId);
-
-					if (!isOwner) {
-						throw errorInsufficientPermissions();
-					}
-				}
-
-				return { ok: true, roomId };
-			} catch (error) {
-				const meetError = toMeetError(error, `deleting room '${roomId}'`);
-
-				return {
-					ok: false,
-					failed: {
-						roomId,
-						error: meetError.name,
-						message: meetError.message
-					}
-				};
-			}
-		},
-		{ concurrency: INTERNAL_CONFIG.CONCURRENCY_BULK_RETRIEVE_ROOMS }
-	);
-
 	const processableIds: string[] = [];
-	const failed: BulkDeleteRoomFailed[] = [];
+	const failed: { roomId: string; error: string; message: string }[] = [];
 
-	settledResults.forEach((result) => {
-		if (result.status === 'fulfilled') {
-			if (result.value.ok) {
-				processableIds.push(result.value.roomId);
-			} else {
-				failed.push(result.value.failed);
-			}
+	roomIds.forEach((roomId) => {
+		const error = findManagementError(roomId);
+
+		if (error) {
+			failed.push({ roomId, error: error.name, message: error.message });
+		} else {
+			processableIds.push(roomId);
 		}
 	});
 

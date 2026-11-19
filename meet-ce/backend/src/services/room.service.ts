@@ -1024,4 +1024,15 @@ export class RoomService {
 		const { owner } = await this.getMeetRoom(roomId, ['owner']);
 		return owner === userId;
 	}
+
+	/**
+	 * Reads the owners of the given rooms at once.
+	 *
+	 * @param roomIds - The IDs of the rooms
+	 * @returns The owner of each room that exists; a room missing from the map does not exist
+	 */
+	async getRoomOwners(roomIds: readonly string[]): Promise<Map<string, string>> {
+		const rooms = await this.roomRepository.findByRoomIds(roomIds, ['roomId', 'owner']);
+		return new Map(rooms.map(({ roomId, owner }) => [roomId, owner]));
+	}
 }
