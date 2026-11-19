@@ -101,7 +101,7 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 					update: this.buildUpdateQuery({ effectivePermissions, permissionsUpdatedAt })
 				}
 			})),
-			{ ordered: false }
+			{ ordered: false, throwOnValidationError: true }
 		);
 	}
 
