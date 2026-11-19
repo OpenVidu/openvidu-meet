@@ -18,6 +18,7 @@ const ensureLayoutSettingsVisible = async (page: Page): Promise<void> => {
 export const selectMosaicLayout = async (page: Page): Promise<void> => {
 	await ensureLayoutSettingsVisible(page);
 	await page.locator('#layout-mosaic').click();
+	await expect(page.locator('#layout-mosaic')).toHaveAttribute('aria-checked', 'true');
 };
 
 /**
@@ -26,6 +27,7 @@ export const selectMosaicLayout = async (page: Page): Promise<void> => {
 export const selectSmartMosaicLayout = async (page: Page): Promise<void> => {
 	await ensureLayoutSettingsVisible(page);
 	await page.locator('#layout-smart-mosaic').click();
+	await expect(page.locator('#layout-smart-mosaic')).toHaveAttribute('aria-checked', 'true');
 };
 
 /**

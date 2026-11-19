@@ -103,10 +103,7 @@ export const applyBackgroundEffect = async (page: Page, backgroundId: string): P
 	await wcLocator(page, '#virtual-bg-btn').click();
 	await expect(wcLocator(page, 'ov-background-effects-panel')).toBeVisible();
 	await wcLocator(page, `#effect-${backgroundId}`).click();
-
-	// Virtual-background processing is a GPU/canvas operation with no DOM signal.
-	// Allow a brief settle window before screenshots/assertions.
-	await page.waitForTimeout(1_500);
+	await expect(wcLocator(page, `#effect-${backgroundId}`)).toHaveClass(/active-effect-btn/);
 	await wcLocator(page, '.panel-close-button').click();
 	await expect(wcLocator(page, 'ov-background-effects-panel')).toBeHidden();
 };

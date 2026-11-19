@@ -100,10 +100,8 @@ test.describe('Media Devices E2E Tests', () => {
 			const replaceButton = page.locator('#replace-screen-button');
 			await expect(replaceButton).toBeVisible();
 			await replaceButton.click();
-			await page.waitForTimeout(1000);
 
-			const replacedLabel = await getScreenTrackLabel(page);
-			expect(replacedLabel).not.toBeNull();
+			await expect.poll(() => getScreenTrackLabel(page)).not.toBeNull();
 		});
 	});
 

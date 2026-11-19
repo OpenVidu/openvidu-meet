@@ -182,14 +182,12 @@ test.describe('Stream E2E Tests', () => {
 
 				// pageB disables camera
 				await toggleCamera(pageB);
-				await pageB.waitForTimeout(1000);
 
 				// pageA should see pageB's video poster
 				await expect(pageA.locator('.OV_stream.remote .participant-avatar > .poster')).toHaveCount(1);
 
 				// pageB re-enables camera
 				await toggleCamera(pageB);
-				await pageB.waitForTimeout(1000);
 
 				// pageA should see pageB's video restored
 				await expect(pageA.locator('.OV_stream.remote ov-participant-avatar > .poster')).toHaveCount(0);
@@ -218,7 +216,6 @@ test.describe('Stream E2E Tests', () => {
 
 				// C leaves
 				await leaveMeeting(pageC);
-				await pageB.waitForTimeout(1000);
 
 				// A and B each now see only the other as a remote stream (total 2)
 				await Promise.all([pageA, pageB].map((page) => expectStreamCount(page, 2)));
@@ -242,7 +239,6 @@ test.describe('Stream E2E Tests', () => {
 			try {
 				// B leaves
 				await leaveMeeting(pageB);
-				await pageA.waitForTimeout(500);
 
 				// A should now see only C's stream (total 2)
 				await expectStreamCount(pageA, 2);
@@ -272,16 +268,13 @@ test.describe('Stream E2E Tests', () => {
 
 				// Rapid toggles on A
 				await toggleCamera(pageA);
-				await pageA.waitForTimeout(100);
 				await toggleCamera(pageA);
-				await pageA.waitForTimeout(100);
 
 				// Should still have 2 video streams
 				await expect(pageA.locator('.OV_stream .OV_video-element')).toHaveCount(2);
 
 				// Rapid toggles on B simultaneously
 				await toggleCamera(pageB);
-				await pageB.waitForTimeout(100);
 				await toggleCamera(pageB);
 
 				// A should still see remote video
@@ -399,20 +392,16 @@ test.describe('Stream E2E Tests', () => {
 			// Float stream
 			await hoverStream(page, '.local_participant .OV_stream_video.local');
 			await floatStream(page);
-			await page.waitForTimeout(500);
 
-			const beforeDragBox = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
-			expect(beforeDragBox).not.toBeNull();
+			const beforeDragBox = await getSettledBoundingBox(page, '.local_participant .OV_stream_video.local');
 
 			// Drag to new position
 			await dragStream(page, '.local_participant', 300, 300);
-			await page.waitForTimeout(500);
 
 			// Verify stream was dragged
-			const streamBox = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
-			expect(streamBox).not.toBeNull();
-			expect(Math.abs(streamBox!.x - beforeDragBox!.x)).toBeGreaterThan(40);
-			expect(Math.abs(streamBox!.y - beforeDragBox!.y)).toBeGreaterThan(40);
+			const streamBox = await getSettledBoundingBox(page, '.local_participant .OV_stream_video.local');
+			expect(Math.abs(streamBox.x - beforeDragBox.x)).toBeGreaterThan(40);
+			expect(Math.abs(streamBox.y - beforeDragBox.y)).toBeGreaterThan(40);
 
 			await page.close();
 		});
@@ -423,38 +412,30 @@ test.describe('Stream E2E Tests', () => {
 			// Float stream
 			await hoverStream(page, '.local_participant .OV_stream_video.local');
 			await floatStream(page);
-			await page.waitForTimeout(500);
 
 			// Drag to right
 			await dragStream(page, '.local_participant', 900, 0);
-			await page.waitForTimeout(500);
 
 			// Verify position after drag — video must remain fully visible inside the layout
-			let streamBox = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
-			const layoutBox = await getElementBoundingBox(page, '#layout');
-			expect(streamBox).not.toBeNull();
-			expect(layoutBox).not.toBeNull();
-			expect(streamBox!.y).toBeGreaterThanOrEqual(layoutBox!.y - 1);
-			expect(streamBox!.y + streamBox!.height).toBeLessThanOrEqual(layoutBox!.y + layoutBox!.height + 1);
+			let streamBox = await getSettledBoundingBox(page, '.local_participant .OV_stream_video.local');
+			const layoutBox = await getSettledBoundingBox(page, '#layout');
+			expect(streamBox.y).toBeGreaterThanOrEqual(layoutBox.y - 1);
+			expect(streamBox.y + streamBox.height).toBeLessThanOrEqual(layoutBox.y + layoutBox.height + 1);
 
 			// Open chat panel
 			await page.locator('#chat-panel-btn').click();
-			await page.waitForTimeout(1000);
 
 			// Stream should adjust position when panel opens
-			streamBox = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
-			expect(streamBox).not.toBeNull();
-			const xWithPanelOpen = streamBox!.x;
+			streamBox = await getSettledBoundingBox(page, '.local_participant .OV_stream_video.local');
+			const xWithPanelOpen = streamBox.x;
 			expect(xWithPanelOpen).toBeGreaterThanOrEqual(0);
 
 			// Close chat panel
 			await page.locator('#chat-panel-btn').click();
-			await page.waitForTimeout(1000);
 
 			// Stream should return to right side
-			streamBox = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
-			expect(streamBox).not.toBeNull();
-			expect(streamBox!.x).toBeGreaterThanOrEqual(xWithPanelOpen);
+			streamBox = await getSettledBoundingBox(page, '.local_participant .OV_stream_video.local');
+			expect(streamBox.x).toBeGreaterThanOrEqual(xWithPanelOpen);
 
 			await page.close();
 		});
@@ -464,30 +445,24 @@ test.describe('Stream E2E Tests', () => {
 
 			// Open chat panel first
 			await page.locator('#chat-panel-btn').click();
-			await page.waitForTimeout(1000);
 
 			// Float stream
 			await hoverStream(page, '.local_participant .OV_stream_video.local');
 			await floatStream(page);
-			await page.waitForTimeout(1000);
 
 			// Drag to right
 			await dragStream(page, '.local_participant', 600, 0);
-			await page.waitForTimeout(1000);
 
 			// Verify position after drag
-			let streamBox = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
-			expect(streamBox).not.toBeNull();
-			const draggedX = streamBox!.x;
+			let streamBox = await getSettledBoundingBox(page, '.local_participant .OV_stream_video.local');
+			const draggedX = streamBox.x;
 
 			// Close chat panel
 			await page.locator('#chat-panel-btn').click();
-			await page.waitForTimeout(1000);
 
 			// Stream should move to right
-			streamBox = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
-			expect(streamBox).not.toBeNull();
-			expect(streamBox!.x).toBeGreaterThanOrEqual(draggedX);
+			streamBox = await getSettledBoundingBox(page, '.local_participant .OV_stream_video.local');
+			expect(streamBox.x).toBeGreaterThanOrEqual(draggedX);
 
 			await page.close();
 		});
@@ -500,39 +475,31 @@ test.describe('Stream E2E Tests', () => {
 			// Float stream
 			await hoverStream(page, '.local_participant .OV_stream_video.local');
 			await floatStream(page);
-			await page.waitForTimeout(500);
 
 			// Drag to right
 			await dragStream(page, '.local_participant', 900, 0);
-			await page.waitForTimeout(500);
 
 			// Open chat panel
 			await page.locator('#chat-panel-btn').click();
-			await page.waitForTimeout(1000);
-			let streamBox = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
-			expect(streamBox).not.toBeNull();
-			const posXChat = streamBox!.x;
+			let streamBox = await getSettledBoundingBox(page, '.local_participant .OV_stream_video.local');
+			const posXChat = streamBox.x;
 
 			// Open settings panel
 			await page.locator('#more-options-btn').click();
 			await expect(page.locator('.mat-mdc-menu-content')).toBeVisible();
-			await page.waitForTimeout(500);
 
-			streamBox = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
-			expect(streamBox).not.toBeNull();
-			const posXSettings = streamBox!.x;
+			streamBox = await getSettledBoundingBox(page, '.local_participant .OV_stream_video.local');
+			const posXSettings = streamBox.x;
 
 			// Settings panel should push video further left
 			expect(posXSettings).toBeLessThanOrEqual(posXChat);
 
 			// Close all panels
 			await page.keyboard.press('Escape');
-			await page.waitForTimeout(500);
 
 			// Stream should move back to right
-			streamBox = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
-			expect(streamBox).not.toBeNull();
-			expect(streamBox!.x).toBeGreaterThanOrEqual(posXSettings);
+			streamBox = await getSettledBoundingBox(page, '.local_participant .OV_stream_video.local');
+			expect(streamBox.x).toBeGreaterThanOrEqual(posXSettings);
 
 			await page.close();
 		});
@@ -540,45 +507,39 @@ test.describe('Stream E2E Tests', () => {
 		test('should DOCK the local video after drag (reset position to layout)', async ({ page }) => {
 			await openMeeting(page, accessUrl);
 
-			await page.waitForTimeout(1000);
 			// Get initial layout stream position
-			const initialBox = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
-			expect(initialBox).not.toBeNull();
+			const initialBox = await getSettledBoundingBox(page, '.local_participant .OV_stream_video.local');
 
 			// Float stream
 			await hoverStream(page, '.local_participant .OV_stream_video.local');
 			await floatStream(page);
-			await page.waitForTimeout(500);
-			const cornerBox = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
-			expect(cornerBox).not.toBeNull();
+			const cornerBox = await getSettledBoundingBox(page, '.local_participant .OV_stream_video.local');
 
 			// Drag to right
 			await dragStream(page, '.local_participant', 300, 300);
-			await page.waitForTimeout(500);
 
 			// Verify stream was dragged — while floating it is the small (~160px) PiP tile.
-			let streamBox = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
-			expect(streamBox).not.toBeNull();
-			const floatedWidth = streamBox!.width;
+			const floatedWidth = (await getSettledBoundingBox(page, '.local_participant .OV_stream_video.local')).width;
 
 			// Dock (restore)
 			await hoverStream(page, '.local_participant .OV_stream_video.local');
 			await dockStream(page);
-			await page.waitForTimeout(1500);
 
 			// Stream should be reset to the layout flow: back to its full in-layout tile size and row,
 			// no longer the floating PiP nor stuck at the dragged float position. (Its x can differ from
 			// the pre-float value because the mosaic re-centers the single tile — only size/row are stable.)
-			streamBox = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
-			expect(streamBox).not.toBeNull();
 			await expect(page.locator('.local_participant:has(.OV_stream_video.local)').first()).not.toHaveClass(
 				/OV_floating/
 			);
-			expect(streamBox!.width).toBeGreaterThan(floatedWidth + 50);
-			expect(streamBox!.height).toBeGreaterThan(cornerBox!.height);
-			expect(streamBox!.y).toBeLessThan(cornerBox!.y);
-			expect(streamBox!.width).toBeCloseTo(initialBox!.width, -1);
-			expect(streamBox!.y).toBeCloseTo(initialBox!.y, -1);
+			await expect(async () => {
+				const streamBox = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
+				expect(streamBox).not.toBeNull();
+				expect(streamBox!.width).toBeGreaterThan(floatedWidth + 50);
+				expect(streamBox!.height).toBeGreaterThan(cornerBox.height);
+				expect(streamBox!.y).toBeLessThan(cornerBox.y);
+				expect(streamBox!.width).toBeCloseTo(initialBox.width, -1);
+				expect(streamBox!.y).toBeCloseTo(initialBox.y, -1);
+			}).toPass({ timeout: 8_000, intervals: [200, 300, 500, 1000] });
 
 			await page.close();
 		});
@@ -594,7 +555,6 @@ test.describe('Stream E2E Tests', () => {
 			await expect(page.locator('.local_participant.OV_screen')).toBeVisible();
 			await expectStreamCount(page, 2);
 			await expectScreenShareCount(page, 1);
-			await page.waitForTimeout(500);
 
 			const cameraContainer = page.locator('.local_participant:not(.OV_screen)').first();
 			const screenContainer = page.locator('.local_participant.OV_screen').first();
@@ -608,41 +568,35 @@ test.describe('Stream E2E Tests', () => {
 			const cameraFloatBtn = cameraContainer.locator('#float-btn');
 			await expect(cameraFloatBtn).toBeVisible();
 			await cameraFloatBtn.click();
-			await page.waitForTimeout(1000);
 
 			// Camera should be floating, screen share should NOT be floating
 			await expect(cameraContainer).toHaveClass(/OV_floating/);
 			await expect(screenContainer).not.toHaveClass(/OV_floating/);
 
 			// Capture screen share position after camera float (this is the reference for drag invariance)
-			const screenBoxAfterFloat = await getElementBoundingBox(page, '.local_participant.OV_screen');
-			expect(screenBoxAfterFloat).not.toBeNull();
+			const screenBoxAfterFloat = await getSettledBoundingBox(page, '.local_participant.OV_screen');
 
 			// Screen share should still be visible and have non-zero dimensions
-			expect(screenBoxAfterFloat!.width).toBeGreaterThan(0);
-			expect(screenBoxAfterFloat!.height).toBeGreaterThan(0);
+			expect(screenBoxAfterFloat.width).toBeGreaterThan(0);
+			expect(screenBoxAfterFloat.height).toBeGreaterThan(0);
 
 			// Record camera position before dragging
-			const cameraBoxBeforeDrag = await getElementBoundingBox(page, '.local_participant:not(.OV_screen)');
-			expect(cameraBoxBeforeDrag).not.toBeNull();
+			const cameraBoxBeforeDrag = await getSettledBoundingBox(page, '.local_participant:not(.OV_screen)');
 
 			// Drag the floating camera to a new position
 			await dragStream(page, '.local_participant:not(.OV_screen)', 400, 300);
-			await page.waitForTimeout(500);
 
 			// Verify camera was actually moved — otherwise the screen-share invariance is trivial
-			const cameraBoxAfterDrag = await getElementBoundingBox(page, '.local_participant:not(.OV_screen)');
-			expect(cameraBoxAfterDrag).not.toBeNull();
-			expect(Math.abs(cameraBoxAfterDrag!.x - cameraBoxBeforeDrag!.x)).toBeGreaterThan(40);
-			expect(Math.abs(cameraBoxAfterDrag!.y - cameraBoxBeforeDrag!.y)).toBeGreaterThan(40);
+			const cameraBoxAfterDrag = await getSettledBoundingBox(page, '.local_participant:not(.OV_screen)');
+			expect(Math.abs(cameraBoxAfterDrag.x - cameraBoxBeforeDrag.x)).toBeGreaterThan(40);
+			expect(Math.abs(cameraBoxAfterDrag.y - cameraBoxBeforeDrag.y)).toBeGreaterThan(40);
 
 			// Screen share position must NOT have changed because of the camera drag
-			const screenBoxAfterDrag = await getElementBoundingBox(page, '.local_participant.OV_screen');
-			expect(screenBoxAfterDrag).not.toBeNull();
-			expect(screenBoxAfterDrag!.x).toBeCloseTo(screenBoxAfterFloat!.x, 0);
-			expect(screenBoxAfterDrag!.y).toBeCloseTo(screenBoxAfterFloat!.y, 0);
-			expect(screenBoxAfterDrag!.width).toBeCloseTo(screenBoxAfterFloat!.width, 0);
-			expect(screenBoxAfterDrag!.height).toBeCloseTo(screenBoxAfterFloat!.height, 0);
+			const screenBoxAfterDrag = await getSettledBoundingBox(page, '.local_participant.OV_screen');
+			expect(screenBoxAfterDrag.x).toBeCloseTo(screenBoxAfterFloat.x, 0);
+			expect(screenBoxAfterDrag.y).toBeCloseTo(screenBoxAfterFloat.y, 0);
+			expect(screenBoxAfterDrag.width).toBeCloseTo(screenBoxAfterFloat.width, 0);
+			expect(screenBoxAfterDrag.height).toBeCloseTo(screenBoxAfterFloat.height, 0);
 
 			// Screen share must still NOT be floating after dragging the local video
 			await expect(screenContainer).not.toHaveClass(/OV_floating/);
@@ -739,26 +693,25 @@ test.describe('Stream E2E Tests', () => {
 				// Local video auto-floated to the bottom-right corner.
 				const localContainer = pageA.locator('.local_participant:has(.OV_stream_video.local)').first();
 				await expect(localContainer).toHaveClass(/OV_floating/, { timeout: 5_000 });
-				await pageA.waitForTimeout(1000);
 
-				const beforeBox = await getElementBoundingBox(pageA, '.local_participant .OV_stream_video.local');
-				expect(beforeBox).not.toBeNull();
+				const beforeBox = await getSettledBoundingBox(pageA, '.local_participant .OV_stream_video.local');
 
 				// Open a right-side panel WITHOUT dragging the tile first — this is the repro.
 				await pageA.locator('#chat-panel-btn').click();
-				await pageA.waitForTimeout(1500);
 
 				// The panel shrinks the visible layout (#layout) from the right. The floating tile must
 				// have followed that edge instead of being left hidden behind the panel.
-				const layoutBox = await getElementBoundingBox(pageA, '#layout');
-				const afterBox = await getElementBoundingBox(pageA, '.local_participant .OV_stream_video.local');
-				expect(layoutBox).not.toBeNull();
-				expect(afterBox).not.toBeNull();
+				await expect(async () => {
+					const layoutBox = await getElementBoundingBox(pageA, '#layout');
+					const afterBox = await getElementBoundingBox(pageA, '.local_participant .OV_stream_video.local');
+					expect(layoutBox).not.toBeNull();
+					expect(afterBox).not.toBeNull();
 
-				// Its right edge stays within the visible (panel-excluded) layout area…
-				expect(afterBox!.x + afterBox!.width).toBeLessThanOrEqual(layoutBox!.x + layoutBox!.width + 5);
-				// …i.e. it actually moved left when the panel opened.
-				expect(afterBox!.x).toBeLessThan(beforeBox!.x - 20);
+					// Its right edge stays within the visible (panel-excluded) layout area…
+					expect(afterBox!.x + afterBox!.width).toBeLessThanOrEqual(layoutBox!.x + layoutBox!.width + 5);
+					// …i.e. it actually moved left when the panel opened.
+					expect(afterBox!.x).toBeLessThan(beforeBox.x - 20);
+				}).toPass({ timeout: 8_000, intervals: [200, 300, 500, 1000] });
 			} finally {
 				await removeAllParticipants();
 			}
@@ -769,7 +722,7 @@ test.describe('Stream E2E Tests', () => {
 
 			// Float: the tile lands at the bottom-right corner of the current (large) layout.
 			await floatStream(page);
-			await page.waitForTimeout(800);
+			await getSettledBoundingBox(page, '.local_participant .OV_stream_video.local');
 
 			// Un-maximize: shrink the browser window. The layout viewport shrinks with it, so the
 			// tile's old bottom-right position now falls OUTSIDE the new bounds.
@@ -793,17 +746,14 @@ test.describe('Stream E2E Tests', () => {
 			await openMeeting(page, accessUrl);
 
 			await floatStream(page);
-			await page.waitForTimeout(800);
+			await getSettledBoundingBox(page, '.local_participant .OV_stream_video.local');
 
 			// Park the tile in the bottom-LEFT quadrant — a deliberate user-chosen position.
 			await dragStream(page, '.local_participant', 300, 700);
-			await page.waitForTimeout(500);
 
-			const layoutBefore = await getElementBoundingBox(page, '#layout');
-			const tileBefore = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
-			expect(layoutBefore).not.toBeNull();
-			expect(tileBefore).not.toBeNull();
-			expect(tileBefore!.x + tileBefore!.width / 2).toBeLessThan(layoutBefore!.x + layoutBefore!.width / 2);
+			const layoutBefore = await getSettledBoundingBox(page, '#layout');
+			const tileBefore = await getSettledBoundingBox(page, '.local_participant .OV_stream_video.local');
+			expect(tileBefore.x + tileBefore.width / 2).toBeLessThan(layoutBefore.x + layoutBefore.width / 2);
 
 			await page.setViewportSize({ width: 1000, height: 600 });
 
@@ -1008,7 +958,7 @@ test.describe('Stream E2E Tests', () => {
 			try {
 				// Local stream should NOT have silence button
 				await hoverStream(pageA, '.OV_publisher .OV_stream_video.local');
-				await pageA.waitForTimeout(500);
+				await expect(pageA.locator('.OV_publisher .OV_stream_video.local #pin-btn')).toBeVisible();
 				await expect(pageA.locator('.OV_publisher .OV_stream_video.local #mute-btn')).toHaveCount(0);
 
 				// Remote stream should have silence button
@@ -1038,7 +988,6 @@ test.describe('Stream E2E Tests', () => {
 				const remoteCamera = pageA.locator('.OV_stream.remote.camera-source').first();
 				await expect(remoteCamera).toBeVisible({ timeout: 10_000 });
 				await remoteCamera.hover();
-				await pageA.waitForTimeout(500);
 
 				// PIN button still appears (no audio dependency)…
 				await expect(remoteCamera.locator('#pin-btn')).toBeVisible();
@@ -1095,10 +1044,9 @@ test.describe('Stream E2E Tests', () => {
 
 				// Mute the remote participant
 				await muteRemoteParticipant(pageA, '.OV_stream.remote');
-				await pageA.waitForTimeout(500);
 
 				// Verify the persistent audio element is now muted
-				expect(await countMutedRemoteAudios(pageA)).toBe(1);
+				await expect.poll(() => countMutedRemoteAudios(pageA)).toBe(1);
 				await expect(pageA.locator('.OV_stream.remote .status-icons #muted-forcibly')).toHaveCount(1);
 
 				// Verify remote participant B can still hear themselves and send audio
@@ -1109,10 +1057,9 @@ test.describe('Stream E2E Tests', () => {
 
 				// Unmute the remote participant
 				await unmuteRemoteParticipant(pageA, '.OV_stream.remote');
-				await pageA.waitForTimeout(500);
 
 				// Verify the persistent audio element is unmuted again
-				expect(await countMutedRemoteAudios(pageA)).toBe(0);
+				await expect.poll(() => countMutedRemoteAudios(pageA)).toBe(0);
 				await expect(pageA.locator('.OV_stream.remote .status-icons #muted-forcibly')).toHaveCount(0);
 			} finally {
 				await removeAllParticipants();
@@ -1130,19 +1077,12 @@ test.describe('Stream E2E Tests', () => {
 			try {
 				// Perform multiple rapid mute/unmute toggles
 				await muteRemoteParticipant(pageA, '.OV_stream.remote');
-				await pageA.waitForTimeout(200);
-
 				await unmuteRemoteParticipant(pageA, '.OV_stream.remote');
-				await pageA.waitForTimeout(200);
-
 				await muteRemoteParticipant(pageA, '.OV_stream.remote');
-				await pageA.waitForTimeout(200);
-
 				await unmuteRemoteParticipant(pageA, '.OV_stream.remote');
-				await pageA.waitForTimeout(200);
 
 				// Final state should be unmuted — audio lives in the hidden persistent audio layer
-				expect(await countMutedRemoteAudios(pageA)).toBe(0);
+				await expect.poll(() => countMutedRemoteAudios(pageA)).toBe(0);
 				await expect(pageA.locator('.OV_stream.remote .OV_audio-element')).toHaveCount(0);
 
 				// Verify remote stream is still visible and functional
@@ -1175,10 +1115,9 @@ test.describe('Stream E2E Tests', () => {
 				const firstSilenceBtn = firstRemote.locator('#mute-btn').first();
 				await expect(firstSilenceBtn).toBeVisible();
 				await firstSilenceBtn.click();
-				await pageA.waitForTimeout(300);
 
 				// Verify exactly 1 remote audio element is muted in the persistent audio layer
-				expect(await countMutedRemoteAudios(pageA)).toBe(1);
+				await expect.poll(() => countMutedRemoteAudios(pageA)).toBe(1);
 
 				// Mute second remote stream (should be C)
 				const secondRemote = pageA.locator('.OV_stream.remote').nth(1);
@@ -1186,19 +1125,17 @@ test.describe('Stream E2E Tests', () => {
 				const secondSilenceBtn = secondRemote.locator('#mute-btn').first();
 				await expect(secondSilenceBtn).toBeVisible();
 				await secondSilenceBtn.click();
-				await pageA.waitForTimeout(300);
 
 				// Verify both remote audio elements are muted in the persistent audio layer
-				expect(await countMutedRemoteAudios(pageA)).toBe(2);
+				await expect.poll(() => countMutedRemoteAudios(pageA)).toBe(2);
 				await expect(pageA.locator('.OV_stream.remote .OV_audio-element')).toHaveCount(0);
 
 				// Unmute first remote
 				await firstRemote.hover();
 				await firstSilenceBtn.click();
-				await pageA.waitForTimeout(300);
 
 				// Verify exactly 1 audio element is still muted (the second); the first is now unmuted
-				expect(await countMutedRemoteAudios(pageA)).toBe(1);
+				await expect.poll(() => countMutedRemoteAudios(pageA)).toBe(1);
 			} finally {
 				await removeAllParticipants();
 			}
@@ -1236,27 +1173,23 @@ test.describe('Stream E2E Tests', () => {
 				// The screen share behaves as an independent sub-stream of the participant, so the
 				// camera stream's status must remain untouched.
 				await muteRemoteParticipant(pageA, remoteScreenSelector);
-				await pageA.waitForTimeout(500);
 				await expect(screenMutedIcon).toHaveCount(1);
 				await expect(screenMutedIcon).toBeVisible();
 				await expect(cameraMutedIcon).toHaveCount(0);
 
 				// Click mute again (unmute) — screen-share icon should disappear, camera still untouched
 				await unmuteRemoteParticipant(pageA, remoteScreenSelector);
-				await pageA.waitForTimeout(500);
 				await expect(screenMutedIcon).toHaveCount(0);
 				await expect(cameraMutedIcon).toHaveCount(0);
 
 				// Now mute B's CAMERA stream — only the camera should show the icon
 				await muteRemoteParticipant(pageA, remoteCameraSelector);
-				await pageA.waitForTimeout(500);
 				await expect(cameraMutedIcon).toHaveCount(1);
 				await expect(cameraMutedIcon).toBeVisible();
 				await expect(screenMutedIcon).toHaveCount(0);
 
 				// Unmute the camera — both icons should now be absent
 				await unmuteRemoteParticipant(pageA, remoteCameraSelector);
-				await pageA.waitForTimeout(500);
 				await expect(cameraMutedIcon).toHaveCount(0);
 				await expect(screenMutedIcon).toHaveCount(0);
 			} finally {
