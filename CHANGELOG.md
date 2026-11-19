@@ -136,8 +136,8 @@ with no replacement.
 - The audio of a shared screen is captured as played, without echo cancellation, noise suppression or automatic
   gain control.
 - The console lists of rooms, recordings and users no longer open an item at the end of a text selection, open it in a
-  new tab on a Ctrl or Cmd click, and show the ids of rooms and users as links, the room id among them on the
-  recordings list.
+  new tab on a middle click or a Ctrl or Cmd click, and show the ids of rooms and users as links, the room id among
+  them on the recordings list.
 - The console lists of rooms, users and recordings keep their search, filters and order in the URL, and the room page its
   selected tab, so a reload or a shared link shows the same view.
 - The console lists keep their rows, dimmed, while a search, a sort or a new page loads, and show placeholder rows when
