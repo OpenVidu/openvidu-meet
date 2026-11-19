@@ -83,6 +83,29 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 	}
 
 	/**
+	 * Sets the effective permissions of members of a room, each its own, in one write. A member that no longer
+	 * exists is skipped, and a failure on one member does not stop the others.
+	 *
+	 * @param roomId - The ID of the room
+	 * @param members - The members and their new effective permissions
+	 */
+	async updateEffectivePermissions(
+		roomId: string,
+		members: { memberId: string; effectivePermissions: MeetRoomMemberPermissions }[]
+	): Promise<void> {
+		const permissionsUpdatedAt = Date.now();
+		await this.model.bulkWrite(
+			members.map(({ memberId, effectivePermissions }) => ({
+				updateOne: {
+					filter: { roomId, memberId },
+					update: this.buildUpdateQuery({ effectivePermissions, permissionsUpdatedAt })
+				}
+			})),
+			{ ordered: false }
+		);
+	}
+
+	/**
 	 * Replaces an existing room member with new data.
 	 *
 	 * @param member - The complete updated room member data
