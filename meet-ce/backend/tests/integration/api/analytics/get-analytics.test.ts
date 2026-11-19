@@ -16,6 +16,7 @@ import {
 	createRoom,
 	deleteAllRecordings,
 	deleteAllRooms,
+	deleteRoom,
 	getAnalytics,
 	startTestServer,
 	stopRecording,
@@ -86,6 +87,19 @@ describe('Analytics API Tests', () => {
 			const analytics: MeetAnalytics = response.body;
 			expect(analytics.totalRooms).toBe(3);
 			expect(analytics.activeRooms).toBe(0);
+		});
+
+		it('should count one room less once it is deleted', async () => {
+			await createRoom();
+			await createRoom();
+			const toDelete = await createRoom();
+			expect(((await getAnalytics()).body as MeetAnalytics).totalRooms).toBe(3);
+
+			expect((await deleteRoom(toDelete.roomId)).status).toBe(200);
+
+			const analytics: MeetAnalytics = (await getAnalytics()).body;
+			expect(analytics.totalRooms).toBe(2);
+			expect(analytics.openRooms).toBe(2);
 		});
 
 		it('should count active rooms correctly', async () => {

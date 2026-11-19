@@ -9,7 +9,8 @@ import {
 	loginRootAdmin,
 	refreshTokenReq,
 	resetUserPassword,
-	startTestServer
+	startTestServer,
+	updateUserRole
 } from '../../../helpers/request-helpers.js';
 import { setupSingleRoom, setupUser } from '../../../helpers/test-scenarios.js';
 
@@ -87,6 +88,25 @@ describe('Authentication API Tests', () => {
 			const responses = await Promise.all([refreshTokenReq(refreshToken), refreshTokenReq(refreshToken)]);
 
 			expect(responses.map((response) => response.status).sort()).toEqual([200, 400]);
+		});
+
+		it('should succeed after the user role changed, yielding an access token accepted with the new role', async () => {
+			MEET_ENV.REFRESH_TOKEN_ROTATION_ENABLED = 'false';
+			const userData = await setupUser({
+				userId: 'rolechanged',
+				name: 'Role Changed',
+				password: 'TempPassword1!',
+				role: MeetUserRole.ROOM_MANAGER
+			});
+			expect((await updateUserRole(userData.user.userId, MeetUserRole.ROOM_MEMBER)).status).toBe(200);
+			expect((await getMe(userData.accessToken)).status).toBe(401);
+
+			const response = await refreshTokenReq(userData.refreshToken!);
+			expect(response.status).toBe(200);
+
+			const meResponse = await getMe(`Bearer ${response.body.accessToken}`);
+			expect(meResponse.status).toBe(200);
+			expect(meResponse.body.role).toBe(MeetUserRole.ROOM_MEMBER);
 		});
 
 		it('should fail when refresh token is missing', async () => {

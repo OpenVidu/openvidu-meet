@@ -82,6 +82,14 @@ describe('Token Validation Tests', () => {
 			expect(response.status).toBe(200);
 		});
 
+		it('should fail when access token is sent without the bearer prefix', async () => {
+			const response = await request(app)
+				.get(`${INTERNAL_USERS_PATH}/me`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken.replace('Bearer ', ''));
+			expect(response.status).toBe(401);
+			expect(response.body.message).toBe('Unauthorized');
+		});
+
 		it('should succeed when admin accesses admin-only endpoint', async () => {
 			const response = await request(app)
 				.get(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/api-keys`))

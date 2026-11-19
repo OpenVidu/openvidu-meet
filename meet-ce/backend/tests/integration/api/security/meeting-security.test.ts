@@ -30,7 +30,9 @@ import {
 	admitWaitingParticipant,
 	askToJoin,
 	bulkRejectWaitingParticipants,
+	cancelAssistant,
 	createAssistant,
+	createRoom,
 	deleteAllRooms,
 	generateRoomMemberToken,
 	getFullPath,
@@ -199,6 +201,19 @@ describe('Meeting API Security Tests', () => {
 			expect(response.body).toEqual({ broadcasts: [] });
 		});
 
+		it('should refuse listing the broadcasts to a token that holds meetingJoin without meetingRead', async () => {
+			roomMember = await updateRoomMemberPermissions(roomId, roomMember.member.memberId, {
+				meetingJoin: true,
+				meetingRead: false
+			});
+
+			const response = await request(app)
+				.get(BROADCASTS_PATH)
+				.query({ roomId })
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken);
+			expectMeetError(response, errorInsufficientPermissions());
+		});
+
 		it('should fail when using room member token from a different room', async () => {
 			const newRoomData = await setupSingleRoom();
 
@@ -300,6 +315,22 @@ describe('Meeting API Security Tests', () => {
 			await joinFakeParticipant(roomId, participantIdentity);
 		});
 
+		it('should succeed when request includes API key although the roles deny participantKick to everyone', async () => {
+			const room = await createRoom({
+				roles: {
+					moderator: { permissions: { participantKick: false } },
+					speaker: { permissions: { participantKick: false } }
+				}
+			});
+			await joinFakeParticipant(room.roomId, 'kicked-by-integrator');
+			await waitForMeetingToStart(room.roomId);
+
+			const response = await request(app)
+				.delete(`${MEETINGS_PATH}/${room.roomId}/participants/kicked-by-integrator`)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
+			expect(response.status).toBe(200);
+		});
+
 		it('should fail when using access token', async () => {
 			const response = await request(app)
 				.delete(`${MEETINGS_PATH}/${roomId}/participants/${participantIdentity}`)
@@ -393,6 +424,14 @@ describe('Meeting API Security Tests', () => {
 
 	describe('AI Assistant Tests', () => {
 		const MOCK_DISPATCH_ID = 'dispatch-test-001';
+
+		it('should answer 403 to creating and canceling an assistant with a token that names no participant', async () => {
+			expectMeetError(await createAssistant(roomData.speakerToken), errorInsufficientPermissions());
+			expectMeetError(
+				await cancelAssistant(MOCK_DISPATCH_ID, roomData.speakerToken),
+				errorInsufficientPermissions()
+			);
+		});
 
 		describe('Create Assistant Security Tests', () => {
 			it('should fail when no room member token header is provided', async () => {

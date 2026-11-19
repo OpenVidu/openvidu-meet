@@ -42,9 +42,12 @@ import {
 	admitWaitingParticipant,
 	askToJoin,
 	bulkRejectWaitingParticipants,
+	createRoom,
 	deleteAllRooms,
+	deleteAllUsers,
 	deleteRoom,
 	endMeeting,
+	generateRoomMemberTokenRequest,
 	getMeeting,
 	getRoom,
 	getWaitingParticipant,
@@ -58,7 +61,9 @@ import {
 	updateRoomRoles,
 	updateRoomStatus
 } from '../../../helpers/request-helpers.js';
-import { guestSecretOf, setupRoomMember, setupSingleRoom } from '../../../helpers/test-scenarios.js';
+import { guestSecretOf, setupRoomMember, setupSingleRoom, setupTestUsers } from '../../../helpers/test-scenarios.js';
+import { errorRoomClosed } from '../../../../src/models/error.model.js';
+import { expectMeetError } from '../../../helpers/assertion-helpers.js';
 import { waitForMeetingToEnd, waitForMeetingToStart } from '../../../helpers/wait-helpers.js';
 import type { RoomData } from '../../../interfaces/scenarios.js';
 
@@ -132,6 +137,7 @@ describe('Waiting participants', () => {
 	afterAll(async () => {
 		await disconnectFakeParticipants();
 		await deleteAllRooms();
+		await deleteAllUsers();
 	});
 
 	describe('Asking to join', () => {
@@ -166,6 +172,36 @@ describe('Waiting participants', () => {
 
 			expect(response.status).toBe(200);
 			expect(response.body).toHaveProperty('token');
+		});
+
+		it('gives an admin and the room owner a join token at once', async () => {
+			const { admin, roomManager } = await setupTestUsers();
+			const room = await createRoom(
+				{ roomName: 'OWNED_LOCKED_ROOM', access: { lock: { enabled: true } } },
+				roomManager.accessToken
+			);
+
+			for (const accessToken of [admin.accessToken, roomManager.accessToken]) {
+				const response = await generateRoomMemberTokenRequest(
+					room.roomId,
+					{ joinMeeting: true, participantName: 'Host' },
+					accessToken
+				);
+
+				expect(response.status).toBe(200);
+				expect(response.body).toHaveProperty('token');
+			}
+		});
+
+		it('answers 409 to a speaker asking to join a closed locked room, and lists nobody as waiting', async () => {
+			const roomData = await setupLockedRoom();
+			expect((await updateRoomStatus(roomData.room.roomId, MeetRoomStatus.CLOSED)).status).toBe(200);
+
+			expectMeetError(
+				await askToJoin(roomData.room.roomId, roomData.speakerSecret, 'Ana'),
+				errorRoomClosed(roomData.room.roomId)
+			);
+			expect(await waiting(roomData.room.roomId)).toEqual([]);
 		});
 
 		it('refuses the ticket as a room member token', async () => {
@@ -340,6 +376,22 @@ describe('Waiting participants', () => {
 			expect(joined.status).toBe(200);
 			const { metadata } = jwtDecode<ClaimGrants>(joined.body.token);
 			expect(participantRoleOf(JSON.parse(metadata!).badge)).toBe(MeetRoomMemberRole.MODERATOR);
+		});
+
+		it('makes a speaker who was admitted and then kicked wait in the line again', async () => {
+			const roomData = await setupLockedRoom();
+			const { roomId } = roomData.room;
+			const { token: hostToken } = await startMeetingAsModerator(roomData);
+			const sam = await knock(roomData, 'Sam');
+			expect((await admitWaitingParticipant(roomId, sam.participantIdentity)).status).toBe(200);
+			const joined = await askToJoin(roomId, roomData.speakerSecret, 'Sam', sam.waitingTicket);
+			const { sub, metadata } = jwtDecode<ClaimGrants>(joined.body.token);
+			await joinFakeParticipant(roomId, sub!, metadata);
+			expect((await kickParticipant(roomId, sub!, hostToken)).status).toBe(200);
+
+			await knock(roomData, 'Sam');
+
+			expect(await waiting(roomId)).toEqual(['Sam']);
 		});
 
 		it('makes an admitted participant who finds the meeting full wait again', async () => {

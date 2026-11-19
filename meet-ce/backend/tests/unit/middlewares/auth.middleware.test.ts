@@ -707,6 +707,18 @@ describe('the validators, against a change made in the same millisecond as the t
 			});
 		});
 
+		it('refuses a stored key sent with a Bearer prefix', async () => {
+			jest.restoreAllMocks();
+			jest.spyOn(apiKeyService, 'getApiKeys').mockResolvedValue([{ key: 'a-key', creationDate: 1 }]);
+			jest.spyOn(userService, 'getUserAssociatedWithApiKey').mockResolvedValue(user());
+
+			await expect(apiKeyValidator.validate(requestWith({ 'x-api-key': 'a-key' }))).resolves.toBeUndefined();
+			await expect(apiKeyValidator.validate(requestWith({ 'x-api-key': 'Bearer a-key' }))).rejects.toMatchObject({
+				statusCode: 401,
+				message: 'Invalid API key'
+			});
+		});
+
 		it('refuses a valid key with no user behind it', async () => {
 			jest.spyOn(apiKeyService, 'validateApiKey').mockResolvedValue(true);
 			jest.spyOn(userService, 'getUserAssociatedWithApiKey').mockResolvedValue(null as never);

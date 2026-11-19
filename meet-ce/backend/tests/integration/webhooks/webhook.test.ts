@@ -1,6 +1,7 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import {
 	LeftEventReason,
+	MEET_BROADCAST_REDACTED_STREAM_KEY,
 	MEET_PERMISSION_KEYS,
 	MeetEventOrigin,
 	MeetParticipantType,
@@ -26,8 +27,12 @@ import {
 } from '@openvidu-meet/typings';
 import { Request, Response } from 'express';
 import crypto from 'crypto';
+import http from 'http';
+import type { ServerResponse } from 'http';
+import type { AddressInfo } from 'net';
 import { EgressInfo, EgressStatus, WebhookEvent } from 'livekit-server-sdk';
 import { container } from '../../../src/config/dependency-injector.config.js';
+import { INTERNAL_CONFIG } from '../../../src/config/internal-config.js';
 import { lkWebhookHandler } from '../../../src/controllers/livekit-webhook.controller.js';
 import { MeetLock } from '../../../src/helpers/redis.helper.js';
 import { RecordingRepository } from '../../../src/repositories/recording.repository.js';
@@ -64,6 +69,7 @@ import {
 	stopWebhookServer
 } from '../../helpers/test-scenarios.js';
 import {
+	pollUntil,
 	ReceivedWebhook,
 	pollUntil,
 	waitForRecordingToStop,
@@ -194,6 +200,28 @@ describe('Webhook Integration Tests', () => {
 			expect(moderatorPermissions.canRetrieveRecordings).toBe(true);
 
 			expectValidSignature(meetingStartedWebhook);
+		});
+
+		it('should send the room destinations of meeting webhooks without their stream key', async () => {
+			const url = 'rtmp://rtmp-sink.invalid:1935/live/abcd-1234';
+			const { room, moderatorToken } = await setupSingleRoom(true, 'TEST_ROOM', {
+				broadcast: { enabled: true, destinations: [{ name: 'Stream', url }] }
+			});
+
+			const started = await waitForWebhookEvent(receivedWebhooks, MeetWebhookEventType.MEETING_STARTED, {
+				roomId: room.roomId
+			});
+			await endMeeting(room.roomId, moderatorToken);
+			const ended = await waitForWebhookEvent(receivedWebhooks, MeetWebhookEventType.MEETING_ENDED, {
+				roomId: room.roomId
+			});
+
+			for (const webhook of [started, ended]) {
+				expect((webhook.body.data as MeetRoom).config.broadcast.destinations).toMatchObject([
+					{ url: `rtmp://rtmp-sink.invalid:1935/live/${MEET_BROADCAST_REDACTED_STREAM_KEY}` }
+				]);
+				expect(webhook.rawBody).not.toContain('abcd-1234');
+			}
 		});
 
 		// An all-ASCII payload cannot tell a receiver that hashes the bytes as received from one that
@@ -327,6 +355,21 @@ describe('Webhook Integration Tests', () => {
 			expectValidSignature(participantLeftWebhook);
 		});
 
+		it('should send participantLeft webhooks with the meeting_ended reason when the meeting is ended through the API', async () => {
+			const { room, moderatorToken } = await setupSingleRoom(true);
+
+			await endMeeting(room.roomId, moderatorToken);
+
+			const participantLeftWebhook = await waitForWebhookEvent(
+				receivedWebhooks,
+				MeetWebhookEventType.PARTICIPANT_LEFT,
+				{ roomId: room.roomId }
+			);
+			const payload = participantLeftWebhook.body.data as MeetParticipantLeftPayload;
+			expect(payload.participant.participantIdentity).toBe('TEST_PARTICIPANT');
+			expect(payload.participant.leaveReason).toBe(LeftEventReason.MEETING_ENDED);
+		});
+
 		it('should echo the app-provided correlation fields in the participantLeft webhook', async () => {
 			const context = await setupSingleRoom(true);
 			const roomData = context.room;
@@ -414,6 +457,43 @@ describe('Webhook Integration Tests', () => {
 			expect(demotion.participant.participantIdentity).toBe(participantIdentity);
 			expect(demotion.participant.role).toBe(MeetRoomMemberRole.SPEAKER);
 			expect(demotion.participant.type).toBe(MeetParticipantType.ANONYMOUS);
+		});
+
+		it('should answer a promotion without waiting for a receiver that does not answer', async () => {
+			const unanswered: ServerResponse[] = [];
+			const silentReceiver = http.createServer((req, res) => {
+				req.resume();
+				unanswered.push(res);
+			});
+			await new Promise<void>((resolve) => silentReceiver.listen(0, resolve));
+
+			try {
+				await deleteAllWebhooks();
+				await createWebhook({ url: `http://localhost:${(silentReceiver.address() as AddressInfo).port}/hook` });
+				const { room, moderatorToken } = await setupSingleRoom(true);
+				await updateParticipantMetadata(room.roomId, 'TEST_PARTICIPANT', {
+					iat: Date.now(),
+					roomId: room.roomId,
+					permissions: room.roles.speaker.permissions,
+					badge: MeetRoomMemberUIBadge.OTHER
+				});
+
+				const startedAt = Date.now();
+				const response = await updateParticipant(
+					room.roomId,
+					'TEST_PARTICIPANT',
+					MeetParticipantModerationAction.UPGRADE,
+					moderatorToken
+				);
+
+				expect(response.status).toBe(200);
+				expect(Date.now() - startedAt).toBeLessThan(INTERNAL_CONFIG.WEBHOOK_REQUEST_TIMEOUT);
+				await pollUntil(async () => unanswered.length > 0, { errorMessage: 'the receiver was never called' });
+			} finally {
+				unanswered.forEach((res) => res.end());
+				silentReceiver.closeAllConnections();
+				await new Promise<void>((resolve) => silentReceiver.close(() => resolve()));
+			}
 		});
 
 		it('should send waitingParticipantKnocked once per wait and waitingParticipantStatusChanged for every later change', async () => {

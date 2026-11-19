@@ -18,6 +18,7 @@ import {
 } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	deleteAllRooms,
+	endMeeting,
 	generateRoomMemberToken,
 	generateRoomMemberTokenRequest,
 	getRecording,
@@ -97,6 +98,15 @@ describe('Meetings API Tests', () => {
 
 			it('should remove a session that reconnects with the token the participant held', async () => {
 				const held = await joinAndKickSpeaker();
+
+				await joinFakeParticipantUntilRemoved(roomData.room.roomId, held.identity, held.metadata);
+
+				expect(await livekitService.participantExists(roomData.room.roomId, held.identity)).toBe(false);
+			});
+
+			it('should remove a session that connects to the next meeting with the token the participant held', async () => {
+				const held = await joinAndKickSpeaker();
+				await endMeeting(roomData.room.roomId, roomData.moderatorToken);
 
 				await joinFakeParticipantUntilRemoved(roomData.room.roomId, held.identity, held.metadata);
 

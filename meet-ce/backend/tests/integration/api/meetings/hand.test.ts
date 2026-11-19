@@ -1,21 +1,29 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { MeetEventOrigin } from '@openvidu-meet/typings';
+import { MeetEventOrigin, MeetWebhookEventType } from '@openvidu-meet/typings';
+import { Express } from 'express';
+import request from 'supertest';
 import { container } from '../../../../src/config/dependency-injector.config.js';
+import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
+import { MEET_ENV } from '../../../../src/environment.js';
 import { MeetRoomHelper } from '../../../../src/helpers/room.helper.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
 import { WebhookDispatcherService } from '../../../../src/services/webhook-dispatcher.service.js';
 import { errorHandNotOwn, errorInsufficientPermissions } from '../../../../src/models/error.model.js';
 import { disconnectFakeParticipants, joinFakeParticipant } from '../../../helpers/livekit-cli-helpers.js';
 import {
+	createWebhook,
 	deleteAllRooms,
+	deleteAllWebhooks,
 	endMeeting,
 	generateRoomMemberToken,
+	getFullPath,
 	getMeetingParticipant,
 	lowerAllHands,
 	startTestServer,
 	updateParticipantHand
 } from '../../../helpers/request-helpers.js';
-import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
+import { setupSingleRoom, startWebhookServer, stopWebhookServer } from '../../../helpers/test-scenarios.js';
+import { ReceivedWebhook, waitForWebhookEvent } from '../../../helpers/wait-helpers.js';
 import { RoomData } from '../../../interfaces/scenarios.js';
 import { expectMeetError, expectValidationError } from '../../../helpers/assertion-helpers.js';
 
@@ -32,10 +40,11 @@ const identityOf = (bearerToken: string): string => {
 };
 
 describe('Meetings API Tests', () => {
+	let app: Express;
 	let roomData: RoomData;
 
 	beforeAll(async () => {
-		await startTestServer();
+		app = await startTestServer();
 	});
 
 	afterAll(async () => {
@@ -215,6 +224,53 @@ describe('Meetings API Tests', () => {
 				bob.token
 			);
 			expectMeetError(response, errorHandNotOwn(alice.identity, roomData.room.roomId));
+			expect((await handOf(alice)).handRaised).toBe(false);
+		});
+
+		it("should reject with 409 an API key raising a participant's hand", async () => {
+			const alice = await joinSpeaker('Alice');
+
+			const response = await request(app)
+				.put(
+					getFullPath(
+						`${INTERNAL_CONFIG.API_BASE_PATH_V1}/meetings/${roomData.room.roomId}/participants/${alice.identity}/hand`
+					)
+				)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+				.send({ handRaised: true });
+			expectMeetError(response, errorHandNotOwn(alice.identity, roomData.room.roomId));
+			expect((await handOf(alice)).handRaised).toBe(false);
+		});
+
+		it('should drop the hand of a participant who leaves without a hand webhook, and let a rejoin start lowered', async () => {
+			const alice = await joinSpeaker('Alice');
+			const { roomId } = roomData.room;
+			const received: ReceivedWebhook[] = [];
+			await deleteAllWebhooks();
+			await createWebhook({
+				url: await startWebhookServer((req) =>
+					received.push({ headers: req.headers, body: req.body, rawBody: req.rawBody })
+				),
+				events: [MeetWebhookEventType.PARTICIPANT_HAND_CHANGED, MeetWebhookEventType.PARTICIPANT_LEFT],
+				roomId
+			});
+
+			try {
+				await updateParticipantHand(roomId, alice.identity, { handRaised: true }, alice.token);
+				await waitForWebhookEvent(received, MeetWebhookEventType.PARTICIPANT_HAND_CHANGED, { roomId });
+
+				await container.get(LiveKitService).deleteParticipant(roomId, alice.identity);
+				await waitForWebhookEvent(received, MeetWebhookEventType.PARTICIPANT_LEFT, { roomId });
+
+				expect(
+					received.filter(({ body }) => body.event === MeetWebhookEventType.PARTICIPANT_HAND_CHANGED)
+				).toHaveLength(1);
+			} finally {
+				await deleteAllWebhooks();
+				await stopWebhookServer();
+			}
+
+			await joinFakeParticipant(roomId, alice.identity);
 			expect((await handOf(alice)).handRaised).toBe(false);
 		});
 

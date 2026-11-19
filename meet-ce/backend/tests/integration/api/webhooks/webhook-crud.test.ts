@@ -7,9 +7,22 @@ import type { AddressInfo } from 'net';
 import request from 'supertest';
 import { INTERNAL_CONFIG, setInternalConfig } from '../../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
-import { errorUnauthorized, errorWebhookNotFound } from '../../../../src/models/error.model.js';
+import {
+	errorInsufficientPermissions,
+	errorUnauthorized,
+	errorWebhookNotFound
+} from '../../../../src/models/error.model.js';
 import { expectMeetError, expectValidationError } from '../../../helpers/assertion-helpers.js';
-import { getFullPath, loginRootAdmin, startTestServer } from '../../../helpers/request-helpers.js';
+import {
+	createRoom,
+	deleteAllRooms,
+	deleteAllUsers,
+	deleteRoom,
+	getFullPath,
+	loginRootAdmin,
+	startTestServer
+} from '../../../helpers/request-helpers.js';
+import { setupSingleRoom, setupTestUsers } from '../../../helpers/test-scenarios.js';
 
 const WEBHOOKS_PATH = getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/webhooks`);
 
@@ -48,6 +61,8 @@ describe('Webhooks API Tests (CRUD)', () => {
 
 	afterAll(async () => {
 		await deleteAllWebhooks();
+		await deleteAllRooms();
+		await deleteAllUsers();
 	});
 
 	describe('Authentication', () => {
@@ -57,6 +72,25 @@ describe('Webhooks API Tests (CRUD)', () => {
 
 			response = await request(app).post(WEBHOOKS_PATH).send({ url: 'https://example.com/hook' });
 			expectMeetError(response, errorUnauthorized());
+		});
+
+		it('should fail with 401 when only a valid room member token is sent', async () => {
+			const { moderatorToken } = await setupSingleRoom();
+
+			const response = await request(app)
+				.post(WEBHOOKS_PATH)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, moderatorToken)
+				.send({ url: 'https://example.com/hook' });
+			expectMeetError(response, errorUnauthorized());
+		});
+
+		it('should fail with 403 for a user who is not an administrator', async () => {
+			const { roomManager } = await setupTestUsers();
+
+			const response = await request(app)
+				.get(WEBHOOKS_PATH)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomManager.accessToken);
+			expectMeetError(response, errorInsufficientPermissions());
 		});
 
 		it('should accept an admin access token', async () => {
@@ -99,6 +133,19 @@ describe('Webhooks API Tests (CRUD)', () => {
 			]);
 			expect(webhook.roomId).toBe('room-123');
 			expect(webhook.enabled).toBe(false);
+		});
+
+		it('should keep a webhook scoped to a room unchanged when that room is deleted', async () => {
+			const room = await createRoom();
+			const created = (
+				await createWebhook({ url: 'https://example.com/hook', roomId: room.roomId, enabled: false })
+			).body as MeetWebhook;
+
+			expect((await deleteRoom(room.roomId)).status).toBe(200);
+
+			const response = await getWebhook(created.webhookId);
+			expect(response.status).toBe(200);
+			expect(response.body).toEqual(created);
 		});
 
 		it('should reject an invalid payload with 422', async () => {

@@ -99,6 +99,22 @@ describe('Meetings API Tests', () => {
 			expect(metadata).toHaveProperty('originalPermissions', speakerPermissions);
 		});
 
+		it('should keep denying data publishing to a participant promoted in a room without chat', async () => {
+			roomData = await setupSingleRoom(true, 'NO_CHAT_ROOM', { chat: { enabled: false } });
+			await setParticipantMetadata(roomData, MeetRoomMemberRole.SPEAKER);
+
+			const response = await updateParticipant(
+				roomData.room.roomId,
+				participantIdentity,
+				MeetParticipantModerationAction.UPGRADE,
+				roomData.moderatorToken
+			);
+			expect(response.status).toBe(200);
+
+			const participant = await livekitService.getParticipant(roomData.room.roomId, participantIdentity);
+			expect(participant.permission?.canPublishData).toBe(false);
+		});
+
 		it('should downgrade participant role from promoted moderator to original permissions', async () => {
 			await setParticipantMetadata(roomData, MeetRoomMemberRole.SPEAKER);
 			await updateParticipant(

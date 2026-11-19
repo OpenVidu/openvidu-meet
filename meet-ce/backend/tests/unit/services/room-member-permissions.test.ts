@@ -50,6 +50,10 @@ class TestableRoomMemberService extends RoomMemberService {
 	) {
 		return this.applyPermissionsToLiveParticipant(roomId, identity, room, buildMetadata, refusedIssuedBefore);
 	}
+
+	underParticipantLock<T>(roomId: string, identity: string, update: () => Promise<T>) {
+		return this.withParticipantMetadataLock(roomId, identity, update);
+	}
 }
 
 const service = new TestableRoomMemberService(
@@ -462,6 +466,26 @@ describe('the participant metadata lock', () => {
 		const requestsMs = 2 * INTERNAL_CONFIG.LIVEKIT_REQUEST_TIMEOUT_SECONDS * 1000;
 
 		expect(ms(INTERNAL_CONFIG.PARTICIPANT_METADATA_LOCK_TTL)).toBeGreaterThan(requestsMs);
+	});
+
+	it('is waited for about 3 seconds and then refused with a 409 saying the participant is already being updated', async () => {
+		const withRetryLock = jest.fn(async () => null);
+		const lockedService = new TestableRoomMemberService(
+			...([...Array.from({ length: 13 }, () => ({})), { withRetryLock }] as unknown as ConstructorParameters<
+				typeof RoomMemberService
+			>)
+		);
+		const update = jest.fn(async () => 'updated');
+
+		await expect(lockedService.underParticipantLock('room-abc', 'speaker-1', update)).rejects.toMatchObject({
+			statusCode: 409,
+			message: "Participant 'speaker-1' in room 'room-abc' is already being updated"
+		});
+
+		expect(update).not.toHaveBeenCalled();
+		const [, , , maxAttempts, retryDelayMs] = withRetryLock.mock.calls[0] as unknown as unknown[] as number[];
+		expect(maxAttempts * retryDelayMs).toBeGreaterThanOrEqual(2500);
+		expect(maxAttempts * retryDelayMs).toBeLessThanOrEqual(3500);
 	});
 });
 

@@ -617,6 +617,19 @@ describe('Broadcasts API Tests', () => {
 			});
 		});
 
+		it('should refuse reading a broadcast with a token of another room', async () => {
+			const roomData = await setupMeetingRoom(broadcastConfig(['a']));
+			const { broadcast } = await startOne(roomData.room.roomId, {
+				destinationId: (await roomDestinationIds(roomData))[0]
+			});
+			const otherRoom = await setupSingleRoom(false, 'OTHER_ROOM');
+
+			expectMeetError(
+				await getBroadcast(broadcast.broadcastId, otherRoom.moderatorToken),
+				errorInsufficientPermissions()
+			);
+		});
+
 		it('should end the broadcasts when the meeting ends', async () => {
 			const roomData = await setupMeetingRoom(broadcastConfig(['a']));
 			const { roomId } = roomData.room;

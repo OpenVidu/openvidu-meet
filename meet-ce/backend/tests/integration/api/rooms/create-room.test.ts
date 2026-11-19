@@ -7,6 +7,7 @@ import {
 	MeetRecordingEncodingPreset,
 	MeetRecordingLayout,
 	MeetRecordingVideoCodec,
+	MEET_PERMISSION_KEYS,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings
 } from '@openvidu-meet/typings';
@@ -44,6 +45,16 @@ describe('Room API Tests', () => {
 			const room = await createRoom();
 			expectValidRoom(room, 'Room');
 			expectExtraFieldsInResponse(room);
+		});
+
+		it('Should answer 201 with a Location header pointing to the created room', async () => {
+			const response = await request(app)
+				.post(ROOMS_PATH)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+				.send({ roomName: 'Weekly sync' });
+
+			expect(response.status).toBe(201);
+			expect(response.headers.location).toMatch(new RegExp(`${ROOMS_PATH}/${response.body.roomId}$`));
 		});
 
 		it('Should create a room without autoDeletionDate (default behavior)', async () => {
@@ -641,6 +652,75 @@ describe('Room API Tests', () => {
 				roomIdPrefix: 'full_advanced_encoding_room',
 				config: expectedConfig
 			});
+		});
+	});
+
+	describe('Room Roles Tests', () => {
+		const SPEAKER_GRANTED = [
+			'recordingList',
+			'recordingPlay',
+			'recordingDownload',
+			'meetingJoin',
+			'meetingRead',
+			'participantSendReaction',
+			'mediaPublishAudio',
+			'mediaPublishVideo',
+			'mediaShareScreen',
+			'mediaChangeVirtualBackground',
+			'chatRead',
+			'chatWrite'
+		];
+		const SPEAKER_DENIED = [
+			'recordingControl',
+			'recordingDelete',
+			'broadcastControl',
+			'broadcastEdit',
+			'roomShareAccessLinks',
+			'participantPromote',
+			'participantKick',
+			'participantMute',
+			'participantLowerHand',
+			'accessBypassLock',
+			'waitingParticipantAdmin',
+			'meetingEnd'
+		];
+		const permissionsOf = (granted: string[], denied: string[]) => ({
+			...Object.fromEntries(granted.map((key) => [key, true])),
+			...Object.fromEntries(denied.map((key) => [key, false]))
+		});
+
+		it('should grant the moderator role all 24 permissions and the speaker role its 12 by default', async () => {
+			const room = await createRoom({ roomName: 'default-roles' }, undefined, { xExtraFields: 'roles' });
+
+			expect(MEET_PERMISSION_KEYS).toHaveLength(24);
+			expect(room.roles.moderator.permissions).toMatchObject(permissionsOf([...MEET_PERMISSION_KEYS], []));
+			expect(room.roles.speaker.permissions).toMatchObject(permissionsOf(SPEAKER_GRANTED, SPEAKER_DENIED));
+			expect([...SPEAKER_GRANTED, ...SPEAKER_DENIED].sort()).toEqual([...MEET_PERMISSION_KEYS].sort());
+		});
+
+		it('should override only the given permissions of a role and keep the other defaults', async () => {
+			const room = await createRoom(
+				{ roomName: 'speaker-records', roles: { speaker: { permissions: { recordingControl: true } } } },
+				undefined,
+				{ xExtraFields: 'roles' }
+			);
+
+			expect(room.roles.speaker.permissions).toMatchObject(
+				permissionsOf(
+					[...SPEAKER_GRANTED, 'recordingControl'],
+					SPEAKER_DENIED.filter((key) => key !== 'recordingControl')
+				)
+			);
+			expect(room.roles.moderator.permissions).toMatchObject(permissionsOf([...MEET_PERMISSION_KEYS], []));
+		});
+
+		it('should fail when a permission of a role is not a boolean', async () => {
+			const response = await request(app)
+				.post(ROOMS_PATH)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+				.send({ roles: { moderator: { permissions: { chatWrite: 'yes' } } } });
+
+			expect(response.status).toBe(422);
 		});
 	});
 
