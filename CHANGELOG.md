@@ -338,6 +338,9 @@ with no replacement.
   the camera button.
 - The notifications in the top corner of a meeting covered the header of an open side panel, its close button
   included. They now sit beside the panel, or below its header when the panel fills the screen.
+- The record button of the toolbar and **Start recording** in the activities panel stayed disabled when a participant
+  already in the meeting published their first track while nobody else was publishing. They are enabled as soon as a
+  track is published.
 - With more than three captions at once, a participant still speaking whose caption had left the screen got no caption
   until they paused. Their caption is shown again with their next words.
 - In a chat message, a bare domain followed by a query or a fragment, such as `example.com?x=1`, was linked without
