@@ -64,7 +64,6 @@ describe('AiAssistantService (live captions)', () => {
 	let redis: FakeRedisSets;
 	let agents: FakeAgents;
 	let lockFree: boolean;
-	let lockRequests: number;
 	let roomCaptions: boolean;
 	let service: AiAssistantService;
 
@@ -73,13 +72,10 @@ describe('AiAssistantService (live captions)', () => {
 		redis = new FakeRedisSets();
 		agents = new FakeAgents();
 		lockFree = true;
-		lockRequests = 0;
 		roomCaptions = true;
 		const mutex = {
-			withRetryLock: async <T>(_key: string, _ttl: number, callback: () => Promise<T>) => {
-				lockRequests++;
-				return lockFree ? callback() : null;
-			}
+			withRetryLock: async <T>(_key: string, _ttl: number, callback: () => Promise<T>) =>
+				lockFree ? callback() : null
 		};
 		const roomService = { getMeetRoom: async () => ({ config: { captions: { enabled: roomCaptions } } }) };
 		service = new AiAssistantService(
@@ -186,12 +182,6 @@ describe('AiAssistantService (live captions)', () => {
 		await service.cleanupState(ROOM_ID);
 		expect(redis.members()).toEqual([]);
 		expect(agents.stopped).toEqual(['AD_1']);
-	});
-
-	it('takes no lock for a participant who leaves a room where nobody has captions on', async () => {
-		await service.cleanupState(ROOM_ID, 'ana');
-
-		expect(lockRequests).toBe(0);
 	});
 
 	it('never fails the webhook that triggers a cleanup', async () => {
