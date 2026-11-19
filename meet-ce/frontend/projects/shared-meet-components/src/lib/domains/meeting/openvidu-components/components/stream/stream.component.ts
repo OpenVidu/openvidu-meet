@@ -48,7 +48,6 @@ export class StreamComponent implements OnDestroy {
 	readonly showParticipantName = this.libService.displayParticipantNameSignal;
 	readonly showAudioDetection = this.libService.displayAudioDetectionSignal;
 	readonly showVideoControls = this.libService.streamVideoControlsSignal;
-	readonly isFullscreen = signal(false);
 	readonly mouseHovering = signal(false);
 
 	/**

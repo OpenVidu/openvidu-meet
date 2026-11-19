@@ -29,7 +29,6 @@ export class RoomService {
 	protected log: ILogger = this.loggerService.get('OpenVidu Meet - RoomService');
 
 	protected readonly ROOMS_API = `${HttpService.API_PATH_PREFIX}/rooms`;
-	protected readonly INTERNAL_ROOMS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/rooms`;
 
 	constructor() {}
 

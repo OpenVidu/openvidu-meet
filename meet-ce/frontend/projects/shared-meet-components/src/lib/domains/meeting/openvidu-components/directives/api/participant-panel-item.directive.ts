@@ -1,4 +1,4 @@
-import { Directive, ElementRef, OnDestroy, effect, inject, input } from '@angular/core';
+import { Directive, OnDestroy, effect, inject, input } from '@angular/core';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
 
 /**
@@ -23,7 +23,6 @@ export class ParticipantPanelItemMuteButtonDirective implements OnDestroy {
 	readonly participantPanelItemMuteButton = input<boolean | undefined>(undefined);
 	readonly muteButton = input<boolean | undefined>(undefined);
 
-	public elementRef = inject(ElementRef);
 	private readonly libService = inject(MeetingUiConfigService);
 	private readonly muteButtonEffect = effect(() => {
 		this.update(this.muteButton() ?? this.participantPanelItemMuteButton() ?? true);

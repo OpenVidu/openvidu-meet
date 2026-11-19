@@ -1,4 +1,4 @@
-import { Directive, ElementRef, OnDestroy, effect, inject, input } from '@angular/core';
+import { Directive, OnDestroy, effect, inject, input } from '@angular/core';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
 
 /**
@@ -23,7 +23,6 @@ export class StreamDisplayParticipantNameDirective implements OnDestroy {
 	readonly streamDisplayParticipantName = input<boolean | undefined>(undefined);
 	readonly displayParticipantName = input<boolean | undefined>(undefined);
 
-	public elementRef = inject(ElementRef);
 	private readonly libService = inject(MeetingUiConfigService);
 	private readonly displayParticipantNameEffect = effect(() => {
 		this.update(this.displayParticipantName() ?? this.streamDisplayParticipantName() ?? true);
@@ -64,7 +63,6 @@ export class StreamDisplayAudioDetectionDirective implements OnDestroy {
 	readonly streamDisplayAudioDetection = input<boolean | undefined>(undefined);
 	readonly displayAudioDetection = input<boolean | undefined>(undefined);
 
-	public elementRef = inject(ElementRef);
 	private readonly libService = inject(MeetingUiConfigService);
 	private readonly displayAudioDetectionEffect = effect(() => {
 		this.update(this.displayAudioDetection() ?? this.streamDisplayAudioDetection() ?? true);
@@ -105,7 +103,6 @@ export class StreamVideoControlsDirective implements OnDestroy {
 	readonly streamVideoControls = input<boolean | undefined>(undefined);
 	readonly videoControls = input<boolean | undefined>(undefined);
 
-	public elementRef = inject(ElementRef);
 	private readonly libService = inject(MeetingUiConfigService);
 	private readonly videoControlsEffect = effect(() => {
 		this.update(this.videoControls() ?? this.streamVideoControls() ?? true);

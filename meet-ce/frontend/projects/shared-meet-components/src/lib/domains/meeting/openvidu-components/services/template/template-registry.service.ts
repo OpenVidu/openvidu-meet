@@ -46,7 +46,6 @@ export class TemplateRegistryService {
 	// ── Additional element templates ──────────────────────────────────────────
 
 	readonly layoutAdditionalElements = signal<TemplateRef<any> | undefined>(undefined);
-	readonly layoutAdditionalElementsSlot = signal<'top' | 'bottom' | 'default'>('default');
 	readonly settingsPanelLayout = signal<TemplateRef<any> | undefined>(undefined);
 	readonly statusRailEnd = signal<TemplateRef<any> | undefined>(undefined);
 }

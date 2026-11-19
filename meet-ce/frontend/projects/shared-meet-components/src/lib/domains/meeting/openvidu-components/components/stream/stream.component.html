@@ -17,7 +17,7 @@
 		#streamContainer
 	>
 		@if (showParticipantName()) {
-			<div id="participant-name-container" class="participant-name" [class.fullscreen]="isFullscreen()">
+			<div id="participant-name-container" class="participant-name">
 				<div class="participant-name-container">
 					<span id="participant-name">{{ stream.participant.name }}</span>
 					@if (stream.isScreenStream) {

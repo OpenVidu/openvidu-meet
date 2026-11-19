@@ -59,7 +59,6 @@ export class FallbackLogoDirective implements OnInit {
 export class LayoutRemoteParticipantsDirective implements OnDestroy {
 	readonly ovRemoteParticipants = input<ParticipantModel[] | undefined>(undefined);
 
-	public elementRef = inject(ElementRef);
 	private readonly directiveService = inject(MeetingUiConfigService);
 	private readonly ovRemoteParticipantsEffect = effect(() => {
 		this.update(this.ovRemoteParticipants());
@@ -90,10 +89,6 @@ export class ToolbarBrandingLogoDirective implements OnDestroy {
 	 */
 	readonly brandingLogo = input<string>('');
 
-	/**
-	 * @ignore
-	 */
-	public elementRef = inject(ElementRef);
 	private readonly libService = inject(MeetingUiConfigService);
 	private readonly brandingLogoEffect = effect(() => {
 		this.update(this.brandingLogo());
@@ -143,10 +138,6 @@ export class ToolbarViewRecordingsButtonDirective implements OnDestroy {
 	 */
 	readonly viewRecordingsButton = input<boolean | undefined>(undefined);
 
-	/**
-	 * @ignore
-	 */
-	public elementRef = inject(ElementRef);
 	private readonly libService = inject(MeetingUiConfigService);
 	private readonly viewRecordingsButtonEffect = effect(() => {
 		this.update(this.viewRecordingsButton() ?? this.toolbarViewRecordingsButton() ?? false);
@@ -186,10 +177,6 @@ export class StartStopRecordingButtonsDirective implements OnDestroy {
 	 */
 	readonly recordingActivityStartStopRecordingButton = input<boolean | undefined>(undefined);
 
-	/**
-	 * @ignore
-	 */
-	public elementRef = inject(ElementRef);
 	private readonly libService = inject(MeetingUiConfigService);
 	private readonly startStopButtonEffect = effect(() => {
 		this.update(this.recordingActivityStartStopRecordingButton() ?? true);
@@ -226,7 +213,6 @@ export class StartStopRecordingButtonsDirective implements OnDestroy {
 export class BroadcastActivityControlsDirective implements OnDestroy {
 	readonly broadcastActivityControls = input<boolean | undefined>(undefined);
 
-	public elementRef = inject(ElementRef);
 	private readonly libService = inject(MeetingUiConfigService);
 	private readonly controlsEffect = effect(() => {
 		this.libService.updateBroadcastActivityConfig({ controls: this.broadcastActivityControls() ?? true });
@@ -255,7 +241,6 @@ export class BroadcastActivityControlsDirective implements OnDestroy {
 export class BroadcastActivityAddDestinationsDirective implements OnDestroy {
 	readonly broadcastActivityAddDestinations = input<boolean | undefined>(undefined);
 
-	public elementRef = inject(ElementRef);
 	private readonly libService = inject(MeetingUiConfigService);
 	private readonly addDestinationsEffect = effect(() => {
 		this.libService.updateBroadcastActivityConfig({
@@ -285,7 +270,6 @@ export class BroadcastActivityAddDestinationsDirective implements OnDestroy {
 export class RecordingActivityViewRecordingsButtonDirective implements OnDestroy {
 	readonly recordingActivityViewRecordingsButton = input<boolean | undefined>(undefined);
 
-	public elementRef = inject(ElementRef);
 	private readonly libService = inject(MeetingUiConfigService);
 	private readonly viewRecordingsButtonEffect = effect(() => {
 		this.update(this.recordingActivityViewRecordingsButton() ?? false);
@@ -322,7 +306,6 @@ export class ToolbarRoomNameDirective implements OnDestroy {
 	readonly toolbarRoomName = input<string | undefined>(undefined);
 	readonly roomName = input<string | undefined>(undefined);
 
-	public elementRef = inject(ElementRef);
 	private readonly libService = inject(MeetingUiConfigService);
 	private readonly roomNameEffect = effect(() => {
 		this.updateRoomName(this.roomName() ?? this.toolbarRoomName());
@@ -358,7 +341,6 @@ export class ToolbarRoomNameDirective implements OnDestroy {
 export class ShowThemeSelectorDirective implements OnDestroy {
 	readonly showThemeSelector = input<boolean | undefined>(undefined);
 
-	public elementRef = inject(ElementRef);
 	private readonly libService = inject(MeetingUiConfigService);
 	private readonly showThemeSelectorEffect = effect(() => {
 		this.update(this.showThemeSelector() ?? false);
@@ -394,7 +376,6 @@ export class ShowThemeSelectorDirective implements OnDestroy {
 export class E2EEKeyDirective implements OnDestroy {
 	readonly e2eeKey = input<string | undefined>(undefined);
 
-	public elementRef = inject(ElementRef);
 	private readonly libService = inject(MeetingUiConfigService);
 	private readonly e2eeKeyEffect = effect(() => {
 		this.update(this.e2eeKey());

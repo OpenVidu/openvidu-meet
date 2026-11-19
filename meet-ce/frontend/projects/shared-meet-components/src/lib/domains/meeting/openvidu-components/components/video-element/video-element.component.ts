@@ -112,7 +112,6 @@ export class VideoElementComponent implements OnDestroy {
 	private attachVideoTrackEffect = effect(() => {
 		const newVideoTrack = this.videoTrack();
 		const video = this.videoElement()?.nativeElement ?? null;
-		const local = this.isLocal();
 
 		// Re-attach whenever the track OR the video element changes. The @if (videoTrack()) in the
 		// template creates the <video> element in a subsequent render cycle after the track input
@@ -126,7 +125,7 @@ export class VideoElementComponent implements OnDestroy {
 			this.previousVideoElement = video;
 
 			if (newVideoTrack && video) {
-				this.updateVideoStyles(newVideoTrack, video, local);
+				this.updateVideoStyles(newVideoTrack, video);
 				newVideoTrack.attach(video);
 			}
 		}
@@ -138,7 +137,7 @@ export class VideoElementComponent implements OnDestroy {
 		}
 	}
 
-	private updateVideoStyles(track: Track, video: HTMLVideoElement, _isLocal: boolean) {
+	private updateVideoStyles(track: Track, video: HTMLVideoElement) {
 		const isScreen = track.source === Track.Source.ScreenShare;
 		const isCamera = track.source === Track.Source.Camera;
 

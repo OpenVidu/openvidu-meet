@@ -1,6 +1,6 @@
 import { computed, signal } from '@angular/core';
 import { handRaiseDateOf, MeetRoomMemberTokenMetadata, MeetRoomMemberUIBadge } from '@openvidu-meet/typings';
-import type { LocalAudioTrack, LocalVideoTrack, RemoteParticipant, Room, TrackPublication } from '../services/livekit';
+import type { RemoteParticipant, Room, TrackPublication } from '../services/livekit';
 import {
 	AudioCaptureOptions,
 	ConnectionQuality,
@@ -334,32 +334,6 @@ export class ParticipantModel {
 	get isScreenShareEnabled(): boolean {
 		this._revision();
 		return this.participant.isScreenShareEnabled;
-	}
-
-	/**
-	 * Returns the participant's published microphone audio track, if any. Used to feed the
-	 * local microphone activity analyser behind the mic status warnings.
-	 * @internal
-	 */
-	getMicrophoneTrack(): LocalAudioTrack | undefined {
-		this._revision(); // reactive: re-evaluates when bump() fires (publish/unpublish, device switch)
-		const publication = this.participant
-			.getTrackPublications()
-			.find((pub) => pub.source === Track.Source.Microphone && pub.kind === Track.Kind.Audio);
-		return publication?.track as LocalAudioTrack | undefined;
-	}
-
-	/**
-	 * Returns the participant's published camera video track, if any. Reactive companion to
-	 * {@link getMicrophoneTrack} so consumers can track the live local camera track.
-	 * @internal
-	 */
-	getCameraTrack(): LocalVideoTrack | undefined {
-		this._revision(); // reactive: re-evaluates when bump() fires (publish/unpublish, device switch)
-		const publication = this.participant
-			.getTrackPublications()
-			.find((pub) => pub.source === Track.Source.Camera && pub.kind === Track.Kind.Video);
-		return publication?.track as LocalVideoTrack | undefined;
 	}
 
 	/**

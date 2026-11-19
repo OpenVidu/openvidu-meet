@@ -17,12 +17,6 @@ export class MeetingStateService {
 	readonly localParticipant = this._localParticipant.asReadonly();
 	/** Readonly signal for the remote participants */
 	readonly remoteParticipants = this._remoteParticipants.asReadonly();
-	/** Computed signal that combines local and remote participants */
-	readonly allParticipants = computed(() => {
-		const local = this._localParticipant();
-		const remotes = this._remoteParticipants();
-		return local ? [local, ...remotes] : remotes;
-	});
 	/** Computed signal for whether the local participant is alone (no remote participants yet) */
 	readonly isAlone = computed(() => this._remoteParticipants().length === 0);
 

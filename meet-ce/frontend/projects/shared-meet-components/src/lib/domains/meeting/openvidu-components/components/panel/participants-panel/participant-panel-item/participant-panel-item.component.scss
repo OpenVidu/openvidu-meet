@@ -228,7 +228,7 @@
 	// ── Animations ──────────────────────────────────────────────────────────────
 	// No rule in this component animates fadeIn or pulse any more, but @keyframes names are NOT
 	// scoped by Angular's style encapsulation: end-meeting, recording-lists, error and room-wizard
-	// write `animation: fadeIn ...`, and room-wizard and selectable-card write `animation: pulse ...`,
+	// write `animation: fadeIn ...`, and room-wizard writes `animation: pulse ...`,
 	// without declaring either. They depend on definitions like these being in the document. Kept
 	// until that is untangled — do not delete as "unused".
 

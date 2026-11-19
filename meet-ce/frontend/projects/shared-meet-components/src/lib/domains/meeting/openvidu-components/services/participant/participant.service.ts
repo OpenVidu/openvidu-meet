@@ -144,17 +144,6 @@ export class ParticipantService {
 	}
 
 	/**
-	 * @internal
-	 * As updating name requires that the participant has the `canUpdateOwnMetadata` to true in server side, which is a little bit insecure,
-	 * we decided to not allow this feature for now.
-	 */
-	// setMyName(name: string) {
-	// 	if (!this.localParticipantWritableSignal()) return;
-	// 	this.localParticipantWritableSignal().setName(name);
-	// 	this.updateLocalParticipant();
-	// }
-
-	/**
 	 * Sets as speaking to all participants given in the array.
 	 * @param speakers
 	 * @internal

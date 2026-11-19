@@ -5,11 +5,6 @@ import { checkRoleGuard } from '../../auth/guards/auth.guard';
 import { checkRoomManageGuard } from '../../rooms/guards/room-access.guard';
 
 /**
- * Room Members domain route configurations
- */
-export const roomMembersDomainRoutes: DomainRouteConfig[] = [];
-
-/**
  * Console child routes for room members domain
  */
 export const roomMembersConsoleRoutes: DomainRouteConfig[] = [

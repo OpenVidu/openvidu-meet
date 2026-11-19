@@ -4,8 +4,7 @@ import {
 	MeetWaitingTicketResponse,
 	MeetRoomMember,
 	MeetRoomMemberPermissions,
-	MeetRoomMemberTokenOptions,
-	MeetRoomMemberUIBadge
+	MeetRoomMemberTokenOptions
 } from '@openvidu-meet/typings';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import { NavigationService } from '../../../shared/services/navigation.service';
@@ -44,7 +43,6 @@ export class RoomMemberContextService {
 	private readonly _isParticipantNameFromUrl = signal<boolean>(false);
 	private readonly _participantExternalId = signal<string | undefined>(undefined);
 	private readonly _participantMetadata = signal<string | undefined>(undefined);
-	private readonly _memberBadge = signal<MeetRoomMemberUIBadge>(MeetRoomMemberUIBadge.OTHER);
 	private readonly _permissions = signal<MeetRoomMemberPermissions | undefined>(undefined);
 	private readonly _member = signal<MeetRoomMember | undefined>(undefined);
 	private readonly _serverTimeSkewMs = signal<number>(0);
@@ -73,8 +71,6 @@ export class RoomMemberContextService {
 	readonly serverTimeSkewMs = this._serverTimeSkewMs.asReadonly();
 	/** Computed signal for the room member's display name */
 	readonly memberName = computed(() => this._member()?.name);
-	/** Readonly signal for the room member's UI badge */
-	readonly memberBadge = this._memberBadge.asReadonly();
 
 	/**
 	 * Sets the participant's display name.
@@ -308,7 +304,6 @@ export class RoomMemberContextService {
 			this._roomId.set(tokenMetadata.roomId);
 			this._serverTimeSkewMs.set(Number.isFinite(tokenMetadata.iat) ? tokenMetadata.iat - Date.now() : 0);
 			this._permissions.set(tokenMetadata.permissions);
-			this._memberBadge.set(tokenMetadata.badge);
 
 			// If token contains memberId, fetch and store member info
 			if (tokenMetadata.memberId) {
@@ -370,7 +365,6 @@ export class RoomMemberContextService {
 		this._participantExternalId.set(undefined);
 		this._participantMetadata.set(undefined);
 		this._permissions.set(undefined);
-		this._memberBadge.set(MeetRoomMemberUIBadge.OTHER);
 		this._member.set(undefined);
 		this._serverTimeSkewMs.set(0);
 	}

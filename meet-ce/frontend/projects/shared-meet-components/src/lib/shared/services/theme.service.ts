@@ -15,7 +15,6 @@ export class ThemeService {
 	// Computed signals for reactivity
 	public readonly currentTheme = computed<Theme>(() => this._currentTheme());
 	public readonly isDark = computed(() => this._currentTheme() === 'dark');
-	public readonly isLight = computed(() => this._currentTheme() === 'light');
 
 	/**
 	 * Initializes the theme based on:
@@ -98,15 +97,5 @@ export class ThemeService {
 				}
 			});
 		}
-	}
-
-	/**
-	 * Resets to system preference
-	 */
-	public resetToSystemPreference(): void {
-		this.meetStorageService.removeTheme();
-
-		const systemTheme = this.getSystemPreference();
-		this.setTheme(systemTheme, false);
 	}
 }
