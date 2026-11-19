@@ -8,7 +8,7 @@ import {
 	expectNoLoginPage,
 	type ReadyUser
 } from './helpers/auth.helper';
-import { gotoConsolePage } from './helpers/console-lists.helper';
+import { gotoConsolePage } from './helpers/console.helper';
 import { createRoom, deleteRooms, deleteUsers, getRecordingShareUrl } from './helpers/meet-api.helper';
 import { openMeeting } from './helpers/meeting-navigation.helper';
 import { toggleParticipantsPanel } from './helpers/panels.helper';

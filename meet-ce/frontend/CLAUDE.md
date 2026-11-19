@@ -124,6 +124,7 @@ pnpm run lib:build      # build the library (ng-packagr), needed by webcomponent
 pnpm run lib:serve      # library watch build
 pnpm run test:unit:lib  # Karma/Jasmine specs of the library (headless: --browsers=ChromeHeadlessCI)
 pnpm run e2e:playwright:spa   # Playwright, `spa` project, against a running backend
+pnpm run e2e:playwright:console   # Playwright, `console` project (e2e/console/), same backend
 pnpm run lint           # --max-warnings 0
 ```
 
@@ -134,13 +135,17 @@ backend serves it at `<basePath>/`.
 
 - Unit: Karma + Jasmine + TestBed, specs co-located as `*.spec.ts` in the library (a handful today:
   services and utils, not components).
-- E2E: Playwright specs in `e2e/` (`*.test.ts`, project `spa`, `tsconfig.test.json`). They drive real
-  Chrome with fake camera/mic against a **running** Meet backend + LiveKit, so `workers: 1`,
-  `fullyParallel: false`, and `retries: 2` in CI (parallel participant bootstraps cause environmental
-  flakiness). Helpers/fixtures live in `e2e/helpers/` and `e2e/fixtures/`. CI splits the specs into
-  five jobs by domain (the `frontend-e2e` matrix in `.github/workflows/ci.yaml`, each passing its
-  files through `./meet.sh test-e2e-frontend -- <args>`); the last one runs every spec the others do
-  not list, so a new spec file runs there until it is given a group.
+- E2E: Playwright specs in `e2e/` (`*.test.ts`, `tsconfig.test.json`). They drive real Chrome with fake
+  camera/mic against a **running** Meet backend + LiveKit, so `workers: 1`, `fullyParallel: false`, and
+  `retries: 2` in CI (parallel participant bootstraps cause environmental flakiness). Helpers/fixtures
+  live in `e2e/helpers/` and `e2e/fixtures/`. Two projects, two CI suites:
+  - `console` (`e2e/console/`, one spec per console page, `./meet.sh test-e2e-console`): the CI suite
+    `console-e2e`, one job, selected by a change the console can see (not the meeting or embedded
+    domains). A test signs in with `signInAdminBeforeEach()` of `console.helper.ts`.
+  - `spa` (every other spec, `./meet.sh test-e2e-frontend`): the meeting and its access, split into
+    five jobs by domain (the `frontend-e2e` matrix in `.github/workflows/ci.yaml`, each passing its
+    files through `./meet.sh test-e2e-frontend -- <args>`); the last one runs every spec the others do
+    not list, so a new spec file runs there until it is given a group.
 
 ## Gotchas
 

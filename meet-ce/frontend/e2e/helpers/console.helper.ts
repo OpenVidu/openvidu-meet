@@ -1,12 +1,50 @@
-import { expect, type Locator, type Page } from '@playwright/test';
-import { MEET_BASE_URL } from './meet-api.helper';
+import { MeetUserRole } from '@openvidu-meet/typings';
+import { expect, test, type Locator, type Page } from '@playwright/test';
+import { authenticate, createReadyUser, type ReadyUser } from './auth.helper';
+import { deleteRooms, deleteUsers, MEET_BASE_URL } from './meet-api.helper';
 
 /**
- * Helpers for the authenticated console list pages (rooms, users, recordings and the room detail
- * tabs). They deliberately assert only on observable behaviour — rendered rows, the search/refresh
- * round-trip, pagination, deletions and notifications — so the same suite is a valid gate before and
- * after refactors of the pages' internal state handling.
+ * Helpers for the console pages. They assert only on observable behaviour (rendered rows, the
+ * search/refresh round-trip, pagination, deletions and notifications), so the console suite is a
+ * valid gate across refactors of the pages' internal state handling.
  */
+
+/**
+ * A prefix unique to one run of a spec file, so name filters match only its own entities. Short and
+ * within `[a-z0-9]`, because a `userId` holds at most 20 lowercase letters, digits and underscores.
+ */
+export const newRunId = (): string => `z${Date.now().toString(36)}`;
+
+/** Cleanup never fails a test: the entities a test already deleted are expected to be gone. */
+export const cleanupRooms = async (roomIds: string[]): Promise<void> => {
+	await deleteRooms(roomIds).catch(() => {});
+};
+
+export const cleanupUsers = async (userIds: string[]): Promise<void> => {
+	await deleteUsers(userIds).catch(() => {});
+};
+
+/**
+ * Signs a fresh admin into the console before each test of the calling spec file and deletes it
+ * after the file. Returns a getter, since the admin exists only once `beforeAll` has run.
+ */
+export const signInAdminBeforeEach = (): (() => ReadyUser) => {
+	let admin: ReadyUser;
+
+	test.beforeAll(async () => {
+		({ user: admin } = await createReadyUser('Console admin', MeetUserRole.ADMIN));
+	});
+
+	test.beforeEach(async ({ page }) => {
+		await authenticate(page, admin);
+	});
+
+	test.afterAll(async () => {
+		await cleanupUsers([admin.userId]);
+	});
+
+	return () => admin;
+};
 
 const SEARCH_INPUT = '#search-input';
 const LOAD_MORE_BUTTON = '#load-more-btn';

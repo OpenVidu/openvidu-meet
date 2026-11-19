@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
     inputs:
       suites:
-        description: 'Suites to run, comma-separated (backend-unit, frontend-unit, wc-unit, backend-integration, frontend-e2e, wc-e2e), or all'
+        description: 'Suites to run, comma-separated (backend-unit, frontend-unit, wc-unit, backend-integration, frontend-e2e, console-e2e, wc-e2e), or all'
         default: 'all'
 
 concurrency:
@@ -34,6 +34,7 @@ jobs:
       wc-unit: ${{ steps.select.outputs.wc-unit }}
       backend-integration: ${{ steps.select.outputs.backend-integration }}
       frontend-e2e: ${{ steps.select.outputs.frontend-e2e }}
+      console-e2e: ${{ steps.select.outputs.console-e2e }}
       wc-e2e: ${{ steps.select.outputs.wc-e2e }}
       storage: ${{ steps.select.outputs.storage }}
       static-base: ${{ steps.select.outputs.static-base }}
@@ -420,7 +421,7 @@ jobs:
           - group: Locked room
             specs: locked-room.test.ts
           # Every spec the groups above leave out, so a new one runs here until it joins a group.
-          - group: Console and meeting features
+          - group: Meeting features
             specs: --grep-invert (layout|access|permissions|token-refresh|share-link|participants|stream|media-devices|locked-room)\.test\.ts
     steps:
       - *checkout
@@ -430,12 +431,14 @@ jobs:
       - *install-lk
       - *start-local-deployment
 
-      - name: Build and Start OpenVidu Meet
+      - &start-meet
+        name: Build and Start OpenVidu Meet
         uses: OpenVidu/actions/start-openvidu-meet@000cbf6a8b545a5588f11028f71fe18a54c18579 # v1.0.27
 
       # Playwright only transpiles, so this is the sole type-check the e2e suites ever get
       # (same hole test:types closes for the backend's tests/**).
-      - name: Type-check e2e suites
+      - &type-check-e2e
+        name: Type-check e2e suites
         run: pnpm --filter @openvidu-meet/frontend run test:types:e2e
 
       - name: Run frontend E2E tests
@@ -445,17 +448,19 @@ jobs:
           RUN_MODE: CI
           PLAYWRIGHT_BROWSERS_PATH: /tmp/ms-playwright
 
-      - name: Upload test results
+      - &upload-e2e-results
+        name: Upload test results
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: frontend-e2e-test-results-${{ strategy.job-index }}
+          name: ${{ github.job }}-test-results-${{ strategy.job-index }}
           path: meet-ce/frontend/test-results/
           retention-days: 2
-      - name: Generate test report
+      - &e2e-report
+        name: Generate test report
         if: failure()
         run: |
-          echo "# Frontend E2E Test Results: ${{ matrix.group }}" >> $GITHUB_STEP_SUMMARY
+          echo "# E2E Test Results: ${{ matrix.group || 'Console' }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           if [ -f "meet-ce/frontend/test-results/results.json" ]; then
             TOTAL=$(jq '.stats.expected' meet-ce/frontend/test-results/results.json)
@@ -492,6 +497,30 @@ jobs:
             echo "Available files:" >> $GITHUB_STEP_SUMMARY
             find meet-ce/frontend/test-results -type f 2>/dev/null | head -20 >> $GITHUB_STEP_SUMMARY || echo "No test-results directory found" >> $GITHUB_STEP_SUMMARY
           fi
+
+  console-e2e:
+    name: Console
+    needs: [changes, backend-unit, frontend-unit, wc-unit]
+    if: ${{ !cancelled() && !failure() && needs.changes.outputs.console-e2e == 'true' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - *checkout
+      - *setup-node
+      - *setup-pnpm
+      - *install-safe-chain
+      - *install-lk
+      - *start-local-deployment
+      - *start-meet
+      - *type-check-e2e
+
+      - name: Run console E2E tests
+        run: ./meet.sh test-e2e-console --skip-install
+        env:
+          RUN_MODE: CI
+          PLAYWRIGHT_BROWSERS_PATH: /tmp/ms-playwright
+
+      - *upload-e2e-results
+      - *e2e-report
 
   wc-e2e:
     name: ${{ matrix.group }}
@@ -570,7 +599,7 @@ jobs:
   # check behind.
   all-tests-passed:
     name: All tests passed
-    needs: [changes, static-checks, backend-unit, frontend-unit, wc-unit, backend-integration, backend-recordings, frontend-e2e, wc-e2e]
+    needs: [changes, static-checks, backend-unit, frontend-unit, wc-unit, backend-integration, backend-recordings, frontend-e2e, console-e2e, wc-e2e]
     if: always()
     runs-on: ubuntu-24.04
     steps:

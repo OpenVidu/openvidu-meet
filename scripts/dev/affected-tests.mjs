@@ -15,12 +15,14 @@ import { AREAS, BACKEND_FOLDER_SCRIPTS, NO_TESTS_OF_THEIR_OWN } from './test-are
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BACKEND_TESTS = 'meet-ce/backend/tests/integration';
 const FRONTEND_TESTS = 'meet-ce/frontend/e2e';
+const CONSOLE_TESTS = `${FRONTEND_TESTS}/console`;
 const WC_TESTS = 'meet-ce/frontend/webcomponent/tests/e2e';
 const MAX_UNPLACED = 5;
 
 const SUITES = {
 	'backend-integration': { title: 'backend integration' },
 	'frontend-e2e': { title: 'frontend e2e', whole: 'test-e2e-frontend' },
+	'console-e2e': { title: 'console e2e', whole: 'test-e2e-console' },
 	'wc-e2e': { title: 'webcomponent e2e', whole: 'test-e2e-webcomponent' }
 };
 
@@ -150,6 +152,9 @@ const signalText = (reasons) => {
 
 const folderOf = (file) => (file.startsWith('api/') ? file.split('/')[1] : file.split('/')[0]);
 
+const testIn = (folder, file) =>
+	file.startsWith(`${folder}/`) && file.endsWith('.test.ts') ? file.slice(folder.length + 1) : undefined;
+
 // A target is { whole: boolean, greps: Set<string>, reasons: string[] }, keyed by folder or file name.
 const collect = (suite, files, touched) => {
 	const targets = new Map();
@@ -163,18 +168,17 @@ const collect = (suite, files, touched) => {
 		targets.set(key, target);
 	};
 	const changedTest = {
-		'backend-integration': (file) =>
-			file.startsWith(`${BACKEND_TESTS}/`) && file.endsWith('.test.ts')
-				? file.slice(BACKEND_TESTS.length + 1)
-				: undefined,
-		'frontend-e2e': (file) =>
-			file.startsWith(`${FRONTEND_TESTS}/`) && file.endsWith('.test.ts')
-				? file.slice(FRONTEND_TESTS.length + 1)
-				: undefined,
-		'wc-e2e': (file) =>
-			file.startsWith(`${WC_TESTS}/`) && file.endsWith('.test.ts') ? file.slice(WC_TESTS.length + 1) : undefined
+		'backend-integration': (file) => testIn(BACKEND_TESTS, file),
+		'frontend-e2e': (file) => (testIn(CONSOLE_TESTS, file) ? undefined : testIn(FRONTEND_TESTS, file)),
+		'console-e2e': (file) => testIn(CONSOLE_TESTS, file),
+		'wc-e2e': (file) => testIn(WC_TESTS, file)
 	}[suite];
-	const areaKey = { 'backend-integration': 'backend', 'frontend-e2e': 'frontend', 'wc-e2e': 'wc' }[suite];
+	const areaKey = {
+		'backend-integration': 'backend',
+		'frontend-e2e': 'frontend',
+		'console-e2e': 'console',
+		'wc-e2e': 'wc'
+	}[suite];
 
 	for (const file of files) {
 		const test = changedTest(file);
@@ -323,17 +327,19 @@ const check = () => {
 		...listDirectories(BACKEND_TESTS).filter((name) => name !== 'api')
 	];
 	const tracked = lines(git('ls-files').stdout);
-	const tests = Object.entries(AREAS).flatMap(([area, { backend = [], frontend = [], wc = [] }]) =>
-		[
-			[BACKEND_TESTS, backend.filter((entry) => !(entry in BACKEND_FOLDER_SCRIPTS))],
-			[FRONTEND_TESTS, frontend],
-			[WC_TESTS, wc]
-		].flatMap(([folder, entries]) =>
-			entries.map((entry) => {
-				const [file, grep] = [entry].flat();
-				return { area, path: `${folder}/${file}`, grep };
-			})
-		)
+	const tests = Object.entries(AREAS).flatMap(
+		([area, { backend = [], frontend = [], console: pages = [], wc = [] }]) =>
+			[
+				[BACKEND_TESTS, backend.filter((entry) => !(entry in BACKEND_FOLDER_SCRIPTS))],
+				[FRONTEND_TESTS, frontend],
+				[CONSOLE_TESTS, pages],
+				[WC_TESTS, wc]
+			].flatMap(([folder, entries]) =>
+				entries.map((entry) => {
+					const [file, grep] = [entry].flat();
+					return { area, path: `${folder}/${file}`, grep };
+				})
+			)
 	);
 	const matchesNothing = ({ path, grep }) =>
 		grep && existsSync(join(ROOT, path)) && !new RegExp(grep).test(readFileSync(join(ROOT, path), 'utf8'));
@@ -350,6 +356,9 @@ const check = () => {
 		...listFiles(FRONTEND_TESTS, '.test.ts')
 			.filter((file) => !referenced('frontend').has(file))
 			.map((file) => `frontend e2e spec not in any area: ${FRONTEND_TESTS}/${file}`),
+		...listFiles(CONSOLE_TESTS, '.test.ts')
+			.filter((file) => !referenced('console').has(file))
+			.map((file) => `console e2e spec not in any area: ${CONSOLE_TESTS}/${file}`),
 		...listFiles(WC_TESTS, '.test.ts')
 			.filter((file) => !referenced('wc').has(file))
 			.map((file) => `webcomponent e2e spec not in any area: ${WC_TESTS}/${file}`),

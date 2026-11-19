@@ -1,6 +1,6 @@
 import { MeetRecordingAutoStartMode, MeetRecordingLayout } from '@openvidu-meet/typings';
 import { expect, test, type Page } from '@playwright/test';
-import { authenticate, createReadyUser, type ReadyUser } from './helpers/auth.helper';
+import { authenticate, createReadyUser, type ReadyUser } from '../helpers/auth.helper';
 import {
 	createRoom,
 	deleteRooms,
@@ -9,7 +9,7 @@ import {
 	getRoomConfig,
 	getRoomRoles,
 	MEET_BASE_URL
-} from './helpers/meet-api.helper';
+} from '../helpers/meet-api.helper';
 
 /**
  * Room-creation wizard E2E tests.

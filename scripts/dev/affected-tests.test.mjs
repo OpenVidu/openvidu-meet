@@ -106,3 +106,13 @@ test('the capability of an OpenSpec change names the area when no source path do
 	assert.deepEqual(plan(files).areas, ['locked-room']);
 	assert.ok('websocket' in listed);
 });
+
+test('a console page change lists its console spec, and a changed console spec runs in the console suite only', () => {
+	const files = [
+		'meet-ce/frontend/projects/shared-meet-components/src/lib/domains/users/pages/users/users.component.ts',
+		'meet-ce/frontend/e2e/console/rooms.test.ts'
+	];
+
+	assert.deepEqual(targets(files, 'console-e2e'), { 'rooms.test.ts': true, 'users.test.ts': true });
+	assert.deepEqual(targets(files, 'frontend-e2e'), {});
+});

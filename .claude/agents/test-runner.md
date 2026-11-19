@@ -34,7 +34,8 @@ you write is your report.
 3. Run each command of `affected` with your stack name in place of `<name>`. By hand:
     - backend integration: `./meet.sh stack run <name> -- pnpm --filter @openvidu-meet/backend run test:integration-<area>`
       (script names in `meet-ce/backend/package.json`);
-    - SPA end-to-end: `./meet.sh stack run <name> -- ./meet.sh test-e2e-frontend --skip-install -- <specs>`;
+    - SPA end-to-end: `./meet.sh stack run <name> -- ./meet.sh test-e2e-frontend --skip-install -- <specs>`
+      (`test-e2e-console` for the specs of `meet-ce/frontend/e2e/console/`);
     - webcomponent end-to-end: the same with `test-e2e-webcomponent`.
 
     Send the output of each run to a file under `test-results/` and read its last lines and its
