@@ -15,16 +15,16 @@ import {
 	getFullPath,
 	loginUser,
 	resetUserPassword,
-	sleep,
 	startTestServer,
 	updateRoomAccessConfig,
 	updateRoomConfig,
 	updateRoomMember,
 	updateRoomRoles,
-	updateUserRole
+	updateUserRole,
+	withClockAhead
 } from '../../../helpers/request-helpers.js';
 import { setupRoomMember, setupSingleRoom, setupTestUsers, setupUser } from '../../../helpers/test-scenarios.js';
-import { TestUsers, UserData } from '../../../interfaces/scenarios.js';
+import { RoomData, TestUsers, UserData } from '../../../interfaces/scenarios.js';
 
 const INTERNAL_USERS_PATH = getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users`);
 const USERS_PATH = getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/users`);
@@ -106,22 +106,21 @@ describe('Token Validation Tests', () => {
 		});
 
 		it('should fail when access token is expired', async () => {
-			// Set short access token expiration
+			// Issue the access token already expired
 			const initialTokenExpiration = MEET_ENV.ACCESS_TOKEN_EXPIRATION;
-			MEET_ENV.ACCESS_TOKEN_EXPIRATION = '1s';
+			MEET_ENV.ACCESS_TOKEN_EXPIRATION = '-1s';
+			let userData: UserData;
 
-			// Create a user and get their access token
-			const userData = await setupUser({
-				userId: `user_${Date.now()}`,
-				name: 'User',
-				password: 'password123',
-				role: MeetUserRole.ROOM_MANAGER
-			});
-
-			await sleep('2s'); // Ensure the token is expired
-
-			// Restore original expiration after setup
-			MEET_ENV.ACCESS_TOKEN_EXPIRATION = initialTokenExpiration;
+			try {
+				userData = await setupUser({
+					userId: `user_${Date.now()}`,
+					name: 'User',
+					password: 'password123',
+					role: MeetUserRole.ROOM_MANAGER
+				});
+			} finally {
+				MEET_ENV.ACCESS_TOKEN_EXPIRATION = initialTokenExpiration;
+			}
 
 			const response = await request(app)
 				.get(`${INTERNAL_USERS_PATH}/me`)
@@ -149,8 +148,9 @@ describe('Token Validation Tests', () => {
 			});
 
 			// Update the user's role
-			await sleep('100ms'); // Small delay to ensure timestamp difference
-			const roleUpdateResponse = await updateUserRole(userData.user.userId, MeetUserRole.ROOM_MEMBER);
+			const roleUpdateResponse = await withClockAhead(() =>
+				updateUserRole(userData.user.userId, MeetUserRole.ROOM_MEMBER)
+			);
 			expect(roleUpdateResponse.status).toBe(200);
 
 			const response = await request(app)
@@ -374,15 +374,16 @@ describe('Token Validation Tests', () => {
 		});
 
 		it('should fail when room member token is expired', async () => {
-			// Set short room member token expiration
+			// Issue the room member token already expired
 			const initialTokenExpiration = MEET_ENV.ROOM_MEMBER_TOKEN_EXPIRATION;
-			MEET_ENV.ROOM_MEMBER_TOKEN_EXPIRATION = '1s';
+			MEET_ENV.ROOM_MEMBER_TOKEN_EXPIRATION = '-1s';
+			let roomData: RoomData;
 
-			const roomData = await setupSingleRoom();
-			await sleep('2s'); // Ensure the token is expired
-
-			// Restore original expiration after setup
-			MEET_ENV.ROOM_MEMBER_TOKEN_EXPIRATION = initialTokenExpiration;
+			try {
+				roomData = await setupSingleRoom();
+			} finally {
+				MEET_ENV.ROOM_MEMBER_TOKEN_EXPIRATION = initialTokenExpiration;
+			}
 
 			const response = await request(app)
 				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
@@ -418,15 +419,16 @@ describe('Token Validation Tests', () => {
 		});
 
 		it('should fail when room member token is expired, even if user access token is valid', async () => {
-			// Set short room member token expiration
+			// Issue the room member token already expired
 			const initialTokenExpiration = MEET_ENV.ROOM_MEMBER_TOKEN_EXPIRATION;
-			MEET_ENV.ROOM_MEMBER_TOKEN_EXPIRATION = '1s';
+			MEET_ENV.ROOM_MEMBER_TOKEN_EXPIRATION = '-1s';
+			let roomData: RoomData;
 
-			const roomData = await setupSingleRoom();
-			await sleep('2s'); // Ensure the token is expired
-
-			// Restore original expiration after setup
-			MEET_ENV.ROOM_MEMBER_TOKEN_EXPIRATION = initialTokenExpiration;
+			try {
+				roomData = await setupSingleRoom();
+			} finally {
+				MEET_ENV.ROOM_MEMBER_TOKEN_EXPIRATION = initialTokenExpiration;
+			}
 
 			const response = await request(app)
 				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
@@ -452,10 +454,11 @@ describe('Token Validation Tests', () => {
 			expect(initialResponse.status).toBe(200);
 
 			// Update the room member's permissions
-			await sleep('100ms'); // Small delay to ensure timestamp difference
-			await updateRoomMember(roomData.room.roomId, roomMember.member.memberId, {
-				baseRole: MeetRoomMemberRole.SPEAKER
-			});
+			await withClockAhead(() =>
+				updateRoomMember(roomData.room.roomId, roomMember.member.memberId, {
+					baseRole: MeetRoomMemberRole.SPEAKER
+				})
+			);
 
 			// The original token should now be invalid
 			const response = await request(app)
@@ -507,14 +510,15 @@ describe('Token Validation Tests', () => {
 			expect(initialResponse.status).toBe(200);
 
 			// Update the room roles' permissions
-			await sleep('100ms'); // Small delay to ensure timestamp difference
-			await updateRoomRoles(roomData.room.roomId, {
-				moderator: {
-					permissions: {
-						participantPromote: false
+			await withClockAhead(() =>
+				updateRoomRoles(roomData.room.roomId, {
+					moderator: {
+						permissions: {
+							participantPromote: false
+						}
 					}
-				}
-			});
+				})
+			);
 
 			// The original token should now be invalid
 			const response = await request(app)
@@ -536,14 +540,15 @@ describe('Token Validation Tests', () => {
 			expect(initialResponse.status).toBe(200);
 
 			// Update the room's roles configuration
-			await sleep('100ms'); // Small delay to ensure timestamp difference
-			await updateRoomRoles(roomData.room.roomId, {
-				moderator: {
-					permissions: {
-						participantPromote: false
+			await withClockAhead(() =>
+				updateRoomRoles(roomData.room.roomId, {
+					moderator: {
+						permissions: {
+							participantPromote: false
+						}
 					}
-				}
-			});
+				})
+			);
 
 			// The original token should now be invalid
 			const response = await request(app)
@@ -569,14 +574,15 @@ describe('Token Validation Tests', () => {
 			expect(initialResponse.status).toBe(200);
 
 			// Update the room access configuration
-			await sleep('100ms'); // Small delay to ensure timestamp difference
-			await updateRoomAccessConfig(roomData.room.roomId, {
-				anonymous: {
-					moderator: {
-						enabled: false
+			await withClockAhead(() =>
+				updateRoomAccessConfig(roomData.room.roomId, {
+					anonymous: {
+						moderator: {
+							enabled: false
+						}
 					}
-				}
-			});
+				})
+			);
 
 			// The original token should now be invalid
 			const response = await request(app)
@@ -613,8 +619,9 @@ describe('Token Validation Tests', () => {
 			expect(initialResponse.status).toBe(200);
 
 			// Update the user's role
-			await sleep('100ms'); // Small delay to ensure timestamp difference
-			const roleUpdateResponse = await updateUserRole(userData.user.userId, MeetUserRole.ROOM_MEMBER);
+			const roleUpdateResponse = await withClockAhead(() =>
+				updateUserRole(userData.user.userId, MeetUserRole.ROOM_MEMBER)
+			);
 			expect(roleUpdateResponse.status).toBe(200);
 
 			// The original token should now be invalid
@@ -674,14 +681,15 @@ describe('Token Validation Tests', () => {
 			expect(initialResponse.status).toBe(200);
 
 			// Update the room's access configuration
-			await sleep('100ms'); // Small delay to ensure timestamp difference
-			await updateRoomAccessConfig(roomData.room.roomId, {
-				anonymous: {
-					moderator: {
-						enabled: false
+			await withClockAhead(() =>
+				updateRoomAccessConfig(roomData.room.roomId, {
+					anonymous: {
+						moderator: {
+							enabled: false
+						}
 					}
-				}
-			});
+				})
+			);
 
 			// The original token should now be invalid
 			const response = await request(app)
@@ -697,10 +705,11 @@ describe('Token Validation Tests', () => {
 			const roomData = await setupSingleRoom();
 
 			// Update room config (not roles/access)
-			await sleep('100ms');
-			await updateRoomConfig(roomData.room.roomId, {
-				chat: { enabled: false }
-			});
+			await withClockAhead(() =>
+				updateRoomConfig(roomData.room.roomId, {
+					chat: { enabled: false }
+				})
+			);
 
 			// The token should still be valid since permissions weren't changed
 			const response = await request(app)

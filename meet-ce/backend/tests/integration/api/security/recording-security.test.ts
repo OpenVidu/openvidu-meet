@@ -27,7 +27,6 @@ import {
 	getFullPath,
 	getRecording,
 	getRecordingAccessSecret,
-	sleep,
 	startRecording,
 	startTestServer,
 	stopAllRecordings,
@@ -44,6 +43,7 @@ import {
 	updateRoomMemberPermissions
 } from '../../../helpers/test-scenarios.js';
 import { RoomData, RoomMemberData, RoomTestUsers, TestUsers } from '../../../interfaces/scenarios.js';
+import { waitForRecordingToStop } from '../../../helpers/wait-helpers.js';
 
 const RECORDINGS_PATH = getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`);
 
@@ -182,7 +182,7 @@ describe('Recording API Security Tests', () => {
 			expect(response.status).toBe(202);
 
 			// Recreate recording for next tests since it was stopped
-			await sleep('2s'); // Ensure recording is fully stopped before starting a new one
+			await waitForRecordingToStop(recordingId);
 			const startResponse = await startRecording(roomData.room.roomId);
 			expectValidStartRecordingResponse(startResponse, roomData.room.roomId, roomData.room.roomName);
 			recordingId = startResponse.body.recordingId;
@@ -207,7 +207,7 @@ describe('Recording API Security Tests', () => {
 			expect(response.status).toBe(202);
 
 			// Recreate recording for next tests since it was stopped
-			await sleep('2s'); // Ensure recording is fully stopped before starting a new one
+			await waitForRecordingToStop(recordingId);
 			const startResponse = await startRecording(roomData.room.roomId);
 			expectValidStartRecordingResponse(startResponse, roomData.room.roomId, roomData.room.roomName);
 			recordingId = startResponse.body.recordingId;

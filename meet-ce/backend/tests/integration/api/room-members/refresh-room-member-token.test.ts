@@ -31,7 +31,6 @@ import {
 	kickParticipant,
 	loginUser,
 	refreshRoomMemberTokenRequest,
-	sleep,
 	startTestServer,
 	updateParticipant,
 	updateRoomMember,
@@ -181,8 +180,8 @@ describe('Room Members API Tests', () => {
 			const initialClockTolerance = INTERNAL_CONFIG.REFRESH_CLOCK_TOLERANCE_SECONDS;
 
 			try {
-				// Set token TTL to 1 second and clock tolerance to 5 seconds for testing
-				MEET_ENV.ROOM_MEMBER_TOKEN_EXPIRATION = '1s';
+				// Issue the token already expired, but within the clock tolerance
+				MEET_ENV.ROOM_MEMBER_TOKEN_EXPIRATION = '-1s';
 				INTERNAL_CONFIG.REFRESH_CLOCK_TOLERANCE_SECONDS = 5;
 
 				const previousToken = await generateRoomMemberToken(roomId, {
@@ -199,9 +198,6 @@ describe('Room Members API Tests', () => {
 				await joinFakeParticipant(roomId, participantIdentity!);
 				await updateParticipantMetadata(roomId, participantIdentity!, metadata);
 
-				// Wait for token expiry (1s) but keep it within tolerance (5s).
-				await sleep('2s');
-
 				const response = await refreshRoomMemberTokenRequest(roomId, previousToken);
 				expect(response.status).toBe(200);
 			} finally {
@@ -216,8 +212,8 @@ describe('Room Members API Tests', () => {
 			const initialClockTolerance = INTERNAL_CONFIG.REFRESH_CLOCK_TOLERANCE_SECONDS;
 
 			try {
-				// Set token TTL to 1 second and clock tolerance to 1 second for testing
-				MEET_ENV.ROOM_MEMBER_TOKEN_EXPIRATION = '1s';
+				// Issue the token expired for longer than the clock tolerance
+				MEET_ENV.ROOM_MEMBER_TOKEN_EXPIRATION = '-3s';
 				INTERNAL_CONFIG.REFRESH_CLOCK_TOLERANCE_SECONDS = 1;
 
 				const previousToken = await generateRoomMemberToken(roomId, {
@@ -233,9 +229,6 @@ describe('Room Members API Tests', () => {
 
 				await joinFakeParticipant(roomId, participantIdentity!);
 				await updateParticipantMetadata(roomId, participantIdentity!, metadata);
-
-				// Wait long enough to exceed both token TTL and tolerance.
-				await sleep('3s');
 
 				const response = await refreshRoomMemberTokenRequest(roomId, previousToken);
 				expectMeetError(response, errorInvalidToken());

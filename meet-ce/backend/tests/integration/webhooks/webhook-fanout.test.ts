@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import type { MeetParticipantJoinedPayload, MeetRoom } from '@openvidu-meet/typings';
 import { MeetWebhookEventType } from '@openvidu-meet/typings';
 import express from 'express';
@@ -8,7 +8,7 @@ import type { AddressInfo } from 'net';
 import { container } from '../../../src/config/dependency-injector.config.js';
 import { INTERNAL_CONFIG, setInternalConfig } from '../../../src/config/internal-config.js';
 import { WebhookDispatcherService } from '../../../src/services/webhook-dispatcher.service.js';
-import { createWebhook, deleteAllWebhooks, sleep, startTestServer } from '../../helpers/request-helpers.js';
+import { createWebhook, deleteAllWebhooks, startTestServer } from '../../helpers/request-helpers.js';
 import type { RawBodyRequest } from '../../helpers/test-scenarios.js';
 import type { ReceivedWebhook } from '../../helpers/wait-helpers.js';
 import { waitForWebhookEvent } from '../../helpers/wait-helpers.js';
@@ -99,6 +99,21 @@ describe('Webhook Fan-out Integration Tests', () => {
 		await deleteAllWebhooks();
 	});
 
+	/** Sends an event as the dispatcher does and resolves once every delivery has finished or exhausted its retries. */
+	const sendAndWaitForDeliveries = async (send: () => void): Promise<void> => {
+		const sendWebhookEvent = jest.spyOn(
+			dispatcher as unknown as { sendWebhookEvent: () => Promise<void> },
+			'sendWebhookEvent'
+		);
+
+		try {
+			send();
+			await sendWebhookEvent.mock.results[0].value;
+		} finally {
+			sendWebhookEvent.mockRestore();
+		}
+	};
+
 	afterAll(async () => {
 		setInternalConfig(originalRetryConfig);
 		await deleteAllWebhooks();
@@ -164,11 +179,9 @@ describe('Webhook Fan-out Integration Tests', () => {
 		await createWebhook({ url: receiverA.url, enabled: false });
 		await createWebhook({ url: receiverB.url });
 
-		dispatcher.sendMeetingStartedWebhook(buildRoom('disabled-room'));
+		await sendAndWaitForDeliveries(() => dispatcher.sendMeetingStartedWebhook(buildRoom('disabled-room')));
 
 		await waitForWebhookEvent(receiverB.received, MeetWebhookEventType.MEETING_STARTED);
-		// The delivery to B completed, so a delivery to A would already have been attempted
-		await sleep('250ms');
 		expect(receiverA.received.length).toBe(0);
 	});
 
@@ -185,10 +198,7 @@ describe('Webhook Fan-out Integration Tests', () => {
 
 	it('should keep events flowing after an event whose every delivery failed', async () => {
 		await createWebhook({ url: DEAD_ENDPOINT_URL });
-		dispatcher.sendMeetingStartedWebhook(buildRoom('all-down-room'));
-
-		// Give the failed delivery (1 retry, 50ms backoff) time to exhaust its attempts
-		await sleep('500ms');
+		await sendAndWaitForDeliveries(() => dispatcher.sendMeetingStartedWebhook(buildRoom('all-down-room')));
 
 		await deleteAllWebhooks();
 		await createWebhook({ url: receiverB.url });

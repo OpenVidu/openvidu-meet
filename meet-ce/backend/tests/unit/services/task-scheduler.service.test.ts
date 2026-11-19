@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from '@jest/globals';
+import { afterEach, describe, expect, it, jest } from '@jest/globals';
 import ms from 'ms';
 import type { IScheduledTask } from '../../../src/models/task-scheduler.model.js';
 import { TaskSchedulerService } from '../../../src/services/task-scheduler.service.js';
@@ -173,19 +173,25 @@ describe('TaskSchedulerService', () => {
 	 * scheduling in that window passed the duplicate guard and left a job nothing could ever stop.
 	 */
 	it('leaves no cron job running after a disconnect, even when it was scheduled twice', async () => {
-		const runs: string[] = [];
-		const { service, events } = buildScheduler();
-		service.registerTask({ ...cronTask('everySecondGC', runs), scheduleOrDelay: '1s' });
+		jest.useFakeTimers({ doNotFake: ['setImmediate', 'nextTick'] });
 
-		events.emitReady();
-		events.emitReady();
-		await flush();
-		events.emitDisconnected();
-		expect(service.scheduledNames()).toEqual([]);
+		try {
+			const runs: string[] = [];
+			const { service, events } = buildScheduler();
+			service.registerTask({ ...cronTask('everySecondGC', runs), scheduleOrDelay: '1s' });
 
-		const runsAfterStop = runs.length;
-		await new Promise((resolve) => setTimeout(resolve, 1300));
-		expect(runs).toHaveLength(runsAfterStop);
+			events.emitReady();
+			events.emitReady();
+			await flush();
+			events.emitDisconnected();
+			expect(service.scheduledNames()).toEqual([]);
+
+			const runsAfterStop = runs.length;
+			await jest.advanceTimersByTimeAsync(ms('1300ms'));
+			expect(runs).toHaveLength(runsAfterStop);
+		} finally {
+			jest.useRealTimers();
+		}
 	});
 
 	it('keeps the first task registered under a name and ignores the rest', () => {

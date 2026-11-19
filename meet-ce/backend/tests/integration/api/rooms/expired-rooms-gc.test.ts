@@ -14,9 +14,9 @@ import {
 	generateRoomMemberToken,
 	getRoom,
 	runExpiredRoomsGC,
-	sleep,
 	startRecording,
-	startTestServer
+	startTestServer,
+	withClockAhead
 } from '../../../helpers/request-helpers.js';
 
 import { waitForRoomToClose, waitForRoomToDelete } from '../../../helpers/wait-helpers.js';
@@ -36,6 +36,9 @@ describe('Expired Rooms GC Tests', () => {
 		await deleteAllRecordings();
 	});
 
+	// The rooms of these tests are created to expire one second later
+	const runGCAfterAutoDeletionDates = () => withClockAhead(runExpiredRoomsGC);
+
 	it('should delete a room with a past auto-deletion date if no active meeting', async () => {
 		const createdRoom = await createRoom({
 			roomName: 'test-gc',
@@ -45,11 +48,8 @@ describe('Expired Rooms GC Tests', () => {
 		let response = await getRoom(createdRoom.roomId);
 		expect(response.status).toBe(200);
 
-		// Wait for auto-deletion date to pass
-		await sleep('2s');
-
-		// Run garbage collector
-		await runExpiredRoomsGC();
+		// Run garbage collector once the auto-deletion date has passed
+		await runGCAfterAutoDeletionDates();
 
 		response = await getRoom(createdRoom.roomId);
 		expectMeetError(response, errorRoomNotFound(createdRoom.roomId));
@@ -61,8 +61,7 @@ describe('Expired Rooms GC Tests', () => {
 			autoDeletionDate: Date.now() + ms('1s')
 		});
 		await joinFakeParticipant(createdRoom.roomId, 'test-participant');
-		await sleep('2s'); // Make sure the auto-deletion date has passed
-		await runExpiredRoomsGC();
+		await runGCAfterAutoDeletionDates();
 
 		// The room should not be deleted but scheduled for deletion
 		const response = await getRoom(createdRoom.roomId);
@@ -91,8 +90,7 @@ describe('Expired Rooms GC Tests', () => {
 			autoDeletionDate: Date.now() + ms('1s')
 		});
 		await joinFakeParticipant(room.roomId, 'test-participant');
-		await sleep('2s'); // Make sure the auto-deletion date has passed
-		await runExpiredRoomsGC();
+		await runGCAfterAutoDeletionDates();
 
 		// The room should not be deleted but scheduled for deletion
 		let response = await getRoom(room.roomId);
@@ -125,32 +123,27 @@ describe('Expired Rooms GC Tests', () => {
 	});
 
 	it('should handle multiple expired rooms in one batch', async () => {
-		const rooms = await Promise.all([
-			createRoom({ roomName: 'test-gc-multi-1', autoDeletionDate: Date.now() + ms('1s') }),
-			createRoom({ roomName: 'test-gc-multi-2', autoDeletionDate: Date.now() + ms('1s') }),
-			createRoom({ roomName: 'test-gc-multi-3', autoDeletionDate: Date.now() + ms('1s') }),
-			createRoom({ roomName: 'test-gc-multi-4', autoDeletionDate: Date.now() + ms('1h') }),
-			createRoom({ roomName: 'test-gc-multi-5', autoDeletionDate: Date.now() + ms('1h') }),
-			createRoom({ roomName: 'test-gc-multi-6', autoDeletionDate: Date.now() + ms('1s') }),
-			createRoom({ roomName: 'test-gc-multi-7', autoDeletionDate: Date.now() + ms('1s') }),
-			createRoom({ roomName: 'test-gc-multi-8', autoDeletionDate: Date.now() + ms('1s') }),
-			createRoom({ roomName: 'test-gc-multi-9', autoDeletionDate: Date.now() + ms('1s') }),
-			createRoom({ roomName: 'test-gc-multi-10', autoDeletionDate: Date.now() + ms('1s') })
+		const [expiring, upcoming] = await Promise.all([
+			Promise.all(
+				Array.from({ length: 8 }, (_, i) =>
+					createRoom({ roomName: `test-gc-multi-expiring-${i + 1}`, autoDeletionDate: Date.now() + ms('1s') })
+				)
+			),
+			Promise.all(
+				Array.from({ length: 2 }, (_, i) =>
+					createRoom({ roomName: `test-gc-multi-upcoming-${i + 1}`, autoDeletionDate: Date.now() + ms('1h') })
+				)
+			)
 		]);
 
-		// Make sure all rooms are expired
-		await sleep('2s');
+		await runGCAfterAutoDeletionDates();
 
-		await runExpiredRoomsGC();
+		for (const room of expiring) {
+			expectMeetError(await getRoom(room.roomId), errorRoomNotFound(room.roomId));
+		}
 
-		for (const room of rooms) {
-			const response = await getRoom(room.roomId);
-
-			if (room.autoDeletionDate! < Date.now()) {
-				expectMeetError(response, errorRoomNotFound(room.roomId));
-			} else {
-				expect(response.status).toBe(200); // Should still exist
-			}
+		for (const room of upcoming) {
+			expect((await getRoom(room.roomId)).status).toBe(200);
 		}
 	});
 
@@ -182,7 +175,7 @@ describe('Expired Rooms GC Tests', () => {
 		// Start recording
 		await startRecording(room1.roomId);
 
-		await runExpiredRoomsGC();
+		await runGCAfterAutoDeletionDates();
 		await waitForRoomToClose(room1.roomId);
 
 		const response = await getRoom(room1.roomId);

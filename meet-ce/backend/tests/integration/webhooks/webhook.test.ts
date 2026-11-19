@@ -54,7 +54,6 @@ import {
 	leaveWaiting,
 	rejectWaitingParticipant,
 	restoreDefaultGlobalConfig,
-	sleep,
 	startTestServer,
 	updateParticipant
 } from '../../helpers/request-helpers.js';
@@ -66,6 +65,7 @@ import {
 } from '../../helpers/test-scenarios.js';
 import {
 	ReceivedWebhook,
+	pollUntil,
 	waitForRecordingToStop,
 	waitForRoomToDelete,
 	waitForWebhookCount,
@@ -668,15 +668,24 @@ describe('Webhook Integration Tests', () => {
 			jest.spyOn(webhookReceiver, 'receive').mockResolvedValue(webhookEvent);
 			jest.spyOn(livekitWebhookService, 'webhookEventBelongsToOpenViduMeet').mockResolvedValue(true);
 
+			// The handler holds the lock until the seven requests that lost it have been answered
+			let releaseHandler!: () => void;
+			const handlerHeld = new Promise<void>((resolve) => {
+				releaseHandler = resolve;
+			});
+			let answeredRequests = 0;
+
 			const handleRoomStartedMock = jest
 				.spyOn(livekitWebhookService, 'handleRoomStarted')
-				.mockImplementation(async () => {
-					await sleep('100ms');
-				});
+				.mockImplementation(() => handlerHeld);
 
 			// Simulate 8 concurrent requests with the same webhook event
 			const concurrentRequests = Array.from({ length: 8 }, () =>
-				lkWebhookHandler(createMockRequest(webhookEvent), createMockResponse())
+				lkWebhookHandler(createMockRequest(webhookEvent), createMockResponse()).then(() => {
+					answeredRequests++;
+
+					if (answeredRequests === 7) releaseHandler();
+				})
 			);
 
 			await Promise.all(concurrentRequests);
@@ -700,26 +709,36 @@ describe('Webhook Integration Tests', () => {
 			);
 			jest.spyOn(livekitWebhookService, 'webhookEventBelongsToOpenViduMeet').mockResolvedValue(true);
 
-			const executions: Array<{ roomName: string; start: number; end: number }> = [];
+			const runningHandlers: string[] = [];
+			let releaseHandlers!: () => void;
+			const handlersHeld = new Promise<void>((resolve) => {
+				releaseHandlers = resolve;
+			});
 
 			const handleRoomStartedMock = jest
 				.spyOn(livekitWebhookService, 'handleRoomStarted')
 				.mockImplementation(async (room) => {
-					executions.push({ roomName: room.name, start: Date.now(), end: 0 });
-					const entry = executions.find((execution) => execution.roomName === room.name)!;
-					await sleep('300ms');
-					entry.end = Date.now();
+					runningHandlers.push(room.name);
+					await handlersHeld;
 				});
 
-			await Promise.all([
+			const handled = Promise.all([
 				lkWebhookHandler(createMockRequest(webhookEventA), createMockResponse()),
 				lkWebhookHandler(createMockRequest(webhookEventB), createMockResponse())
 			]);
 
+			try {
+				// Both handlers run at the same time: neither has finished when the other one starts
+				await pollUntil(async () => runningHandlers.length === 2, {
+					errorMessage: 'The two webhook events were not processed concurrently'
+				});
+			} finally {
+				releaseHandlers();
+			}
+
+			await handled;
+
 			expect(handleRoomStartedMock).toHaveBeenCalledTimes(2);
-			expect(executions.length).toBe(2);
-			expect(executions[0].start).toBeLessThan(executions[1].end);
-			expect(executions[1].start).toBeLessThan(executions[0].end);
 			expect(await mutexService.lockExists(lockKeyA)).toBe(false);
 			expect(await mutexService.lockExists(lockKeyB)).toBe(false);
 		});
@@ -752,8 +771,13 @@ describe('Webhook Integration Tests', () => {
 			const webhookEvent = createWebhookEvent('ttl-hold-event-id', 'ttl-hold-room');
 			const lockKey = MeetLock.getWebhookLock(webhookEvent);
 
-			await mutexService.withLock(lockKey, 1000, async () => {
-				await sleep('2500ms');
+			const extend = jest.spyOn(mutexService as unknown as { extend: () => Promise<void> }, 'extend');
+
+			await mutexService.withLock(lockKey, 200, async () => {
+				// The third extension happens after the lock's TTL: only an extended lock is still held
+				await pollUntil(async () => extend.mock.calls.length >= 3, {
+					errorMessage: 'The lock was not extended while its callback ran'
+				});
 				expect(await mutexService.lockExists(lockKey)).toBe(true);
 			});
 
@@ -768,12 +792,13 @@ describe('Webhook Integration Tests', () => {
 			// A lock taken and never extended or released, as a process that crashed leaves it
 			await (mutexService as unknown as { acquire(key: string, ttl: number): Promise<unknown> }).acquire(
 				lockKey,
-				1000
+				200
 			);
 			expect(await mutexService.lockExists(lockKey)).toBe(true);
 
-			await sleep('1500ms');
-			expect(await mutexService.lockExists(lockKey)).toBe(false);
+			await pollUntil(async () => !(await mutexService.lockExists(lockKey)), {
+				errorMessage: 'The lock of a dead holder did not expire'
+			});
 		});
 	});
 

@@ -4,6 +4,7 @@ import {
 	MEET_PERMISSION_KEYS,
 	MeetParticipantModerationAction,
 	MeetRecordingAutoStartMode,
+	MeetRecordingInfo,
 	MeetRecordingStatus,
 	MeetRoomMemberPermissions,
 	MeetRoomMemberUIBadge
@@ -24,12 +25,11 @@ import {
 import {
 	deleteAllRecordings,
 	deleteAllRooms,
-	sleep,
 	startTestServer,
 	stopRecording
 } from '../../../helpers/request-helpers.js';
 import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
-import { waitForActiveRecordingEgress, waitForNoInProgressEgress } from '../../../helpers/wait-helpers.js';
+import { pollUntil, waitForActiveRecordingEgress, waitForNoInProgressEgress } from '../../../helpers/wait-helpers.js';
 
 /**
  * `config.recording.autoStart`: the recording starts by itself once the configured participant
@@ -128,13 +128,15 @@ describe('Recording Auto-Start Tests', () => {
 	 * and this app's own call then skips with a 409.
 	 */
 	const waitForRoomRecordingCount = async (roomId: string, count: number) => {
-		const deadline = Date.now() + 30_000;
-		let recordings = await findRoomRecordings(roomId);
+		let recordings: MeetRecordingInfo[] = [];
 
-		while (recordings.length < count && Date.now() < deadline) {
-			await sleep('1s');
-			recordings = await findRoomRecordings(roomId);
-		}
+		await pollUntil(
+			async () => {
+				recordings = await findRoomRecordings(roomId);
+				return recordings.length >= count;
+			},
+			{ timeoutMs: 30_000, errorMessage: `Room '${roomId}' did not reach ${count} recordings` }
+		);
 
 		expect(recordings.length).toBe(count);
 		return recordings;
@@ -430,16 +432,15 @@ describe('Recording Auto-Start Tests', () => {
 		await simulateParticipantJoined(room.roomId, 'FIRST_PARTICIPANT');
 
 		// Wait until the recording is ACTIVE so the system stop below takes the regular stop path
-		let recordings = await findRoomRecordings(room.roomId);
-		const activeDeadline = Date.now() + 30_000;
+		let recordings: MeetRecordingInfo[] = [];
 
-		while (
-			(recordings.length === 0 || recordings[0].status !== MeetRecordingStatus.ACTIVE) &&
-			Date.now() < activeDeadline
-		) {
-			await sleep('1s');
-			recordings = await findRoomRecordings(room.roomId);
-		}
+		await pollUntil(
+			async () => {
+				recordings = await findRoomRecordings(room.roomId);
+				return recordings[0]?.status === MeetRecordingStatus.ACTIVE;
+			},
+			{ timeoutMs: 30_000, errorMessage: `The recording of room '${room.roomId}' did not become active` }
+		);
 
 		expect(recordings.length).toBe(1);
 		expect(recordings[0].status).toBe(MeetRecordingStatus.ACTIVE);
