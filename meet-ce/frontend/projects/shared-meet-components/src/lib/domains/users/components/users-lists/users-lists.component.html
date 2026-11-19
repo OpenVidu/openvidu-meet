@@ -36,7 +36,7 @@
 							matSuffix
 							type="button"
 							class="ov-search-modifier clear-name-btn"
-							(click)="clearNameFilter()"
+							(click)="filterControls.clearName()"
 							[matTooltip]="'USERS.COMMON.CLEAR_SEARCH' | translate"
 							matTooltipPosition="above"
 							id="clear-name-btn"
@@ -52,7 +52,7 @@
 						type="button"
 						class="ov-search-modifier case-toggle"
 						[class.active]="filterState().nameCaseInsensitive"
-						(click)="toggleCaseInsensitive()"
+						(click)="filterControls.toggleCaseInsensitive()"
 						[matTooltip]="'USERS.COMMON.MATCH_CASE_INSENSITIVE' | translate"
 						matTooltipPosition="above"
 						id="case-insensitive-btn"
@@ -94,7 +94,7 @@
 							mat-menu-item
 							type="button"
 							[class.active]="filterState().nameMatchMode === option.value"
-							(click)="setMatchMode(option.value)"
+							(click)="filterControls.setMatchMode(option.value)"
 							id="match-mode-option-{{ option.value }}"
 						>
 							<mat-icon>{{ option.icon }}</mat-icon>
@@ -130,7 +130,7 @@
 		</div>
 
 		<!-- Center Section: Batch Actions (visible when items selected) -->
-		@if (showSelection() && selectedUsers().size > 0) {
+		@if (showSelection() && selection.count() > 0) {
 			<div class="toolbar-center" id="toolbar-center">
 				<div class="batch-actions" id="batch-actions">
 					<button
@@ -141,7 +141,7 @@
 						[matTooltip]="'USERS.LIST.DELETE_SELECTED_USERS' | translate"
 						id="bulk-delete-btn"
 					>
-						<mat-icon [matBadge]="selectedUsers().size" matBadgePosition="below after"> delete </mat-icon>
+						<mat-icon [matBadge]="selection.count()" matBadgePosition="below after"> delete </mat-icon>
 					</button>
 				</div>
 			</div>
@@ -181,7 +181,7 @@
 		<div class="ov-active-filters" id="active-filters">
 			<span class="active-filters-label">{{ 'USERS.LIST.FILTERS_LABEL' | translate }}</span>
 			@for (chip of activeFilterChips(); track chip.key) {
-				<button class="filter-chip" (click)="removeFilter(chip.key)" id="filter-chip-{{ chip.key }}">
+				<button class="filter-chip" (click)="filterControls.remove(chip.key)" id="filter-chip-{{ chip.key }}">
 					<span>{{ chip.label }}</span>
 					<mat-icon>close</mat-icon>
 				</button>
@@ -229,9 +229,9 @@
 					<ng-container matColumnDef="select">
 						<th mat-header-cell *matHeaderCellDef id="select-header">
 							<mat-checkbox
-								[checked]="allSelected()"
-								[indeterminate]="someSelected()"
-								(change)="toggleAllSelection()"
+								[checked]="selection.allSelected()"
+								[indeterminate]="selection.someSelected()"
+								(change)="selection.toggleAll()"
 								[disabled]="loading()"
 								id="select-all-checkbox"
 							/>
@@ -239,8 +239,8 @@
 						<td mat-cell *matCellDef="let user" id="select-cell-{{ user.userId }}">
 							@if (canSelectUser(user)) {
 								<mat-checkbox
-									[checked]="isUserSelected(user)"
-									(change)="toggleUserSelection(user)"
+									[checked]="selection.isSelected(user)"
+									(change)="selection.toggle(user)"
 									[disabled]="loading()"
 									id="select-user-{{ user.userId }}"
 								/>
@@ -411,7 +411,7 @@
 				<tr
 					mat-row
 					*matRowDef="let row; columns: displayedColumns()"
-					[class.selected-row]="isUserSelected(row)"
+					[class.selected-row]="selection.isSelected(row)"
 					[class.protected-row]="UsersUiUtils.isProtectedUser(row, currentUserId())"
 					[class.root-row]="row.isRootAdmin"
 					id="table-row-{{ row.userId }}"

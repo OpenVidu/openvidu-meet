@@ -1,17 +1,6 @@
 import { Clipboard } from '@angular/cdk/clipboard';
 import { DatePipe } from '@angular/common';
-import {
-	Component,
-	computed,
-	DestroyRef,
-	effect,
-	inject,
-	input,
-	OnInit,
-	output,
-	signal,
-	untracked
-} from '@angular/core';
+import { Component, computed, DestroyRef, effect, inject, input, OnInit, output, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatBadgeModule } from '@angular/material/badge';
@@ -38,13 +27,14 @@ import {
 	TextMatchMode
 } from '@openvidu-meet/typings';
 import { merge } from 'rxjs';
+import { ListFilterControls } from '../../../../shared/models/list-filter-controls';
+import { ListSelection } from '../../../../shared/models/list-selection';
 import { ListUrlParams } from '../../../../shared/models/list-url-state';
 import { RowLinkDirective } from '../../../../shared/directives/row-link.directive';
 import { SkeletonRowsComponent } from '../../../../shared/components/skeleton-rows/skeleton-rows.component';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
-import { setsAreEqual } from '../../../../shared/utils/array.utils';
 import { RoomUiUtils } from '../../utils/ui';
 
 export interface RoomTableAction {
@@ -152,7 +142,7 @@ export const ROOM_FILTER_URL_PARAMS: ListUrlParams<RoomTableFilter> = {
 	templateUrl: './rooms-lists.component.html',
 	styleUrl: './rooms-lists.component.scss',
 	host: {
-		'[class.has-selections]': 'hasSelections()'
+		'[class.has-selections]': 'selection.count() > 0'
 	}
 })
 export class RoomsListsComponent implements OnInit {
@@ -177,9 +167,6 @@ export class RoomsListsComponent implements OnInit {
 
 	private readonly applyInitialFilters = effect(() => this.applyFilters(this.initialFilters()));
 
-	// Host binding state for styling when rooms are selected
-	hasSelections = computed(() => this.selectedRooms().size > 0);
-
 	// Output events
 	roomAction = output<RoomTableAction>();
 	filterChange = output<RoomTableFilter>();
@@ -198,6 +185,8 @@ export class RoomsListsComponent implements OnInit {
 		showMemberRooms: new FormControl<boolean>(false, { nonNullable: true }),
 		showUserAccessRooms: new FormControl<boolean>(false, { nonNullable: true })
 	});
+
+	filterControls = new ListFilterControls(this.filtersForm);
 
 	get controls() {
 		return this.filtersForm.controls;
@@ -234,12 +223,13 @@ export class RoomsListsComponent implements OnInit {
 	currentSortField = signal<MeetRoomSortField>('creationDate');
 	currentSortOrder = signal<SortOrder>(SortOrder.DESC);
 
-	showEmptyFilterMessage = signal(false); // Show message when no rooms match filters
+	showEmptyFilterMessage = computed(() => this.rooms().length === 0 && this.hasActiveFilters());
 
-	// Selection state
-	selectedRooms = signal<Set<string>>(new Set());
-	allSelected = signal(false);
-	someSelected = signal(false);
+	selection = new ListSelection({
+		items: this.rooms,
+		idOf: (room) => room.roomId,
+		canSelect: (room) => this.canSelectRoom(room)
+	});
 
 	// Table configuration
 	displayedColumns = computed(() => {
@@ -320,27 +310,6 @@ export class RoomsListsComponent implements OnInit {
 	protected readonly RoomUiUtils = RoomUiUtils;
 	protected readonly MeetUserRole = MeetUserRole;
 
-	constructor() {
-		effect(() => {
-			// Update selected rooms based on current rooms
-			const rooms = this.rooms();
-			const validRoomIds = new Set(rooms.map((r) => r.roomId));
-
-			// Use untracked to avoid creating a reactive dependency on selectedRooms
-			const currentSelection = untracked(() => this.selectedRooms());
-			const filteredSelection = new Set([...currentSelection].filter((id) => validRoomIds.has(id)));
-
-			// Only update if the selection has actually changed
-			if (!setsAreEqual(filteredSelection, currentSelection)) {
-				this.selectedRooms.set(filteredSelection);
-				this.updateSelectionState();
-			}
-
-			// Show message when no rooms match filters
-			this.showEmptyFilterMessage.set(rooms.length === 0 && this.hasActiveFilters());
-		});
-	}
-
 	ngOnInit() {
 		this.setupFilters();
 	}
@@ -396,56 +365,8 @@ export class RoomsListsComponent implements OnInit {
 
 	// ===== SELECTION METHODS =====
 
-	toggleAllSelection() {
-		const selected = this.selectedRooms();
-
-		if (this.allSelected()) {
-			selected.clear();
-		} else {
-			this.rooms().forEach((room) => {
-				if (this.canSelectRoom(room)) {
-					selected.add(room.roomId);
-				}
-			});
-		}
-
-		this.selectedRooms.set(new Set(selected));
-		this.updateSelectionState();
-	}
-
-	toggleRoomSelection(room: MeetRoom) {
-		const selected = this.selectedRooms();
-
-		if (selected.has(room.roomId)) {
-			selected.delete(room.roomId);
-		} else {
-			selected.add(room.roomId);
-		}
-
-		this.selectedRooms.set(new Set(selected));
-		this.updateSelectionState();
-	}
-
-	private updateSelectionState() {
-		const selectableRooms = this.rooms().filter((r) => this.canSelectRoom(r));
-		const selectedCount = this.selectedRooms().size;
-		const selectableCount = selectableRooms.length;
-
-		this.allSelected.set(selectedCount > 0 && selectedCount === selectableCount);
-		this.someSelected.set(selectedCount > 0 && selectedCount < selectableCount);
-	}
-
-	isRoomSelected(room: MeetRoom): boolean {
-		return this.selectedRooms().has(room.roomId);
-	}
-
 	canSelectRoom(room: MeetRoom): boolean {
 		return this.RoomUiUtils.canManageRoom(room, this.currentUserId(), this.currentUserRole());
-	}
-
-	getSelectedRooms(): MeetRoom[] {
-		const selected = this.selectedRooms();
-		return this.rooms().filter((r) => selected.has(r.roomId));
 	}
 
 	// ===== ACTION METHODS =====
@@ -484,7 +405,7 @@ export class RoomsListsComponent implements OnInit {
 	}
 
 	bulkDeleteSelected() {
-		const selectedRooms = this.getSelectedRooms();
+		const selectedRooms = this.selection.selected();
 
 		if (selectedRooms.length > 0) {
 			this.roomAction.emit({ rooms: selectedRooms, action: 'bulkDelete' });
@@ -513,26 +434,6 @@ export class RoomsListsComponent implements OnInit {
 
 	toggleFilterPanel() {
 		this.showFilterPanel.update((open) => !open);
-	}
-
-	toggleCaseInsensitive() {
-		this.controls.nameCaseInsensitive.setValue(!this.controls.nameCaseInsensitive.value);
-	}
-
-	clearNameFilter() {
-		this.controls.nameFilter.setValue('');
-	}
-
-	setMatchMode(mode: TextMatchMode) {
-		this.controls.nameMatchMode.setValue(mode);
-	}
-
-	removeFilter(key: string) {
-		const control = (this.filtersForm.controls as Record<string, FormControl>)[key];
-
-		if (!control) return;
-
-		control.setValue(typeof control.value === 'boolean' ? false : '');
 	}
 
 	private buildFilterSnapshot(): RoomTableFilter {
