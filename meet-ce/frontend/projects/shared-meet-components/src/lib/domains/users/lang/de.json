@@ -57,7 +57,14 @@
       "LOADING_TITLE": "Benutzer werden geladen",
       "LOADING_SUBTITLE": "Bitte warten Sie, während wir die Benutzer abrufen...",
       "PAGE_TITLE": "Benutzer",
-      "PAGE_SUBTITLE": "Verwalten Sie Ihre Benutzer, steuern Sie den Zugriff und registrieren Sie neue Konten."
+      "PAGE_SUBTITLE": "Verwalten Sie Ihre Benutzer, steuern Sie den Zugriff und registrieren Sie neue Konten.",
+      "FIGURES": {
+        "ALL": "Alle Benutzer",
+        "ADMINS": "Administratoren",
+        "ROOM_MANAGERS": "Raum-Manager",
+        "ROOM_MEMBERS": "Raummitglieder",
+        "UNIT": "Benutzer"
+      }
     },
     "PROFILE": {
       "TITLE_OWN": "Profil",

@@ -168,7 +168,7 @@
 				<p class="filter-description">{{ 'RECORDINGS.LIST.FILTER_BY_STATUS_DESCRIPTION' | translate }}</p>
 				<mat-form-field appearance="outline">
 					<mat-label>{{ 'RECORDINGS.COMMON.STATUS' | translate }}</mat-label>
-					<mat-select [formControl]="controls.statusFilter">
+					<mat-select [formControl]="controls.statusFilter" multiple>
 						@for (option of statusOptions; track option.value) {
 							<mat-option [value]="option.value">{{ option.label }}</mat-option>
 						}

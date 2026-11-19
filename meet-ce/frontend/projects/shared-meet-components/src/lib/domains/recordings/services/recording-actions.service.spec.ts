@@ -107,6 +107,38 @@ describe('RecordingActionsService', () => {
 		);
 	});
 
+	it('tells the host after a delete and after a bulk delete', async () => {
+		const onDeleted = jasmine.createSpy('onDeleted');
+		recordingService.deleteRecording.and.resolveTo();
+		recordingService.bulkDeleteRecordings.and.resolveTo({ deleted: ['r1'], failed: [], message: '' });
+
+		await service.handle({ action: 'delete', recordings: [recording('r2')] }, { list, log, onDeleted });
+		await confirmDialog();
+		await service.handle({ action: 'bulkDelete', recordings: [recording('r1')] }, { list, log, onDeleted });
+		await confirmDialog();
+
+		expect(onDeleted).toHaveBeenCalledTimes(2);
+	});
+
+	it('tells the host about the deleted half of a partial bulk delete, and nothing when a delete fails', async () => {
+		const onDeleted = jasmine.createSpy('onDeleted');
+		recordingService.bulkDeleteRecordings.and.rejectWith({
+			error: { deleted: ['r1'], failed: [{ recordingId: 'r2', error: 'in_use' }] }
+		});
+		recordingService.deleteRecording.and.rejectWith(new Error('boom'));
+
+		await service.handle(
+			{ action: 'bulkDelete', recordings: [recording('r1'), recording('r2')] },
+			{ list, log, onDeleted }
+		);
+		await confirmDialog();
+		expect(onDeleted).toHaveBeenCalledTimes(1);
+
+		await service.handle({ action: 'delete', recordings: [recording('r3')] }, { list, log, onDeleted });
+		await confirmDialog();
+		expect(onDeleted).toHaveBeenCalledTimes(1);
+	});
+
 	it('bulk delete reports a partial result: removes the deleted half and mentions both halves', async () => {
 		recordingService.bulkDeleteRecordings.and.rejectWith({
 			error: { deleted: ['r1'], failed: [{ recordingId: 'r2', error: 'in_use' }] }

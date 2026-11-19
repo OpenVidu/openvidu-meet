@@ -79,5 +79,10 @@
       "TITLE": "Error interno",
       "MESSAGE": "Se ha producido un error inesperado, inténtalo de nuevo más tarde"
     }
+  },
+  "LIST_FIGURES": {
+    "LABEL": "Cifras clave",
+    "NEXT": "Próxima:",
+    "SHARE": "{percent}% de {unit}"
   }
 }

@@ -1,9 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import type { MeetExpiringRoom } from '@openvidu-meet/typings';
-import { MeetRecordingStatus, MeetRoomStatus } from '@openvidu-meet/typings';
+import { MeetRecordingStatus, MeetRoomStatus, MeetUserRole } from '@openvidu-meet/typings';
 import ms from 'ms';
 import { INTERNAL_CONFIG } from '../../../src/config/internal-config.js';
 import { AnalyticsService } from '../../../src/services/analytics.service.js';
+import type { RecordingAccessScope } from '../../../src/types/recording-projection.types.js';
+import type { RoomAccessScope } from '../../../src/types/room-projection.types.js';
 
 const noopLogger = { info: () => {}, warn: () => {}, debug: () => {}, error: () => {}, verbose: () => {} };
 
@@ -17,17 +19,22 @@ class FakeRoomRepository {
 	expiringWindows: [number, number][] = [];
 	nextExpiringWindows: [number, number][] = [];
 
-	countByStatus(status: MeetRoomStatus): Promise<number> {
-		return Promise.resolve(this.roomsByStatus[status] ?? 0);
+	scopes: RoomAccessScope[] = [];
+
+	countByStatusInScope(scope: RoomAccessScope): Promise<Partial<Record<MeetRoomStatus, number>>> {
+		this.scopes.push(scope);
+		return Promise.resolve(this.roomsByStatus);
 	}
 
-	countExpiringRooms(from: number, until: number): Promise<number> {
+	countExpiringRooms(from: number, until: number, scope: RoomAccessScope): Promise<number> {
 		this.expiringWindows.push([from, until]);
+		this.scopes.push(scope);
 		return Promise.resolve(this.expiringCount);
 	}
 
-	findNextExpiringRoom(from: number, until: number): Promise<MeetExpiringRoom | null> {
+	findNextExpiringRoom(from: number, until: number, scope: RoomAccessScope): Promise<MeetExpiringRoom | null> {
 		this.nextExpiringWindows.push([from, until]);
+		this.scopes.push(scope);
 		return Promise.resolve(this.nextExpiring);
 	}
 }
@@ -35,21 +42,34 @@ class FakeRoomRepository {
 class FakeRecordingRepository {
 	recordingsByStatus: Partial<Record<MeetRecordingStatus, number>> = {};
 
-	countByStatus(status: MeetRecordingStatus): Promise<number> {
-		return Promise.resolve(this.recordingsByStatus[status] ?? 0);
+	scopes: RecordingAccessScope[] = [];
+
+	countByStatusInScope(scope: RecordingAccessScope): Promise<Partial<Record<MeetRecordingStatus, number>>> {
+		this.scopes.push(scope);
+		return Promise.resolve(this.recordingsByStatus);
+	}
+}
+
+class FakeUserRepository {
+	usersByRole: Partial<Record<MeetUserRole, number>> = {};
+
+	countByRole(): Promise<Partial<Record<MeetUserRole, number>>> {
+		return Promise.resolve(this.usersByRole);
 	}
 }
 
 describe('AnalyticsService', () => {
 	let rooms: FakeRoomRepository;
 	let recordings: FakeRecordingRepository;
+	let users: FakeUserRepository;
 	let service: AnalyticsService;
 
 	beforeEach(() => {
 		jest.spyOn(Date, 'now').mockReturnValue(NOW);
 		rooms = new FakeRoomRepository();
 		recordings = new FakeRecordingRepository();
-		service = new AnalyticsService(noopLogger as never, rooms as never, recordings as never);
+		users = new FakeUserRepository();
+		service = new AnalyticsService(noopLogger as never, rooms as never, recordings as never, users as never);
 	});
 
 	afterEach(() => {
@@ -127,8 +147,50 @@ describe('AnalyticsService', () => {
 		);
 	});
 
+	it('counts the whole deployment in the analytics', async () => {
+		await service.getAnalytics();
+
+		expect([...rooms.scopes, ...recordings.scopes]).toEqual([{}, {}, {}, {}]);
+	});
+
+	it('counts the rooms and the recordings of the scope it is given in the summaries', async () => {
+		const scope = { owner: 'maria', member: 'maria', userAccess: true };
+		rooms.roomsByStatus = { [MeetRoomStatus.OPEN]: 2, [MeetRoomStatus.CLOSED]: 1 };
+		recordings.recordingsByStatus = { [MeetRecordingStatus.COMPLETE]: 4, [MeetRecordingStatus.ABORTED]: 1 };
+
+		const roomsSummary = await service.getRoomsSummary(scope);
+		const recordingsSummary = await service.getRecordingsSummary({ roomOwner: 'maria' });
+
+		expect(rooms.scopes).toEqual([scope, scope, scope]);
+		expect(roomsSummary).toEqual({
+			totalRooms: 3,
+			activeRooms: 0,
+			openRooms: 2,
+			closedRooms: 1,
+			roomsExpiringSoon: 0
+		});
+		expect(recordings.scopes).toEqual([{ roomOwner: 'maria' }]);
+		expect(recordingsSummary).toEqual({
+			totalRecordings: 5,
+			completeRecordings: 4,
+			recordingsInProgress: 0,
+			failedRecordings: 1
+		});
+	});
+
+	it('reports the users of each role, and all of them as the total', async () => {
+		users.usersByRole = { [MeetUserRole.ADMIN]: 2, [MeetUserRole.ROOM_MANAGER]: 4, [MeetUserRole.ROOM_MEMBER]: 6 };
+
+		await expect(service.getUsersSummary()).resolves.toEqual({
+			totalUsers: 12,
+			adminUsers: 2,
+			roomManagerUsers: 4,
+			roomMemberUsers: 6
+		});
+	});
+
 	it('rethrows a repository failure', async () => {
-		rooms.countByStatus = () => Promise.reject(new Error('database down'));
+		rooms.countByStatusInScope = () => Promise.reject(new Error('database down'));
 
 		await expect(service.getAnalytics()).rejects.toThrow('database down');
 	});

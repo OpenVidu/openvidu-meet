@@ -1,0 +1,95 @@
+<ng-template #nextItem let-next>
+	{{ 'LIST_FIGURES.NEXT' | translate }}
+	<a class="next-name" [routerLink]="next.link">{{ next.name }}</a> &middot; {{ next.when }}
+</ng-template>
+
+@if (isMobileView()) {
+	<section class="card" [attr.aria-label]="'LIST_FIGURES.LABEL' | translate">
+		<p class="card-total">
+			<span class="card-total-count">{{ total() }}</span>
+			<span class="card-total-unit">{{ unit() }}</span>
+		</p>
+		<div class="bar" aria-hidden="true">
+			@for (segment of barSegments(); track segment.key) {
+				<span class="segment" [style.flex-grow]="segment.count" [style.background]="segment.color"></span>
+			}
+		</div>
+		<div class="card-chips">
+			@for (figure of selectableFigures(); track figure.key) {
+				<button
+					type="button"
+					class="card-chip"
+					[attr.data-figure]="figure.key"
+					[class.selected]="figure.key === selectedKey()"
+					[attr.aria-pressed]="figure.key === selectedKey()"
+					(click)="select(figure)"
+				>
+					@if (figure.filter !== null) {
+						<span class="card-chip-dot" [style.background]="figure.color"></span>
+					}
+					{{ figure.label }}
+					<strong>{{ figure.count }}</strong>
+				</button>
+			}
+		</div>
+		@if (informingFigure(); as informing) {
+			<p class="card-informing">
+				{{ informing.sentence }}
+				@if (informing.next; as next) {
+					&middot; <ng-container *ngTemplateOutlet="nextItem; context: { $implicit: next }" />
+				}
+			</p>
+		}
+	</section>
+} @else {
+	<div class="tiles" role="group" [attr.aria-label]="'LIST_FIGURES.LABEL' | translate">
+		@for (figure of figures(); track figure.key) {
+			@if (figure.filter !== undefined) {
+				<button
+					type="button"
+					class="tile"
+					[attr.data-figure]="figure.key"
+					[class.selected]="figure.key === selectedKey()"
+					[attr.aria-pressed]="figure.key === selectedKey()"
+					(click)="select(figure)"
+				>
+					<ng-container *ngTemplateOutlet="tileBody; context: { $implicit: figure }" />
+				</button>
+			} @else {
+				<div class="tile" [attr.data-figure]="figure.key">
+					<ng-container *ngTemplateOutlet="tileBody; context: { $implicit: figure }" />
+				</div>
+			}
+		}
+	</div>
+}
+
+<ng-template #tileBody let-figure>
+	<span class="tile-icon" aria-hidden="true" [style.--figure-color]="figure.color">
+		<mat-icon>{{ figure.icon }}</mat-icon>
+	</span>
+	<span class="tile-label">{{ figure.label }}</span>
+	<span class="tile-value">
+		<span class="tile-count">{{ figure.count }}</span>
+		@if (figure.filter !== null) {
+			<span class="tile-share">{{
+				'LIST_FIGURES.SHARE' | translate: { percent: share(figure), unit: unit() }
+			}}</span>
+		}
+	</span>
+	@if (figure.next) {
+		<span class="tile-next"
+			><ng-container *ngTemplateOutlet="nextItem; context: { $implicit: figure.next }"
+		/></span>
+	} @else if (figure.filter === null) {
+		<span class="bar" aria-hidden="true">
+			@for (segment of barSegments(); track segment.key) {
+				<span class="segment" [style.flex-grow]="segment.count" [style.background]="segment.color"></span>
+			}
+		</span>
+	} @else if (figure.filter !== undefined) {
+		<span class="bar" aria-hidden="true">
+			<span [style.width.%]="(figure.count / total()) * 100" [style.background]="figure.color"></span>
+		</span>
+	}
+</ng-template>

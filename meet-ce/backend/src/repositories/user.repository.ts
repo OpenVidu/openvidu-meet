@@ -1,4 +1,4 @@
-import type { MeetUser, MeetUserField } from '@openvidu-meet/typings';
+import type { MeetUser, MeetUserField, MeetUserRole } from '@openvidu-meet/typings';
 import { SortOrder, TextMatchMode } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import type { QueryFilter } from 'mongoose';
@@ -192,6 +192,13 @@ export class UserRepository extends BaseRepository<MeetUser, MeetUserDocument> {
 			isTruncated: result.isTruncated,
 			nextPageToken: result.nextPageToken
 		};
+	}
+
+	/**
+	 * Counts the users by role.
+	 */
+	countByRole(): Promise<Partial<Record<MeetUserRole, number>>> {
+		return this.countGroupedBy('role');
 	}
 
 	/**

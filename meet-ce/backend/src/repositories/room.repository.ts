@@ -16,6 +16,7 @@ import { MEET_ROOM_DOCUMENT_ONLY_FIELDS, MeetRoomModel } from '../models/mongoos
 import { LoggerService } from '../services/logger.service.js';
 import type {
 	MeetRoomPage,
+	RoomAccessScope,
 	RoomQuery,
 	RoomQueryWithFields,
 	RoomQueryWithProjection
@@ -361,30 +362,7 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 			sortOrder = SortOrder.DESC
 		} = options;
 
-		// Build base filter
-		const filter: QueryFilter<MeetRoomDocument> = {};
-
-		const accessScopeOrFilters: QueryFilter<MeetRoomDocument>[] = [];
-
-		if (owner) {
-			accessScopeOrFilters.push({ owner });
-		}
-
-		if (member) {
-			const memberRoomIds = await this.roomMemberRepository.getRoomIdsByMemberId(member);
-			accessScopeOrFilters.push({ roomId: { $in: memberRoomIds } });
-		}
-
-		if (userAccess) {
-			accessScopeOrFilters.push({ 'access.user.enabled': true });
-		}
-
-		// Combine access scope filters with $or if there are multiple, or merge directly if only one
-		if (accessScopeOrFilters.length === 1) {
-			Object.assign(filter, accessScopeOrFilters[0]);
-		} else if (accessScopeOrFilters.length > 1) {
-			filter.$or = accessScopeOrFilters;
-		}
+		const filter = await this.buildAccessScopeFilter({ owner, member, userAccess });
 
 		if (roomName) {
 			filter.roomName = buildStringMatchFilter(roomName, roomNameMatchMode, roomNameCaseInsensitive);
@@ -538,25 +516,28 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	}
 
 	/**
-	 * Counts the number of rooms with the given status.
+	 * Counts the rooms of the access scope by status.
 	 */
-	countByStatus(status: MeetRoomStatus): Promise<number> {
-		return this.count({ status });
+	async countByStatusInScope(scope: RoomAccessScope): Promise<Partial<Record<MeetRoomStatus, number>>> {
+		return this.countGroupedBy('status', await this.buildAccessScopeFilter(scope));
 	}
 
 	/**
-	 * Counts the rooms whose auto-deletion date falls in [from, until).
+	 * Counts the rooms of the access scope whose auto-deletion date falls in [from, until).
 	 */
-	countExpiringRooms(from: number, until: number): Promise<number> {
-		return this.count({ autoDeletionDate: { $gte: from, $lt: until } });
+	async countExpiringRooms(from: number, until: number, scope: RoomAccessScope): Promise<number> {
+		return this.count({
+			...(await this.buildAccessScopeFilter(scope)),
+			autoDeletionDate: { $gte: from, $lt: until }
+		});
 	}
 
 	/**
-	 * Finds the room with the earliest auto-deletion date in [from, until).
+	 * Finds the room of the access scope with the earliest auto-deletion date in [from, until).
 	 */
-	async findNextExpiringRoom(from: number, until: number): Promise<MeetExpiringRoom | null> {
+	async findNextExpiringRoom(from: number, until: number, scope: RoomAccessScope): Promise<MeetExpiringRoom | null> {
 		const { items } = await this.findMany(
-			{ autoDeletionDate: { $gte: from, $lt: until } },
+			{ ...(await this.buildAccessScopeFilter(scope)), autoDeletionDate: { $gte: from, $lt: until } },
 			{ maxItems: 1, sortField: 'autoDeletionDate', sortOrder: SortOrder.ASC },
 			['roomId', 'roomName', 'autoDeletionDate']
 		);
@@ -570,6 +551,33 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	// ==========================================
 	// PRIVATE HELPER METHODS
 	// ==========================================
+
+	/**
+	 * Builds the filter of the rooms in the access scope: the ones owned by `owner`, joined by `member` or open to
+	 * user access, whichever the scope sets. Without any of them, the filter matches every room.
+	 */
+	private async buildAccessScopeFilter({
+		owner,
+		member,
+		userAccess
+	}: RoomAccessScope): Promise<QueryFilter<MeetRoomDocument>> {
+		const accessScopeOrFilters: QueryFilter<MeetRoomDocument>[] = [];
+
+		if (owner) {
+			accessScopeOrFilters.push({ owner });
+		}
+
+		if (member) {
+			const memberRoomIds = await this.roomMemberRepository.getRoomIdsByMemberId(member);
+			accessScopeOrFilters.push({ roomId: { $in: memberRoomIds } });
+		}
+
+		if (userAccess) {
+			accessScopeOrFilters.push({ 'access.user.enabled': true });
+		}
+
+		return accessScopeOrFilters.length > 1 ? { $or: accessScopeOrFilters } : (accessScopeOrFilters[0] ?? {});
+	}
 
 	/**
 	 * Normalizes room data for storage by removing the base URL from access URLs.

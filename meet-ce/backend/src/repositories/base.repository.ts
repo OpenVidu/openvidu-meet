@@ -382,6 +382,31 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 		}
 	}
 
+	/**
+	 * Counts the documents matching the filter, grouped by the value of one field.
+	 *
+	 * @param field - The field to group by
+	 * @param filter - MongoDB query filter (optional, defaults to counting all documents)
+	 * @returns The count of each value that has at least one document
+	 */
+	protected async countGroupedBy<TValue extends string>(
+		field: string,
+		filter: QueryFilter<TDocument> = {}
+	): Promise<Partial<Record<TValue, number>>> {
+		try {
+			const groups = await this.model
+				.aggregate<{ _id: TValue; count: number }>([
+					{ $match: filter },
+					{ $group: { _id: `$${field}`, count: { $sum: 1 } } }
+				])
+				.exec();
+			return Object.fromEntries(groups.map(({ _id, count }) => [_id, count])) as Partial<Record<TValue, number>>;
+		} catch (error) {
+			this.logger.error(`Error counting documents by ${field}:`, error);
+			throw error;
+		}
+	}
+
 	// ==========================================
 	// HELPER METHODS
 	// ==========================================

@@ -1415,6 +1415,18 @@ export const getAnalytics = async () => {
 	return response;
 };
 
+// LIST SUMMARY HELPERS
+
+export const getListSummary = async (resource: 'rooms' | 'recordings' | 'users', accessToken?: string) => {
+	checkAppIsRunning();
+
+	const token = accessToken ?? (await loginRootAdmin()).accessToken;
+	return await request(app)
+		.get(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/${resource}/summary`))
+		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, token)
+		.send();
+};
+
 // PRIVATE METHODS
 
 const checkAppIsRunning = () => {

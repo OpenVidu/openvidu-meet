@@ -1,0 +1,241 @@
+:host {
+	display: block;
+}
+
+.tiles {
+	display: grid;
+	grid-auto-flow: column;
+	grid-auto-columns: minmax(0, 1fr);
+	gap: var(--ov-meet-spacing-md);
+}
+
+.tile {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	grid-template-areas:
+		'icon label'
+		'value value'
+		'bottom bottom';
+	grid-template-rows: auto 1fr auto;
+	align-items: start;
+	gap: var(--ov-meet-spacing-sm);
+	min-height: 124px;
+	padding: 16px 18px;
+	border: 1px solid var(--ov-meet-border-color);
+	border-radius: var(--ov-meet-radius-md);
+	background: var(--ov-meet-surface-color);
+	color: var(--ov-meet-text-primary);
+	font: inherit;
+	text-align: left;
+
+	&:is(button) {
+		cursor: pointer;
+		transition: background-color var(--ov-meet-transition-fast);
+
+		&:hover {
+			background: var(--ov-meet-surface-hover);
+		}
+
+		&:focus-visible {
+			outline: 2px solid var(--ov-meet-color-primary);
+			outline-offset: 2px;
+		}
+	}
+
+	&.selected {
+		outline: 2px solid var(--ov-meet-color-primary);
+		outline-offset: -1px;
+	}
+}
+
+.tile-icon {
+	grid-area: icon;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	border-radius: var(--ov-meet-radius-md);
+	background: color-mix(in srgb, var(--figure-color) 15%, transparent);
+	color: var(--figure-color);
+
+	mat-icon {
+		font-size: var(--ov-meet-icon-size-md);
+		width: var(--ov-meet-icon-size-md);
+		height: var(--ov-meet-icon-size-md);
+	}
+}
+
+.tile-icon,
+.tile-label {
+	align-self: center;
+}
+
+.tile-label {
+	grid-area: label;
+	min-width: 0;
+	font-size: 13px;
+	font-weight: var(--ov-meet-font-weight-medium);
+	color: var(--ov-meet-text-secondary);
+	overflow-wrap: anywhere;
+}
+
+.tile-value {
+	grid-area: value;
+	display: flex;
+	align-items: baseline;
+	flex-wrap: wrap;
+	column-gap: var(--ov-meet-spacing-sm);
+}
+
+.tile-count {
+	font-size: 32px;
+	line-height: 1.2;
+	font-weight: var(--ov-meet-font-weight-regular);
+}
+
+.tile-share {
+	font-size: var(--ov-meet-font-size-xs);
+	color: var(--ov-meet-text-secondary);
+}
+
+.tile-next {
+	grid-area: bottom;
+	font-size: var(--ov-meet-font-size-xs);
+	color: var(--ov-meet-text-secondary);
+}
+
+.next-name {
+	color: var(--ov-meet-text-primary);
+	font-weight: var(--ov-meet-font-weight-medium);
+	text-decoration: none;
+
+	&:hover,
+	&:focus-visible {
+		text-decoration: underline;
+	}
+}
+
+.bar {
+	grid-area: bottom;
+	display: flex;
+	gap: 3px;
+	height: 6px;
+	border-radius: 3px;
+	overflow: hidden;
+	background: var(--ov-meet-border-color);
+
+	> span {
+		height: 100%;
+	}
+
+	.segment {
+		flex-basis: 0;
+		min-width: 0;
+	}
+}
+
+@media (max-width: 1199.98px) {
+	.tile {
+		grid-template-areas:
+			'icon value'
+			'label label'
+			'bottom bottom';
+		grid-template-rows: auto 1fr auto;
+		min-height: 0;
+		padding: 12px 14px;
+		gap: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-sm);
+	}
+
+	.tile-share {
+		display: none;
+	}
+
+	.tile-label {
+		align-self: start;
+	}
+
+	.tile-value {
+		align-self: center;
+	}
+}
+
+.card {
+	display: flex;
+	flex-direction: column;
+	gap: var(--ov-meet-spacing-md);
+	padding: var(--ov-meet-spacing-md);
+	border: 1px solid var(--ov-meet-border-color);
+	border-radius: var(--ov-meet-radius-md);
+	background: var(--ov-meet-surface-color);
+	color: var(--ov-meet-text-primary);
+
+	.bar {
+		height: 8px;
+		border-radius: 4px;
+	}
+}
+
+.card-total {
+	display: flex;
+	align-items: baseline;
+	gap: var(--ov-meet-spacing-sm);
+	margin: 0;
+}
+
+.card-total-count {
+	font-size: var(--ov-meet-font-size-hero);
+	line-height: 1.1;
+	font-weight: var(--ov-meet-font-weight-light);
+}
+
+.card-total-unit {
+	font-size: var(--ov-meet-font-size-md);
+	color: var(--ov-meet-text-secondary);
+}
+
+.card-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--ov-meet-spacing-sm);
+}
+
+.card-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--ov-meet-spacing-sm);
+	min-height: 44px;
+	padding: 0 14px;
+	border: 1px solid var(--ov-meet-border-color);
+	border-radius: 22px;
+	background: var(--ov-meet-surface-color);
+	color: var(--ov-meet-text-primary);
+	font: inherit;
+	font-size: var(--ov-meet-font-size-sm);
+	cursor: pointer;
+
+	&:focus-visible {
+		outline: 2px solid var(--ov-meet-color-primary);
+		outline-offset: 2px;
+	}
+
+	&.selected {
+		outline: 2px solid var(--ov-meet-color-primary);
+		outline-offset: -1px;
+	}
+}
+
+.card-chip-dot {
+	flex-shrink: 0;
+	width: 10px;
+	height: 10px;
+	border-radius: var(--ov-meet-radius-circle);
+}
+
+.card-informing {
+	margin: 0;
+	padding-top: var(--ov-meet-spacing-md);
+	border-top: 1px solid var(--ov-meet-border-color);
+	font-size: var(--ov-meet-font-size-sm);
+	color: var(--ov-meet-text-secondary);
+}

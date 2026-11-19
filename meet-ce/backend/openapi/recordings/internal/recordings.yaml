@@ -1,3 +1,28 @@
+/recordings/summary:
+    get:
+        operationId: recordingGetSummary
+        summary: Get the figures of the recording list
+        description: >
+            Counts the recordings the authenticated user can list, the same recordings `GET /recordings` returns to
+            them without filters: all of them for an `admin`, and for the other roles those of the rooms they own,
+            are members of with `recordingList`, or that have user access enabled. Takes no parameters.
+
+
+            **Access token roles**: `admin`, `room_manager`, `room_member`. An API key or a room member token is
+            answered with `401`.
+        tags:
+            - Internal API - Recordings
+        security:
+            - accessTokenHeader: []
+        responses:
+            '200':
+                $ref: './responses/success/get-recordings-summary.yaml'
+            '401':
+                $ref: '../../shared/responses/errors/unauthorized.yaml'
+            '429':
+                $ref: '../../shared/responses/errors/too-many-requests.yaml'
+            '500':
+                $ref: '../../shared/responses/errors/internal-server.yaml'
 /recordings/{recordingId}/link:
     get:
         operationId: recordingGetLink

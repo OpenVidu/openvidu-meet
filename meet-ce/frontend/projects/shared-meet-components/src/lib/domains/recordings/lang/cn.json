@@ -38,7 +38,7 @@
       "DOWNLOAD_OF_SELECTED_INFIX": " / ",
       "DOWNLOAD_OF_SELECTED_SUFFIX": " 个选中项",
       "FILTER_BY_STATUS": "按状态筛选",
-      "FILTER_BY_STATUS_DESCRIPTION": "将结果范围缩小到具有所选状态的录像。",
+      "FILTER_BY_STATUS_DESCRIPTION": "将结果限制为处于所选任一状态的录像。",
       "FILTERS_LABEL": "筛选条件：",
       "CLEAR_ALL": "全部清除",
       "CLEAR_FILTERS": "清除筛选条件",
@@ -58,7 +58,6 @@
       "MATCH_MODE_CONTAINS": "包含",
       "MATCH_MODE_EXACT": "精确匹配",
       "MATCH_MODE_REGEX": "正则表达式",
-      "STATUS_ALL": "所有状态",
       "STATUS_STARTING": "正在开始",
       "STATUS_ACTIVE": "进行中",
       "STATUS_ENDING": "正在结束",
@@ -67,7 +66,14 @@
       "STATUS_ABORTED": "已中止",
       "STATUS_LIMIT_REACHED": "已达上限",
       "PLAY_PERMISSION_REQUIRED": "播放和分享录制需要 recordingPlay 权限",
-      "BULK_LIMIT_EXCEEDED": "一次最多只能处理 {count} 个录制"
+      "BULK_LIMIT_EXCEEDED": "一次最多只能处理 {count} 个录制",
+      "FIGURES": {
+        "ALL": "全部录像",
+        "IN_PROGRESS": "进行中",
+        "COMPLETE": "已完成",
+        "FAILED": "失败",
+        "UNIT": "录像"
+      }
     },
     "DETAIL": {
       "LOADING_TITLE": "正在加载录像详情",

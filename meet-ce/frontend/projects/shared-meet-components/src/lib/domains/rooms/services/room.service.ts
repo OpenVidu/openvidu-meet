@@ -13,6 +13,7 @@ import {
 	MeetRoomOptions,
 	MeetRoomRoles,
 	MeetRoomRolesConfig,
+	MeetRoomsSummary,
 	MeetRoomStatus,
 	ProjectedMeetRoom
 } from '@openvidu-meet/typings';
@@ -29,6 +30,7 @@ export class RoomService {
 	protected log: ILogger = this.loggerService.get('OpenVidu Meet - RoomService');
 
 	protected readonly ROOMS_API = `${HttpService.API_PATH_PREFIX}/rooms`;
+	protected readonly INTERNAL_ROOMS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/rooms`;
 
 	constructor() {}
 
@@ -90,6 +92,15 @@ export class RoomService {
 		}
 
 		return this.httpService.getRequest(path);
+	}
+
+	/**
+	 * Gets the key figures of the rooms the caller can list.
+	 *
+	 * @return A promise that resolves to the rooms summary
+	 */
+	async getRoomsSummary(): Promise<MeetRoomsSummary> {
+		return this.httpService.getRequest(`${this.INTERNAL_ROOMS_API}/summary`);
 	}
 
 	/**

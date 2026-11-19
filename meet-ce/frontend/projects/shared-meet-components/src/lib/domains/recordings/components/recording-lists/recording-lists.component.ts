@@ -127,7 +127,7 @@ export class RecordingListsComponent implements OnInit {
 		nameFilter: new FormControl<string>('', { nonNullable: true }),
 		nameMatchMode: new FormControl<TextMatchMode>(TextMatchMode.PREFIX, { nonNullable: true }),
 		nameCaseInsensitive: new FormControl<boolean>(false, { nonNullable: true }),
-		statusFilter: new FormControl<MeetRecordingStatus | ''>('', { nonNullable: true })
+		statusFilter: new FormControl<MeetRecordingStatus[]>([], { nonNullable: true })
 	});
 
 	filterControls = new ListFilterControls(this.filtersForm);
@@ -147,7 +147,7 @@ export class RecordingListsComponent implements OnInit {
 	// Reads the applied snapshot so pending free-text input doesn't count as "active".
 	hasActiveFilters = computed(() => {
 		const f = this.appliedFilterState();
-		return !!(f.nameFilter || f.statusFilter);
+		return !!(f.nameFilter || f.statusFilter.length);
 	});
 
 	// Whether the inline filter panel is expanded
@@ -188,11 +188,11 @@ export class RecordingListsComponent implements OnInit {
 		const f = this.appliedFilterState();
 		const chips: { key: string; label: string }[] = [];
 
-		if (f.statusFilter) {
-			const opt = this.statusOptions.find((o) => o.value === f.statusFilter);
+		if (f.statusFilter.length) {
+			const labels = f.statusFilter.map((status) => this.statusOptions.find((o) => o.value === status)?.label);
 			chips.push({
 				key: 'statusFilter',
-				label: `${this.translateService.translate('RECORDINGS.LIST.STATUS_FILTER_LABEL_PREFIX')}${opt?.label ?? f.statusFilter}`
+				label: `${this.translateService.translate('RECORDINGS.LIST.STATUS_FILTER_LABEL_PREFIX')}${labels.join(', ')}`
 			});
 		}
 
@@ -268,7 +268,6 @@ export class RecordingListsComponent implements OnInit {
 
 	// Status options using enum values
 	statusOptions = [
-		{ value: '', label: this.translateService.translate('RECORDINGS.LIST.STATUS_ALL') },
 		{
 			value: MeetRecordingStatus.STARTING,
 			label: this.translateService.translate('RECORDINGS.LIST.STATUS_STARTING')
@@ -470,7 +469,7 @@ export class RecordingListsComponent implements OnInit {
 				// Preserve search modifiers — they are not part of "filters"
 				nameMatchMode: this.controls.nameMatchMode.value,
 				nameCaseInsensitive: this.controls.nameCaseInsensitive.value,
-				statusFilter: ''
+				statusFilter: []
 			},
 			{ emitEvent: false }
 		);

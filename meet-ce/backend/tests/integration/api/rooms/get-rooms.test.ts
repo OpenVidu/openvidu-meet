@@ -23,8 +23,10 @@ import {
 	createRoomMember,
 	deleteAllRooms,
 	deleteAllUsers,
+	getListSummary,
 	getRooms,
-	startTestServer
+	startTestServer,
+	updateRoomStatus
 } from '../../../helpers/request-helpers.js';
 import { setupSingleRoom, setupTestUsers } from '../../../helpers/test-scenarios.js';
 import { TestUsers } from '../../../interfaces/scenarios.js';
@@ -673,6 +675,88 @@ describe('Room API Tests', () => {
 				testUsers.roomMember.accessToken
 			);
 			expectRoomsToContainOnly(response, [testRooms.membersRoom, testRooms.openRoom]);
+		});
+
+		it('should count in the summary the rooms the user can list', async () => {
+			const adminSummary = await getListSummary('rooms', testUsers.admin.accessToken);
+			expect(adminSummary.status).toBe(200);
+			expect(adminSummary.body).toMatchObject({ totalRooms: 4, openRooms: 4 });
+
+			const managerSummary = await getListSummary('rooms', testUsers.roomManager.accessToken);
+			expect(managerSummary.status).toBe(200);
+			expect(managerSummary.body).toMatchObject({ totalRooms: 3, openRooms: 3 });
+
+			const memberSummary = await getListSummary('rooms', testUsers.roomMember.accessToken);
+			expect(memberSummary.status).toBe(200);
+			expect(memberSummary.body).toMatchObject({ totalRooms: 2, openRooms: 2 });
+		});
+	});
+
+	describe('Rooms summary', () => {
+		const inDays = (days: number) => Date.now() + ms(`${days}d`);
+		let testUsers: TestUsers;
+
+		beforeAll(async () => {
+			testUsers = await setupTestUsers();
+		});
+
+		afterAll(async () => {
+			await deleteAllRooms();
+			await deleteAllUsers();
+		});
+
+		afterEach(async () => {
+			await deleteAllRooms();
+		});
+
+		it('should count the rooms by status and the ones expiring in 7 days, naming the first', async () => {
+			const first = await createRoom({ roomName: 'expires-in-two-days', autoDeletionDate: inDays(2) });
+			await createRoom({ roomName: 'expires-in-six-days', autoDeletionDate: inDays(6) });
+			await createRoom({ roomName: 'expires-in-ten-days', autoDeletionDate: inDays(10) });
+			const closed = await createRoom({ roomName: 'closed' });
+			await updateRoomStatus(closed.roomId, MeetRoomStatus.CLOSED);
+			await setupSingleRoom(true);
+
+			const response = await getListSummary('rooms');
+
+			expect(response.status).toBe(200);
+			expect(response.body).toEqual({
+				totalRooms: 5,
+				activeRooms: 1,
+				openRooms: 3,
+				closedRooms: 1,
+				roomsExpiringSoon: 2,
+				nextExpiringRoom: {
+					roomId: first.roomId,
+					roomName: 'expires-in-two-days',
+					autoDeletionDate: first.autoDeletionDate
+				}
+			});
+		});
+
+		it('should report no expiring room when none expires in 7 days', async () => {
+			await createRoom({ roomName: 'expires-in-ten-days', autoDeletionDate: inDays(10) });
+
+			const response = await getListSummary('rooms');
+
+			expect(response.status).toBe(200);
+			expect(response.body.roomsExpiringSoon).toBe(0);
+			expect(response.body).not.toHaveProperty('nextExpiringRoom');
+		});
+
+		it('should count only the expiring rooms the user can list', async () => {
+			await createRoom({ roomName: 'admin-expires-in-two-days', autoDeletionDate: inDays(2) });
+			const owned = await createRoom(
+				{ roomName: 'owned-expires-in-six-days', autoDeletionDate: inDays(6) },
+				testUsers.roomManager.accessToken
+			);
+
+			const response = await getListSummary('rooms', testUsers.roomManager.accessToken);
+
+			expect(response.status).toBe(200);
+			expect(response.body.totalRooms).toBe(1);
+			expect(response.body.roomsExpiringSoon).toBe(1);
+			expect(response.body.nextExpiringRoom).toMatchObject({ roomId: owned.roomId });
 		});
 	});
 

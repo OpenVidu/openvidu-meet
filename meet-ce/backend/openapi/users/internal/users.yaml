@@ -1,3 +1,27 @@
+/users/summary:
+    get:
+        operationId: userGetSummary
+        summary: Get the figures of the user list
+        description: >
+            Counts the users by role. Takes no parameters.
+
+
+            **Access token roles**: `admin`.
+        tags:
+            - Internal API - Users
+        security:
+            - accessTokenHeader: []
+        responses:
+            '200':
+                $ref: './responses/success/get-users-summary.yaml'
+            '401':
+                $ref: '../../shared/responses/errors/unauthorized.yaml'
+            '403':
+                $ref: '../../shared/responses/errors/forbidden.yaml'
+            '429':
+                $ref: '../../shared/responses/errors/too-many-requests.yaml'
+            '500':
+                $ref: '../../shared/responses/errors/internal-server.yaml'
 /users/me:
     get:
         operationId: userGetMe

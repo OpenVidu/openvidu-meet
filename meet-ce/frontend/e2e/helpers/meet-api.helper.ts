@@ -121,6 +121,23 @@ export const createRoomAsUser = async (accessToken: string, options: MeetRoomOpt
 };
 
 /**
+ * Closes a room that has no active meeting.
+ */
+export const closeRoom = async (roomId: string): Promise<void> => {
+	const response = await fetch(withApiPath(`/rooms/${encodeURIComponent(roomId)}/status`), {
+		method: 'PUT',
+		headers: {
+			'content-type': 'application/json',
+			'x-api-key': API_KEY
+		},
+		body: JSON.stringify({ status: 'closed' })
+	});
+
+	const responseText = await response.text();
+	assertOk(response, responseText, `close room ${roomId}`);
+};
+
+/**
  * Reads a room's current status, which is what tells a meeting apart from a room nobody has joined:
  * it flips to `active_meeting` when Meet creates the LiveKit room and LiveKit reports it started.
  */

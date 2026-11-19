@@ -1,0 +1,5 @@
+description: Users summary retrieved successfully
+content:
+    application/json:
+        schema:
+            $ref: '../../schemas/meet-users-summary.yaml'

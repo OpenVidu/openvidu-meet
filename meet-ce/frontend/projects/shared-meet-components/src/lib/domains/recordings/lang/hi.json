@@ -38,7 +38,7 @@
       "DOWNLOAD_OF_SELECTED_INFIX": " में से ",
       "DOWNLOAD_OF_SELECTED_SUFFIX": " चयनित",
       "FILTER_BY_STATUS": "स्थिति के अनुसार फ़िल्टर करें",
-      "FILTER_BY_STATUS_DESCRIPTION": "परिणाम को चयनित स्थिति वाली रिकॉर्डिंग तक सीमित करता है।",
+      "FILTER_BY_STATUS_DESCRIPTION": "परिणाम को चयनित स्थितियों में से किसी एक वाली रिकॉर्डिंग तक सीमित करता है।",
       "FILTERS_LABEL": "फ़िल्टर:",
       "CLEAR_ALL": "सभी साफ़ करें",
       "CLEAR_FILTERS": "फ़िल्टर साफ़ करें",
@@ -58,7 +58,6 @@
       "MATCH_MODE_CONTAINS": "शामिल है",
       "MATCH_MODE_EXACT": "सटीक मिलान",
       "MATCH_MODE_REGEX": "Regex",
-      "STATUS_ALL": "सभी स्थितियां",
       "STATUS_STARTING": "शुरू हो रहा है",
       "STATUS_ACTIVE": "सक्रिय",
       "STATUS_ENDING": "समाप्त हो रहा है",
@@ -67,7 +66,14 @@
       "STATUS_ABORTED": "निरस्त",
       "STATUS_LIMIT_REACHED": "सीमा पूरी हुई",
       "PLAY_PERMISSION_REQUIRED": "रिकॉर्डिंग चलाने और साझा करने के लिए recordingPlay अनुमति आवश्यक है",
-      "BULK_LIMIT_EXCEEDED": "एक बार में अधिकतम {count} रिकॉर्डिंग संसाधित की जा सकती हैं"
+      "BULK_LIMIT_EXCEEDED": "एक बार में अधिकतम {count} रिकॉर्डिंग संसाधित की जा सकती हैं",
+      "FIGURES": {
+        "ALL": "सभी रिकॉर्डिंग",
+        "IN_PROGRESS": "जारी",
+        "COMPLETE": "पूर्ण",
+        "FAILED": "विफल",
+        "UNIT": "रिकॉर्डिंग"
+      }
     },
     "DETAIL": {
       "LOADING_TITLE": "रिकॉर्डिंग विवरण लोड हो रहा है",

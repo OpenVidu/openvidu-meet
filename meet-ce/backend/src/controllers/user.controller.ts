@@ -4,6 +4,7 @@ import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { handleError, rejectRequestFromMeetError } from '../middlewares/error-handler.middleware.js';
 import { errorUnauthorized, errorUserNotFound } from '../models/error.model.js';
+import { AnalyticsService } from '../services/analytics.service.js';
 import { LoggerService } from '../services/logger.service.js';
 import { RequestSessionService } from '../services/request-session.service.js';
 import { TokenService } from '../services/token.service.js';
@@ -50,6 +51,18 @@ export const getUsers = async (req: Request, res: Response) => {
 		});
 	} catch (error) {
 		handleError(res, error, 'getting users');
+	}
+};
+
+export const getUsersSummary = async (_req: Request, res: Response) => {
+	const logger = container.get(LoggerService);
+	logger.verbose('Getting users summary');
+
+	try {
+		const summary = await container.get(AnalyticsService).getUsersSummary();
+		return res.status(200).json(summary);
+	} catch (error) {
+		handleError(res, error, 'getting users summary');
 	}
 };
 

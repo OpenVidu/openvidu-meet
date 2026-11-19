@@ -196,6 +196,13 @@ export const internalRoomRouter: Router = Router();
 internalRoomRouter.use(bodyParser.urlencoded({ extended: true }));
 internalRoomRouter.use(bodyParser.json());
 
+internalRoomRouter.get(
+	'/summary',
+	apiLimiter,
+	withAuth(accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.ROOM_MANAGER, MeetUserRole.ROOM_MEMBER)),
+	applyRoomListAccessFilters,
+	roomCtrl.getRoomsSummary
+);
 internalRoomRouter.post(
 	'/:roomId/members/token',
 	tokenIssuanceLimiter,

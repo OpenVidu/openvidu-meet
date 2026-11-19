@@ -57,7 +57,14 @@
       "LOADING_TITLE": "Gebruikers laden",
       "LOADING_SUBTITLE": "Even geduld terwijl we gebruikers ophalen...",
       "PAGE_TITLE": "Gebruikers",
-      "PAGE_SUBTITLE": "Beheer uw gebruikers, regel de toegang en registreer nieuwe accounts."
+      "PAGE_SUBTITLE": "Beheer uw gebruikers, regel de toegang en registreer nieuwe accounts.",
+      "FIGURES": {
+        "ALL": "Alle gebruikers",
+        "ADMINS": "Beheerders",
+        "ROOM_MANAGERS": "Kamerbeheerders",
+        "ROOM_MEMBERS": "Kamerleden",
+        "UNIT": "gebruikers"
+      }
     },
     "PROFILE": {
       "TITLE_OWN": "Profiel",

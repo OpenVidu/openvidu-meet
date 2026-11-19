@@ -30,6 +30,15 @@
 
 		<!-- Content -->
 		<div class="page-content">
+			@if (figures().length > 0) {
+				<ov-list-figures
+					[figures]="figures()"
+					[selectedKey]="selectedFigure()"
+					[unit]="'RECORDINGS.LIST.FIGURES.UNIT' | translate"
+					(figureSelect)="onFigureSelect($event)"
+				/>
+			}
+
 			<ov-recording-lists
 				[recordings]="list.items()"
 				[canDeleteRecordings]="canDeleteRecordings()"
@@ -46,7 +55,7 @@
 				[initialFilters]="initialFilters()"
 				(recordingAction)="onRecordingAction($event)"
 				(loadMore)="list.loadMore($event)"
-				(refresh)="list.refresh($event)"
+				(refresh)="onRefresh($event)"
 				(filterChange)="urlState.write($event)"
 			/>
 		</div>

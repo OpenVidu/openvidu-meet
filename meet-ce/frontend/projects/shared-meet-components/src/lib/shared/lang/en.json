@@ -79,5 +79,10 @@
       "TITLE": "Internal error",
       "MESSAGE": "An unexpected error occurred, please try again later"
     }
+  },
+  "LIST_FIGURES": {
+    "LABEL": "Key figures",
+    "NEXT": "Next:",
+    "SHARE": "{percent}% of {unit}"
   }
 }

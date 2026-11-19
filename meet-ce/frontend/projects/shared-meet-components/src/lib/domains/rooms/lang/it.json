@@ -75,7 +75,17 @@
       "MATCH_MODE_STARTS_WITH": "Inizia con",
       "MATCH_MODE_CONTAINS": "Contiene",
       "MATCH_MODE_EXACT": "Esatta",
-      "MATCH_MODE_REGEX": "Regex"
+      "MATCH_MODE_REGEX": "Regex",
+      "FIGURES": {
+        "ALL": "Tutte le stanze",
+        "ACTIVE_MEETING": "In riunione ora",
+        "OPEN": "Aperte",
+        "CLOSED": "Chiuse",
+        "EXPIRING": "In scadenza entro 7 giorni",
+        "EXPIRING_SENTENCE": "{count, plural, one {# stanza scade entro 7 giorni} other {# stanze scadono entro 7 giorni}}",
+        "EXPIRES_WHEN": "{days, plural, =0 {oggi} =1 {domani} other {tra # giorni}}",
+        "UNIT": "stanze"
+      }
     },
     "DETAIL": {
       "LOADING_TITLE": "Caricamento dei dettagli della stanza",

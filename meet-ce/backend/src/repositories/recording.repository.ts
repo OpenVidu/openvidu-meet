@@ -19,6 +19,7 @@ import { LoggerService } from '../services/logger.service.js';
 import type {
 	MeetRecordingPage,
 	ProjectedRecording,
+	RecordingAccessScope,
 	RecordingQuery,
 	RecordingQueryWithFields,
 	RecordingQueryWithProjection
@@ -217,7 +218,7 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 	 * @param options.roomOwner - Optional room owner ID for access control filtering
 	 * @param options.roomMember - Optional room member ID for access control filtering (requires 'recordingList' permission)
 	 * @param options.roomUserAccess - Optional flag to include recordings from rooms with user access enabled
-	 * @param options.status - Optional recording status to filter by
+	 * @param options.status - Optional recording status, or list of statuses, to filter by
 	 * @param options.fields - Array of field names to include in the result
 	 * @param options.maxItems - Maximum number of results to return (default: 10)
 	 * @param options.nextPageToken - Token for pagination (encoded cursor with last sortField value and _id)
@@ -254,33 +255,7 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 			sortOrder = SortOrder.DESC
 		} = options;
 
-		// Build base filter
-		const filter: QueryFilter<MeetRecordingDocument> = {};
-
-		const accessScopeOrFilters: QueryFilter<MeetRecordingDocument>[] = [];
-
-		if (roomOwner) {
-			accessScopeOrFilters.push({ roomOwner });
-		}
-
-		if (roomMember) {
-			const memberRoomIds = await this.roomMemberRepository.getRoomIdsByMemberId(
-				roomMember,
-				'recordingList'
-			);
-			accessScopeOrFilters.push({ roomId: { $in: memberRoomIds } });
-		}
-
-		if (roomUserAccess) {
-			accessScopeOrFilters.push({ roomUserAccess: true });
-		}
-
-		// Combine access scope filters with $or if multiple, or directly if only one
-		if (accessScopeOrFilters.length === 1) {
-			Object.assign(filter, accessScopeOrFilters[0]);
-		} else if (accessScopeOrFilters.length > 1) {
-			filter.$or = accessScopeOrFilters;
-		}
+		const filter = await this.buildAccessScopeFilter({ roomOwner, roomMember, roomUserAccess });
 
 		if (roomId) {
 			// roomId takes precedence. If both roomId and roomName are provided, roomName is ignored.
@@ -291,7 +266,7 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 		}
 
 		if (status) {
-			filter.status = status;
+			filter.status = { $in: [status].flat() };
 		}
 
 		// Use base repository's pagination method
@@ -395,9 +370,37 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 	}
 
 	/**
-	 * Counts the recordings with the given status.
+	 * Counts the recordings of the access scope by status.
 	 */
-	countByStatus(status: MeetRecordingStatus): Promise<number> {
-		return this.count({ status });
+	async countByStatusInScope(scope: RecordingAccessScope): Promise<Partial<Record<MeetRecordingStatus, number>>> {
+		return this.countGroupedBy('status', await this.buildAccessScopeFilter(scope));
+	}
+
+	/**
+	 * Builds the filter of the recordings in the access scope: the ones of the rooms owned by `roomOwner`, joined by
+	 * `roomMember` with the `recordingList` permission or open to user access, whichever the scope sets. Without any
+	 * of them, the filter matches every recording.
+	 */
+	private async buildAccessScopeFilter({
+		roomOwner,
+		roomMember,
+		roomUserAccess
+	}: RecordingAccessScope): Promise<QueryFilter<MeetRecordingDocument>> {
+		const accessScopeOrFilters: QueryFilter<MeetRecordingDocument>[] = [];
+
+		if (roomOwner) {
+			accessScopeOrFilters.push({ roomOwner });
+		}
+
+		if (roomMember) {
+			const memberRoomIds = await this.roomMemberRepository.getRoomIdsByMemberId(roomMember, 'recordingList');
+			accessScopeOrFilters.push({ roomId: { $in: memberRoomIds } });
+		}
+
+		if (roomUserAccess) {
+			accessScopeOrFilters.push({ roomUserAccess: true });
+		}
+
+		return accessScopeOrFilters.length > 1 ? { $or: accessScopeOrFilters } : (accessScopeOrFilters[0] ?? {});
 	}
 }

@@ -75,7 +75,17 @@
       "MATCH_MODE_STARTS_WITH": "Empieza por",
       "MATCH_MODE_CONTAINS": "Contiene",
       "MATCH_MODE_EXACT": "Exacto",
-      "MATCH_MODE_REGEX": "Regex"
+      "MATCH_MODE_REGEX": "Regex",
+      "FIGURES": {
+        "ALL": "Todas las salas",
+        "ACTIVE_MEETING": "En reunión ahora",
+        "OPEN": "Abiertas",
+        "CLOSED": "Cerradas",
+        "EXPIRING": "Caducan en 7 días",
+        "EXPIRING_SENTENCE": "{count, plural, one {# sala caduca en 7 días} other {# salas caducan en 7 días}}",
+        "EXPIRES_WHEN": "{days, plural, =0 {hoy} =1 {mañana} other {en # días}}",
+        "UNIT": "salas"
+      }
     },
     "DETAIL": {
       "LOADING_TITLE": "Cargando detalles de la sala",

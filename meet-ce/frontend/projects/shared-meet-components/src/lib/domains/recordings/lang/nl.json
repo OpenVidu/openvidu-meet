@@ -38,7 +38,7 @@
       "DOWNLOAD_OF_SELECTED_INFIX": " van ",
       "DOWNLOAD_OF_SELECTED_SUFFIX": " geselecteerd",
       "FILTER_BY_STATUS": "Filteren op status",
-      "FILTER_BY_STATUS_DESCRIPTION": "Beperkt het resultaat tot opnames met de geselecteerde status.",
+      "FILTER_BY_STATUS_DESCRIPTION": "Beperkt het resultaat tot opnames met een van de geselecteerde statussen.",
       "FILTERS_LABEL": "Filters:",
       "CLEAR_ALL": "Alles wissen",
       "CLEAR_FILTERS": "Filters wissen",
@@ -58,7 +58,6 @@
       "MATCH_MODE_CONTAINS": "Bevat",
       "MATCH_MODE_EXACT": "Exacte overeenkomst",
       "MATCH_MODE_REGEX": "Regex",
-      "STATUS_ALL": "Alle statussen",
       "STATUS_STARTING": "Wordt gestart",
       "STATUS_ACTIVE": "Actief",
       "STATUS_ENDING": "Wordt beëindigd",
@@ -67,7 +66,14 @@
       "STATUS_ABORTED": "Afgebroken",
       "STATUS_LIMIT_REACHED": "Limiet bereikt",
       "PLAY_PERMISSION_REQUIRED": "Voor het afspelen en delen van opnames is de machtiging recordingPlay nodig",
-      "BULK_LIMIT_EXCEEDED": "Er kunnen maximaal {count} opnames tegelijk worden verwerkt"
+      "BULK_LIMIT_EXCEEDED": "Er kunnen maximaal {count} opnames tegelijk worden verwerkt",
+      "FIGURES": {
+        "ALL": "Alle opnames",
+        "IN_PROGRESS": "Bezig",
+        "COMPLETE": "Voltooid",
+        "FAILED": "Mislukt",
+        "UNIT": "opnames"
+      }
     },
     "DETAIL": {
       "LOADING_TITLE": "Opnamedetails laden",

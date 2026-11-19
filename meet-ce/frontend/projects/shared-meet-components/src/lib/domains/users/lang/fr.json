@@ -57,7 +57,14 @@
       "LOADING_TITLE": "Chargement des utilisateurs",
       "LOADING_SUBTITLE": "Veuillez patienter pendant que nous récupérons les utilisateurs...",
       "PAGE_TITLE": "Utilisateurs",
-      "PAGE_SUBTITLE": "Gérez vos utilisateurs, contrôlez les accès et enregistrez de nouveaux comptes."
+      "PAGE_SUBTITLE": "Gérez vos utilisateurs, contrôlez les accès et enregistrez de nouveaux comptes.",
+      "FIGURES": {
+        "ALL": "Tous les utilisateurs",
+        "ADMINS": "Administrateurs",
+        "ROOM_MANAGERS": "Gestionnaires de salle",
+        "ROOM_MEMBERS": "Membres de salle",
+        "UNIT": "utilisateurs"
+      }
     },
     "PROFILE": {
       "TITLE_OWN": "Profil",

@@ -124,6 +124,8 @@ with no replacement.
 - `chatWrite` lets a participant send chat messages only together with `chatRead`, and
   `mediaChangeVirtualBackground` offers background effects only together with `mediaPublishVideo`. The room
   wizard and the member form disable each of these switches while the permission it needs is off.
+- [`recordingList`][3.10-recording-list] filters by several statuses at once, given in `status` as a comma-separated
+  list.
 
 #### UI
 
@@ -143,6 +145,10 @@ with no replacement.
 - The console lists keep their rows, dimmed, while a search, a sort or a new page loads, and show placeholder rows when
   they have none yet, instead of replacing the list with a spinner, and the Embedded page shows its sections with
   placeholder rows instead of a loading screen.
+- The console Rooms, Recordings and Users pages show their key figures above the list, counted over what the user can
+  see: the rooms by status and those reaching their auto-deletion date within 7 days, the recordings by status and the
+  users by role. Selecting a figure filters the list, and the status filter of every recordings list takes several
+  statuses.
 - The console overview shows the rooms by status (open, in a meeting now and closed), the recordings by status
   (available for playback, in progress and failed) and the rooms that reach their auto-deletion date within 7 days, and
   refreshes every 30 seconds while its tab is visible or on Refresh; `analyticsGet` returns them as `openRooms`,

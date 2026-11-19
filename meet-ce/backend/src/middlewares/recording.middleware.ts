@@ -143,7 +143,7 @@ export const applyRecordingListAccessFilters = async (_req: Request, res: Respon
 	const requestSessionService = container.get(RequestSessionService);
 	const memberRoomId = requestSessionService.getRoomIdFromMember();
 
-	const queryOptions = res.locals.validatedQuery as RecordingQueryWithFields;
+	const queryOptions = (res.locals.validatedQuery ??= {}) as RecordingQueryWithFields;
 
 	// If request is made with room member token,
 	// scope recordings to the associated room and check recordingList permission.

@@ -26,6 +26,7 @@ import {
 	deleteAllUsers,
 	endMeeting,
 	getFullPath,
+	getListSummary,
 	getRecording,
 	getRecordingAccessSecret,
 	startRecording,
@@ -49,6 +50,7 @@ import { RoomData, RoomMemberData, RoomTestUsers, TestUsers } from '../../../int
 import { waitForRecordingToStop } from '../../../helpers/wait-helpers.js';
 
 const RECORDINGS_PATH = getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`);
+const RECORDINGS_SUMMARY_PATH = getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings/summary`);
 
 describe('Recording API Security Tests', () => {
 	let app: Express;
@@ -399,6 +401,68 @@ describe('Recording API Security Tests', () => {
 			it('should fail when using recording access secret', async () => {
 				const secret = await getRecordingAccessSecret(recordingId, false);
 				const response = await request(app).get(RECORDINGS_PATH).query({ recordingSecret: secret });
+				expectMeetError(response, errorUnauthorized());
+			});
+		});
+
+		describe('Get Recordings Summary Tests', () => {
+			const expectSummaryOf = async (accessToken: string, totalRecordings: number) => {
+				const response = await getListSummary('recordings', accessToken);
+				expect(response.status).toBe(200);
+				expect(response.body.totalRecordings).toBe(totalRecordings);
+				expect(
+					response.body.completeRecordings +
+						response.body.recordingsInProgress +
+						response.body.failedRecordings
+				).toBe(totalRecordings);
+			};
+
+			it('should count the recordings of any room for ADMIN', async () => {
+				await expectSummaryOf(testUsers.admin.accessToken, 1);
+			});
+
+			it('should count the recordings of the room for ROOM_MANAGER room owner', async () => {
+				await expectSummaryOf(roomUsers.roomManagerOwner.accessToken, 1);
+			});
+
+			it('should count the recordings of the room for ROOM_MEMBER only while it holds recordingList', async () => {
+				roomUsers.roomMemberDetails = await updateRoomMemberPermissions(
+					roomId,
+					roomUsers.roomMemberDetails.member.memberId,
+					{ recordingList: true },
+					roomUsers.roomMember.accessToken
+				);
+				await expectSummaryOf(roomUsers.roomMember.accessToken, 1);
+
+				roomUsers.roomMemberDetails = await updateRoomMemberPermissions(
+					roomId,
+					roomUsers.roomMemberDetails.member.memberId,
+					{ recordingList: false },
+					roomUsers.roomMember.accessToken
+				);
+				await expectSummaryOf(roomUsers.roomMember.accessToken, 0);
+			});
+
+			it('should not count the recordings for ROOM_MANAGER without access to the room', async () => {
+				await expectSummaryOf(testUsers.roomManager.accessToken, 0);
+			});
+
+			it('should fail when request includes API key', async () => {
+				const response = await request(app)
+					.get(RECORDINGS_SUMMARY_PATH)
+					.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
+				expectMeetError(response, errorUnauthorized());
+			});
+
+			it('should fail when using room member token', async () => {
+				const response = await request(app)
+					.get(RECORDINGS_SUMMARY_PATH)
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken);
+				expectMeetError(response, errorUnauthorized());
+			});
+
+			it('should fail when user is not authenticated', async () => {
+				const response = await request(app).get(RECORDINGS_SUMMARY_PATH);
 				expectMeetError(response, errorUnauthorized());
 			});
 		});

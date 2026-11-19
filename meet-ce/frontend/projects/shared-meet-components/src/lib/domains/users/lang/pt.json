@@ -57,7 +57,14 @@
       "LOADING_TITLE": "A carregar utilizadores",
       "LOADING_SUBTITLE": "Aguarde enquanto obtemos os utilizadores...",
       "PAGE_TITLE": "Utilizadores",
-      "PAGE_SUBTITLE": "Faça a gestão dos utilizadores, controle o acesso e registe novas contas."
+      "PAGE_SUBTITLE": "Faça a gestão dos utilizadores, controle o acesso e registe novas contas.",
+      "FIGURES": {
+        "ALL": "Todos os utilizadores",
+        "ADMINS": "Administradores",
+        "ROOM_MANAGERS": "Gestores de sala",
+        "ROOM_MEMBERS": "Membros da sala",
+        "UNIT": "utilizadores"
+      }
     },
     "PROFILE": {
       "TITLE_OWN": "Perfil",

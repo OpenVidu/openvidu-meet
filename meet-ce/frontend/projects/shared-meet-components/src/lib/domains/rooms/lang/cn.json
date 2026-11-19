@@ -75,7 +75,17 @@
       "MATCH_MODE_STARTS_WITH": "开头匹配",
       "MATCH_MODE_CONTAINS": "包含",
       "MATCH_MODE_EXACT": "精确匹配",
-      "MATCH_MODE_REGEX": "正则表达式"
+      "MATCH_MODE_REGEX": "正则表达式",
+      "FIGURES": {
+        "ALL": "全部房间",
+        "ACTIVE_MEETING": "会议中",
+        "OPEN": "开放",
+        "CLOSED": "已关闭",
+        "EXPIRING": "7 天内到期",
+        "EXPIRING_SENTENCE": "{count, plural, other {# 个房间将在 7 天内到期}}",
+        "EXPIRES_WHEN": "{days, plural, =0 {今天} =1 {明天} other {# 天后}}",
+        "UNIT": "房间"
+      }
     },
     "DETAIL": {
       "LOADING_TITLE": "正在加载房间详情",

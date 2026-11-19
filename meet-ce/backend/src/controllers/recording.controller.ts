@@ -8,6 +8,7 @@ import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { RecordingHelper } from '../helpers/recording.helper.js';
 import { errorRecordingsZipEmpty, internalError } from '../models/error.model.js';
+import { AnalyticsService } from '../services/analytics.service.js';
 import { LoggerService } from '../services/logger.service.js';
 import { RecordingService } from '../services/recording.service.js';
 import { getBaseUrl } from '../utils/url.utils.js';
@@ -73,6 +74,18 @@ export const getRecordings = async (req: Request, res: Response) => {
 		});
 	} catch (error) {
 		handleError(res, error, 'getting recordings');
+	}
+};
+
+export const getRecordingsSummary = async (_req: Request, res: Response) => {
+	const logger = container.get(LoggerService);
+	logger.verbose('Getting recordings summary');
+
+	try {
+		const summary = await container.get(AnalyticsService).getRecordingsSummary(res.locals.validatedQuery);
+		return res.status(200).json(summary);
+	} catch (error) {
+		handleError(res, error, 'getting recordings summary');
 	}
 };
 

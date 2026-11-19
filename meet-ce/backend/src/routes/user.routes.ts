@@ -70,6 +70,7 @@ internalUserRouter.use(bodyParser.urlencoded({ extended: true }));
 internalUserRouter.use(bodyParser.json());
 internalUserRouter.use(apiLimiter);
 
+internalUserRouter.get('/summary', withAuth(accessTokenValidator(MeetUserRole.ADMIN)), userCtrl.getUsersSummary);
 internalUserRouter.get(
 	'/me',
 	withAuth(

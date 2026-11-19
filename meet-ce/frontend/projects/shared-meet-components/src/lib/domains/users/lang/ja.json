@@ -57,7 +57,14 @@
       "LOADING_TITLE": "ユーザーを読み込んでいます",
       "LOADING_SUBTITLE": "ユーザーを取得していますので、お待ちください...",
       "PAGE_TITLE": "ユーザー",
-      "PAGE_SUBTITLE": "ユーザーの管理、アクセス制御、新しいアカウントの登録を行います。"
+      "PAGE_SUBTITLE": "ユーザーの管理、アクセス制御、新しいアカウントの登録を行います。",
+      "FIGURES": {
+        "ALL": "すべてのユーザー",
+        "ADMINS": "管理者",
+        "ROOM_MANAGERS": "ルームマネージャー",
+        "ROOM_MEMBERS": "ルームメンバー",
+        "UNIT": "ユーザー"
+      }
     },
     "PROFILE": {
       "TITLE_OWN": "プロフィール",

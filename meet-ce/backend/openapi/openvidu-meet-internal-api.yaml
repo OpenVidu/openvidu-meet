@@ -16,6 +16,8 @@ paths:
         $ref: './auth/auth.yaml#/~1auth~1refresh'
     /api-keys:
         $ref: './api-keys/api-keys.yaml#/~1auth~1api-keys'
+    /users/summary:
+        $ref: './users/internal/users.yaml#/~1users~1summary'
     /users/me:
         $ref: './users/internal/users.yaml#/~1users~1me'
     /users/change-password:
@@ -26,6 +28,8 @@ paths:
         $ref: './config/config.yaml#/~1config~1rooms~1appearance'
     /config/captions:
         $ref: './config/config.yaml#/~1config~1captions'
+    /rooms/summary:
+        $ref: './rooms/internal/rooms.yaml#/~1rooms~1summary'
     /rooms/{roomId}/members/token:
         $ref: './room-members/internal/room-members.yaml#/~1rooms~1{roomId}~1members~1token'
     /rooms/{roomId}/members/token/refresh:
@@ -34,6 +38,8 @@ paths:
         $ref: './meetings/internal/meetings.yaml#/~1meetings~1{roomId}~1reactions'
     /meetings/{roomId}/waiting-participants/leave:
         $ref: './meetings/internal/meetings.yaml#/~1meetings~1{roomId}~1waiting-participants~1leave'
+    /recordings/summary:
+        $ref: './recordings/internal/recordings.yaml#/~1recordings~1summary'
     /recordings/{recordingId}/link:
         $ref: './recordings/internal/recordings.yaml#/~1recordings~1{recordingId}~1link'
     /ai/assistants:
@@ -59,6 +65,12 @@ components:
             $ref: ./rooms/schemas/meet-room.yaml
         MeetAnalytics:
             $ref: ./analytics/schemas/meet-analytics.yaml
+        MeetRoomsSummary:
+            $ref: ./rooms/internal/schemas/meet-rooms-summary.yaml
+        MeetRecordingsSummary:
+            $ref: ./recordings/internal/schemas/meet-recordings-summary.yaml
+        MeetUsersSummary:
+            $ref: ./users/internal/schemas/meet-users-summary.yaml
         AiAssistant:
             $ref: ./ai-assistants/schemas/ai-assistant.yaml
         Error:

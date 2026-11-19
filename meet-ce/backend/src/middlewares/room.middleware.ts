@@ -32,7 +32,7 @@ export const applyRoomListAccessFilters = (_req: Request, res: Response, next: N
 		return next();
 	}
 
-	const queryOptions = res.locals.validatedQuery as RoomQueryWithFields;
+	const queryOptions = (res.locals.validatedQuery ??= {}) as RoomQueryWithFields;
 	const hasScopeFilters = !!queryOptions.owner || !!queryOptions.member || queryOptions.userAccess;
 
 	// Non-admin users can only scope owner/member filters to their own userId.

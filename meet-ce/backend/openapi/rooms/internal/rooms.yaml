@@ -1,0 +1,25 @@
+/rooms/summary:
+    get:
+        operationId: roomGetSummary
+        summary: Get the figures of the room list
+        description: >
+            Counts the rooms the authenticated user can list, the same rooms `GET /rooms` returns to them without
+            filters: all of them for an `admin`, and for the other roles the rooms they own, are members of or that
+            have user access enabled. Takes no parameters.
+
+
+            **Access token roles**: `admin`, `room_manager`, `room_member`. An API key or a room member token is
+            answered with `401`.
+        tags:
+            - Internal API - Rooms
+        security:
+            - accessTokenHeader: []
+        responses:
+            '200':
+                $ref: './responses/success/get-rooms-summary.yaml'
+            '401':
+                $ref: '../../shared/responses/errors/unauthorized.yaml'
+            '429':
+                $ref: '../../shared/responses/errors/too-many-requests.yaml'
+            '500':
+                $ref: '../../shared/responses/errors/internal-server.yaml'

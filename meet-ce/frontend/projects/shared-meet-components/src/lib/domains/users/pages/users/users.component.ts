@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
@@ -10,6 +10,9 @@ import { bulkDeleteUsersDialogPreset, deleteUserDialogPreset } from '../../utils
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { EntityListState } from '../../../../shared/models/entity-list.model';
 import { ListUrlState } from '../../../../shared/models/list-url-state';
+import { SummaryState } from '../../../../shared/models/summary-state';
+import { ListFigure, selectedFigureKey } from '../../../../shared/components/list-figures/list-figure.model';
+import { ListFiguresComponent } from '../../../../shared/components/list-figures/list-figures.component';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { DialogService } from '../../../../shared/services/dialog.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
@@ -25,12 +28,20 @@ import {
 	UserTableFilter
 } from '../../components/users-lists/users-lists.component';
 import { UserService } from '../../services/user.service';
+import { UsersUiUtils } from '../../utils/ui';
 import { LoggerService } from '../../../../shared/services/logger.service';
 import type { ILogger } from '../../../../shared/models/logger.model';
 
 @Component({
 	selector: 'ov-users',
-	imports: [MatButtonModule, MatIconModule, MatProgressSpinnerModule, UsersListsComponent, TranslatePipe],
+	imports: [
+		MatButtonModule,
+		MatIconModule,
+		MatProgressSpinnerModule,
+		UsersListsComponent,
+		ListFiguresComponent,
+		TranslatePipe
+	],
 	templateUrl: './users.component.html',
 	styleUrl: './users.component.scss'
 })
@@ -59,9 +70,63 @@ export class UsersComponent implements OnInit {
 		}
 	});
 
+	protected readonly summary = new SummaryState({
+		read: () => this.userService.getUsersSummary(),
+		onError: (error) => this.log.e('Error loading users summary:', error)
+	});
+
+	protected readonly figures = computed<ListFigure<MeetUserRole>[]>(() => {
+		const summary = this.summary.value();
+		this.translateService.translationsLoaded();
+
+		if (!summary?.totalUsers) return [];
+
+		const t = (key: string) => this.translateService.translate(`USERS.LIST.FIGURES.${key}`);
+
+		return [
+			{
+				key: 'all',
+				label: t('ALL'),
+				count: summary.totalUsers,
+				color: 'var(--ov-meet-icon-users)',
+				icon: 'group',
+				filter: null
+			},
+			{
+				key: 'admins',
+				label: t('ADMINS'),
+				count: summary.adminUsers,
+				color: 'var(--ov-meet-color-primary)',
+				icon: UsersUiUtils.getRoleIcon(MeetUserRole.ADMIN),
+				filter: MeetUserRole.ADMIN
+			},
+			{
+				key: 'roomManagers',
+				label: t('ROOM_MANAGERS'),
+				count: summary.roomManagerUsers,
+				color: 'var(--ov-meet-color-success)',
+				icon: UsersUiUtils.getRoleIcon(MeetUserRole.ROOM_MANAGER),
+				filter: MeetUserRole.ROOM_MANAGER
+			},
+			{
+				key: 'roomMembers',
+				label: t('ROOM_MEMBERS'),
+				count: summary.roomMemberUsers,
+				color: 'var(--ov-meet-color-warning)',
+				icon: UsersUiUtils.getRoleIcon(MeetUserRole.ROOM_MEMBER),
+				filter: MeetUserRole.ROOM_MEMBER
+			}
+		];
+	});
+
+	protected readonly selectedFigure = computed(() =>
+		selectedFigureKey(this.figures(), this.initialFilters().roleFilter)
+	);
+
 	async ngOnInit() {
 		this.currentUserId.set((await this.authService.getUserId()) ?? '');
 
+		void this.summary.refresh();
 		await this.list.initialize(this.initialFilters());
 		this.urlState.onChange((filters) => {
 			this.initialFilters.set(filters);
@@ -96,6 +161,15 @@ export class UsersComponent implements OnInit {
 			nextPageToken: response.pagination.nextPageToken,
 			hasMore: response.pagination.isTruncated
 		};
+	}
+
+	protected onFigureSelect(role: MeetUserRole | null) {
+		this.urlState.write({ ...this.initialFilters(), roleFilter: role ?? '' });
+	}
+
+	protected async onRefresh(filters: UserTableFilter) {
+		void this.summary.refresh();
+		await this.list.refresh(filters);
 	}
 
 	// ─── Actions ──────────────────────────────────────────────────────────────
@@ -142,6 +216,7 @@ export class UsersComponent implements OnInit {
 		this.list.update((users) =>
 			users.map((currentUser) => (currentUser.userId === updatedUser.userId ? updatedUser : currentUser))
 		);
+		void this.summary.refresh();
 	}
 
 	private onResetPassword(user: MeetUserDTO) {
@@ -160,6 +235,7 @@ export class UsersComponent implements OnInit {
 					await this.userService.deleteUser(user.userId);
 
 					this.list.remove((u) => u.userId === user.userId);
+					void this.summary.refresh();
 					this.notificationService.showMessage(
 						`${this.translateService.translate('USERS.ERRORS.USER_DELETED_PREFIX')}${user.name}${this.translateService.translate('USERS.ERRORS.USER_DELETED_SUFFIX')}`
 					);
@@ -181,6 +257,7 @@ export class UsersComponent implements OnInit {
 				const { deleted } = await this.userService.bulkDeleteUsers(userIds);
 
 				this.list.remove((u) => deleted.includes(u.userId));
+				void this.summary.refresh();
 				this.notificationService.showMessage(
 					`${deleted.length} ${this.translateService.translate(deleted.length > 1 ? 'USERS.ERRORS.USERS_DELETED_SUFFIX_PLURAL' : 'USERS.ERRORS.USERS_DELETED_SUFFIX_SINGULAR')}`
 				);
@@ -200,6 +277,7 @@ export class UsersComponent implements OnInit {
 
 				// Partial result: some users were deleted, some not.
 				this.list.remove((u) => deleted.includes(u.userId));
+				void this.summary.refresh();
 
 				let message = '';
 

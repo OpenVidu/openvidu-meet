@@ -79,5 +79,10 @@
       "TITLE": "内部错误",
       "MESSAGE": "发生意外错误，请稍后重试"
     }
+  },
+  "LIST_FIGURES": {
+    "LABEL": "关键数据",
+    "NEXT": "下一个：",
+    "SHARE": "占{unit}的 {percent}%"
   }
 }

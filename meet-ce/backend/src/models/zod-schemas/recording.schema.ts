@@ -16,6 +16,25 @@ import { maxItemsSchema } from './pagination.schema.js';
 
 const fieldsSchema = fieldListSchema(MEET_RECORDING_FIELDS);
 
+const recordingStatusSchema = z.enum(MeetRecordingStatus);
+
+const statusListSchema = z.string().transform((value, ctx) => {
+	const statuses = new Set<MeetRecordingStatus>();
+
+	for (const item of value.split(',')) {
+		const { success, data, error } = recordingStatusSchema.safeParse(item.trim());
+
+		if (!success) {
+			ctx.addIssue({ code: 'custom', message: error.issues[0].message });
+			return z.NEVER;
+		}
+
+		statuses.add(data);
+	}
+
+	return [...statuses];
+});
+
 export const nonEmptySanitizedRecordingId = (fieldName: string) =>
 	z
 		.string()
@@ -89,7 +108,7 @@ export const RecordingFiltersSchema = z
 
 			return arg;
 		}, z.boolean().optional().default(false)),
-		status: z.enum(MeetRecordingStatus).optional(),
+		status: statusListSchema.optional(),
 		fields: fieldsSchema,
 		maxItems: maxItemsSchema,
 		nextPageToken: z.string().optional(),
