@@ -337,6 +337,30 @@ test.describe('Room Features E2E Tests', () => {
 			await leaveMeeting(page);
 		});
 
+		test('should enter fullscreen from More options with its menus inside, and leave it again', async ({
+			page
+		}) => {
+			await openMeeting(page, roomId, { role: 'moderator' });
+
+			await openMoreOptionsMenu(page);
+			await wcLocator(page, '#fullscreen-btn').click();
+			await expect(wcLocator(page, '#meeting-stage:fullscreen')).toHaveCount(1);
+
+			await openMoreOptionsMenu(page);
+			const menuItem = wcLocator(page, '#meeting-stage > .cdk-overlay-container #fullscreen-btn');
+			await expect(menuItem.locator('mat-icon')).toHaveText('fullscreen_exit');
+
+			await menuItem.click();
+			await expect(wcLocator(page, '#meeting-stage:fullscreen')).toHaveCount(0);
+			await expect(wcLocator(page, '#meeting-stage > .cdk-overlay-container')).toHaveCount(0);
+
+			await openMoreOptionsMenu(page);
+			await expect(wcLocator(page, '#fullscreen-btn mat-icon')).toHaveText('fullscreen');
+
+			await page.keyboard.press('Escape');
+			await leaveMeeting(page, { role: 'moderator' });
+		});
+
 		test('should show activities panel', async ({ page }) => {
 			await openMeeting(page, roomId, { role: 'moderator' });
 

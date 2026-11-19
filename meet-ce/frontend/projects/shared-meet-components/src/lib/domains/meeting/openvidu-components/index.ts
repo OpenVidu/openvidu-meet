@@ -69,7 +69,6 @@ export * from './services/theme/meeting-theme.service';
 export * from './services/translate/meeting-translate.service';
 export * from './services/viewport/viewport.service';
 //Modules
-export * from './config/custom-cdk-overlay';
 export * from './openvidu-components-angular-ui.module';
 export * from './openvidu-components-angular.module';
 

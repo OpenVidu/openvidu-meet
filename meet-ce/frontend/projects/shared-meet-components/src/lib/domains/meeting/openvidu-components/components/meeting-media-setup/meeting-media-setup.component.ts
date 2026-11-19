@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, input, OnDestroy, OnInit, output, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, OnInit, output, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -7,7 +7,6 @@ import { AvatarView } from '../../models/avatar-view.model';
 import { CustomDevice } from '../../models/device.model';
 import { LangOption } from '../../models/lang.model';
 import { TranslatePipe } from '../../pipes/translate.pipe';
-import { CdkOverlayService } from '../../services/cdk-overlay/cdk-overlay.service';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
 import { DeviceService } from '../../services/device/device.service';
 import { LocalMediaService } from '../../services/local-media/local-media.service';
@@ -45,7 +44,7 @@ import type { ILogger } from '../../../../../shared/models/logger.model';
 	templateUrl: './meeting-media-setup.component.html',
 	styleUrl: './meeting-media-setup.component.scss'
 })
-export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
+export class MeetingMediaSetupComponent implements OnInit {
 	readonly error = input<{ name: string; message: string } | undefined>(undefined);
 	readonly onVideoDeviceChanged = output<CustomDevice>();
 	readonly onAudioDeviceChanged = output<CustomDevice>();
@@ -87,7 +86,6 @@ export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
 		isSpeaking: false,
 		hasEncryptionError: false
 	}));
-	private readonly cdkSrv = inject(CdkOverlayService);
 	private readonly virtualBackgroundService = inject(VirtualBackgroundService);
 	private readonly translateService = inject(MeetingTranslateService);
 	protected readonly viewportService = inject(ViewportService);
@@ -112,16 +110,6 @@ export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
 	async ngOnInit() {
 		await this.initializeDevices();
 		this.isLoading.set(false);
-	}
-
-	ngOnDestroy() {
-		this.cdkSrv.setSelector('body');
-	}
-
-	onDeviceSelectorClicked() {
-		// Some devices as iPhone do not show the menu panels correctly
-		// Updating the container where the panel is added fix the problem.
-		this.cdkSrv.setSelector('#prejoin-container');
 	}
 
 	join() {
