@@ -2003,7 +2003,6 @@ test.describe('Layout E2E Tests', () => {
 
 				// Switch to mosaic and verify the same participants are visible
 				await selectMosaicLayout(pageA);
-				await pageA.waitForTimeout(1_000);
 				await waitForVisibleRemoteParticipants(pageA, {
 					count: 3,
 					includes: ['remote-a', 'remote-b', 'remote-a (screen)']
@@ -2011,7 +2010,6 @@ test.describe('Layout E2E Tests', () => {
 
 				// Switch back to smart mosaic and verify the same participants are visible
 				await selectSmartMosaicLayout(pageA);
-				await pageA.waitForTimeout(1_000);
 				await waitForVisibleRemoteParticipants(pageA, {
 					count: 3,
 					includes: ['remote-a', 'remote-b', 'remote-a (screen)']
