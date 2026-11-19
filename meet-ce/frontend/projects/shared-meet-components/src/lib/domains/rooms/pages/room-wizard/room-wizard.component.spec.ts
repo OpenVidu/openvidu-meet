@@ -2,6 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
+import { MeetRoomMemberRole } from '@openvidu-meet/typings';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
@@ -159,5 +160,71 @@ describe('RoomWizardComponent.createRoomAdvance (locked room message)', () => {
 			enabled: true,
 			message: null
 		});
+	});
+});
+
+/** A created room takes the user to its join screen; a member that cannot be added never undoes the room. */
+describe('RoomWizardComponent (landing in the created room)', () => {
+	let component: RoomWizardComponent;
+	let wizardService: RoomWizardStateService;
+	let createRoom: jasmine.Spy;
+	let createRoomMember: jasmine.Spy;
+	let showMessage: jasmine.Spy;
+	let redirectTo: jasmine.Spy;
+
+	beforeEach(() => {
+		createRoom = jasmine
+			.createSpy('createRoom')
+			.and.resolveTo({ roomId: 'room-1', access: { user: { url: 'https://meet.example.com/room/room-1' } } });
+		createRoomMember = jasmine.createSpy('createRoomMember').and.resolveTo({});
+		showMessage = jasmine.createSpy('showMessage');
+		redirectTo = jasmine.createSpy('redirectTo').and.resolveTo(undefined);
+
+		TestBed.configureTestingModule({
+			providers: [
+				provideZonelessChangeDetection(),
+				RoomWizardStateService,
+				{ provide: RoomService, useValue: { createRoom } },
+				{ provide: RoomMemberService, useValue: { createRoomMember } },
+				{ provide: NotificationService, useValue: { showMessage } },
+				{ provide: NavigationService, useValue: { redirectTo, navigateTo: () => Promise.resolve() } },
+				{ provide: TranslateService, useValue: { translate: (key: string) => key } },
+				{
+					provide: ActivatedRoute,
+					useValue: {
+						snapshot: { url: [], paramMap: { get: () => null }, queryParamMap: { get: () => null } }
+					}
+				}
+			]
+		});
+
+		component = TestBed.createComponent(RoomWizardComponent).componentInstance;
+		wizardService = TestBed.inject(RoomWizardStateService);
+		wizardService.initializeWizard(false);
+	});
+
+	it('creates a room from its name alone and opens its join screen', async () => {
+		await component.createRoomBasic('Team sync');
+
+		expect(createRoom.calls.mostRecent().args[0]).toEqual({ roomName: 'Team sync' });
+		expect(redirectTo).toHaveBeenCalledOnceWith('/room/room-1');
+	});
+
+	it('creates the room and warns of the members that could not be added', async () => {
+		wizardService.addPendingMember({ userId: 'ana', baseRole: MeetRoomMemberRole.SPEAKER });
+		wizardService.addPendingMember({ userId: 'bad_user', baseRole: MeetRoomMemberRole.SPEAKER });
+		createRoomMember.and.callFake(async (_roomId: string, member: { userId: string }) => {
+			if (member.userId === 'bad_user') throw new Error('Conflict');
+
+			return {};
+		});
+		spyOn(console, 'warn');
+
+		await component.createRoomAdvance();
+
+		expect(createRoomMember).toHaveBeenCalledTimes(2);
+		expect(showMessage).toHaveBeenCalledOnceWith(jasmine.stringMatching(/bad_user/));
+		expect(showMessage).not.toHaveBeenCalledWith(jasmine.stringMatching(/ana/));
+		expect(redirectTo).toHaveBeenCalledOnceWith('/room/room-1');
 	});
 });

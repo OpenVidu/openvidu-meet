@@ -1,4 +1,10 @@
-import { MEET_PERMISSION_KEYS, MeetRoomConfig, MeetRoomMemberPermissions } from '@openvidu-meet/typings';
+import {
+	MEET_PERMISSION_KEYS,
+	MeetAppearanceConfig,
+	MeetRoomConfig,
+	MeetRoomMemberPermissions,
+	MeetRoomThemeMode
+} from '@openvidu-meet/typings';
 import { InitialMediaRequest, RoomFeatures } from '../models/features.model';
 import { FeatureCalculator } from './features.utils';
 
@@ -213,5 +219,44 @@ describe('FeatureCalculator.resolveInitialMediaState', () => {
 		const state = stateFor({ audioActive: true }, { initialAudioActive: true }, { mediaPublishAudio: false });
 
 		expect(state.microphone).toBeFalse();
+	});
+});
+
+/**
+ * An enabled theme owns the meeting's look, so the participant gets no theme selector; no theme or a
+ * disabled one leaves the selector as it was.
+ */
+describe('FeatureCalculator.applyAppearanceConfig', () => {
+	const themeConfig = (enabled?: boolean): MeetAppearanceConfig => ({
+		themes:
+			enabled === undefined
+				? []
+				: [
+						{
+							name: 'default',
+							enabled,
+							baseTheme: MeetRoomThemeMode.LIGHT,
+							primaryColor: '#e30613'
+						}
+					]
+	});
+
+	const showThemeSelector = (appearanceConfig: MeetAppearanceConfig): boolean => {
+		const features = { showThemeSelector: true } as RoomFeatures;
+		FeatureCalculator.applyAppearanceConfig(features, appearanceConfig);
+
+		return features.showThemeSelector;
+	};
+
+	it('should hide the theme selector while the stored theme is enabled', () => {
+		expect(showThemeSelector(themeConfig(true))).toBeFalse();
+	});
+
+	it('should keep the theme selector when the stored theme is disabled', () => {
+		expect(showThemeSelector(themeConfig(false))).toBeTrue();
+	});
+
+	it('should keep the theme selector when no theme is stored', () => {
+		expect(showThemeSelector(themeConfig())).toBeTrue();
 	});
 });

@@ -14,6 +14,7 @@ import {
 	MeetRoomOptions,
 	MeetRoomRoles,
 	MeetRoomStatus,
+	MeetRoomTheme,
 	MeetUserDTO,
 	MeetUserOptions,
 	MeetUserRole
@@ -455,6 +456,20 @@ export const deleteUser = async (userId: string): Promise<void> => {
 
 	const responseText = await response.text();
 	assertOk(response, responseText, `delete user ${userId}`);
+};
+
+/**
+ * Replaces the deployment-wide rooms appearance with a single theme, as an admin does from the console.
+ */
+export const updateRoomsAppearance = async (accessToken: string, theme: MeetRoomTheme): Promise<void> => {
+	const response = await fetch(withInternalApiPath('/config/rooms/appearance'), {
+		method: 'PUT',
+		headers: { 'content-type': 'application/json', authorization: `Bearer ${accessToken}` },
+		body: JSON.stringify({ appearance: { themes: [theme] } })
+	});
+
+	const responseText = await response.text();
+	assertOk(response, responseText, 'update rooms appearance');
 };
 
 /**

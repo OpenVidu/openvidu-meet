@@ -31,6 +31,19 @@ const joinToken = (badge = 'other'): string => {
 	return `${header}.${payload}.fake-signature`;
 };
 
+/** A token of a participant already in the meeting, which carries the identity (`sub`) and an expiry. */
+const meetingToken = (expiresAtMs: number): string => {
+	const header = base64UrlEncode(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+	const payload = base64UrlEncode(
+		JSON.stringify({
+			sub: 'participant-1',
+			exp: Math.floor(expiresAtMs / 1000),
+			metadata: JSON.stringify({ roomId: 'room1', badge: 'other' })
+		})
+	);
+	return `${header}.${payload}.fake-signature`;
+};
+
 describe('RoomMemberContextService', () => {
 	let service: RoomMemberContextService;
 	let redirectToErrorPage: jasmine.Spy;
@@ -167,6 +180,71 @@ describe('RoomMemberContextService', () => {
 			expect(updated).toBeFalse();
 			expect(requestJoinToken).not.toHaveBeenCalled();
 			expect(redirectToErrorPage).toHaveBeenCalledOnceWith(NavigationErrorReason.ROOM_ACCESS_REVOKED, true);
+		});
+	});
+
+	/** The meeting asks for a new token a minute before the one it holds expires, at most ten seconds earlier. */
+	describe('token renewal scheduling', () => {
+		const NOW = 1_800_000_000_000;
+		const MINUTE_MS = 60_000;
+		const SECOND_MS = 1_000;
+
+		const flush = async () => {
+			for (let i = 0; i < 10; i++) await Promise.resolve();
+		};
+
+		beforeEach(() => {
+			jasmine.clock().install();
+			jasmine.clock().mockDate(new Date(NOW));
+		});
+
+		afterEach(() => {
+			service.clearContext();
+			jasmine.clock().uninstall();
+		});
+
+		const joinMeetingExpiringIn = async (minutes: number) => {
+			requestJoinToken.and.resolveTo({ token: meetingToken(NOW + minutes * MINUTE_MS) });
+			await service.generateToken('room1', { secret: 'speaker-secret', joinMeeting: true });
+		};
+
+		it('renews the token shortly before it expires, and the renewed one the same way', async () => {
+			const renewed = meetingToken(NOW + 20 * MINUTE_MS);
+			refreshRoomMemberToken.and.resolveTo({ token: renewed });
+			await joinMeetingExpiringIn(10);
+
+			jasmine.clock().tick(10 * MINUTE_MS - 71 * SECOND_MS);
+			await flush();
+
+			expect(refreshRoomMemberToken).not.toHaveBeenCalled();
+
+			jasmine.clock().tick(12 * SECOND_MS);
+			await flush();
+
+			expect(refreshRoomMemberToken).toHaveBeenCalledOnceWith('room1');
+			expect(service.roomMemberToken()).toBe(renewed);
+
+			jasmine.clock().tick(10 * MINUTE_MS);
+			await flush();
+
+			expect(refreshRoomMemberToken).toHaveBeenCalledTimes(2);
+		});
+
+		it('does not renew the token of a participant who has not joined the meeting yet', async () => {
+			jasmine.clock().tick(60 * MINUTE_MS);
+			await flush();
+
+			expect(refreshRoomMemberToken).not.toHaveBeenCalled();
+		});
+
+		it('stops renewing once the participant has left the meeting', async () => {
+			await joinMeetingExpiringIn(10);
+
+			service.clearContext();
+			jasmine.clock().tick(60 * MINUTE_MS);
+			await flush();
+
+			expect(refreshRoomMemberToken).not.toHaveBeenCalled();
 		});
 	});
 

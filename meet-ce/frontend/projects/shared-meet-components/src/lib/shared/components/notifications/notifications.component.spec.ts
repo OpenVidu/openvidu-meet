@@ -75,4 +75,29 @@ describe('NotificationsComponent', () => {
 		expect(admit).not.toHaveBeenCalled();
 		expect(notificationService.notifications()).toEqual([]);
 	});
+
+	it('never takes the focus away from what the participant is typing, and leaves its actions to the keyboard', async () => {
+		const chatInput = document.createElement('input');
+		document.body.appendChild(chatInput);
+		chatInput.focus();
+
+		notificationService.showNotification({
+			kind: 'waiting-participant-knock',
+			icon: 'hourglass_top',
+			message: 'Wants to join',
+			placement: 'pinned',
+			secondaryAction: { label: 'Deny', run: () => {} },
+			action: { label: 'Admit', run: () => {} }
+		});
+		await render();
+
+		expect(document.activeElement).toBe(chatInput);
+		expect(fixture.nativeElement.querySelector('.ov-notification').getAttribute('role')).toBe('alert');
+		buttons().forEach((button) => {
+			expect(button.tagName).toBe('BUTTON');
+			expect(button.tabIndex).toBe(0);
+		});
+
+		chatInput.remove();
+	});
 });

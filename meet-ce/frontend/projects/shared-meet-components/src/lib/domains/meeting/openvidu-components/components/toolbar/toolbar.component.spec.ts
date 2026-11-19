@@ -1,4 +1,23 @@
-import { signal } from '@angular/core';
+import { ElementRef, provideZonelessChangeDetection, signal } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { DialogService } from '../../../../../shared/services/dialog.service';
+import { LoggerService } from '../../../../../shared/services/logger.service';
+import { MeetingContextService } from '../../../services/meeting-context.service';
+import { WaitingParticipantsAdminService } from '../../../waiting-participants/waiting-participants-admin.service';
+import { BroadcastStateService } from '../../services/broadcast/broadcast-state.service';
+import { ChatService } from '../../services/chat/chat.service';
+import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
+import { DeviceService } from '../../services/device/device.service';
+import { DocumentService } from '../../services/document/document.service';
+import { LocalMediaService } from '../../services/local-media/local-media.service';
+import { MeetingLiveKitService } from '../../services/meeting-livekit/meeting-livekit.service';
+import { PanelService } from '../../services/panel/panel.service';
+import { ParticipantService } from '../../services/participant/participant.service';
+import { PlatformService } from '../../services/platform/platform.service';
+import { RecordingService } from '../../services/recording/recording.service';
+import { ScreenShareService } from '../../services/screen-share/screen-share.service';
+import { MeetingTranslateService } from '../../services/translate/meeting-translate.service';
+import { ViewportService } from '../../services/viewport/viewport.service';
 import { ToolbarComponent } from './toolbar.component';
 
 describe('ToolbarComponent microphone toggle', () => {
@@ -38,5 +57,76 @@ describe('ToolbarComponent microphone toggle', () => {
 		await toggling;
 
 		expect(toolbar.microphoneMuteChanging()).toBeFalse();
+	});
+});
+
+describe('ToolbarComponent when the connection is lost', () => {
+	let reconnecting: ReturnType<typeof signal<boolean>>;
+	let panelOpen: ReturnType<typeof signal<{ isOpened: boolean }>>;
+	let closePanel: jasmine.Spy;
+
+	/** A service whose members the toolbar reads at construction but this spec does not care about. */
+	const stubOf = (members: Record<string | symbol, unknown> = {}) =>
+		new Proxy(members, { get: (target, key) => (key in target ? target[key] : signal(undefined)) });
+
+	beforeEach(() => {
+		reconnecting = signal(false);
+		panelOpen = signal({ isOpened: false });
+		closePanel = jasmine.createSpy('closePanel');
+
+		TestBed.configureTestingModule({
+			providers: [
+				provideZonelessChangeDetection(),
+				{ provide: ElementRef, useValue: new ElementRef(document.createElement('div')) },
+				{ provide: DocumentService, useValue: stubOf() },
+				{ provide: ChatService, useValue: stubOf({ chatMessages: signal([]) }) },
+				{
+					provide: PanelService,
+					useValue: stubOf({
+						panelOpened: signal({ isOpened: false }),
+						isPanelOpened: () => panelOpen().isOpened,
+						isChatPanelOpened: () => false,
+						closePanel
+					})
+				},
+				{ provide: ParticipantService, useValue: stubOf() },
+				{ provide: WaitingParticipantsAdminService, useValue: stubOf() },
+				{
+					provide: LocalMediaService,
+					useValue: stubOf({ camera: { enabled: signal(false) }, microphone: { enabled: signal(false) } })
+				},
+				{ provide: ScreenShareService, useValue: stubOf() },
+				{ provide: MeetingLiveKitService, useValue: stubOf({ isReconnecting: reconnecting }) },
+				{ provide: DeviceService, useValue: stubOf() },
+				{ provide: DialogService, useValue: stubOf() },
+				{ provide: RecordingService, useValue: stubOf() },
+				{ provide: BroadcastStateService, useValue: stubOf() },
+				{ provide: MeetingContextService, useValue: stubOf() },
+				{ provide: MeetingTranslateService, useValue: stubOf() },
+				{ provide: MeetingUiConfigService, useValue: stubOf({ roomNameSignal: signal('') }) },
+				{ provide: PlatformService, useValue: stubOf({ isFirefox: () => false, isMobile: () => false }) },
+				{ provide: ViewportService, useValue: stubOf() },
+				{ provide: LoggerService, useValue: { get: () => ({ d: () => {}, w: () => {}, e: () => {} }) } }
+			]
+		});
+
+		TestBed.runInInjectionContext(() => new ToolbarComponent());
+	});
+
+	it('closes the panel that is open', () => {
+		panelOpen.set({ isOpened: true });
+		TestBed.tick();
+
+		reconnecting.set(true);
+		TestBed.tick();
+
+		expect(closePanel).toHaveBeenCalledTimes(1);
+	});
+
+	it('has no panel to close while none is open', () => {
+		reconnecting.set(true);
+		TestBed.tick();
+
+		expect(closePanel).not.toHaveBeenCalled();
 	});
 });

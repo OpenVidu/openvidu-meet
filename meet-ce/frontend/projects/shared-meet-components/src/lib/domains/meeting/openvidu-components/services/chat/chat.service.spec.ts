@@ -74,6 +74,17 @@ describe('ChatService', () => {
 		expect(service.chatMessages()).toEqual([{ isLocal: true, participantName: 'Me', message: 'hello there' }]);
 	});
 
+	['', ' ', '     '].forEach((blank) => {
+		it(`does not send a message of ${blank.length} space(s)`, async () => {
+			remoteParticipants = [{ identity: 'reader', canReadChat: true }];
+
+			await service.sendMessage(blank);
+
+			expect(sendText).not.toHaveBeenCalled();
+			expect(service.chatMessages()).toEqual([]);
+		});
+	});
+
 	it('sends nothing when no participant holds chatRead, and still shows the own message', async () => {
 		remoteParticipants = [{ identity: 'non-reader', canReadChat: false }];
 

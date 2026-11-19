@@ -183,6 +183,21 @@ describe('NavigationService - hosted-mode event gates', () => {
 
 			expect(redirectSpy).not.toHaveBeenCalled();
 		});
+
+		['javascript:alert(document.cookie)', 'data:text/html,<script>alert(1)</script>'].forEach((url) => {
+			it(`refuses the non-web destination ${url.split(':')[0]}:`, async () => {
+				spyOn(leaveRedirect, 'getLeaveRedirectURL').and.returnValue(url);
+				spyOn(console, 'error');
+				const redirectSpy = spyOn(
+					service as unknown as { redirectWindow: (url: string) => void },
+					'redirectWindow'
+				);
+
+				await service.redirectToLeaveUrl();
+
+				expect(redirectSpy).not.toHaveBeenCalled();
+			});
+		});
 	});
 
 	/**

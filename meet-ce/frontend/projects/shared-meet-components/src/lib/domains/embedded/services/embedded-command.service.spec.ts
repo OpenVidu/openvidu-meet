@@ -857,6 +857,21 @@ describe('EmbeddedCommandService', () => {
 			await expectAsync(service.broadcastStart()).toBeResolved();
 		});
 
+		it('broadcastStart with own destinations and no broadcastEdit leaves the refusal to the server and logs it', async () => {
+			hasPermission.and.callFake((permission: string) => permission !== 'broadcastEdit');
+			const refusal = new Error('Forbidden: broadcastEdit is required');
+			broadcastService.request.and.rejectWith(refusal);
+
+			await expectAsync(
+				service.broadcastStart({
+					destinations: [{ name: 'Own', url: 'rtmp://media.example.com/live/key' }]
+				})
+			).toBeResolved();
+
+			expect(broadcastService.request).toHaveBeenCalledTimes(1);
+			expect(logger.error).toHaveBeenCalledWith(jasmine.any(String), refusal);
+		});
+
 		it('a failing action is logged, not propagated to the host', async () => {
 			moderationService.endMeeting.and.rejectWith(new Error('boom'));
 
