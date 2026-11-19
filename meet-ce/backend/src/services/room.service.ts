@@ -557,12 +557,12 @@ export class RoomService {
 	}
 
 	/**
-	 * Retrieves the config of a room to gate a feature on it, reusing the room the room member token of the current
-	 * request was validated against instead of reading it again, when it is that same room.
+	 * Retrieves the config of a room to answer a read or gate a feature on it, reusing the room the room member token
+	 * of the current request was validated against instead of reading it again, when it is that same room.
 	 *
 	 * The config it returns may have been read when the request was authenticated. That is as current as a new read
-	 * only because a room's config cannot change while the room has an active meeting, so use it to gate a feature,
-	 * never as the config a write starts from.
+	 * only because a room's config cannot change while the room has an active meeting, so never use it as the config a
+	 * write starts from.
 	 *
 	 * @param roomId - The ID of the room
 	 * @returns A promise that resolves to the config of the room
