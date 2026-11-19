@@ -270,6 +270,48 @@ describe('WebhookDispatcherService delivery', () => {
 		expect(warnings).toContain(`Webhook event meetingStarted could not be delivered to 'wh-/down' (${base}/down)`);
 	});
 
+	it('makes six attempts as shipped, waiting 0.3 s before the first retry and doubling the wait each time', async () => {
+		jest.useFakeTimers();
+
+		try {
+			const { service, send } = build([webhook('/down')]);
+			const attempts = jest
+				.spyOn(service as unknown as { sendRequest: () => Promise<void> }, 'sendRequest')
+				.mockRejectedValue(new Error('down'));
+			const sent = send(MeetWebhookEventType.MEETING_STARTED, fakeRoom);
+			await jest.advanceTimersByTimeAsync(0);
+			expect(attempts).toHaveBeenCalledTimes(1);
+
+			for (const [retry, wait] of [300, 600, 1200, 2400, 4800].entries()) {
+				await jest.advanceTimersByTimeAsync(wait - 1);
+				expect(attempts).toHaveBeenCalledTimes(retry + 1);
+				await jest.advanceTimersByTimeAsync(1);
+				expect(attempts).toHaveBeenCalledTimes(retry + 2);
+			}
+
+			await sent;
+			expect(attempts).toHaveBeenCalledTimes(6);
+		} finally {
+			jest.useRealTimers();
+		}
+	});
+
+	it('signs a delivery with the API key that exists when the event is sent', async () => {
+		const apiKeys = [{ key: 'old-key' }];
+		const { send } = build([webhook('/all')], apiKeys);
+
+		await send(MeetWebhookEventType.MEETING_STARTED, fakeRoom);
+		apiKeys[0] = { key: 'new-key' };
+		await send(MeetWebhookEventType.MEETING_STARTED, fakeRoom);
+
+		const [first, second] = received;
+		const signedWith = (key: string, { headers, body }: Received) =>
+			crypto.createHmac('sha256', key).update(`${headers['x-timestamp']}.${body}`).digest('hex');
+		expect(first.headers['x-signature']).toBe(signedWith('old-key', first));
+		expect(second.headers['x-signature']).toBe(signedWith('new-key', second));
+		expect(second.headers['x-signature']).not.toBe(signedWith('old-key', second));
+	});
+
 	it('abandons a request the endpoint never answers', async () => {
 		setInternalConfig({ WEBHOOK_RETRY_ATTEMPTS: 0, WEBHOOK_REQUEST_TIMEOUT: 50 });
 		const { send, warnings, reasons } = build([webhook('/hang')]);

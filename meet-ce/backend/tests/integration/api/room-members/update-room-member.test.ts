@@ -1,22 +1,25 @@
 import { afterAll, beforeAll, describe, expect, it, jest } from '@jest/globals';
 import { TrackSource } from '@livekit/protocol';
 import {
+	LeftEventReason,
+	MeetParticipantLeftPayload,
 	MeetRoomMember,
 	MeetRoomMemberRole,
 	MeetRoomMemberTokenMetadata,
 	MeetRoomRoles,
 	MeetSignalType,
-	MeetUserRole
+	MeetUserRole,
+	MeetWebhookEventType
 } from '@openvidu-meet/typings';
 import type { Express } from 'express';
 import request from 'supertest';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
-import { OpenViduMeetError } from '../../../../src/models/error.model.js';
+import { errorInsufficientPermissions, OpenViduMeetError } from '../../../../src/models/error.model.js';
 import { FrontendEventService } from '../../../../src/services/frontend-event.service.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
 import { TokenService } from '../../../../src/services/token.service.js';
-import { expectValidationError } from '../../../helpers/assertion-helpers.js';
+import { expectMeetError, expectValidationError } from '../../../helpers/assertion-helpers.js';
 import {
 	disconnectFakeParticipants,
 	joinFakeParticipant,
@@ -27,16 +30,20 @@ import {
 	createRoom,
 	createRoomMember,
 	createUser,
+	createWebhook,
 	deleteAllRooms,
 	deleteAllUsers,
+	deleteAllWebhooks,
 	generateRoomMemberToken,
+	generateRoomMemberTokenRequest,
 	getFullPath,
 	getRoomMember,
 	sleep,
 	startTestServer,
 	updateRoomMember
 } from '../../../helpers/request-helpers.js';
-import { guestSecretOf } from '../../../helpers/test-scenarios.js';
+import { guestSecretOf, startWebhookServer, stopWebhookServer } from '../../../helpers/test-scenarios.js';
+import { ReceivedWebhook, waitForWebhookEvent } from '../../../helpers/wait-helpers.js';
 
 describe('Room Members API Tests', () => {
 	let app: Express;
@@ -373,17 +380,48 @@ describe('Room Members API Tests', () => {
 			expect(participant).toBeDefined();
 			expect(participant.identity).toBe(participantIdentity);
 
-			// Update room member to remove meetingJoin permission
-			const response = await updateRoomMember(roomId, memberId, {
-				customPermissions: {
-					meetingJoin: false
-				}
+			const received: ReceivedWebhook[] = [];
+			await deleteAllWebhooks();
+			await createWebhook({
+				url: await startWebhookServer((req) =>
+					received.push({ headers: req.headers, body: req.body, rawBody: req.rawBody })
+				),
+				events: [MeetWebhookEventType.PARTICIPANT_LEFT],
+				roomId
 			});
-			expect(response.status).toBe(200);
-			expect(response.body.effectivePermissions.meetingJoin).toBe(false);
 
-			// Check if the participant has been removed from LiveKit
-			await expect(livekitService.getParticipant(roomId, participantIdentity)).rejects.toThrow(OpenViduMeetError);
+			try {
+				// Update room member to remove meetingJoin permission
+				const response = await updateRoomMember(roomId, memberId, {
+					customPermissions: {
+						meetingJoin: false
+					}
+				});
+				expect(response.status).toBe(200);
+				expect(response.body.effectivePermissions.meetingJoin).toBe(false);
+
+				// Check if the participant has been removed from LiveKit
+				await expect(livekitService.getParticipant(roomId, participantIdentity)).rejects.toThrow(
+					OpenViduMeetError
+				);
+
+				const participantLeft = await waitForWebhookEvent(received, MeetWebhookEventType.PARTICIPANT_LEFT, {
+					roomId
+				});
+				expect((participantLeft.body.data as MeetParticipantLeftPayload).participant.leaveReason).toBe(
+					LeftEventReason.PARTICIPANT_KICKED
+				);
+			} finally {
+				await deleteAllWebhooks();
+				await stopWebhookServer();
+			}
+
+			const tokenResponse = await generateRoomMemberTokenRequest(roomId, {
+				secret: guestSecretOf(member),
+				joinMeeting: true,
+				participantName: 'Test Member'
+			});
+			expectMeetError(tokenResponse, errorInsufficientPermissions());
 		});
 
 		it('should send permissions-updated signal when member permissions change and participant is in meeting', async () => {
@@ -428,6 +466,27 @@ describe('Room Members API Tests', () => {
 			expect((await updateRoomMember(roomId, memberId, {})).status).toBe(200);
 			expect(sendSignalSpy).not.toHaveBeenCalled();
 			sendSignalSpy.mockRestore();
+		});
+
+		it('should answer 200 when the request to renew the token cannot be delivered to the participant', async () => {
+			const createResponse = await createRoomMember(roomId, {
+				name: 'Unreachable Member',
+				baseRole: MeetRoomMemberRole.SPEAKER
+			});
+			const memberId = createResponse.body.memberId as string;
+			await joinMemberToMeeting(memberId, 'Unreachable Member');
+			const sendDataSpy = jest
+				.spyOn(container.get(LiveKitService), 'sendData')
+				.mockRejectedValue(new Error('participant unreachable'));
+
+			const response = await updateRoomMember(roomId, memberId, {
+				customPermissions: { recordingControl: true }
+			});
+
+			expect(response.status).toBe(200);
+			expect(response.body.effectivePermissions.recordingControl).toBe(true);
+			expect(sendDataSpy).toHaveBeenCalledTimes(1);
+			sendDataSpy.mockRestore();
 		});
 
 		it('should apply the new media grant to a member in the meeting without their client renewing its token', async () => {

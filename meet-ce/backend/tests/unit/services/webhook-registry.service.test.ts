@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from '@jest/globals';
 import type { MeetWebhook, MeetWebhookOptions } from '@openvidu-meet/typings';
 import { randomUUID } from 'crypto';
+import type { StringValue } from 'ms';
 import { LockAcquisitionError } from 'redlock-universal';
 import { setInternalConfig } from '../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../src/environment.js';
@@ -8,6 +9,7 @@ import { OpenViduMeetError } from '../../../src/models/error.model.js';
 import { RedisDistributedLock, type RedisRedlock } from '../../../src/models/redis-lock.model.js';
 import type { LoggerService } from '../../../src/services/logger.service.js';
 import { MutexService } from '../../../src/services/mutex.service.js';
+import { StorageInitService } from '../../../src/services/storage/storage-init.service.js';
 import type { RedisService } from '../../../src/services/redis.service.js';
 import { WebhookRegistryService } from '../../../src/services/webhook-registry.service.js';
 
@@ -140,11 +142,9 @@ describe('WebhookRegistryService.initializeDefaultWebhook (runs on every start)'
 	const originalEnabled = MEET_ENV.INITIAL_WEBHOOK_ENABLED;
 	const originalApiKey = MEET_ENV.INITIAL_API_KEY;
 
-	const seededService = (repository: FakeWebhookRepository) =>
+	const seededService = (repository: FakeWebhookRepository, mutex = realMutexOverFakeRedis()) =>
 		new WebhookRegistryService(
-			...([noopLogger, repository, {}, realMutexOverFakeRedis()] as unknown as ConstructorParameters<
-				typeof WebhookRegistryService
-			>)
+			...([noopLogger, repository, {}, mutex] as unknown as ConstructorParameters<typeof WebhookRegistryService>)
 		);
 
 	beforeEach(() => {
@@ -189,6 +189,32 @@ describe('WebhookRegistryService.initializeDefaultWebhook (runs on every start)'
 		await service.initializeDefaultWebhook();
 
 		expect(repository.documents).toHaveLength(1);
+	});
+
+	it('registers one webhook when two replicas start at the same time', async () => {
+		setInternalConfig({ STORAGE_INIT_LOCK_RETRY_DELAY: '10ms' as StringValue });
+
+		try {
+			const repository = new FakeWebhookRepository();
+			const mutex = realMutexOverFakeRedis();
+			const replica = () =>
+				new StorageInitService(
+					...([
+						noopLogger,
+						mutex,
+						{ initializeGlobalConfig: async () => {} },
+						{ initializeAdminUser: async () => {} },
+						{ initializeApiKey: async () => {} },
+						seededService(repository, mutex)
+					] as unknown as ConstructorParameters<typeof StorageInitService>)
+				);
+
+			await Promise.all([replica().initializeStorage(), replica().initializeStorage()]);
+
+			expect(repository.documents).toHaveLength(1);
+		} finally {
+			setInternalConfig({ STORAGE_INIT_LOCK_RETRY_DELAY: '2s' as StringValue });
+		}
 	});
 
 	it('leaves a deployment that already registered a webhook of its own alone', async () => {

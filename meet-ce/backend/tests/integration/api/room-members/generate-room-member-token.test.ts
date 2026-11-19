@@ -268,11 +268,18 @@ describe('Room Members API Tests', () => {
 			const response = await generateRoomMemberTokenRequest(roomId, { secret: roomData.speakerSecret });
 			expectMeetError(response, errorAnonymousAccessDisabled(roomId, MeetRoomMemberRole.SPEAKER));
 
-			// Enable anonymous speaker access for further tests
+			// Enable anonymous speaker access again: the same secret works with the speaker permissions
 			await updateRoomAccessConfig(roomId, {
 				anonymous: {
 					speaker: { enabled: true }
 				}
+			});
+
+			const reenabledResponse = await generateRoomMemberTokenRequest(roomId, { secret: roomData.speakerSecret });
+			expectValidRoomMemberTokenResponse(reenabledResponse, {
+				roomId,
+				badge: MeetRoomMemberUIBadge.OTHER,
+				permissions: roomRoles.speaker.permissions
 			});
 		});
 
@@ -360,6 +367,25 @@ describe('Room Members API Tests', () => {
 				userId: testUsers.roomManager.user.userId,
 				badge: MeetRoomMemberUIBadge.OWNER,
 				permissions: allPermissions // Room owner should have all permissions
+			});
+		});
+
+		it('should generate token holding every permission for the room owner when the moderator role denies one', async () => {
+			const roomWithOwner = await createRoom(
+				{ roles: { moderator: { permissions: { recordingControl: false } } } },
+				testUsers.roomManager.accessToken
+			);
+
+			const response = await generateRoomMemberTokenRequest(
+				roomWithOwner.roomId,
+				{},
+				testUsers.roomManager.accessToken
+			);
+			expectValidRoomMemberTokenResponse(response, {
+				roomId: roomWithOwner.roomId,
+				userId: testUsers.roomManager.user.userId,
+				badge: MeetRoomMemberUIBadge.OWNER,
+				permissions: allPermissions
 			});
 		});
 

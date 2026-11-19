@@ -479,6 +479,13 @@ describe('User API Security Tests', () => {
 			const response = await request(app).get(`${INTERNAL_USERS_PATH}/me`);
 			expectMeetError(response, errorUnauthorized());
 		});
+
+		it('should fail when only a valid API key is sent', async () => {
+			const response = await request(app)
+				.get(`${INTERNAL_USERS_PATH}/me`)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
+			expectMeetError(response, errorUnauthorized());
+		});
 	});
 
 	describe('Change Password Tests', () => {

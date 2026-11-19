@@ -25,6 +25,7 @@ import {
 	deleteAllUsers,
 	generateRoomMemberToken,
 	getRoom,
+	getMe,
 	getRoomMember,
 	getUser,
 	startTestServer,
@@ -112,6 +113,23 @@ describe('Users API Tests', () => {
 			expect(getUserResponse.body).toHaveProperty('roleUpdatedAt');
 			expect(getUserResponse.body.roleUpdatedAt).toBe(updateResponse.body.roleUpdatedAt);
 			expect(getUserResponse.body.roleUpdatedAt).toBeGreaterThanOrEqual(getUserResponse.body.registrationDate);
+		});
+
+		it('should answer 200 leaving roleUpdatedAt and the user tokens untouched when the role is the current one', async () => {
+			const userData = await setupUser({
+				userId: `user_${Date.now()}`,
+				name: 'Test User',
+				password: 'password123',
+				role: MeetUserRole.ROOM_MANAGER
+			});
+			const { roleUpdatedAt } = userData.user;
+
+			const response = await updateUserRole(userData.user.userId, MeetUserRole.ROOM_MANAGER);
+			expect(response.status).toBe(200);
+			expect(response.body.role).toBe(MeetUserRole.ROOM_MANAGER);
+			expect(response.body.roleUpdatedAt).toBe(roleUpdatedAt);
+
+			expect((await getMe(userData.accessToken)).status).toBe(200);
 		});
 
 		it('should not expose sensitive fields in response', async () => {

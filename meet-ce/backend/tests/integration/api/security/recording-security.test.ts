@@ -20,6 +20,7 @@ import {
 } from '../../../helpers/assertion-helpers.js';
 import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
 import {
+	createRoom,
 	deleteAllRecordings,
 	deleteAllRooms,
 	deleteAllUsers,
@@ -31,10 +32,12 @@ import {
 	startRecording,
 	startTestServer,
 	stopAllRecordings,
-	updateRoomAccessConfig
+	updateRoomAccessConfig,
+	updateRoomRoles
 } from '../../../helpers/request-helpers.js';
 
 import {
+	createRecordingForRoom,
 	setupCompletedRecording,
 	setupRoomMember,
 	setupSingleRoom,
@@ -582,6 +585,20 @@ describe('Recording API Security Tests', () => {
 
 				// Recreate recording for next tests since it was deleted
 				recordingId = await setupCompletedRecording(roomData);
+			});
+
+			it('should succeed when user is the room owner although the moderator role denies recordingDelete', async () => {
+				const ownedRoom = await createRoom({}, testUsers.roomManager.accessToken);
+				const ownedRecordingId = await createRecordingForRoom(ownedRoom.roomId);
+				const rolesResponse = await updateRoomRoles(ownedRoom.roomId, {
+					moderator: { permissions: { recordingDelete: false } }
+				});
+				expect(rolesResponse.status).toBe(200);
+
+				const response = await request(app)
+					.delete(`${RECORDINGS_PATH}/${ownedRecordingId}`)
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken);
+				expect(response.status).toBe(200);
 			});
 
 			it('should fail when user is authenticated as ROOM_MANAGER and is room member without recordingDelete permission', async () => {

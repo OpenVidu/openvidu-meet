@@ -1,8 +1,11 @@
 import { afterEach, beforeAll, describe, expect, it, jest } from '@jest/globals';
 import { MeetRoomDeletionPolicyWithMeeting, MeetRoomStatus } from '@openvidu-meet/typings';
+import { Express } from 'express';
+import request from 'supertest';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { RoomScheduledTasksService } from '../../../../src/services/room-scheduled-tasks.service.js';
 import { WebhookDispatcherService } from '../../../../src/services/webhook-dispatcher.service.js';
+import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { errorRoomDeletionScheduled } from '../../../../src/models/error.model.js';
 import { expectMeetError } from '../../../helpers/assertion-helpers.js';
 import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
@@ -11,16 +14,21 @@ import {
 	deleteAllRooms,
 	deleteRoom,
 	endMeeting,
+	generateRoomMemberToken,
+	getAllRecordingsFromRoom,
+	getFullPath,
 	getRoom,
 	startTestServer,
 	updateRoomStatus
 } from '../../../helpers/request-helpers.js';
-import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
+import { createRecordingForRoom, setupSingleRoom } from '../../../helpers/test-scenarios.js';
 import { waitForMeetingToEnd, waitForRoomToClose, waitForRoomToDelete } from '../../../helpers/wait-helpers.js';
 
 describe('Room API Tests', () => {
+	let app: Express;
+
 	beforeAll(async () => {
-		await startTestServer();
+		app = await startTestServer();
 	});
 
 	afterEach(async () => {
@@ -61,6 +69,24 @@ describe('Room API Tests', () => {
 			const getResponse = await getRoom(createdRoom.roomId);
 			expect(getResponse.status).toBe(200);
 			expect(getResponse.body.status).toEqual('closed');
+		});
+
+		it('should keep the recordings of a closed room listed and playable', async () => {
+			const { room, recordingSecret } = await setupSingleRoom();
+			const recordingId = await createRecordingForRoom(room.roomId);
+			expect((await updateRoomStatus(room.roomId, MeetRoomStatus.CLOSED)).status).toBe(200);
+
+			const token = await generateRoomMemberToken(room.roomId, { secret: recordingSecret, joinMeeting: false });
+			const listResponse = await getAllRecordingsFromRoom(token);
+			expect(listResponse.status).toBe(200);
+			expect(
+				listResponse.body.recordings.map((recording: { recordingId: string }) => recording.recordingId)
+			).toEqual([recordingId]);
+
+			const mediaResponse = await request(app)
+				.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}/media`))
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, token);
+			expect(mediaResponse.status).toBe(200);
 		});
 
 		it('should schedule room to be closed when meeting ends if there is an active meeting', async () => {

@@ -144,6 +144,24 @@ describe('E2EE Room Configuration Tests', () => {
 			expect(config.recording.enabled).toBe(false);
 			expect(config.captions.enabled).toBe(false);
 		});
+
+		it.each(['recording', 'captions'] as const)(
+			'Should keep %s disabled when an update enables only it on a room with E2EE enabled',
+			async (feature) => {
+				const room = await createRoom({
+					roomName: `Test E2EE ${feature}`,
+					config: { e2ee: { enabled: true } }
+				});
+
+				const response = await updateRoomConfig(room.roomId, { [feature]: { enabled: true } });
+				expect(response.status).toBe(200);
+
+				const { status, body: config } = await getRoomConfig(room.roomId);
+				expect(status).toBe(200);
+				expect(config.e2ee.enabled).toBe(true);
+				expect(config[feature].enabled).toBe(false);
+			}
+		);
 	});
 
 	describe('E2EE Validation Tests', () => {

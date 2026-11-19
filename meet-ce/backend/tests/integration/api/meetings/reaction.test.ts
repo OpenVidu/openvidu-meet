@@ -1,6 +1,10 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { MeetReaction } from '@openvidu-meet/typings';
+import { Express } from 'express';
+import request from 'supertest';
 import { container } from '../../../../src/config/dependency-injector.config.js';
+import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
+import { MEET_ENV } from '../../../../src/environment.js';
 import { MeetRoomHelper } from '../../../../src/helpers/room.helper.js';
 import { FrontendEventService } from '../../../../src/services/frontend-event.service.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
@@ -10,6 +14,7 @@ import {
 	deleteAllRooms,
 	endMeeting,
 	generateRoomMemberToken,
+	getFullPath,
 	sendParticipantReaction,
 	startTestServer,
 	updateRoomRoles
@@ -26,10 +31,11 @@ const identityOf = (bearerToken: string): string => {
 };
 
 describe('Meetings API Tests', () => {
+	let app: Express;
 	let roomData: RoomData;
 
 	beforeAll(async () => {
-		await startTestServer();
+		app = await startTestServer();
 	});
 
 	afterAll(async () => {
@@ -185,6 +191,19 @@ describe('Meetings API Tests', () => {
 			const response = await sendParticipantReaction(roomData.room.roomId, {
 				reaction: MeetReaction.SLIGHTLY_FROWNING_FACE
 			});
+
+			expectMeetError(response, errorUnauthorized());
+		});
+
+		it('should fail with 401 when the request carries only the API key', async () => {
+			const response = await request(app)
+				.post(
+					getFullPath(
+						`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomData.room.roomId}/reactions`
+					)
+				)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+				.send({ reaction: MeetReaction.SLIGHTLY_FROWNING_FACE });
 
 			expectMeetError(response, errorUnauthorized());
 		});

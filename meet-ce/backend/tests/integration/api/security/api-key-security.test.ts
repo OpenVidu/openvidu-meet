@@ -84,6 +84,12 @@ describe('API Keys API Security Tests', () => {
 			const response = await request(app).get(`${API_KEYS_PATH}`);
 			expectMeetError(response, errorUnauthorized());
 		});
+
+		it('should fail when only a valid API key is sent', async () => {
+			const apiKey = await generateApiKey();
+			const response = await request(app).get(`${API_KEYS_PATH}`).set(INTERNAL_CONFIG.API_KEY_HEADER, apiKey);
+			expectMeetError(response, errorUnauthorized());
+		});
 	});
 
 	describe('Delete API Keys', () => {
