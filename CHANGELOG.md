@@ -346,6 +346,7 @@ with no replacement.
   track is published.
 - With more than three captions at once, a participant still speaking whose caption had left the screen got no caption
   until they paused. Their caption is shown again with their next words.
+- In `<openvidu-meet>`, the send button of the chat overflowed the message box. It sits inside it.
 - In a chat message, a bare domain followed by a query or a fragment, such as `example.com?x=1`, was linked without
   them. The whole address is linked now.
 - The notices of the console room detail page about copying a member's link, removing members, deleting the room and
