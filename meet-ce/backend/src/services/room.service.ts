@@ -413,27 +413,21 @@ export class RoomService {
 				fields: ['memberId', 'baseRole', 'customPermissions']
 			});
 
-			await runConcurrently(
-				page.members,
-				async ({ memberId, baseRole, customPermissions }) => {
-					try {
-						await this.roomMemberRepository.updatePartial(roomId, memberId, {
-							effectivePermissions: MeetRoomMemberHelper.computeEffectivePermissions(
-								roomRoles,
-								baseRole,
-								customPermissions
-							),
-							permissionsUpdatedAt: Date.now()
-						});
-					} catch (error) {
-						this.logger.warn(
-							`Failed to update effective permissions for member '${memberId}' in room '${roomId}':`,
-							error
-						);
-					}
-				},
-				{ concurrency: INTERNAL_CONFIG.CONCURRENCY_BULK_UPDATE_PERMISSIONS }
-			);
+			try {
+				await this.roomMemberRepository.updateEffectivePermissions(
+					roomId,
+					page.members.map(({ memberId, baseRole, customPermissions }) => ({
+						memberId,
+						effectivePermissions: MeetRoomMemberHelper.computeEffectivePermissions(
+							roomRoles,
+							baseRole,
+							customPermissions
+						)
+					}))
+				);
+			} catch (error) {
+				this.logger.warn(`Failed to update effective permissions of some members in room '${roomId}':`, error);
+			}
 
 			nextPageToken = page.isTruncated ? page.nextPageToken : undefined;
 		} while (nextPageToken);
