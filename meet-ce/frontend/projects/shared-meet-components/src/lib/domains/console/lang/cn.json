@@ -162,11 +162,5 @@
       "DELETE_WEBHOOK_MESSAGE": "确定要删除指向 <b>{url}</b> 的 Webhook 吗？它将立即停止接收事件通知。",
       "DELETE": "删除"
     }
-  },
-  "LOGO_SELECTOR": {
-    "TITLE": "品牌徽标",
-    "DESCRIPTION": "打造专属体验——为您的体验添加品牌徽标。",
-    "UPGRADE_MESSAGE": "升级到专业版以自定义您的品牌标识",
-    "UPGRADE_BUTTON": "升级到专业版"
   }
 }
