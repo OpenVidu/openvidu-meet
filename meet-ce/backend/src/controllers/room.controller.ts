@@ -114,11 +114,13 @@ export const getRoom = async (req: Request, res: Response) => {
 
 		let room = await roomService.getMeetRoom(
 			roomId,
-			shouldApplyPermissionFiltering ? [...fieldsForQuery, 'roles'] : fieldsForQuery
+			shouldApplyPermissionFiltering ? [...fieldsForQuery, ...ROOM_ACCESS_FIELDS] : fieldsForQuery
 		);
 
 		if (shouldApplyPermissionFiltering) {
-			const permissions = await container.get(RoomAccessService).getGrantedRoomMemberPermissions(roomId);
+			const [permissions] = await container
+				.get(RoomAccessService)
+				.getGrantedRoomMemberPermissionsInRooms([room as RoomAccessFacts]);
 			room = MeetRoomHelper.applyPermissionFiltering(room, permissions);
 			room = MeetRoomHelper.applyFieldFilters(room, fields, extraFields);
 		}
@@ -236,7 +238,7 @@ export const getRoomConfig = async (req: Request, res: Response) => {
 	logger.verbose(`Getting room config for room '${roomId}'`);
 
 	try {
-		const { config } = await roomService.getMeetRoom(roomId, ['config']);
+		const config = await roomService.getRequestRoomConfig(roomId);
 		return res.status(200).json(config);
 	} catch (error) {
 		handleError(res, error, `getting room config for room '${roomId}'`);

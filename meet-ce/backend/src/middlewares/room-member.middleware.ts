@@ -2,9 +2,8 @@ import type { MeetRoomMemberTokenOptions } from '@openvidu-meet/typings';
 import { MeetUserRole } from '@openvidu-meet/typings';
 import type { NextFunction, Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
-import { errorInsufficientPermissions, errorRoomMemberNotFound, errorRoomNotFound } from '../models/error.model.js';
+import { errorInsufficientPermissions, errorRoomNotFound } from '../models/error.model.js';
 import { RequestSessionService } from '../services/request-session.service.js';
-import { RoomMemberService } from '../services/room-member.service.js';
 import { RoomAccessService } from '../services/room-access.service.js';
 import { RoomService } from '../services/room.service.js';
 import type { AuthValidator } from './auth.middleware.js';
@@ -36,12 +35,6 @@ export const authorizeRoomMemberAccess = async (req: Request, res: Response, nex
 
 		if (!canReadRoomMember(roomId, memberId, owner)) {
 			return rejectRequestFromMeetError(res, errorInsufficientPermissions());
-		}
-
-		const isMember = await container.get(RoomMemberService).isRoomMember(roomId, memberId);
-
-		if (!isMember) {
-			return rejectRequestFromMeetError(res, errorRoomMemberNotFound(roomId, memberId));
 		}
 
 		return next();
