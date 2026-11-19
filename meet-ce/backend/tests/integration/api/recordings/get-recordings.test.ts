@@ -13,13 +13,13 @@ import {
 	generateRoomMemberToken,
 	getAllRecordings,
 	getAllRecordingsFromRoom,
-	sleep,
 	startTestServer,
 	stopRecording
 } from '../../../helpers/request-helpers.js';
 
 import { setupMultiRecordingsTestContext, setupSingleRoomWithRecording } from '../../../helpers/test-scenarios.js';
 import { RoomData, TestContext } from '../../../interfaces/scenarios.js';
+import { waitForAllRecordingsToStop } from '../../../helpers/wait-helpers.js';
 
 describe('Recordings API Tests', () => {
 	let context: TestContext | null = null;
@@ -230,7 +230,7 @@ describe('Recordings API Tests', () => {
 		it('should return recordings with pagination', async () => {
 			context = await setupMultiRecordingsTestContext(6, 6, 6);
 			const rooms = context.rooms;
-			await sleep('2s');
+			await waitForAllRecordingsToStop(rooms.map((roomData) => roomData.recordingId!));
 			const response = await getAllRecordings({ maxItems: 3 });
 			expectSuccessListRecordingResponse(response, 3, true, true, 3);
 

@@ -1,4 +1,4 @@
-import { afterAll, expect } from '@jest/globals';
+import { afterAll, expect, jest } from '@jest/globals';
 import {
 	MeetAppearanceConfig,
 	MeetAssistantCapabilityName,
@@ -74,6 +74,22 @@ let app: Express;
 
 export const sleep = (time: StringValue) => {
 	return new Promise((resolve) => setTimeout(resolve, ms(time)));
+};
+
+/**
+ * Runs `action` with the clock one second ahead. A token carries the millisecond it was issued at and a change
+ * invalidates the tokens issued strictly before its own timestamp, so a change made through this helper
+ * is later than every token issued before the call.
+ */
+export const withClockAhead = async <T>(action: () => Promise<T>): Promise<T> => {
+	const realNow = Date.now;
+	const spy = jest.spyOn(Date, 'now').mockImplementation(() => realNow() + 1000);
+
+	try {
+		return await action();
+	} finally {
+		spy.mockRestore();
+	}
 };
 
 export const startTestServer = async (): Promise<Express> => {
@@ -759,14 +775,12 @@ export const runExpiredRoomsGC = async () => {
  *
  * This function retrieves the RoomScheduledTasksService from the dependency injection container
  * and calls its validateRoomsStatusGC method to clean up inconsistent rooms.
- * It then waits for 1 second before completing.
  */
 export const executeRoomStatusValidationGC = async () => {
 	checkAppIsRunning();
 
 	const roomTaskScheduler = container.get(RoomScheduledTasksService);
 	await roomTaskScheduler['validateRoomsStatusGC']();
-	await sleep('1s');
 };
 
 export const executeDurationLimitTimersGC = async () => {
@@ -774,7 +788,6 @@ export const executeDurationLimitTimersGC = async () => {
 
 	const meetingDurationLimitService = container.get(MeetingDurationLimitService);
 	await meetingDurationLimitService['reconcileDurationLimitTimersGC']();
-	await sleep('1s');
 };
 
 // ROOM MEMBER HELPERS

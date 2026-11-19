@@ -32,9 +32,9 @@ import {
 	generateRoomMemberToken,
 	getFullPath,
 	getRoomMember,
-	sleep,
 	startTestServer,
-	updateRoomMember
+	updateRoomMember,
+	withClockAhead
 } from '../../../helpers/request-helpers.js';
 import { guestSecretOf } from '../../../helpers/test-scenarios.js';
 
@@ -266,13 +266,12 @@ describe('Room Members API Tests', () => {
 			const memberId = createResponse.body.memberId;
 			const originalTimestamp = createResponse.body.permissionsUpdatedAt;
 
-			// Wait a bit to ensure timestamp difference
-			await sleep('1s');
-
 			// Update member
-			const updateResponse = await updateRoomMember(roomId, memberId, {
-				baseRole: MeetRoomMemberRole.MODERATOR
-			});
+			const updateResponse = await withClockAhead(() =>
+				updateRoomMember(roomId, memberId, {
+					baseRole: MeetRoomMemberRole.MODERATOR
+				})
+			);
 			expect(updateResponse.status).toBe(200);
 			expect(updateResponse.body.permissionsUpdatedAt).toBeGreaterThan(originalTimestamp);
 		});
@@ -459,13 +458,15 @@ describe('Room Members API Tests', () => {
 			return response.body.memberId as string;
 		};
 
+		const updateAfterIssuingToken = (memberId: string) =>
+			withClockAhead(() =>
+				updateRoomMember(roomId, memberId, { customPermissions: { mediaPublishAudio: false } })
+			);
+
 		it('should be removed from the meeting when the token was issued before the update', async () => {
 			const memberId = await createSpeaker('Stale Member');
 			const heldBefore = await joinTokenMetadata(memberId, 'Stale Member');
-			await sleep('10ms');
-			const response = await updateRoomMember(roomId, memberId, {
-				customPermissions: { mediaPublishAudio: false }
-			});
+			const response = await updateAfterIssuingToken(memberId);
 			expect(response.status).toBe(200);
 
 			await joinFakeParticipantUntilRemoved(roomId, memberId, heldBefore);
@@ -475,17 +476,20 @@ describe('Room Members API Tests', () => {
 
 		it('should stay in the meeting when the token was issued after the update', async () => {
 			const memberId = await createSpeaker('Current Member');
-			await sleep('10ms');
 			const response = await updateRoomMember(roomId, memberId, {
 				customPermissions: { mediaPublishAudio: false }
 			});
 			expect(response.status).toBe(200);
-			await sleep('10ms');
 			const issuedAfter = await joinTokenMetadata(memberId, 'Current Member');
 
 			await joinFakeParticipant(roomId, memberId, issuedAfter);
-			// The media server removes a session within a moment of its join, so one still here has been kept
-			await sleep('3s');
+
+			// The media server tells Meet of the sessions in the order they join: once a later stale session is
+			// removed, this one has been judged too
+			const staleMemberId = await createSpeaker('Stale Member');
+			const heldBefore = await joinTokenMetadata(staleMemberId, 'Stale Member');
+			await updateAfterIssuingToken(staleMemberId);
+			await joinFakeParticipantUntilRemoved(roomId, staleMemberId, heldBefore);
 
 			expect(await container.get(LiveKitService).participantExists(roomId, memberId)).toBe(true);
 		});
