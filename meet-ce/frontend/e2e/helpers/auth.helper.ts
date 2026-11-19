@@ -1,5 +1,5 @@
 import { MeetUserRole } from '@openvidu-meet/typings';
-import { expect, type Page } from '@playwright/test';
+import { expect, type Browser, type Page } from '@playwright/test';
 import { createUser, getUserAccessToken, MEET_BASE_URL } from './meet-api.helper';
 import { click } from './ui-utils.helper';
 
@@ -43,26 +43,10 @@ const changePasswordOnFirstLogin = async (page: Page, currentPassword: string, n
 	await click(page.locator('button[type="submit"].primary-button'), 10_000);
 };
 
-/**
- * Logs a registered user in when the app requests it. The login form is auto-detected (the app
- * shows it when authentication is required), so this is a no-op when no login is presented — for
- * example when the user is already authenticated or the room allows anonymous access. A login with
- * `newPassword` is a first login: the app forces the password change and this completes it.
- */
-export const performLogin = async (page: Page, login: LoginOptions): Promise<void> => {
-	const loginButton = page.locator('#login-button');
-	const loginRequired = await loginButton
-		.waitFor({ state: 'visible', timeout: 5_000 })
-		.then(() => true)
-		.catch(() => false);
-
-	if (!loginRequired) {
-		return;
-	}
-
+const submitLogin = async (page: Page, login: LoginOptions): Promise<void> => {
 	await page.locator('#userId-input').fill(login.userId);
 	await page.locator('#password-input').fill(login.password);
-	await click(loginButton, 10_000);
+	await click(page.locator('#login-button'), 10_000);
 
 	if (login.newPassword) {
 		await changePasswordOnFirstLogin(page, login.password, login.newPassword);
@@ -70,14 +54,39 @@ export const performLogin = async (page: Page, login: LoginOptions): Promise<voi
 };
 
 /**
- * Establishes an authenticated session by logging in from the OpenVidu Meet home page, which
- * redirects to the login form when not authenticated.
+ * Logs a registered user in when the app requests it. The login form is auto-detected (the app
+ * shows it when authentication is required), so this is a no-op when no login is presented — for
+ * example when the user is already authenticated or the room allows anonymous access. A login with
+ * `newPassword` is a first login: the app forces the password change and this completes it.
+ */
+export const performLogin = async (page: Page, login: LoginOptions): Promise<void> => {
+	const loginRequired = await page
+		.locator('#login-button')
+		.waitFor({ state: 'visible', timeout: 5_000 })
+		.then(() => true)
+		.catch(() => false);
+
+	if (loginRequired) {
+		await submitLogin(page, login);
+	}
+};
+
+/**
+ * Establishes an authenticated session by logging in from the OpenVidu Meet home page. A fresh page
+ * always gets the login form there, so it waits for it however long the app takes to start.
  */
 export const authenticate = async (page: Page, login: LoginOptions): Promise<void> => {
 	await page.goto(MEET_BASE_URL, { waitUntil: 'domcontentloaded' });
-	await performLogin(page, login);
-	// Confirm the login succeeded (the login form is gone once authenticated).
+	await expect(page.locator('#login-button')).toBeVisible({ timeout: 20_000 });
+	await submitLogin(page, login);
 	await expect(page.locator('#login-button')).toHaveCount(0, { timeout: 15_000 });
+};
+
+/** Opens a page in a browser context of its own, signed in as the given user. */
+export const openSignedInPage = async (browser: Browser, login: LoginOptions): Promise<Page> => {
+	const page = await (await browser.newContext()).newPage();
+	await authenticate(page, login);
+	return page;
 };
 
 // ─── Login-page assertions ─────────────────────────────────────────────────────
