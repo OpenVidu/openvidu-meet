@@ -10,8 +10,6 @@ class MeetStorageServiceStub {
 	}
 
 	setTheme() {}
-
-	removeTheme() {}
 }
 
 /**

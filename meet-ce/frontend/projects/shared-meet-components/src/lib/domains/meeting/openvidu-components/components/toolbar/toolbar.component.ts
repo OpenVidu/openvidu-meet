@@ -11,19 +11,16 @@ import {
 	OnInit,
 	output,
 	signal,
-	viewChild,
 	WritableSignal
 } from '@angular/core';
 
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatIconModule } from '@angular/material/icon';
-import { MatMenuTrigger } from '@angular/material/menu';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { fromEvent } from 'rxjs';
 import { FallbackLogoDirective } from '../../directives/api/internals.directive';
 import { ToolbarMoreOptionsAdditionalMenuItemsDirective } from '../../directives/template/internals.directive';
 import { BroadcastRequestedEvent, isBroadcastRunning } from '../../models/broadcast.model';
-import { ChatMessage } from '../../models/chat.model';
 import { PanelActivitiesOptions, PanelType } from '../../models/panel.model';
 import { ParticipantLeftEvent, ParticipantLeftReason } from '../../models/participant.model';
 import {
@@ -142,25 +139,12 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	/**
 	 * @ignore
 	 */
-	readonly menuTriggerQuery = viewChild(MatMenuTrigger);
-	public menuTrigger: MatMenuTrigger | undefined;
-
-	/**
-	 * @ignore
-	 */
 	readonly room = signal<Room | null>(null);
 	/**
 	 * @ignore
 	 */
 	unreadMessages: WritableSignal<number> = signal(0);
-	/**
-	 * @ignore
-	 */
-	readonly messageList: WritableSignal<ChatMessage[]> = signal([]);
-	/**
-	 * @internal
-	 */
-	private readonly lastKnownChatMessageCount = signal(0);
+	private lastKnownChatMessageCount = 0;
 	/**
 	 * @ignore
 	 * Local media state, read from its single owner. These used to be local signals synced against
@@ -196,16 +180,16 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	/**
 	 * @ignore
 	 */
-	readonly isChatOpened = signal(false);
+	readonly isChatOpened = computed(() => this.panelService.isChatPanelOpened());
 	/**
 	 * @ignore
 	 */
-	readonly isParticipantsOpened = signal(false);
+	readonly isParticipantsOpened = computed(() => this.panelService.isParticipantsPanelOpened());
 
 	/**
 	 * @ignore
 	 */
-	readonly isActivitiesOpened = signal(false);
+	readonly isActivitiesOpened = computed(() => this.panelService.isActivitiesPanelOpened());
 
 	/**
 	 * @ignore
@@ -346,41 +330,20 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	private readonly roomNameEffect = effect(() => {
 		this.evalAndSetRoomName(this.libService.roomNameSignal());
 	});
-	private readonly querySyncEffect = effect(() => {
-		this.menuTrigger = this.menuTriggerQuery();
-	});
-	private readonly menuTogglingEffect = effect(() => {
-		const ev = this.panelService.panelOpened();
-		const shouldChatBeOpened = ev.isOpened && ev.panelType === PanelType.CHAT;
-		const shouldParticipantsBeOpened = ev.isOpened && ev.panelType === PanelType.PARTICIPANTS;
-		const shouldActivitiesBeOpened = ev.isOpened && ev.panelType === PanelType.ACTIVITIES;
-
-		// Update states
-		this.isChatOpened.set(shouldChatBeOpened);
-		this.isParticipantsOpened.set(shouldParticipantsBeOpened);
-		this.isActivitiesOpened.set(shouldActivitiesBeOpened);
-
-		// Use the derived values, not the signals we just modified
-		if (shouldChatBeOpened) {
+	private readonly unreadResetEffect = effect(() => {
+		if (this.isChatOpened()) {
 			this.unreadMessages.set(0);
 		}
 	});
 	private readonly chatMessagesEffect = effect(() => {
-		const messages = this.chatService.chatMessages();
-		const currentMessageCount = messages.length;
-		const previousMessageCount = this.lastKnownChatMessageCount();
-		const newMessagesCount = Math.max(0, currentMessageCount - previousMessageCount);
+		const currentMessageCount = this.chatService.chatMessages().length;
+		const newMessagesCount = Math.max(0, currentMessageCount - this.lastKnownChatMessageCount);
 
-		// Only update unread messages if panel is not open AND there are new messages
-		// Do this calculation BEFORE modifying lastKnownChatMessageCount
-		if (!this.panelService.isChatPanelOpened() && newMessagesCount > 0) {
+		if (!this.isChatOpened() && newMessagesCount > 0) {
 			this.unreadMessages.update((count) => count + newMessagesCount);
 		}
 
-		// NOW update the signals for next effect run
-		// Do this last to avoid circular reads
-		this.lastKnownChatMessageCount.set(currentMessageCount);
-		this.messageList.set(messages);
+		this.lastKnownChatMessageCount = currentMessageCount;
 	});
 	/**
 	 * Closes any open panel when the connection drops. `isConnectionLost` is a boolean signal, so this

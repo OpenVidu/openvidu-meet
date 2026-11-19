@@ -1,4 +1,4 @@
-import { Directive, ElementRef, OnDestroy, effect, inject, input } from '@angular/core';
+import { Directive, OnDestroy, effect, inject, input } from '@angular/core';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
 
 /**
@@ -23,7 +23,6 @@ export class ActivitiesPanelRecordingActivityDirective implements OnDestroy {
 	readonly activitiesPanelRecordingActivity = input<boolean | undefined>(undefined);
 	readonly recordingActivity = input<boolean | undefined>(undefined);
 
-	public elementRef = inject(ElementRef);
 	private readonly libService = inject(MeetingUiConfigService);
 	private readonly recordingActivityEffect = effect(() => {
 		this.update(this.recordingActivity() ?? this.activitiesPanelRecordingActivity() ?? true);
@@ -64,7 +63,6 @@ export class ActivitiesPanelBroadcastActivityDirective implements OnDestroy {
 	readonly activitiesPanelBroadcastActivity = input<boolean | undefined>(undefined);
 	readonly broadcastActivity = input<boolean | undefined>(undefined);
 
-	public elementRef = inject(ElementRef);
 	private readonly libService = inject(MeetingUiConfigService);
 	private readonly broadcastActivityEffect = effect(() => {
 		this.update(this.broadcastActivity() ?? this.activitiesPanelBroadcastActivity() ?? true);

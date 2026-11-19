@@ -1,16 +1,5 @@
 import { DatePipe } from '@angular/common';
-import {
-	Component,
-	computed,
-	DestroyRef,
-	effect,
-	inject,
-	input,
-	OnInit,
-	output,
-	signal,
-	untracked
-} from '@angular/core';
+import { Component, computed, DestroyRef, inject, input, OnInit, output, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatBadgeModule } from '@angular/material/badge';
@@ -35,10 +24,11 @@ import {
 	TextMatchMode
 } from '@openvidu-meet/typings';
 import { merge } from 'rxjs';
+import { ListFilterControls } from '../../../../shared/models/list-filter-controls';
+import { ListSelection } from '../../../../shared/models/list-selection';
 import { SkeletonRowsComponent } from '../../../../shared/components/skeleton-rows/skeleton-rows.component';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
-import { setsAreEqual } from '../../../../shared/utils/array.utils';
 import { RoomMemberUiUtils } from '../../utils/ui';
 
 export interface MemberTableAction {
@@ -103,7 +93,7 @@ export interface MemberTableFilter {
 	templateUrl: './room-members-list.component.html',
 	styleUrl: './room-members-list.component.scss',
 	host: {
-		'[class.has-selections]': 'hasSelections()'
+		'[class.has-selections]': 'selection.count() > 0'
 	}
 })
 export class RoomMembersListsComponent implements OnInit {
@@ -127,9 +117,6 @@ export class RoomMembersListsComponent implements OnInit {
 		sortOrder: SortOrder.DESC
 	});
 
-	// Host binding state for styling when members are selected
-	hasSelections = computed(() => this.selectedMembers().size > 0);
-
 	// Output events
 	readonly memberAction = output<MemberTableAction>();
 	readonly filterChange = output<MemberTableFilter>();
@@ -144,6 +131,8 @@ export class RoomMembersListsComponent implements OnInit {
 		baseRole: new FormControl<MeetRoomMemberRole | ''>('', { nonNullable: true }),
 		type: new FormControl<MeetRoomMemberType | ''>('', { nonNullable: true })
 	});
+
+	filterControls = new ListFilterControls(this.filtersForm);
 
 	get controls() {
 		return this.filtersForm.controls;
@@ -247,12 +236,12 @@ export class RoomMembersListsComponent implements OnInit {
 	currentSortField = signal<MeetRoomMemberSortField>('membershipDate');
 	currentSortOrder = signal<SortOrder>(SortOrder.DESC);
 
-	showEmptyFilterMessage = signal(false);
+	showEmptyFilterMessage = computed(() => this.members().length === 0 && this.hasActiveFilters());
 
-	// Selection state
-	selectedMembers = signal<Set<string>>(new Set());
-	allSelected = signal(false);
-	someSelected = signal(false);
+	selection = new ListSelection({
+		items: this.members,
+		idOf: (member) => member.memberId
+	});
 
 	// Table configuration
 	displayedColumns = computed(() => {
@@ -261,23 +250,6 @@ export class RoomMembersListsComponent implements OnInit {
 	});
 
 	protected readonly RoomMemberUiUtils = RoomMemberUiUtils;
-
-	constructor() {
-		effect(() => {
-			const members = this.members();
-			const validMemberIds = new Set(members.map((m) => m.memberId));
-
-			const currentSelection = untracked(() => this.selectedMembers());
-			const filteredSelection = new Set([...currentSelection].filter((id) => validMemberIds.has(id)));
-
-			if (!setsAreEqual(filteredSelection, currentSelection)) {
-				this.selectedMembers.set(filteredSelection);
-				this.updateSelectionState();
-			}
-
-			this.showEmptyFilterMessage.set(members.length === 0 && this.hasActiveFilters());
-		});
-	}
 
 	ngOnInit() {
 		this.setupFilters();
@@ -312,60 +284,6 @@ export class RoomMembersListsComponent implements OnInit {
 			.subscribe(() => this.emitFilterChange());
 	}
 
-	// ===== SELECTION METHODS =====
-
-	toggleAllSelection() {
-		const selected = this.selectedMembers();
-
-		if (this.allSelected()) {
-			selected.clear();
-		} else {
-			this.members().forEach((member) => {
-				if (this.canSelectMember(member)) {
-					selected.add(member.memberId);
-				}
-			});
-		}
-
-		this.selectedMembers.set(new Set(selected));
-		this.updateSelectionState();
-	}
-
-	toggleMemberSelection(member: MeetRoomMember) {
-		const selected = this.selectedMembers();
-
-		if (selected.has(member.memberId)) {
-			selected.delete(member.memberId);
-		} else {
-			selected.add(member.memberId);
-		}
-
-		this.selectedMembers.set(new Set(selected));
-		this.updateSelectionState();
-	}
-
-	private updateSelectionState() {
-		const selectableMembers = this.members().filter((m) => this.canSelectMember(m));
-		const selectedCount = this.selectedMembers().size;
-		const selectableCount = selectableMembers.length;
-
-		this.allSelected.set(selectedCount > 0 && selectedCount === selectableCount);
-		this.someSelected.set(selectedCount > 0 && selectedCount < selectableCount);
-	}
-
-	isMemberSelected(member: MeetRoomMember): boolean {
-		return this.selectedMembers().has(member.memberId);
-	}
-
-	canSelectMember(_member: MeetRoomMember): boolean {
-		return true;
-	}
-
-	getSelectedMembers(): MeetRoomMember[] {
-		const selected = this.selectedMembers();
-		return this.members().filter((m) => selected.has(m.memberId));
-	}
-
 	// ===== ACTION METHODS =====
 
 	addMember() {
@@ -385,7 +303,7 @@ export class RoomMembersListsComponent implements OnInit {
 	}
 
 	bulkDeleteSelected() {
-		const selectedMembers = this.getSelectedMembers();
+		const selectedMembers = this.selection.selected();
 
 		if (selectedMembers.length > 0) {
 			this.memberAction.emit({ members: selectedMembers, action: 'bulkDelete' });
@@ -414,26 +332,6 @@ export class RoomMembersListsComponent implements OnInit {
 
 	toggleFilterPanel() {
 		this.showFilterPanel.update((open) => !open);
-	}
-
-	removeFilter(key: string) {
-		const control = (this.filtersForm.controls as Record<string, FormControl>)[key];
-
-		if (!control) return;
-
-		control.setValue(typeof control.value === 'boolean' ? false : '');
-	}
-
-	toggleCaseInsensitive() {
-		this.controls.nameCaseInsensitive.setValue(!this.controls.nameCaseInsensitive.value);
-	}
-
-	clearNameFilter() {
-		this.controls.nameFilter.setValue('');
-	}
-
-	setMatchMode(mode: TextMatchMode) {
-		this.controls.nameMatchMode.setValue(mode);
 	}
 
 	private buildFilterSnapshot(): MemberTableFilter {

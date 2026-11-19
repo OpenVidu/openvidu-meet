@@ -72,7 +72,7 @@ describe('RecordingListsComponent', () => {
 			fixture.componentRef.setInput('recordings', recordings);
 			fixture.componentRef.setInput('canDeleteRecordings', true);
 			await fixture.whenStable();
-			component.selectedRecordings.set(new Set(recordings.map((r) => r.recordingId)));
+			component.selection.toggleAll();
 			await fixture.whenStable();
 		};
 

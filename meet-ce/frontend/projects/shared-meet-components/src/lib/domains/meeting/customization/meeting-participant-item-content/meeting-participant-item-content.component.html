@@ -44,7 +44,7 @@
 					@if (ctx.showMakeModeratorButton) {
 						<button
 							mat-menu-item
-							(click)="onMakeModeratorClick()"
+							(click)="onModeratorRoleClick(MeetParticipantModerationAction.UPGRADE)"
 							class="make-moderator-btn"
 							[attr.id]="'make-moderator-btn-' + participant().sid"
 						>
@@ -56,7 +56,7 @@
 					@if (ctx.showUnmakeModeratorButton) {
 						<button
 							mat-menu-item
-							(click)="onUnmakeModeratorClick()"
+							(click)="onModeratorRoleClick(MeetParticipantModerationAction.DOWNGRADE)"
 							class="remove-moderator-btn"
 							[attr.id]="'remove-moderator-btn-' + participant().sid"
 						>

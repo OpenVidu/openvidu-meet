@@ -70,11 +70,6 @@ export class MeetStorageService {
 		this.storage.set(MeetStorageKeys.THEME, theme);
 	}
 
-	/** Removes the shared theme preference (falls back to the system preference). */
-	removeTheme(): void {
-		this.storage.remove(MeetStorageKeys.THEME);
-	}
-
 	/** Retrieves the last participant name used on this device (cross-visit, shared across tabs). */
 	getLastParticipantName(): string | null {
 		return this.storage.get<string>(MeetStorageKeys.LAST_PARTICIPANT_NAME);

@@ -147,20 +147,6 @@ export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
 		this.onVideoEnabledChanged.emit(enabled);
 	}
 
-	videoDeviceChanged(device: CustomDevice) {
-		this.log.d('Video device changed to:', device);
-		this.onVideoDeviceChanged.emit(device);
-	}
-
-	audioDeviceChanged(device: CustomDevice) {
-		this.log.d('Audio device changed to:', device);
-		this.onAudioDeviceChanged.emit(device);
-	}
-
-	audioEnabledChanged(enabled: boolean) {
-		this.onAudioEnabledChanged.emit(enabled);
-	}
-
 	/**
 	 * Toggle virtual background panel visibility with smooth animation
 	 */

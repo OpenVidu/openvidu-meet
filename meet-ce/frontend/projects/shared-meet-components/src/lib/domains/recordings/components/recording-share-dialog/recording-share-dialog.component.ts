@@ -62,7 +62,7 @@ export class RecordingShareDialogComponent implements OnInit {
 	recordingUrl = signal<string | undefined>(undefined);
 
 	loading = signal(false);
-	erroMessage = signal<string | undefined>(undefined);
+	errorMessage = signal<string | undefined>(undefined);
 	copied = signal(false);
 
 	selectedAccessLabel = computed(() =>
@@ -137,24 +137,24 @@ export class RecordingShareDialogComponent implements OnInit {
 
 	async getRecordingUrl() {
 		if (!this.canGenerateUrls()) {
-			this.erroMessage.set(this.translateService.translate('RECORDINGS.ERRORS.PERMISSION_DENIED'));
+			this.errorMessage.set(this.translateService.translate('RECORDINGS.ERRORS.PERMISSION_DENIED'));
 			return;
 		}
 
 		if (this.accessType() === 'public' && !this.canGeneratePublicUrls()) {
-			this.erroMessage.set(this.translateService.translate('RECORDINGS.ERRORS.PUBLIC_URLS_NOT_ENABLED'));
+			this.errorMessage.set(this.translateService.translate('RECORDINGS.ERRORS.PUBLIC_URLS_NOT_ENABLED'));
 			return;
 		}
 
 		this.loading.set(true);
-		this.erroMessage.set(undefined);
+		this.errorMessage.set(undefined);
 
 		try {
 			const privateAccess = this.accessType() === 'private';
 			const { url } = await this.recordingService.generateRecordingUrl(this.data.recordingId, privateAccess);
 			this.recordingUrl.set(url);
 		} catch (error) {
-			this.erroMessage.set(this.translateService.translate('RECORDINGS.ERRORS.GENERATE_URL_FAILED'));
+			this.errorMessage.set(this.translateService.translate('RECORDINGS.ERRORS.GENERATE_URL_FAILED'));
 			console.error('Error generating recording URL:', error);
 		} finally {
 			this.loading.set(false);
@@ -184,6 +184,6 @@ export class RecordingShareDialogComponent implements OnInit {
 	goBack() {
 		this.recordingUrl.set(undefined);
 		this.copied.set(false);
-		this.erroMessage.set(undefined);
+		this.errorMessage.set(undefined);
 	}
 }

@@ -26,13 +26,8 @@ export class ChatService {
 	private log: ILogger = inject(LoggerService).get('ChatService');
 
 	chatMessages = signal<ChatMessage[]>([]);
-	// Chat notification sound served as a static asset (resolves in SPA & WC modes),
-	// matching SoundService instead of inlining the audio as base64.
-	private messageSound: HTMLAudioElement = new Audio(this.assets.chatMessageSound);
+	private messageSound?: HTMLAudioElement;
 	private shownId: number | undefined;
-	constructor() {
-		this.messageSound.volume = 0.6;
-	}
 
 	/**
 	 * Adds a new message to the chat from a remote participant. A participant who cannot read the chat,
@@ -48,7 +43,7 @@ export class ChatService {
 
 		if (!this.panelService.isChatPanelOpened()) {
 			this.announceMessage(participantName);
-			this.messageSound.play().catch(() => {});
+			this.playMessageSound();
 		}
 	}
 
@@ -113,6 +108,15 @@ export class ChatService {
 				run: () => this.panelService.togglePanel(PanelType.CHAT)
 			}
 		});
+	}
+
+	private playMessageSound(): void {
+		if (!this.messageSound) {
+			this.messageSound = new Audio(this.assets.chatMessageSound);
+			this.messageSound.volume = 0.6;
+		}
+
+		this.messageSound.play().catch(() => {});
 	}
 
 	private dismissAnnouncement(): void {

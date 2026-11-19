@@ -1,4 +1,4 @@
-import { Directive, ElementRef, OnDestroy, effect, inject, input } from '@angular/core';
+import { Directive, OnDestroy, effect, inject, input } from '@angular/core';
 import { AvailableLangs, LangOption } from '../../models/lang.model';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
 import { InitialMediaState, LocalMediaService } from '../../services/local-media/local-media.service';
@@ -24,10 +24,6 @@ export class LivekitUrlDirective implements OnDestroy {
 	 */
 	readonly livekitUrl = input<string>('');
 
-	/**
-	 * @ignore
-	 */
-	public elementRef = inject(ElementRef);
 	private readonly libService = inject(MeetingUiConfigService);
 	private readonly livekitUrlEffect = effect(() => {
 		this.update(this.livekitUrl());
@@ -74,10 +70,6 @@ export class TokenErrorDirective implements OnDestroy {
 	 */
 	readonly tokenError = input<any>(undefined);
 
-	/**
-	 * @ignore
-	 */
-	public elementRef = inject(ElementRef);
 	private readonly libService = inject(MeetingUiConfigService);
 	private readonly tokenErrorEffect = effect(() => {
 		this.update(this.tokenError());
@@ -137,10 +129,6 @@ export class LangDirective implements OnDestroy {
 	 */
 	readonly lang = input<AvailableLangs>('en');
 
-	/**
-	 * @ignore
-	 */
-	public elementRef = inject(ElementRef);
 	private readonly translateService = inject(MeetingTranslateService);
 	private readonly langEffect = effect(() => {
 		this.update(this.lang());
@@ -205,10 +193,6 @@ export class LangOptionsDirective implements OnDestroy {
 	 */
 	readonly langOptions = input<LangOption[] | undefined>(undefined);
 
-	/**
-	 * @ignore
-	 */
-	public elementRef = inject(ElementRef);
 	private readonly translateService = inject(MeetingTranslateService);
 	private readonly langOptionsEffect = effect(() => {
 		this.update(this.langOptions());
@@ -253,10 +237,6 @@ export class ParticipantNameDirective implements OnDestroy {
 	 */
 	readonly participantName = input<string>('');
 
-	/**
-	 * @ignore
-	 */
-	public elementRef = inject(ElementRef);
 	private readonly libService = inject(MeetingUiConfigService);
 	private readonly participantNameEffect = effect(() => {
 		this.update(this.participantName());
@@ -305,10 +285,6 @@ export class PrejoinDirective implements OnDestroy {
 	 */
 	readonly prejoin = input<boolean>(true);
 
-	/**
-	 * @ignore
-	 */
-	public elementRef = inject(ElementRef);
 	private readonly libService = inject(MeetingUiConfigService);
 	private readonly prejoinEffect = effect(() => {
 		this.update(this.prejoin());
@@ -358,10 +334,6 @@ export class InitialMediaStateDirective {
 	 */
 	readonly initialMediaState = input<InitialMediaState>({ camera: true, microphone: true });
 
-	/**
-	 * @ignore
-	 */
-	public elementRef = inject(ElementRef);
 	private readonly localMedia = inject(LocalMediaService);
 	private readonly initialMediaStateEffect = effect(() => {
 		this.update(this.initialMediaState());
@@ -399,10 +371,6 @@ export class ChatWritableDirective implements OnDestroy {
 	 */
 	readonly chatWritable = input<boolean | undefined>(undefined);
 
-	/**
-	 * @ignore
-	 */
-	public elementRef = inject(ElementRef);
 	private readonly libService = inject(MeetingUiConfigService);
 	private readonly chatWritableEffect = effect(() => {
 		this.libService.setChatInputEnabled(this.chatWritable() ?? true);
@@ -437,10 +405,6 @@ export class ShowCameraControlsDirective implements OnDestroy {
 	 */
 	readonly showCameraControls = input<boolean | undefined>(undefined);
 
-	/**
-	 * @ignore
-	 */
-	public elementRef = inject(ElementRef);
 	private readonly libService = inject(MeetingUiConfigService);
 	private readonly showCameraControlsEffect = effect(() => {
 		this.libService.setShowCameraControls(this.showCameraControls() ?? true);
@@ -475,10 +439,6 @@ export class ShowMicrophoneControlsDirective implements OnDestroy {
 	 */
 	readonly showMicrophoneControls = input<boolean | undefined>(undefined);
 
-	/**
-	 * @ignore
-	 */
-	public elementRef = inject(ElementRef);
 	private readonly libService = inject(MeetingUiConfigService);
 	private readonly showMicrophoneControlsEffect = effect(() => {
 		this.libService.setShowMicrophoneControls(this.showMicrophoneControls() ?? true);

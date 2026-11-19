@@ -14,20 +14,6 @@ export const formatDurationToHMS = (durationSeconds?: number): string => {
 	}
 };
 
-export const formatDurationToTime = (durationSeconds?: number): string => {
-	if (!durationSeconds || durationSeconds === 0) return '-';
-
-	const hours = Math.floor(durationSeconds / 3600);
-	const minutes = Math.floor((durationSeconds % 3600) / 60);
-	const seconds = Math.floor(durationSeconds % 60);
-
-	if (hours > 0) {
-		return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-	}
-
-	return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-};
-
 export const formatBytes = (bytes?: number): string => {
 	if (!bytes || bytes === 0) return '-';
 

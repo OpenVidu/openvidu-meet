@@ -740,9 +740,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 		r.toolbarMoreOptionsAdditionalMenuItems.set(this.externalToolbarMoreOptionsAdditionalMenuItems()?.template);
 
 		// Additional layout elements
-		const layoutAdditional = this.externalLayoutAdditionalElements();
-		r.layoutAdditionalElements.set(layoutAdditional?.template);
-		r.layoutAdditionalElementsSlot.set(layoutAdditional?.slot() ?? 'default');
+		r.layoutAdditionalElements.set(this.externalLayoutAdditionalElements()?.template);
 
 		r.statusRailEnd.set(this.externalStatusRailEnd()?.template);
 	}

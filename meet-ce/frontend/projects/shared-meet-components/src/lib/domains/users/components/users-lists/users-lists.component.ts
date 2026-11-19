@@ -1,16 +1,5 @@
 import { DatePipe } from '@angular/common';
-import {
-	Component,
-	computed,
-	DestroyRef,
-	effect,
-	inject,
-	input,
-	OnInit,
-	output,
-	signal,
-	untracked
-} from '@angular/core';
+import { Component, computed, DestroyRef, effect, inject, input, OnInit, output, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatBadgeModule } from '@angular/material/badge';
@@ -35,12 +24,13 @@ import {
 	TextMatchMode
 } from '@openvidu-meet/typings';
 import { merge } from 'rxjs';
+import { ListFilterControls } from '../../../../shared/models/list-filter-controls';
+import { ListSelection } from '../../../../shared/models/list-selection';
 import { ListUrlParams } from '../../../../shared/models/list-url-state';
 import { RowLinkDirective } from '../../../../shared/directives/row-link.directive';
 import { SkeletonRowsComponent } from '../../../../shared/components/skeleton-rows/skeleton-rows.component';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
-import { setsAreEqual } from '../../../../shared/utils/array.utils';
 import { UsersUiUtils } from '../../utils/ui';
 
 export interface UserTableAction {
@@ -125,7 +115,7 @@ export const USER_FILTER_URL_PARAMS: ListUrlParams<UserTableFilter> = {
 	templateUrl: './users-lists.component.html',
 	styleUrl: './users-lists.component.scss',
 	host: {
-		'[class.has-selections]': 'hasSelections()'
+		'[class.has-selections]': 'selection.count() > 0'
 	}
 })
 export class UsersListsComponent implements OnInit {
@@ -143,9 +133,6 @@ export class UsersListsComponent implements OnInit {
 
 	private readonly applyInitialFilters = effect(() => this.applyFilters(this.initialFilters()));
 
-	// Host binding state for styling when users are selected
-	hasSelections = computed(() => this.selectedUsers().size > 0);
-
 	// Output events
 	readonly userAction = output<UserTableAction>();
 	readonly filterChange = output<UserTableFilter>();
@@ -159,6 +146,8 @@ export class UsersListsComponent implements OnInit {
 		nameCaseInsensitive: new FormControl<boolean>(false, { nonNullable: true }),
 		roleFilter: new FormControl<MeetUserRole | ''>('', { nonNullable: true })
 	});
+
+	filterControls = new ListFilterControls(this.filtersForm);
 
 	get controls() {
 		return this.filtersForm.controls;
@@ -218,12 +207,13 @@ export class UsersListsComponent implements OnInit {
 	currentSortField = signal<MeetUserSortField>('registrationDate');
 	currentSortOrder = signal<SortOrder>(SortOrder.DESC);
 
-	showEmptyFilterMessage = signal(false); // Show message when no users match filters
+	showEmptyFilterMessage = computed(() => this.users().length === 0 && this.hasActiveFilters());
 
-	// Selection state
-	selectedUsers = signal<Set<string>>(new Set());
-	allSelected = signal(false);
-	someSelected = signal(false);
+	selection = new ListSelection({
+		items: this.users,
+		idOf: (user) => user.userId,
+		canSelect: (user) => this.canSelectUser(user)
+	});
 
 	// Table configuration
 	displayedColumns = computed(() => {
@@ -239,27 +229,6 @@ export class UsersListsComponent implements OnInit {
 		{ value: MeetUserRole.ROOM_MEMBER, label: this.translateService.translate('USERS.LIST.ROLE_FILTER_ROOM_MEMBER') }
 	];
 	protected readonly UsersUiUtils = UsersUiUtils;
-
-	constructor() {
-		effect(() => {
-			// Update selected users based on current users
-			const users = this.users();
-			const validUserIds = new Set(users.map((u) => u.userId));
-
-			// Use untracked to avoid creating a reactive dependency on selectedUsers
-			const currentSelection = untracked(() => this.selectedUsers());
-			const filteredSelection = new Set([...currentSelection].filter((id) => validUserIds.has(id)));
-
-			// Only update if the selection has actually changed
-			if (!setsAreEqual(filteredSelection, currentSelection)) {
-				this.selectedUsers.set(filteredSelection);
-				this.updateSelectionState();
-			}
-
-			// Show message when no users match filters
-			this.showEmptyFilterMessage.set(users.length === 0 && this.hasActiveFilters());
-		});
-	}
 
 	ngOnInit() {
 		this.setupFilters();
@@ -297,56 +266,8 @@ export class UsersListsComponent implements OnInit {
 
 	// ===== SELECTION METHODS =====
 
-	toggleAllSelection() {
-		const selected = this.selectedUsers();
-
-		if (this.allSelected()) {
-			selected.clear();
-		} else {
-			this.users().forEach((user) => {
-				if (this.canSelectUser(user)) {
-					selected.add(user.userId);
-				}
-			});
-		}
-
-		this.selectedUsers.set(new Set(selected));
-		this.updateSelectionState();
-	}
-
-	toggleUserSelection(user: MeetUserDTO) {
-		const selected = this.selectedUsers();
-
-		if (selected.has(user.userId)) {
-			selected.delete(user.userId);
-		} else {
-			selected.add(user.userId);
-		}
-
-		this.selectedUsers.set(new Set(selected));
-		this.updateSelectionState();
-	}
-
-	private updateSelectionState() {
-		const selectableUsers = this.users().filter((u) => this.canSelectUser(u));
-		const selectedCount = this.selectedUsers().size;
-		const selectableCount = selectableUsers.length;
-
-		this.allSelected.set(selectedCount > 0 && selectedCount === selectableCount);
-		this.someSelected.set(selectedCount > 0 && selectedCount < selectableCount);
-	}
-
-	isUserSelected(user: MeetUserDTO): boolean {
-		return this.selectedUsers().has(user.userId);
-	}
-
 	canSelectUser(user: MeetUserDTO): boolean {
 		return !UsersUiUtils.isProtectedUser(user, this.currentUserId());
-	}
-
-	getSelectedUsers(): MeetUserDTO[] {
-		const selected = this.selectedUsers();
-		return this.users().filter((u) => selected.has(u.userId));
 	}
 
 	// ===== ACTION METHODS =====
@@ -372,7 +293,7 @@ export class UsersListsComponent implements OnInit {
 	}
 
 	bulkDeleteSelected() {
-		const selectedUsers = this.getSelectedUsers();
+		const selectedUsers = this.selection.selected();
 
 		if (selectedUsers.length > 0) {
 			this.userAction.emit({ users: selectedUsers, action: 'bulkDelete' });
@@ -401,26 +322,6 @@ export class UsersListsComponent implements OnInit {
 
 	toggleFilterPanel() {
 		this.showFilterPanel.update((open) => !open);
-	}
-
-	toggleCaseInsensitive() {
-		this.controls.nameCaseInsensitive.setValue(!this.controls.nameCaseInsensitive.value);
-	}
-
-	clearNameFilter() {
-		this.controls.nameFilter.setValue('');
-	}
-
-	setMatchMode(mode: TextMatchMode) {
-		this.controls.nameMatchMode.setValue(mode);
-	}
-
-	removeFilter(key: string) {
-		const control = (this.filtersForm.controls as Record<string, FormControl>)[key];
-
-		if (!control) return;
-
-		control.setValue(typeof control.value === 'boolean' ? false : '');
 	}
 
 	private buildFilterSnapshot(): UserTableFilter {

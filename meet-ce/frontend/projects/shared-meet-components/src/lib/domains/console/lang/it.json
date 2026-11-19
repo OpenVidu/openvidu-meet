@@ -162,11 +162,5 @@
       "DELETE_WEBHOOK_MESSAGE": "Vuoi eliminare il webhook che punta a <b>{url}</b>? Smetterà subito di ricevere le notifiche degli eventi.",
       "DELETE": "Elimina"
     }
-  },
-  "LOGO_SELECTOR": {
-    "TITLE": "Logo del marchio",
-    "DESCRIPTION": "Rendilo tuo: aggiungi il logo del tuo marchio all'esperienza.",
-    "UPGRADE_MESSAGE": "Esegui l'upgrade a Pro per personalizzare il tuo marchio",
-    "UPGRADE_BUTTON": "Esegui l'upgrade a Pro"
   }
 }

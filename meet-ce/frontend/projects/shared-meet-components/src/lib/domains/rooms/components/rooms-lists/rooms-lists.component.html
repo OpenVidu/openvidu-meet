@@ -41,7 +41,7 @@
 							matSuffix
 							type="button"
 							class="ov-search-modifier clear-name-btn"
-							(click)="clearNameFilter()"
+							(click)="filterControls.clearName()"
 							[matTooltip]="'ROOMS.LIST.CLEAR_SEARCH' | translate"
 							matTooltipPosition="above"
 							id="clear-name-btn"
@@ -57,7 +57,7 @@
 						type="button"
 						class="ov-search-modifier case-toggle"
 						[class.active]="filterState().nameCaseInsensitive"
-						(click)="toggleCaseInsensitive()"
+						(click)="filterControls.toggleCaseInsensitive()"
 						[matTooltip]="'ROOMS.LIST.MATCH_CASE_INSENSITIVE' | translate"
 						matTooltipPosition="above"
 						id="case-insensitive-btn"
@@ -99,7 +99,7 @@
 							mat-menu-item
 							type="button"
 							[class.active]="filterState().nameMatchMode === option.value"
-							(click)="setMatchMode(option.value)"
+							(click)="filterControls.setMatchMode(option.value)"
 							id="match-mode-option-{{ option.value }}"
 						>
 							<mat-icon>{{ option.icon }}</mat-icon>
@@ -135,7 +135,7 @@
 		</div>
 
 		<!-- Center Section: Batch Actions (visible when items selected) -->
-		@if (showSelection() && selectedRooms().size > 0) {
+		@if (showSelection() && selection.count() > 0) {
 			<div class="toolbar-center" id="toolbar-center">
 				<div class="batch-actions" id="batch-actions">
 					<button
@@ -146,7 +146,7 @@
 						[matTooltip]="'ROOMS.LIST.DELETE_SELECTED_ROOMS' | translate"
 						id="bulk-delete-btn"
 					>
-						<mat-icon [matBadge]="selectedRooms().size" matBadgePosition="below after"> delete </mat-icon>
+						<mat-icon [matBadge]="selection.count()" matBadgePosition="below after"> delete </mat-icon>
 					</button>
 				</div>
 			</div>
@@ -276,7 +276,7 @@
 		<div class="ov-active-filters" id="active-filters">
 			<span class="active-filters-label">{{ 'ROOMS.LIST.FILTERS_LABEL' | translate }}</span>
 			@for (chip of activeFilterChips(); track chip.key) {
-				<button class="filter-chip" (click)="removeFilter(chip.key)" id="filter-chip-{{ chip.key }}">
+				<button class="filter-chip" (click)="filterControls.remove(chip.key)" id="filter-chip-{{ chip.key }}">
 					<span>{{ chip.label }}</span>
 					<mat-icon>close</mat-icon>
 				</button>
@@ -323,9 +323,9 @@
 						<th mat-header-cell *matHeaderCellDef id="select-header">
 							@if (canSelectRooms()) {
 								<mat-checkbox
-									[checked]="allSelected()"
-									[indeterminate]="someSelected()"
-									(change)="toggleAllSelection()"
+									[checked]="selection.allSelected()"
+									[indeterminate]="selection.someSelected()"
+									(change)="selection.toggleAll()"
 									[disabled]="loading()"
 									id="select-all-checkbox"
 								/>
@@ -334,8 +334,8 @@
 						<td mat-cell *matCellDef="let room" id="select-cell-{{ room.roomId }}">
 							@if (canSelectRoom(room)) {
 								<mat-checkbox
-									[checked]="isRoomSelected(room)"
-									(change)="toggleRoomSelection(room)"
+									[checked]="selection.isSelected(room)"
+									(change)="selection.toggle(room)"
 									[disabled]="loading()"
 									id="select-room-{{ room.roomId }}"
 								/>
@@ -601,7 +601,7 @@
 				<tr
 					mat-row
 					*matRowDef="let row; columns: displayedColumns()"
-					[class.selected-row]="isRoomSelected(row)"
+					[class.selected-row]="selection.isSelected(row)"
 					id="table-row-{{ row.roomId }}"
 					[ovRowLink]="['/rooms', row.roomId]"
 				></tr>

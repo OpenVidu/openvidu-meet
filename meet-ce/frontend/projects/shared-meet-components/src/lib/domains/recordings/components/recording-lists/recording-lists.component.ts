@@ -1,16 +1,5 @@
 import { DatePipe } from '@angular/common';
-import {
-	Component,
-	computed,
-	DestroyRef,
-	effect,
-	inject,
-	input,
-	OnInit,
-	output,
-	signal,
-	untracked
-} from '@angular/core';
+import { Component, computed, DestroyRef, effect, inject, input, OnInit, output, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatBadgeModule } from '@angular/material/badge';
@@ -35,11 +24,12 @@ import {
 	TextMatchMode
 } from '@openvidu-meet/typings';
 import { merge } from 'rxjs';
+import { ListFilterControls } from '../../../../shared/models/list-filter-controls';
+import { ListSelection } from '../../../../shared/models/list-selection';
 import { RowLinkDirective } from '../../../../shared/directives/row-link.directive';
 import { SkeletonRowsComponent } from '../../../../shared/components/skeleton-rows/skeleton-rows.component';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
-import { setsAreEqual } from '../../../../shared/utils/array.utils';
 import { ViewportService } from '../../../meeting/openvidu-components';
 import {
 	RECORDING_FILTER_DEFAULTS,
@@ -98,7 +88,7 @@ import { RecordingUiUtils } from '../../utils/ui';
 	templateUrl: './recording-lists.component.html',
 	styleUrl: './recording-lists.component.scss',
 	host: {
-		'[class.has-selections]': 'hasSelections()'
+		'[class.has-selections]': 'selection.count() > 0'
 	}
 })
 export class RecordingListsComponent implements OnInit {
@@ -126,9 +116,6 @@ export class RecordingListsComponent implements OnInit {
 
 	private readonly applyInitialFilters = effect(() => this.applyFilters(this.initialFilters()));
 
-	// Host binding state for styling when rooms are selected
-	hasSelections = computed(() => this.selectedRecordings().size > 0);
-
 	// Output events
 	recordingAction = output<RecordingTableAction>();
 	filterChange = output<RecordingTableFilter>();
@@ -142,6 +129,8 @@ export class RecordingListsComponent implements OnInit {
 		nameCaseInsensitive: new FormControl<boolean>(false, { nonNullable: true }),
 		statusFilter: new FormControl<MeetRecordingStatus | ''>('', { nonNullable: true })
 	});
+
+	filterControls = new ListFilterControls(this.filtersForm);
 
 	get controls() {
 		return this.filtersForm.controls;
@@ -217,32 +206,27 @@ export class RecordingListsComponent implements OnInit {
 	currentSortField = signal<MeetRecordingSortField>('startDate');
 	currentSortOrder = signal<SortOrder>(SortOrder.DESC);
 
-	showEmptyFilterMessage = signal(false); // Show message when no recordings match filters
+	showEmptyFilterMessage = computed(() => this.recordings().length === 0 && this.hasActiveFilters());
 
 	protected readonly bulkLimit = RECORDINGS_BULK_MAX_ITEMS;
 
-	// Selection state
-	selectedRecordings = signal<Set<string>>(new Set());
-	allSelected = signal(false);
-	someSelected = signal(false);
+	selection = new ListSelection({
+		items: this.recordings,
+		idOf: (recording) => recording.recordingId,
+		canSelect: (recording) => this.canSelectRecording(recording)
+	});
 
 	// Derived subsets of the current selection
-	deletableSelected = computed(() => {
-		const selected = this.selectedRecordings();
-		return this.recordings().filter(
-			(r) =>
-				selected.has(r.recordingId) && RecordingUiUtils.isDeletable(r.status) && this.canDeleteRecordingItem(r)
-		);
-	});
-	downloadableSelected = computed(() => {
-		const selected = this.selectedRecordings();
-		return this.recordings().filter(
-			(r) =>
-				selected.has(r.recordingId) &&
-				RecordingUiUtils.isDownloadable(r.status) &&
-				this.canDownloadRecordingItem(r)
-		);
-	});
+	deletableSelected = computed(() =>
+		this.selection
+			.selected()
+			.filter((r) => RecordingUiUtils.isDeletable(r.status) && this.canDeleteRecordingItem(r))
+	);
+	downloadableSelected = computed(() =>
+		this.selection
+			.selected()
+			.filter((r) => RecordingUiUtils.isDownloadable(r.status) && this.canDownloadRecordingItem(r))
+	);
 
 	bulkDeleteDisabled = computed(
 		() =>
@@ -311,32 +295,8 @@ export class RecordingListsComponent implements OnInit {
 	// Make RecordingUiUtils available in template
 	protected readonly RecordingUiUtils = RecordingUiUtils;
 
-	constructor() {
-		effect(() => {
-			// Update selected recordings based on current recordings
-			const recordings = this.recordings();
-			const validRecordingIds = new Set(recordings.map((r) => r.recordingId));
-
-			// Use untracked to avoid circular dependency in effect
-			const currentSelection = untracked(() => this.selectedRecordings());
-			const filteredSelection = new Set([...currentSelection].filter((id) => validRecordingIds.has(id)));
-
-			// Only update if the selection has actually changed
-			if (!setsAreEqual(filteredSelection, currentSelection)) {
-				this.selectedRecordings.set(filteredSelection);
-				this.updateSelectionState();
-			}
-
-			// Show message when no recordings match filters
-			this.showEmptyFilterMessage.set(recordings.length === 0 && this.hasActiveFilters());
-		});
-	}
-
 	ngOnInit() {
 		this.setupFilters();
-
-		// Calculate showEmptyFilterMessage based on initial state
-		this.showEmptyFilterMessage.set(this.recordings().length === 0 && this.hasActiveFilters());
 	}
 
 	// ===== INITIALIZATION METHODS =====
@@ -370,49 +330,6 @@ export class RecordingListsComponent implements OnInit {
 	}
 
 	// ===== SELECTION METHODS =====
-
-	toggleAllSelection() {
-		const selected = this.selectedRecordings();
-
-		if (this.allSelected()) {
-			selected.clear();
-		} else {
-			this.recordings().forEach((recording) => {
-				if (this.canSelectRecording(recording)) {
-					selected.add(recording.recordingId);
-				}
-			});
-		}
-
-		this.selectedRecordings.set(new Set(selected));
-		this.updateSelectionState();
-	}
-
-	toggleRecordingSelection(recording: MeetRecordingInfo) {
-		const selected = this.selectedRecordings();
-
-		if (selected.has(recording.recordingId)) {
-			selected.delete(recording.recordingId);
-		} else {
-			selected.add(recording.recordingId);
-		}
-
-		this.selectedRecordings.set(new Set(selected));
-		this.updateSelectionState();
-	}
-
-	private updateSelectionState() {
-		const selectableRecordings = this.recordings().filter((r) => this.canSelectRecording(r));
-		const selectedCount = this.selectedRecordings().size;
-		const selectableCount = selectableRecordings.length;
-
-		this.allSelected.set(selectedCount > 0 && selectedCount === selectableCount);
-		this.someSelected.set(selectedCount > 0 && selectedCount < selectableCount);
-	}
-
-	isRecordingSelected(recording: MeetRecordingInfo): boolean {
-		return this.selectedRecordings().has(recording.recordingId);
-	}
 
 	canSelectRecording(recording: MeetRecordingInfo): boolean {
 		return (
@@ -465,18 +382,13 @@ export class RecordingListsComponent implements OnInit {
 			this.translateService.translate(`${prefix}_PREFIX`) +
 			count +
 			this.translateService.translate(`${prefix}_INFIX`) +
-			this.selectedRecordings().size +
+			this.selection.count() +
 			this.translateService.translate(`${prefix}_SUFFIX`)
 		);
 	}
 
 	private bulkLimitTooltip(): string {
 		return this.translateService.translate('RECORDINGS.LIST.BULK_LIMIT_EXCEEDED', { count: this.bulkLimit });
-	}
-
-	getSelectedRecordings(): MeetRecordingInfo[] {
-		const selected = this.selectedRecordings();
-		return this.recordings().filter((r) => selected.has(r.recordingId));
 	}
 
 	// ===== ACTION METHODS =====
@@ -535,26 +447,6 @@ export class RecordingListsComponent implements OnInit {
 
 	toggleFilterPanel() {
 		this.showFilterPanel.update((open) => !open);
-	}
-
-	toggleCaseInsensitive() {
-		this.controls.nameCaseInsensitive.setValue(!this.controls.nameCaseInsensitive.value);
-	}
-
-	clearNameFilter() {
-		this.controls.nameFilter.setValue('');
-	}
-
-	setMatchMode(mode: TextMatchMode) {
-		this.controls.nameMatchMode.setValue(mode);
-	}
-
-	removeFilter(key: string) {
-		const control = (this.filtersForm.controls as Record<string, FormControl>)[key];
-
-		if (!control) return;
-
-		control.setValue(typeof control.value === 'boolean' ? false : '');
 	}
 
 	private buildFilterSnapshot(): RecordingTableFilter {
