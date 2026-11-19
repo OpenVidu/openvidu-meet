@@ -113,7 +113,7 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	updateIdleRoomAccess(roomId: string, access: MeetRoomAccess): Promise<MeetRoom | null> {
 		return this.updatePartialOne(
 			{ roomId, status: { $ne: MeetRoomStatus.ACTIVE_MEETING } },
-			{ access, rolesUpdatedAt: Date.now() },
+			this.normalizeRoomForStorage({ access, rolesUpdatedAt: Date.now() }),
 			{ throwIfNotFound: false }
 		);
 	}
