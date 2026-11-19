@@ -323,6 +323,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	readonly isBroadcastBusy = computed(() => this.broadcastState.isEnding() || this.broadcastState.isStartPending());
 
 	readonly totalParticipants = this.participantService.totalParticipantsSignal;
+	readonly hasRoomTracksPublished = this.participantService.hasRoomTracksPublished;
 	readonly waitingParticipants = computed(() => this.waitingAdmin.waiting().length);
 
 	private log: ILogger = inject(LoggerService).get('ToolbarComponent');
@@ -402,13 +403,6 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 
 	private fitToolbar(): void {
 		this.viewportService.fitToolbar(this.toolbarElement());
-	}
-
-	/**
-	 * @internal
-	 */
-	get hasRoomTracksPublished(): boolean {
-		return this.meetingLiveKitService.hasRoomTracksPublished();
 	}
 
 	/**

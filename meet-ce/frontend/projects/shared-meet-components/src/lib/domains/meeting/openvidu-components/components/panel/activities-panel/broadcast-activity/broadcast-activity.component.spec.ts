@@ -1,4 +1,4 @@
-import { provideZonelessChangeDetection, signal } from '@angular/core';
+import { provideZonelessChangeDetection, signal, WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MeetBroadcastDestination } from '@openvidu-meet/typings';
 import { MeetingContextService } from '../../../../../services/meeting-context.service';
@@ -16,8 +16,10 @@ const ROOM_DESTINATIONS: MeetBroadcastDestination[] = [
 /** The panel creates the activity again every time it opens, so what was chosen in it must outlive it. */
 describe('BroadcastActivityComponent', () => {
 	const createActivity = () => TestBed.runInInjectionContext(() => new BroadcastActivityComponent());
+	let hasRoomTracksPublished: WritableSignal<boolean>;
 
 	beforeEach(() => {
+		hasRoomTracksPublished = signal(true);
 		TestBed.configureTestingModule({
 			providers: [
 				provideZonelessChangeDetection(),
@@ -32,14 +34,8 @@ describe('BroadcastActivityComponent', () => {
 					provide: MeetingContextService,
 					useValue: { broadcastConfig: signal({ destinations: ROOM_DESTINATIONS }) }
 				},
-				{
-					provide: ParticipantService,
-					useValue: { localParticipant: signal(undefined), remoteParticipants: signal([]) }
-				},
-				{
-					provide: MeetingLiveKitService,
-					useValue: { hasRoomTracksPublished: () => true, getRoomName: () => 'room1' }
-				}
+				{ provide: ParticipantService, useValue: { hasRoomTracksPublished } },
+				{ provide: MeetingLiveKitService, useValue: { getRoomName: () => 'room1' } }
 			]
 		});
 	});
@@ -71,5 +67,16 @@ describe('BroadcastActivityComponent', () => {
 				destinations: [{ name: 'Channel C', url: 'rtmp://c.example.com/live/key-c' }]
 			}
 		]);
+	});
+
+	it('offers to go live as soon as the room publishes a track', () => {
+		hasRoomTracksPublished.set(false);
+		const activity = createActivity();
+
+		expect(activity.canGoLive()).toBeFalse();
+
+		hasRoomTracksPublished.set(true);
+
+		expect(activity.canGoLive()).toBeTrue();
 	});
 });

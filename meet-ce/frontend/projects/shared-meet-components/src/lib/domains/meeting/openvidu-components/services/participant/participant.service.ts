@@ -35,9 +35,11 @@ export class ParticipantService {
 	 */
 	remoteParticipants: Signal<ParticipantModel[]>;
 	private _remoteParticipants: WritableSignal<ParticipantModel[]> = signal<ParticipantModel[]>([]);
-	readonly totalParticipantsSignal = computed(
-		() => (this._localParticipant() ? 1 : 0) + this._remoteParticipants().length
-	);
+	private readonly participants = computed(() => {
+		const local = this._localParticipant();
+		return local ? [local, ...this._remoteParticipants()] : this._remoteParticipants();
+	});
+	readonly totalParticipantsSignal = computed(() => this.participants().length);
 	readonly hasRemoteEncryptionErrorsSignal = computed(() =>
 		this._remoteParticipants().some((participant) => participant.hasEncryptionError)
 	);
@@ -45,11 +47,9 @@ export class ParticipantService {
 	 * The participants with a raised hand, the local one included, in the order they raised it. Every
 	 * client derives it from the same server-written attribute, so the queue reads the same everywhere.
 	 */
-	readonly raisedHands = computed(() => {
-		const local = this._localParticipant();
-		const participants = local ? [local, ...this._remoteParticipants()] : this._remoteParticipants();
-		return raisedHandQueue(participants, (participant) => participant.handRaiseDate);
-	});
+	readonly raisedHands = computed(() =>
+		raisedHandQueue(this.participants(), (participant) => participant.handRaiseDate)
+	);
 	/** The 1-based queue position of every raised hand, by participant identity. */
 	readonly handQueuePositions = computed(
 		() => new Map(this.raisedHands().map((participant, index) => [participant.identity, index + 1]))
@@ -60,6 +60,11 @@ export class ParticipantService {
 		const raised = raisedHandQueue(remotes, (participant) => participant.handRaiseDate);
 		return [...raised, ...remotes.filter((participant) => !participant.isHandRaised)];
 	});
+
+	/** Whether a participant of the meeting, the local one included, publishes any track. */
+	readonly hasRoomTracksPublished = computed(() =>
+		this.participants().some((participant) => participant.tracks.length > 0)
+	);
 
 	/**
 	 * @internal

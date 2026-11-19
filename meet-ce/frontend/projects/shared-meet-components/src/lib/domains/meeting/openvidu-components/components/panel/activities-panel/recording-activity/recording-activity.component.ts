@@ -150,7 +150,7 @@ export class RecordingActivityComponent {
 	/**
 	 * @internal
 	 */
-	readonly hasRoomTracksPublished = signal(false);
+	readonly hasRoomTracksPublished = this.participantService.hasRoomTracksPublished;
 
 	/**
 	 * @internal
@@ -172,12 +172,6 @@ export class RecordingActivityComponent {
 		if (status !== RecordingState.FAILED) {
 			this.oldRecordingStatus.set(status);
 		}
-	});
-
-	private readonly roomTracksPublishedEffect = effect(() => {
-		this.participantService.localParticipant();
-		this.participantService.remoteParticipants();
-		this.hasRoomTracksPublished.set(this.meetingLiveKitService.hasRoomTracksPublished());
 	});
 
 	/**
