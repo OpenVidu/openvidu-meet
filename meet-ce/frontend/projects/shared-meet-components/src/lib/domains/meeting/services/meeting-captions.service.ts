@@ -348,12 +348,10 @@ export class MeetingCaptionsService {
 			timestamp: Date.now()
 		};
 
-		const currentCaptions = this._captions();
-
-		// Add new caption and limit total number
-		const updatedCaptions = [...currentCaptions, caption].slice(-this.config.maxVisibleCaptions);
-
-		this._captions.set(updatedCaptions);
+		this._captions.update((captions) => [...captions, caption]);
+		this._captions()
+			.slice(0, -this.config.maxVisibleCaptions)
+			.forEach(({ id }) => this.removeCaption(id));
 
 		// Set expiration timer
 		const duration = isFinal ? this.config.finalCaptionDuration : this.config.interimCaptionDuration;

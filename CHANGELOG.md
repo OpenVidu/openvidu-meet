@@ -338,6 +338,8 @@ with no replacement.
   the camera button.
 - The notifications in the top corner of a meeting covered the header of an open side panel, its close button
   included. They now sit beside the panel, or below its header when the panel fills the screen.
+- With more than three captions at once, a participant still speaking whose caption had left the screen got no caption
+  until they paused. Their caption is shown again with their next words.
 - In a chat message, a bare domain followed by a query or a fragment, such as `example.com?x=1`, was linked without
   them. The whole address is linked now.
 - The notices of the console room detail page about copying a member's link, removing members, deleting the room and

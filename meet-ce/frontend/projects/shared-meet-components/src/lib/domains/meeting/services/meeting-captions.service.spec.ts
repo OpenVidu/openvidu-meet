@@ -150,6 +150,18 @@ describe('MeetingCaptionsService', () => {
 		expect(texts()).toEqual(['two', 'three', 'four']);
 	});
 
+	it('shows a speech still being transcribed again after newer captions pushed it out', async () => {
+		await service.enable();
+
+		for (const trackId of ['TR_1', 'TR_2', 'TR_3', 'TR_4']) {
+			await transcribe(`speech of ${trackId}`, { final: false, trackId });
+		}
+
+		await transcribe('still talking', { final: false, trackId: 'TR_1' });
+
+		expect(texts()).toEqual(['speech of TR_3', 'speech of TR_4', 'still talking']);
+	});
+
 	it('ignores blank transcriptions and speakers the meeting does not know', async () => {
 		await service.enable();
 
