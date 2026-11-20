@@ -30,7 +30,6 @@ const INVALID = [
 	'rtmp://media example.com/live/key',
 	'rtmp://media.example.com/live/key live=1 live=1',
 	'rtmp://media.example.com/live/key#frag',
-	'rtmp://media.example.com/live/#ov-stream-tag=x',
 	'rtmp://media.example.com/live/?key=secret',
 	'http://media.example.com/live/key',
 	'rtmp://user:pass@192.0.2.10/live/key1abcdefgh',

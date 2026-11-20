@@ -79,7 +79,7 @@
 		"inversify": "8.2.3",
 		"ioredis": "6.0.0",
 		"jwt-decode": "4.0.0",
-		"livekit-server-sdk": "2.19.2",
+		"livekit-server-sdk": "2.20.1",
 		"lodash.merge": "4.6.2",
 		"mongoose": "9.11.4",
 		"ms": "2.1.3",
