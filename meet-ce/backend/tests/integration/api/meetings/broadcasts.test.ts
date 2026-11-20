@@ -541,6 +541,7 @@ describe('Broadcasts API Tests', () => {
 
 			const delivered = JSON.stringify(webhooks);
 			expect(delivered).not.toContain(sinkUrl.split('/').pop());
+			expect(delivered).not.toContain('ov-stream-tag');
 		});
 
 		it('should stop an egress that streams the meeting without a broadcast of it', async () => {

@@ -96,13 +96,14 @@ only in the document-only room field `broadcastDestinationUrls` (stripped in
 `RoomRepository.toDomain()`); the domain and every API response carry the redacted URL. A
 broadcast is one destination: the broadcasts of a meeting share one room-composite egress, which
 the first one starts and the next ones join through `updateStream`, one URL per call. LiveKit
-reports streams redacted and in no reliable order, so each URL is added as a destination whose id is
-its broadcast id, which the egress reports back as `StreamInfo.id`; a broadcast reads only the entry
-with its own id, and is removed by its real URL. The running broadcasts are one Redis hash
-(`BroadcastStateService`, a field per room, no TTL) mutated only under the room's broadcast lock, so
-any replica can answer the egress webhooks or a request. Nothing expires it: `room_finished` and the
-reconciliation (`BroadcastService.reconcile`, on the egress `participant_left`, on every start and in
-the `broadcastsReconciliationGC` sweep) settle what LiveKit's webhooks never told.
+reports streams redacted and in no reliable order, so each URL is added tagged with its broadcast id
+(`#ov-stream-tag=<broadcastId>`, `BroadcastHelper.taggedUrl`), which the OpenVidu egress strips
+before streaming and reports back after the redacted URL; a broadcast reads only the entry with its
+own tag. The running broadcasts are one Redis hash (`BroadcastStateService`, a field per room, no TTL)
+mutated only under the room's broadcast lock, so any replica can answer the egress webhooks or a
+request. Nothing expires it: `room_finished` and the reconciliation (`BroadcastService.reconcile`, on
+the egress `participant_left`, on every start and in the `broadcastsReconciliationGC` sweep) settle
+what LiveKit's webhooks never told.
 
 ## Cross-cutting infrastructure
 
