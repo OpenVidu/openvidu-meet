@@ -29,9 +29,14 @@ line, unless it fixes something a user can observe.
 ## Procedure
 
 1. Read what changed in each package over the range you cross and note the behavior changes that touch
-   this codebase. Ask the `context7` MCP server first (`resolve-library-id`, then `query-docs` for the
-   migration notes between the two versions); when it does not have the package or the version, read the
-   release notes of the package. Never bump on what you remember of a library.
+   this codebase. **Always** use the `context7` MCP server, for every package you move, patch releases
+   included, before editing its manifest: `resolve-library-id`, then `query-docs` with the version of
+   the package's `package.json` for the migration notes, breaking changes and deprecations between the
+   two versions. A query names the library and the question, never code or data of this repository.
+   Skipping it for a package, because it looks trivial or because other packages of the same family
+   were already queried, is not allowed: query each one. Only when Context7 does not have the package or
+   the version, read the release notes of the package and say so in the report. Never bump on what you
+   remember of a library.
 2. Edit the manifests, then `pnpm install` (not frozen) to update the lockfile, and read the lockfile
    diff: only the packages you meant to move, and one resolved version of each shared library.
 3. Adapt the code to the new versions in the same work, so that nothing is left using what they changed:
@@ -65,7 +70,8 @@ line, unless it fixes something a user can observe.
 
 ## Report
 
-The packages moved (from, to, why), the ones held back with the reason, the code adapted (per package:
+The packages moved (from, to, why, and for each one whether Context7 answered or the release notes
+were read instead), the ones held back with the reason, the code adapted (per package:
 migrations run, breaking changes fixed, deprecations replaced, with the files), the behavior changes
 stopped on, the opportunities left for later, each command of the proof with its exit status, the
 remaining audit findings, and the meet-pro alignment left to do. Do not commit or push.
