@@ -4,14 +4,14 @@
 
 ### Requirement: Broadcasts need an egress service
 
-**Reason**: Broadcasts no longer need the OpenVidu egress that reports the tag Meet gives a stream URL: they need an egress that reports a stream id, which LiveKit's egress does.
-**Migration**: Replaced by "Broadcasts need an egress service that reports stream ids", which keeps the `503` behavior and changes the egress that is required.
+**Reason**: Broadcasts no longer need the OpenVidu egress that reports the tag the server gives a stream URL: they need an egress that reports a stream id, which LiveKit's egress does.
+**Migration**: Replaced by "Broadcasts need an egress service that reports stream ids", which keeps the `503` and `500` behavior and changes the egress that is required.
 
 ## ADDED Requirements
 
 ### Requirement: Broadcasts need an egress service that reports stream ids
 
-`broadcastStart` and `broadcastStop` SHALL answer `503` with error `LiveKit Error` when no egress service of the deployment takes the request, starting nothing. Broadcasts need an egress that reports each stream with the id the server gives it: against an egress that does not, `broadcastStart` SHALL answer `500` and withdraw what it added, so nothing streams.
+`broadcastStart` and `broadcastStop` SHALL answer `503` with error `LiveKit Error` when no egress service of the deployment takes the request, starting or stopping nothing, and `bulkStopBroadcasts` SHALL report each broadcast it could not stop for that reason in `failed`. Broadcasts need an egress service that reports each stream with the id the server gives it: against one that does not, `broadcastStart` SHALL answer `500` and withdraw what it added, so nothing streams.
 
 #### Scenario: No egress service running
 

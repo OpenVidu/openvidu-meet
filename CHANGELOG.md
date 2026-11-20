@@ -108,7 +108,7 @@ with no replacement.
 
 #### Deployment
 
-- Live broadcasts need the OpenVidu egress, which reports the tag Meet gives each stream URL.
+- Live broadcasts need an egress service that reports stream ids, as the one of OpenVidu 3.10.0 does.
 - Azure Blob Storage authenticates with the Azure managed identity of the VM or pod running Meet when
   `MEET_AZURE_ACCOUNT_KEY` is empty.
 
