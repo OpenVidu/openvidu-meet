@@ -1,15 +1,15 @@
-import type { AgentDispatch, ParticipantPermission, StreamDestination } from '@livekit/protocol';
-import { UpdateStreamRequest } from '@livekit/protocol';
+import type { AgentDispatch, ParticipantPermission } from '@livekit/protocol';
 import { inject, injectable } from 'inversify';
 import type {
 	CreateOptions,
+	EgressInfo,
 	ListEgressOptions,
 	ParticipantInfo,
 	Room,
 	SendDataOptions,
 	StartEgressRequest
 } from 'livekit-server-sdk';
-import { DataPacket_Kind, EgressInfo, LiveKitAPI } from 'livekit-server-sdk';
+import { DataPacket_Kind, LiveKitAPI } from 'livekit-server-sdk';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
 import { EgressHelper } from '../helpers/egress.helper.js';
@@ -23,14 +23,6 @@ import {
 	OpenViduMeetError
 } from '../models/error.model.js';
 import { LoggerService } from './logger.service.js';
-
-type JsonValue = Parameters<typeof EgressInfo.fromJson>[0];
-
-// What `EgressClient` calls LiveKit through, used directly because its `updateStream` adds streams
-// by URL only, without ids, until livekit/node-sdks#772 is released.
-type EgressRpc = {
-	request(service: string, method: string, data: JsonValue, headers: Record<string, string>): Promise<JsonValue>;
-};
 
 @injectable()
 export class LiveKitService {
@@ -472,20 +464,13 @@ export class LiveKitService {
 	}
 
 	/**
-	 * Adds streams to a running egress, each under the id LiveKit reports it with, and removes
-	 * others by their URL as it was given, not as LiveKit reports it (redacted). An egress that
-	 * ended since it was last seen takes no update, which LiveKit answers as a precondition
-	 * failure: `undefined` instead of an error.
+	 * Adds and removes stream URLs of a running egress. LiveKit needs the URLs as they were given,
+	 * not as it reports them (redacted). An egress that ended since it was last seen takes no
+	 * update, which LiveKit answers as a precondition failure: `undefined` instead of an error.
 	 */
-	async updateStream(
-		egressId: string,
-		addDestinations: StreamDestination[],
-		removeOutputUrls: string[]
-	): Promise<EgressInfo | undefined> {
+	async updateStream(egressId: string, addUrls: string[], removeUrls: string[]): Promise<EgressInfo | undefined> {
 		try {
-			return await this.sendUpdateStream(
-				new UpdateStreamRequest({ egressId, addDestinations, removeOutputUrls })
-			);
+			return await this.lk.egress.updateStream(egressId, addUrls, removeUrls);
 		} catch (error) {
 			const { status } = this.asTwirpError(error);
 
@@ -497,14 +482,6 @@ export class LiveKitService {
 			this.logger.error(`Error updating the stream URLs of egress '${egressId}' (${this.egressFailure(error)})`);
 			throw this.toEgressError(error, `updating the destinations of egress '${egressId}'`);
 		}
-	}
-
-	private async sendUpdateStream(request: UpdateStreamRequest): Promise<EgressInfo> {
-		const egress = this.lk.egress;
-		const { rpc } = egress as unknown as { rpc: EgressRpc };
-		const headers = await egress.authHeader({ roomRecord: true });
-		const response = await rpc.request('Egress', 'UpdateStream', request.toJson(), headers);
-		return EgressInfo.fromJson(response, { ignoreUnknownFields: true });
 	}
 
 	/**

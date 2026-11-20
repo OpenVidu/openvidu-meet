@@ -1,4 +1,3 @@
-import { StreamDestination } from '@livekit/protocol';
 import type { MeetBroadcastDestination, MeetBroadcastInfo, MeetBroadcastStartOptions } from '@openvidu-meet/typings';
 import {
 	MeetBroadcastStatus,
@@ -126,7 +125,7 @@ export class BroadcastService {
 			const records = await this.broadcastState.find(roomId);
 			const target = this.findRunningRecord(records, broadcastId);
 			const egress =
-				(await this.livekitService.updateStream(target.egressId, [], [target.destination.url])) ??
+				(await this.livekitService.updateStream(target.egressId, [], [BroadcastHelper.taggedUrl(target)])) ??
 				(await this.livekitService.getEgress(roomId, target.egressId))[0];
 			const updated = egress ? this.withEgress(records, egress) : records;
 			const stopped = BroadcastHelper.withEnded(updated.find((record) => record.broadcastId === broadcastId)!);
@@ -280,7 +279,7 @@ export class BroadcastService {
 
 	/**
 	 * Adds each target to the egress already streaming the meeting, or starts the egress with the
-	 * first one, each stream under the id of its broadcast. A target that fails withdraws the
+	 * first one, each URL tagged with the id of its broadcast. A target that fails withdraws the
 	 * streams added before it, and its own in case the egress took it before the call failed, so
 	 * the request starts every broadcast or none.
 	 */
@@ -297,11 +296,11 @@ export class BroadcastService {
 		try {
 			for (const destination of targets) {
 				const stream = { broadcastId: BroadcastHelper.newBroadcastId(room.roomId), destination };
-				const target = new StreamDestination({ id: stream.broadcastId, url: destination.url });
+				const url = BroadcastHelper.taggedUrl(stream);
 				adding = host && { ...stream, egressId: host.egressId };
-				const joined = host && (await this.livekitService.updateStream(host.egressId, [target], []));
+				const joined = host && (await this.livekitService.updateStream(host.egressId, [url], []));
 				const settings = joined && host ? host : roomSettings;
-				egress = joined ?? (await this.startEgress(room.roomId, target, settings));
+				egress = joined ?? (await this.startEgress(room.roomId, url, settings));
 				adding = { ...stream, egressId: egress.egressId };
 				host = BroadcastHelper.createRecord(stream.broadcastId, egress, room, destination, settings);
 				started.push(host);
@@ -318,7 +317,7 @@ export class BroadcastService {
 	protected async withdraw(streams: StreamPlacement[]): Promise<void> {
 		for (const stream of streams) {
 			try {
-				await this.livekitService.updateStream(stream.egressId, [], [stream.destination.url]);
+				await this.livekitService.updateStream(stream.egressId, [], [BroadcastHelper.taggedUrl(stream)]);
 			} catch (error) {
 				this.logger.warn(
 					`Could not withdraw the stream to '${redactStreamUrl(stream.destination.url)}' from egress '${stream.egressId}'`,
@@ -340,7 +339,7 @@ export class BroadcastService {
 
 	protected startEgress(
 		roomId: string,
-		destination: StreamDestination,
+		url: string,
 		{ layout, encoding }: Pick<BroadcastRecord, 'layout' | 'encoding'>
 	): Promise<EgressInfo> {
 		return this.livekitService.startEgress(
@@ -352,7 +351,7 @@ export class BroadcastService {
 					new Output({
 						config: {
 							case: 'stream',
-							value: new StreamOutput({ protocol: StreamProtocol.RTMP, destinations: [destination] })
+							value: new StreamOutput({ protocol: StreamProtocol.RTMP, urls: [url] })
 						}
 					})
 				]
