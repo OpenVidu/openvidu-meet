@@ -131,6 +131,8 @@ committed in place, without a worktree. Each spec's `## Purpose` names the pages
   the git-ignored `docs/webcomponent/`).
 - REST API reference: when the public OpenAPI changes, regenerate it with
   `./meet.sh build-rest-api-doc ../openvidu.io/docs/meet/embedded/reference/api.html`.
+- Screenshots and videos (`docs/assets/{images,videos}/meet/`): the `meet-docs-sync` skill lists the stale
+  ones and recaptures them in place with `meet-screenshots` and `meet-videos`.
 - Release notes (`docs/meet/releases.md`) are written on release day, not by each change.
 
 ## Edition model (why the code is shaped this way)

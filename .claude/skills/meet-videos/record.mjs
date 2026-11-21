@@ -1,32 +1,20 @@
 #!/usr/bin/env node
 /**
- * meet-videos — record cursor-guided demo videos of the OpenVidu Meet frontend for a
- * product landing page.
+ * meet-videos — record cursor-guided demo videos of the OpenVidu Meet frontend for openvidu.io.
  *
- * Sibling of meet-screenshots/capture.mjs and reuses the same machinery (UI login +
- * reused storageState, theme forcing via localStorage 'ovMeet-theme', REST room seeding,
- * per-participant fake-camera browsers for live meetings). Two things are new here:
+ * Each flow writes <out>/<flow.out>/<flow.id>-<theme>.mp4. Docs flows use the openvidu.io asset path
+ * as flow.out and the asset name as flow.id, so `--out <openvidu.io>/docs/assets` overwrites the
+ * published asset in place (see the meet-docs-sync skill).
  *
- *   1. A SYNTHETIC ON-SCREEN CURSOR. Playwright video capture records the page's compositor
- *      output, which does NOT include the OS pointer. So we inject a DOM cursor (installCursor)
- *      that follows real mouse events, and drive it with eased, human-looking motion
- *      (moveCursor) plus a click ripple — that motion is the whole point of these clips.
- *   2. VIDEO RECORDING. Contexts are created with recordVideo (Playwright writes WebM), then
- *      ffmpeg transcodes each clip to the requested FORMAT (mp4 default, or webm/gif/webp).
+ * A synthetic DOM cursor (installCursor) follows real mouse events, because Playwright video does not
+ * record the OS pointer. Playwright writes WebM per page; ffmpeg transcodes it (mp4 by default).
  *
- * Each "flow" is a scripted, cursor-driven walkthrough rather than a single still:
- *   live-meeting  (meeting) — in-room tour: toggle mic/cam, open chat + send, participants panel
- *   join-meeting  (meeting) — lobby: type name, device preview, Join, land in a populated room
- *   create-room   (rooms)   — rooms list -> Create Room -> basic wizard -> create
- *   console-tour  (console) — cursor sweep across overview / rooms / recordings / users / config
+ * Run from the repo root, against an isolated, empty stack:
+ *   ./meet.sh stack up docs
+ *   ./meet.sh stack run docs -- node .claude/skills/meet-videos/record.mjs --flows delete-room --out ../openvidu.io/docs/assets
  *
- * Run from the repo root (so Playwright resolves from ./node_modules):
- *   node .claude/skills/meet-videos/record.mjs                          # all flows, both themes
- *   node .claude/skills/meet-videos/record.mjs --list                   # list flow ids and exit
- *   node .claude/skills/meet-videos/record.mjs --flows live-meeting --themes dark
- *
- * SAFETY: never deletes pre-existing rooms. It seeds its own demo rooms (and the room the
- * create-room flow makes through the UI) and removes ONLY those, tracked by id.
+ * SAFETY: flows with seeded data refuse to run unless the backend has no rooms and only the admin user,
+ * and every run removes only the rooms and users that appeared during it.
  */
 import { chromium } from 'playwright';
 import { mkdir } from 'node:fs/promises';
@@ -45,8 +33,10 @@ const flag = (name, def) => {
 };
 const has = (name) => argv.includes(`--${name}`);
 
-const ORIGIN = String(flag('origin', 'http://localhost:6080'));
-const BASE_PATH = String(flag('base', '/meet'));
+// `./meet.sh stack run <name> -- ...` exports MEET_API_URL, so the stack is the default target.
+const STACK_URL = process.env.MEET_API_URL ? new URL(process.env.MEET_API_URL) : null;
+const ORIGIN = String(flag('origin', STACK_URL?.origin ?? 'http://localhost:6080'));
+const BASE_PATH = String(flag('base', STACK_URL?.pathname.replace(/\/$/, '') || '/meet'));
 const APP = `${ORIGIN}${BASE_PATH}`;
 const API = `${APP}/api/v1`;
 const INTERNAL = `${APP}/internal-api/v1`;
@@ -64,7 +54,7 @@ const HEADED = has('headed');
 // transcodes to the chosen format. PACE scales every move/pause (>1 slower, <1 faster).
 const FORMAT = String(flag('format', 'mp4')).toLowerCase();
 const EXT = { mp4: 'mp4', webm: 'webm', gif: 'gif', webp: 'webp' }[FORMAT] || 'mp4';
-const CRF = Number(flag('crf', 23)); // mp4/webm quality (lower = better/larger)
+const CRF = Number(flag('crf', 21)); // mp4/webm quality (lower = better/larger)
 const QUALITY = Number(flag('quality', 80)); // gif/webp quality
 const FPS = Number(flag('fps', 30));
 const GIFW = Number(flag('gif-width', 1000)); // downscale width for gif/webp (full res is huge)
@@ -74,7 +64,9 @@ const PACE = Number(flag('pace', 1)); // motion/pause speed multiplier
 const ASSET_WIDTH = Number(flag('asset-width', 960));
 const ASSET_FPS = Number(flag('asset-fps', 12));
 const ASSET_SECONDS = Number(flag('asset-seconds', 8)); // max looped length of a video asset
-const P = (ms) => Math.max(0, Math.round(ms * PACE));
+// A flow's own `pace` multiplies the global one: the short console clips read best faster.
+let flowPace = 1;
+const P = (ms) => Math.max(0, Math.round(ms * PACE * flowPace));
 
 const SKILL_DIR = fileURLToPath(new URL('.', import.meta.url));
 const VIDEO_TMP = `${tmpdir()}/meet-videos-raw`;
@@ -103,34 +95,38 @@ const DEMO_ROOM_NAMES = ['Sales Sync', 'Engineering Standup', 'Design Review'];
 // UI flows run in a shared logged-in browser (reused storageState); live flows spin up their own
 // per-participant fake-camera browsers. drive() is the cursor-guided script for the recorded page.
 const ALL_FLOWS = [
-	{ id: 'live-meeting', kind: 'live', domain: 'meeting', roomName: 'Team Standup', count: 4, drive: driveLiveMeeting },
-	{ id: 'join-meeting', kind: 'live', domain: 'meeting', roomName: 'Weekly Sync', count: 3, drive: driveJoinMeeting },
-	// enable-captions: 2-person meeting where the filmed moderator turns ON live captions and the
-	// remote participant "speaks" — captions stream in word-by-word. Live captions are gated by the
-	// backend (MEET_CAPTIONS_ENABLED), so this flow (a) creates the room with captions enabled,
-	// (b) stubs the captions/AI-assistant endpoints on the filmed page so the button enables and
-	// enable() resolves (mirrors the e2e mockCaptionsBackend helper), and (c) injects caption text
-	// straight into MeetingCaptionsService via the dev-build Angular debug API (window.ng) — no real
-	// speech transcription, which the fake tone-audio camera can't produce.
-	{ id: 'enable-captions', kind: 'live', domain: 'meeting', roomName: 'Live Captions Demo', count: 2,
+	// --- openvidu.io assets: out = asset folder under docs/assets, id = asset name ---
+	{ id: 'login', kind: 'ui', anon: true, out: 'videos/meet/users/overview', drive: driveLogin },
+	{ id: 'create-room-basic', kind: 'ui', out: 'videos/meet/rooms/management', pace: 0.6, seed: () => seed({ rooms: DEMO_ROOM_NAMES }), drive: driveCreateRoom },
+	{ id: 'create-room-wizard', kind: 'ui', out: 'videos/meet/rooms/management', pace: 0.85, seed: () => seed({ rooms: DEMO_ROOM_NAMES }), drive: driveCreateRoomWizard },
+	{ id: 'delete-room', kind: 'ui', out: 'videos/meet/rooms/management', pace: 0.6, seed: () => seed({ rooms: ['Old Project Room'] }), drive: driveDeleteRoom },
+	{ id: 'update-room-status', kind: 'ui', out: 'videos/meet/rooms/management', pace: 0.6, seed: () => seed({ rooms: ['Product Demo'] }), drive: driveUpdateRoomStatus },
+	{ id: 'share-link', kind: 'ui', out: 'videos/meet/rooms/access', pace: 0.6, seed: () => seed({ rooms: ['Product Demo'] }), drive: driveShareLink },
+	{ id: 'create-user', kind: 'ui', out: 'videos/meet/users/management', pace: 0.6, seed: () => seed({}), drive: driveCreateUser },
+	{ id: 'delete-user', kind: 'ui', out: 'videos/meet/users/management', pace: 0.6, seed: () => seed({ users: [['ava_morgan', 'Ava Morgan']] }), drive: driveDeleteUser },
+	{ id: 'reset-user-password', kind: 'ui', out: 'videos/meet/users/management', pace: 0.6, seed: () => seed({ users: [['noah_bennett', 'Noah Bennett']] }), drive: driveResetUserPassword },
+	{ id: 'update-user-role', kind: 'ui', out: 'videos/meet/users/management', pace: 0.6, seed: () => seed({ users: [['liam_walker', 'Liam Walker']] }), drive: driveUpdateUserRole },
+	{ id: 'join-meeting', kind: 'live', out: 'videos/meet/getting-started', pace: 0.6, roomName: 'Weekly Sync', count: 3, drive: driveJoinMeeting },
+	// The logged-in admin opens a room from the list while David is already in its meeting.
+	{ id: 'access-room', kind: 'live', authed: true, out: 'videos/meet/meetings/overview', pace: 0.6, roomName: 'Product Demo', count: 2, drive: driveAccessRoom },
+	// Live captions are gated by MEET_CAPTIONS_ENABLED: the room enables them, the filmed page stubs the captions
+	// endpoints (like the e2e mockCaptionsBackend) and caption text is injected through window.ng, so this flow
+	// needs the non-optimized development build on the backend.
+	{ id: 'enable-captions', kind: 'live', out: 'videos/meet/meetings/live-captions', roomName: 'Live Captions Demo', count: 2,
 		roomConfig: { captions: { enabled: true } }, drive: driveEnableCaptions },
-	// start-recording: 2-person meeting where the filmed moderator opens more options and clicks Start
-	// recording; the take starts inside the meeting and eases a zoom onto those two clicks.
-	{ id: 'start-recording', kind: 'live', domain: 'recordings', roomName: 'Product Demo', count: 2, drive: driveStartRecording },
-	// anon: starts logged OUT (it IS the login) — no reused session, no room seeding.
-	{ id: 'login', kind: 'ui', anon: true, domain: 'auth', drive: driveLogin },
-	{ id: 'create-room', kind: 'ui', domain: 'rooms', drive: driveCreateRoom },
-	{ id: 'create-room-wizard', kind: 'ui', domain: 'rooms', drive: driveCreateRoomWizard },
-	{ id: 'console-tour', kind: 'ui', domain: 'console', drive: driveConsoleTour },
-	// lifecycle: one continuous authed + fake-camera recording (create -> join -> record) that is
-	// split by timestamp into 3 clips. Needs an EMPTY room list for the "create first room" card.
-	// The host (filmed) publishes hostVideo; a guest joins for the record phase with guestVideo.
-	{ id: 'room-lifecycle', kind: 'lifecycle', domain: 'meeting', segments: ['create', 'join', 'record'],
+	// Starts inside the meeting and zooms onto More options and Start recording.
+	{ id: 'start-recording', kind: 'live', out: 'videos/meet/recordings/management', roomName: 'Product Demo', count: 2, drive: driveStartRecording },
+
+	// --- demo clips no openvidu.io page uses ---
+	{ id: 'live-meeting', kind: 'live', out: 'extra/meeting', roomName: 'Team Standup', count: 4, drive: driveLiveMeeting },
+	{ id: 'console-tour', kind: 'ui', out: 'extra/console', seed: () => seed({ rooms: DEMO_ROOM_NAMES }), drive: driveConsoleTour },
+	// One authed take (create -> join -> record) split into 3 clips; needs an empty room list.
+	{ id: 'room-lifecycle', kind: 'lifecycle', out: 'extra/meeting', segments: ['create', 'join', 'record'],
 		hostVideo: 'girl-03.mp4', guestVideo: 'guy-01.mp4', guestName: 'David', drive: driveRoomLifecycle }
 ];
 
 if (has('list')) {
-	console.log('Available flows:\n' + ALL_FLOWS.map((f) => `  ${f.id}  (${f.kind}, ${f.domain})`).join('\n'));
+	console.log(ALL_FLOWS.map((f) => `${f.id}\t${f.out}/${f.id}`).join('\n'));
 	process.exit(0);
 }
 const flowFilter = flag('flows', null);
@@ -619,6 +615,149 @@ function transcodeVideo(srcWebm, relNoExt, { trimStart = 0, clicks = [] } = {}) 
 	return `${relNoExt}.${EXT}`;
 }
 
+// ---------- Seeded flows: an empty backend, seeded per take and emptied after it ----------
+// The lists in the docs clips show only what the flow seeds, so these flows run on an empty stack
+// (checked by assertEmptyBackend before anything runs) and resetBackend may delete everything new.
+async function listUsers() {
+	const res = await fetch(`${API}/users?maxItems=100`, { headers: { Authorization: `Bearer ${token}` } });
+	if (!res.ok) throw new Error(`listUsers failed: ${res.status}`);
+	return (await res.json()).users ?? [];
+}
+async function assertEmptyBackend() {
+	const rooms = await listRooms(token);
+	const users = (await listUsers()).filter((u) => u.userId !== USER);
+	if (rooms.length || users.length) {
+		throw new Error(`seeded flows need an empty backend, and ${APP} has ${rooms.length} room(s) and ${users.length} extra user(s): ` +
+			'run them on an isolated stack (./meet.sh stack up docs, then ./meet.sh stack run docs -- node ...)');
+	}
+}
+async function resetBackend() {
+	await deleteRooms(token, (await listRooms(token)).map((r) => r.roomId));
+	for (const u of await listUsers()) {
+		if (u.userId !== USER) await fetch(`${API}/users/${encodeURIComponent(u.userId)}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+	}
+}
+async function seed({ rooms = [], users = [] }) {
+	for (const n of rooms) await createRoom(token, n);
+	if (rooms.length) await waitForRoomCount(token, rooms.length);
+	for (const [userId, name] of users) {
+		const res = await fetch(`${API}/users`, {
+			method: 'POST',
+			headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+			body: JSON.stringify({ userId, name, role: 'room_member', password: 'demo-pass-123' })
+		});
+		if (!res.ok) throw new Error(`createUser failed: ${res.status} ${await res.text()}`);
+	}
+}
+async function openRowMenu(page, optionSelector) {
+	await clickSelector(page, '[id^="more-actions-btn-"]');
+	await page.waitForTimeout(P(700));
+	await clickSelector(page, optionSelector);
+}
+// Opens a console list and starts the clip once its rows are in, so no take begins on a blank page.
+async function startOnList(page, route, marker) {
+	await page.goto(`${APP}/${route}`, { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector(marker, { state: 'visible', timeout: TIMEOUT });
+	await page.waitForSelector('[id^="actions-cell-"]', { state: 'visible', timeout: TIMEOUT }).catch(() => {});
+	await page.waitForTimeout(P(500));
+	startVideoHere(0.2);
+	await parkCursor(page);
+	await page.waitForTimeout(P(1100));
+}
+const DIALOG = '.mat-mdc-dialog-container';
+async function driveAccessRoom(page) {
+	await startOnList(page, 'rooms', '#rooms-table');
+	// The access button opens a new tab, and Playwright records each page apart: keep the take in one tab.
+	await page.evaluate(() => { window.open = (u) => { location.assign(u); return null; }; });
+	await clickSelector(page, '[id^="access-room-btn-"]');
+	await page.waitForSelector('#participant-name-input', { state: 'visible', timeout: TIMEOUT });
+	await page.waitForTimeout(P(1200));
+	if (!(await page.locator('#participant-name-input').inputValue().catch(() => ''))) await typeText(page, '#participant-name-input', 'Admin');
+	await clickSelector(page, '#participant-name-submit');
+	await page.waitForSelector('#join-button', { state: 'visible', timeout: TIMEOUT });
+	await page.waitForTimeout(P(1500));
+	await clickSelector(page, '#join-button');
+	await page.waitForSelector('#layout-container', { state: 'visible', timeout: TIMEOUT });
+	await page.waitForSelector('#media-buttons-container', { state: 'visible', timeout: TIMEOUT });
+	await remoteTiles(page, 1).catch(() => {});
+	await page.waitForTimeout(P(3000));
+}
+async function driveDeleteRoom(page) {
+	await startOnList(page, 'rooms', '#rooms-table');
+	await openRowMenu(page, '[id^="delete-room-btn-"]');
+	await page.waitForSelector(DIALOG, { state: 'visible', timeout: TIMEOUT });
+	await page.waitForTimeout(P(1200));
+	await clickSelector(page, `${DIALOG} .confirm-button`);
+	await page.waitForTimeout(P(2600));
+}
+async function driveUpdateRoomStatus(page) {
+	await startOnList(page, 'rooms', '#rooms-table');
+	await openRowMenu(page, '[id^="toggle-room-status-btn-"]');
+	await page.waitForTimeout(P(2600));
+}
+async function driveShareLink(page) {
+	await startOnList(page, 'rooms', '#rooms-table');
+	await openRowMenu(page, '[id^="share-link-btn-"]');
+	await page.waitForSelector(DIALOG, { state: 'visible', timeout: TIMEOUT });
+	await page.waitForTimeout(P(1000));
+	await clickSelector(page, `${DIALOG} mat-radio-button:has-text("Anonymous Moderator")`);
+	await page.waitForTimeout(P(700));
+	await clickSelector(page, `${DIALOG} .generate-button`);
+	await page.waitForSelector(`${DIALOG} .copy-button`, { state: 'visible', timeout: TIMEOUT });
+	await page.waitForTimeout(P(900));
+	await clickSelector(page, `${DIALOG} .copy-button`);
+	await page.waitForTimeout(P(1800));
+}
+async function driveCreateUser(page) {
+	await startOnList(page, 'users', '#users-table');
+	await clickSelector(page, '#create-user-btn');
+	await page.waitForSelector('input[formcontrolname="userId"]', { state: 'visible', timeout: TIMEOUT });
+	await page.waitForTimeout(P(800));
+	await typeText(page, 'input[formcontrolname="userId"]', 'olivia_brooks');
+	await typeText(page, 'input[formcontrolname="name"]', 'Olivia Brooks');
+	await clickSelector(page, 'mat-select[formcontrolname="role"]');
+	await page.waitForSelector('mat-option', { state: 'visible', timeout: TIMEOUT });
+	await page.waitForTimeout(P(600));
+	await clickSelector(page, 'mat-option:has-text("Room Member")');
+	await page.waitForTimeout(P(600));
+	await typeText(page, 'input[formcontrolname="password"]', 'demo-pass-123');
+	await page.waitForTimeout(P(700));
+	await clickSelector(page, 'button.primary-button:has-text("Create User")');
+	await page.waitForURL((u) => !u.pathname.includes('/users/new'), { timeout: TIMEOUT }).catch(() => {});
+	await page.waitForTimeout(P(2800));
+}
+async function driveDeleteUser(page) {
+	await startOnList(page, 'users', '#users-table');
+	await clickSelector(page, '[id^="delete-user-btn-"]:not([disabled])');
+	await page.waitForSelector(DIALOG, { state: 'visible', timeout: TIMEOUT });
+	await page.waitForTimeout(P(1200));
+	await clickSelector(page, `${DIALOG} .confirm-button`);
+	await page.waitForTimeout(P(2600));
+}
+async function driveResetUserPassword(page) {
+	await startOnList(page, 'users', '#users-table');
+	await clickSelector(page, '[id^="reset-password-btn-"]:not([disabled])');
+	await page.waitForSelector(DIALOG, { state: 'visible', timeout: TIMEOUT });
+	await page.waitForTimeout(P(900));
+	await clickSelector(page, `${DIALOG} .generate-btn`);
+	await page.waitForTimeout(P(1200));
+	await clickSelector(page, `${DIALOG} .primary-button`);
+	await page.waitForTimeout(P(2800));
+}
+async function driveUpdateUserRole(page) {
+	await startOnList(page, 'users', '#users-table');
+	await clickSelector(page, '[id^="update-role-btn-"]:not([disabled])');
+	await page.waitForSelector(DIALOG, { state: 'visible', timeout: TIMEOUT });
+	await page.waitForTimeout(P(900));
+	await clickSelector(page, `${DIALOG} mat-select`);
+	await page.waitForSelector('mat-option', { state: 'visible', timeout: TIMEOUT });
+	await page.waitForTimeout(P(600));
+	await clickSelector(page, 'mat-option:has-text("Room Manager")');
+	await page.waitForTimeout(P(900));
+	await clickSelector(page, `${DIALOG} .primary-button`);
+	await page.waitForTimeout(P(2800));
+}
+
 // ---------- Flow drivers (the cursor-guided scripts) ----------
 // Login (anon flow): the cursor fills the login form and signs in, landing on the console.
 async function driveLogin(page) {
@@ -663,8 +802,10 @@ async function driveCreateRoom(page) {
 	await page.goto(`${APP}/rooms`, { waitUntil: 'domcontentloaded' });
 	await page.waitForSelector('#rooms-table', { state: 'attached', timeout: TIMEOUT }).catch(() => {});
 	await page.waitForSelector('#create-room-btn', { state: 'visible', timeout: TIMEOUT });
+	await page.waitForTimeout(P(500));
+	startVideoHere(0.2);
 	await parkCursor(page);
-	await page.waitForTimeout(P(1200));
+	await page.waitForTimeout(P(1100));
 	await clickSelector(page, '#create-room-btn'); // -> /rooms/new (basic creation)
 	await page.waitForSelector('.wizard-header', { state: 'visible', timeout: TIMEOUT });
 	await page.waitForSelector('.room-basic-creation-form input', { state: 'visible', timeout: TIMEOUT });
@@ -682,6 +823,8 @@ async function driveCreateRoomWizard(page) {
 	await page.goto(`${APP}/rooms`, { waitUntil: 'domcontentloaded' });
 	await page.waitForSelector('#rooms-table', { state: 'attached', timeout: TIMEOUT }).catch(() => {});
 	await page.waitForSelector('#create-room-btn', { state: 'visible', timeout: TIMEOUT });
+	await page.waitForTimeout(P(500));
+	startVideoHere(0.2);
 	await parkCursor(page);
 	await page.waitForTimeout(P(900));
 	await clickSelector(page, '#create-room-btn');
@@ -709,6 +852,9 @@ async function driveCreateRoomWizard(page) {
 	await clickSelector(page, '#recording-layout-section .layout-tile:has-text("Speaker")');
 	await page.waitForTimeout(P(900));
 	await clickSelector(page, '#wizard-next-btn');
+	await page.waitForSelector('text=Allow live broadcast', { state: 'visible', timeout: TIMEOUT });
+	await page.waitForTimeout(P(1200));
+	await clickSelector(page, '#wizard-next-btn');
 	await page.waitForSelector('.room-access-step', { state: 'visible', timeout: TIMEOUT });
 	await page.waitForTimeout(P(1400));
 	await clickSelector(page, '#wizard-finish-btn');
@@ -720,6 +866,7 @@ async function driveCreateRoomWizard(page) {
 async function driveJoinMeeting(page, url, roster) {
 	await page.goto(url, { waitUntil: 'domcontentloaded' });
 	await page.waitForSelector('#participant-name-input', { state: 'visible', timeout: TIMEOUT });
+	startVideoHere(0.2);
 	await parkCursor(page);
 	await page.waitForTimeout(P(700));
 	await typeText(page, '#participant-name-input', roster[0].name);
@@ -904,11 +1051,21 @@ async function bootstrapAuth(browser) {
 	await context.close();
 }
 
+// The failing line of this script and a screenshot of the page at that moment, kept outside --out.
+async function describeFailure(e, page, rel) {
+	const at = String(e.stack || '').split('\n').find((l) => l.includes('record.mjs:'))?.trim() ?? '';
+	const shot = `${VIDEO_TMP}/fail-${rel.replace(/\//g, '_')}.png`;
+	const saved = page ? await page.screenshot({ path: shot }).then(() => true, () => false) : false;
+	return `${String(e.message || e).split('\n')[0]} ${at}${saved ? ` (screenshot: ${shot})` : ''}`;
+}
+
 async function runUiFlow(browser, flow, theme) {
-	const rel = `${flow.domain}/${flow.id}-${theme}`;
+	const rel = `${flow.out}/${flow.id}-${theme}`;
+	flowPace = flow.pace ?? 1;
 	const ATTEMPTS = 2;
 	for (let a = 1; a <= ATTEMPTS; a++) {
 		console.log(`[${theme}] ${flow.id}${a > 1 ? ` — retry ${a}` : ''}`);
+		if (flow.seed) { await resetBackend(); await flow.seed(); }
 		const context = await browser.newContext({
 			viewport: { width: WIDTH, height: HEIGHT },
 			deviceScaleFactor: SCALE,
@@ -918,20 +1075,22 @@ async function runUiFlow(browser, flow, theme) {
 		});
 		await context.addInitScript((t) => { try { localStorage.setItem('ovMeet-theme', t); } catch {} }, theme);
 		await context.addInitScript(installCursor);
+		videoT0 = Date.now();
+		videoTrimStart = 0;
 		const page = await context.newPage();
 		const video = page.video();
 		try {
 			cursorPos = { x: Math.round(WIDTH / 2), y: Math.round(HEIGHT / 2) };
 			await flow.drive(page);
 			await context.close(); // finalizes the video file
-			const out = transcodeVideo(await video.path(), rel);
+			const out = transcodeVideo(await video.path(), rel, { trimStart: videoTrimStart });
 			try { unlinkSync(await video.path()); } catch {}
 			written.push(out);
 			console.log(`  ✓ ${out}`);
 			return;
 		} catch (e) {
+			const msg = await describeFailure(e, page, rel);
 			await context.close().catch(() => {});
-			const msg = String(e.message || e).split('\n')[0];
 			if (a < ATTEMPTS) {
 				console.warn(`  … retry ${rel} (${msg})`);
 				await new Promise((r) => setTimeout(r, 1500));
@@ -944,7 +1103,8 @@ async function runUiFlow(browser, flow, theme) {
 }
 
 async function runLiveFlow(token, flow, theme) {
-	const rel = `${flow.domain}/${flow.id}-${theme}`;
+	const rel = `${flow.out}/${flow.id}-${theme}`;
+	flowPace = flow.pace ?? 1;
 	const roster = rosterFor(flow.count);
 	const ATTEMPTS = 2; // multi-browser joins are timing-sensitive; one retry absorbs races
 	for (let a = 1; a <= ATTEMPTS; a++) {
@@ -962,7 +1122,7 @@ async function runLiveFlow(token, flow, theme) {
 				await joinMeeting(p.page, url, { name: roster[i].name });
 			}
 			// recorded viewer (index 0) — its context has video + cursor; drive() joins + performs the tour
-			rec = await newParticipant(theme, roster[0].file, { record: true, cursor: true });
+			rec = await newParticipant(theme, roster[0].file, { record: true, cursor: true, authed: !!flow.authed });
 			video = rec.page.video();
 			cursorPos = { x: Math.round(WIDTH / 2), y: Math.round(HEIGHT / 2) };
 			videoT0 = rec.createdAt;
@@ -976,8 +1136,8 @@ async function runLiveFlow(token, flow, theme) {
 			console.log(`  ✓ ${out}`);
 			break;
 		} catch (e) {
+			const msg = await describeFailure(e, rec?.page, rel);
 			if (rec) await rec.context.close().catch(() => {});
-			const msg = String(e.message || e).split('\n')[0];
 			if (a < ATTEMPTS) console.warn(`  … retry ${rel} (${msg})`);
 			else {
 				failures.push(`${rel} (${msg})`);
@@ -995,7 +1155,8 @@ async function runLiveFlow(token, flow, theme) {
 // then splits it into per-segment clips. Cleans tool data before AND after each theme so light and
 // dark start from an identical empty state (no stored rooms or recordings).
 async function runRoomLifecycle(token, flow, theme, preRoomIds, preRecIds) {
-	const seg = (name) => `${flow.domain}/${flow.id}-${name}-${theme}`;
+	flowPace = flow.pace ?? 1;
+	const seg = (name) => `${flow.out}/${flow.id}-${name}-${theme}`;
 	const ATTEMPTS = 2;
 	for (let a = 1; a <= ATTEMPTS; a++) {
 		console.log(`[${theme}] ${flow.id} (create → join → record; split into ${flow.segments.length})${a > 1 ? ` — retry ${a}` : ''}`);
@@ -1056,67 +1217,41 @@ if (flag('refocus', null)) {
 
 // ---------- Main ----------
 const token = await apiLogin();
-const preExistingIds = new Set((await listRooms(token)).map((r) => r.roomId));
-for (const d of new Set(FLOWS.map((f) => f.domain))) await mkdir(`${OUT}/${d}`, { recursive: true });
+const seeded = FLOWS.filter((f) => f.seed || f.kind === 'lifecycle');
+if (seeded.length) await assertEmptyBackend();
+for (const d of new Set(FLOWS.map((f) => f.out))) await mkdir(`${OUT}/${d}`, { recursive: true });
 await mkdir(VIDEO_TMP, { recursive: true });
-console.log(`Output: ${OUT}  |  ${WIDTH}x${HEIGHT}@${SCALE}x  |  ${FORMAT}  |  themes: ${THEMES.join(', ')}  |  flows: ${FLOWS.map((f) => f.id).join(', ')}`);
+console.log(`Output: ${OUT}  |  ${APP}  |  ${FORMAT}  |  themes: ${THEMES.join(', ')}  |  flows: ${FLOWS.map((f) => f.id).join(', ')}`);
 
 const uiFlows = FLOWS.filter((f) => f.kind === 'ui');
 const liveFlows = FLOWS.filter((f) => f.kind === 'live');
 const lifecycleFlows = FLOWS.filter((f) => f.kind === 'lifecycle');
-const trackedRoomIds = [];
 
-// A logged-in session is needed by non-anon UI flows and by lifecycle flows. Capture it once —
-// storageState is portable across browsers, including the per-participant fake-camera browsers.
-if (uiFlows.some((f) => !f.anon) || lifecycleFlows.length) {
+// One UI login, reused by every logged-in flow (repeated logins trip the rate limiter).
+if (uiFlows.some((f) => !f.anon) || lifecycleFlows.length || liveFlows.some((f) => f.authed)) {
 	const authBrowser = await chromium.launch({ headless: !HEADED });
 	try { await bootstrapAuth(authBrowser); } finally { await authBrowser.close(); }
 }
 
-// UI flows in a shared browser; seed populated data for the non-anon ones.
-if (uiFlows.length) {
-	const browser = await chromium.launch({ headless: !HEADED });
-	try {
-		if (uiFlows.some((f) => !f.anon)) {
-			const names = DEMO_ROOM_NAMES.slice(0, 3);
-			for (const n of names) trackedRoomIds.push((await createRoom(token, n)).roomId);
-			await waitForRoomCount(token, 3);
-			console.log(`Seeded ${names.length} demo room(s): ${names.join(', ')}`);
+try {
+	if (uiFlows.length) {
+		const browser = await chromium.launch({ headless: !HEADED });
+		try {
+			for (const flow of uiFlows) for (const theme of THEMES) await runUiFlow(browser, flow, theme);
+		} finally {
+			await browser.close();
 		}
-		for (const flow of uiFlows) for (const theme of THEMES) await runUiFlow(browser, flow, theme);
-	} finally {
-		await browser.close();
 	}
-}
-
-// Lifecycle flows: own fake-camera browser, split output, self-cleaning. Snapshot the current
-// rooms + recordings as the baseline to protect; the flow creates/removes only its own data so
-// every theme starts from an identical empty state. Needs an empty overview for the first-room card.
-if (lifecycleFlows.length) {
-	const preRoomIds = new Set((await listRooms(token)).map((r) => r.roomId));
-	const preRecIds = new Set((await listRecordings(token)).map((r) => r.recordingId));
-	for (const flow of lifecycleFlows) for (const theme of THEMES) await runRoomLifecycle(token, flow, theme, preRoomIds, preRecIds);
-}
-
-// Live flows: each seeds + deletes its own room.
-for (const flow of liveFlows) for (const theme of THEMES) await runLiveFlow(token, flow, theme);
-
-// Track the room the create-room flow made through the UI. We can't read its id from the UI, so
-// we sweep for rooms that appeared during this run (not pre-existing, not already-tracked seeds).
-// This never touches pre-existing rooms, and by cleanup time live-flow rooms have self-deleted.
-if (uiFlows.some((f) => f.id === 'create-room')) {
-	for (const r of await listRooms(token)) {
-		if (!preExistingIds.has(r.roomId) && !trackedRoomIds.includes(r.roomId)) trackedRoomIds.push(r.roomId);
+	// Lifecycle takes clean their own rooms and recordings so light and dark start identical.
+	if (lifecycleFlows.length) {
+		const preRoomIds = new Set((await listRooms(token)).map((r) => r.roomId));
+		const preRecIds = new Set((await listRecordings(token)).map((r) => r.recordingId));
+		for (const flow of lifecycleFlows) for (const theme of THEMES) await runRoomLifecycle(token, flow, theme, preRoomIds, preRecIds);
 	}
-}
-
-// Cleanup: remove only rooms we created (seeded demo rooms + the UI-created room).
-if (CLEANUP && trackedRoomIds.length) {
-	const ids = [...new Set(trackedRoomIds)];
-	const failed = await deleteRooms(token, ids);
-	console.log(failed.length ? `\nNOTE: could not remove demo room(s): ${failed.join(', ')}.` : `Cleaned up ${ids.length} demo room(s). Room list restored.`);
-} else if (!CLEANUP && trackedRoomIds.length) {
-	console.log(`Left ${new Set(trackedRoomIds).size} demo room(s) in place (--no-cleanup).`);
+	// Live flows create and delete their own room.
+	for (const flow of liveFlows) for (const theme of THEMES) await runLiveFlow(token, flow, theme);
+} finally {
+	if (seeded.length && CLEANUP) await resetBackend();
 }
 
 console.log(`\n${written.length} video(s) written to ${OUT}.`);

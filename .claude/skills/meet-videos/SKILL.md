@@ -1,11 +1,11 @@
 ---
 name: meet-videos
-description: Record cursor-guided demo videos of the OpenVidu Meet frontend (the Angular app served at /meet) for a product landing page. Use when the user asks to record, capture, or generate demo videos / screen recordings / animated clips of the app — a live meeting, creating a room, joining a meeting, an admin/console tour, etc. Drives the running app with Playwright, injects a synthetic on-screen cursor that glides between elements and flashes a click ripple (the whole point — Playwright video does NOT capture the real pointer), logs in once and reuses the session, forces light/dark theme, seeds demo data via the REST API, and writes an MP4 per flow + theme (WebM/GIF/animated-WebP also supported). Sibling of the meet-screenshots skill and reuses its login/seeding/live-participant machinery.
+description: Record cursor-guided demo videos of the OpenVidu Meet frontend (the Angular app served at /meet) for openvidu.io, its docs pages and its landing. Use when the user asks to record, capture, or generate demo videos / screen recordings / animated clips of the app — a live meeting, creating a room, joining a meeting, an admin/console tour, etc. Drives the running app with Playwright, injects a synthetic on-screen cursor that glides between elements and flashes a click ripple (the whole point — Playwright video does NOT capture the real pointer), logs in once and reuses the session, forces light/dark theme, seeds demo data via the REST API, and writes an MP4 per flow + theme, named and placed like the openvidu.io asset it replaces (WebM/GIF/animated-WebP also supported). To refresh the openvidu.io assets for a release, start from the meet-docs-sync skill. Sibling of the meet-screenshots skill and reuses its login/seeding/live-participant machinery.
 ---
 
 # OpenVidu Meet — cursor-guided demo videos
 
-Record short, animated walkthroughs of the Meet frontend for a marketing landing page. Each
+Record short, animated walkthroughs of the Meet frontend for openvidu.io. Each
 **flow** is a scripted, cursor-driven tour (not a single still): the cursor glides between UI
 elements, clicks with a visible ripple, and types with a natural cadence. The bundled `record.mjs`
 does the work; this file is the flow/selector reference and the place to add new flows.
@@ -18,7 +18,11 @@ wants. Pass `--format webm|gif|webp` for other targets, `--scale 2` for HiDPI (h
 
 ## Prerequisites
 
-- App **running** at `http://localhost:6080/meet` (verify: `curl -s -o /dev/null -w "%{http_code}" http://localhost:6080/meet` → `301`).
+- A running backend. For openvidu.io assets use an empty, isolated stack started from the main checkout
+  (`./meet.sh stack up docs`) and run the script through `./meet.sh stack run docs -- node ...`: it reads the
+  stack's `MEET_API_URL`. Without it the target is `http://localhost:6080/meet` (`--origin` to change it).
+  Flows that seed rooms or users (`seed`) refuse a backend that already has rooms or users other than the
+  admin, and empty it again when they end.
 - **Playwright + Chromium** (already in the repo root `node_modules`). Run **from the repo root** so `import 'playwright'` resolves.
 - **ffmpeg** on `PATH` — required. Playwright records WebM; ffmpeg transcodes to the chosen format and builds the per-participant fake-camera samples. Without it the tool cannot produce output.
 - Admin credentials (default `admin`/`admin`).
@@ -27,16 +31,19 @@ wants. Pass `--format webm|gif|webp` for other targets, `--scale 2` for HiDPI (h
 
 ```bash
 node .claude/skills/meet-videos/record.mjs                              # all flows, both themes -> MP4
-node .claude/skills/meet-videos/record.mjs --list                       # list flow ids and exit
+node .claude/skills/meet-videos/record.mjs --list                       # flow ids and the file each writes
 node .claude/skills/meet-videos/record.mjs --flows live-meeting --themes dark
-node .claude/skills/meet-videos/record.mjs --flows create-room,console-tour --pace 1.3
+./meet.sh stack run docs -- node .claude/skills/meet-videos/record.mjs --flows delete-room,create-user --out ../openvidu.io/docs/assets
 ```
+
+To bring openvidu.io up to date, start from the `meet-docs-sync` skill: it lists which assets are stale
+and prints these commands.
 
 Flags: `--flows` (csv), `--themes` (`light,dark`), `--width`/`--height`/`--scale`, `--timeout`
 (ms, default 30000), `--pace` (motion/pause speed multiplier, >1 slower), `--out`, `--origin`,
 `--base` (`/meet`), `--user`/`--password`, `--no-cleanup`, `--headed`, `--list`,
 `--format` (`mp4` default | `webm` | `gif` | `webp`), `--fps` (default 30),
-`--crf` (mp4/webm quality, default 23; lower = better/larger), `--quality` (gif/webp, default 80),
+`--crf` (mp4/webm quality, default 21; lower = better/larger), `--quality` (gif/webp, default 80),
 `--gif-width` (downscale width for gif/webp, default 1000 — full-res gif is huge). Fake-camera
 **video** assets: `--asset-width` (default 960), `--asset-fps` (12), `--asset-seconds` (max looped
 length, 8) — these bound the raw Y4M decoded from a video asset (see below).
@@ -156,40 +163,42 @@ Live flows seed their own room per theme and delete it afterwards. Multi-browser
 timing-sensitive, so each live flow retries once per theme automatically; if one still fails, re-run
 just that theme (`--themes dark`).
 
-## Output naming — by domain + flow
+## Output naming
 
-`<out>/<domain>/<flow-id>-<theme>.<ext>` (folder = frontend domain, file = flow + theme; `<ext>`
-follows `--format`). Split flows append the segment name: `<flow-id>-<segment>-<theme>.<ext>`.
-Default `--out` is `./videos`. A default run produces **18 MP4s** (6 single-clip flows × 2 themes +
-the 3-segment room-lifecycle flow × 2 themes):
-
-```
-auth/      login-{light,dark}
-meeting/   live-meeting-{light,dark} · join-meeting-{light,dark}
-meeting/   room-lifecycle-{create,join,record}-{light,dark}   (one take, split into 3 clips)
-recordings/ start-recording-{light,dark}
-rooms/     create-room-{light,dark} · create-room-wizard-{light,dark}
-console/   console-tour-{light,dark}
-```
+`<out>/<flow.out>/<flow.id>-<theme>.<ext>` (split flows append the segment: `<flow.id>-<segment>-<theme>`).
+openvidu.io flows use the asset folder under `docs/assets` as `out` and the asset name as `id`
+(`videos/meet/rooms/management/delete-room-light.mp4`), so `--out <openvidu.io>/docs/assets` overwrites the
+published clip. Demo clips no page uses write under `extra/`. A flow's own `pace` multiplies `--pace`
+(the console clips use 0.6). UI flows start the clip once the first page has loaded (`startVideoHere`).
+A failed take prints the failing line of `record.mjs` and the path of a screenshot taken at that moment.
 
 ## Flow catalog (built into record.mjs)
 
-| Flow id | Kind | Domain | What the cursor does |
+| Flow id | Kind | Writes (under `--out`) | What the cursor does |
 |---|---|---|---|
-| `login` | ui (anon) | auth | Starts logged out on `/login`: cursor types the user id → types the password → clicks **Login** → lands on the Overview console. Skips reused-session + seeding. |
-| `live-meeting` | live (4 ppl) | meeting | Filmed viewer joins a seeded room with 3 others → toggles mic off/on → toggles camera off/on → opens Chat, types & sends a message → opens the Participants panel → closes it, ending on the grid. The hero clip. |
-| `join-meeting` | live (3 ppl) | meeting | Two participants already in the room; the filmed viewer walks the lobby: types a display name → clicks the name submit → device-preview prejoin → clicks **Join** → lands in the populated room. |
-| `enable-captions` | live (2 ppl) | meeting | Filmed moderator + one remote participant. The moderator clicks the toolbar **captions button** to turn live captions ON, then the remote participant "speaks" — captions stream in word-by-word (interim → final) at the bottom. Live captions are backend-gated (`MEET_CAPTIONS_ENABLED`), so the room is created with `config.captions.enabled=true`, the filmed page stubs `GET /config/captions` + `POST`/`DELETE /ai/assistants` (mirrors the e2e `mockCaptionsBackend`), and caption text is injected into `MeetingCaptionsService._captions` via the dev-build Angular debug API (`window.ng`) — the fake tone-audio camera produces no real transcription. Requires the **non-optimized development** build on :6080 (window.ng + unmangled identifiers). |
-| `start-recording` | live (2 ppl) | recordings | Filmed moderator in a 2-person meeting; the clip starts inside the meeting. The cursor clicks **More options** (`#more-options-btn`) then **Start recording** (`#recording-btn`), both with the zoom + soft blur focus (`focusOn: '.mat-mdc-menu-panel'` keeps the whole menu sharp); the Activities panel then shows the recording go from starting to active. Used by the recording management page on openvidu.io. |
-| `create-room` | ui (admin) | rooms | Rooms list → clicks **Create Room** → basic wizard → clears the default "Room" and types "Product Demo Room" → clicks **Create Room**. |
-| `create-room-wizard` | ui (admin) | rooms | Rooms list → **Create Room** → **Advanced setup** → walks every wizard step: types the name, types the participant (10) and duration (60) limits in Meeting, picks **First participant joins** in the trigger select of Recording and the **Speaker** layout tile, lingers on Room Access → **Create Room**. Selectors: `#wizard-advanced-mode-btn`, `#wizard-next-btn`, `#wizard-finish-btn`, step roots `.room-details-step` / `.meeting-config-step` / `.recording-config-step` / `.room-access-step`, recording sections `#recording-trigger-section mat-select` / `#recording-layout-section`, limits `#room-feature-max-participants input` / `#room-feature-max-duration input`. |
-| `console-tour` | ui (admin) | console | Overview → clicks each side-nav item (Rooms → Recordings → Users → Configuration) → back to Overview, lingering on each screen. Uses 3 seeded demo rooms so lists are populated. |
-| `room-lifecycle` | lifecycle (admin + own camera) | meeting | **One continuous take, split into 3 clips.** create: empty overview → "create first room" card → wizard → name → **Create Room** (auto-redirects to the prejoin). join: prejoin → **Join**, host publishing `hostVideo`. record: a guest joins publishing `guestVideo` (2-person meeting) → more options → **Start recording** → recording active. Needs an empty room list for the first-room card. `cleanToolData()` removes tool-created rooms **and recordings** before/after each theme, so light & dark start from an identical empty state. |
+| `login` | ui (anon) | videos/meet/users/overview | Types the user id and password, clicks **Login**, lands on the Overview. |
+| `create-room-basic` | ui, seeds 3 rooms | videos/meet/rooms/management | Rooms list → **Create Room** → types "Product Demo Room" → **Create Room**. |
+| `create-room-wizard` | ui, seeds 3 rooms | videos/meet/rooms/management | **Create Room** → **Advanced setup** → name, 10 participants and 60 min in Meeting, **First participant joins** and **Speaker** in Recording, the Live broadcast step, Room Access → **Create Room**. |
+| `delete-room` | ui, seeds "Old Project Room" | videos/meet/rooms/management | Row menu → **Delete room** → confirms. |
+| `update-room-status` | ui, seeds "Product Demo" | videos/meet/rooms/management | Row menu → **Close room**. |
+| `share-link` | ui, seeds "Product Demo" | videos/meet/rooms/access | Row menu → **Share link** → **Anonymous Moderator** → **Get Link** → copy. |
+| `create-user` | ui | videos/meet/users/management | **Create User** → olivia_brooks, Olivia Brooks, Room Member, a password → **Create User**. |
+| `delete-user` | ui, seeds Ava Morgan | videos/meet/users/management | Delete button → confirms. |
+| `reset-user-password` | ui, seeds Noah Bennett | videos/meet/users/management | Reset button → **Auto generate** → **Reset Password**. |
+| `update-user-role` | ui, seeds Liam Walker | videos/meet/users/management | Role button → **Room Manager** → **Save Role**. |
+| `join-meeting` | live (3 ppl) | videos/meet/getting-started | Two participants already in; the filmed one types a name, sees the device view, **Join**. |
+| `access-room` | live (2 ppl), filmed as the admin | videos/meet/meetings/overview | Rooms list (David already in the meeting) → access button → join view → device view → **Join**. |
+| `enable-captions` | live (2 ppl) | videos/meet/meetings/live-captions | Moderator turns captions on; the other participant's words stream in. Captions are stubbed and injected through `window.ng`, so the backend must serve the **development** build. |
+| `start-recording` | live (2 ppl) | videos/meet/recordings/management | Starts inside the meeting; **More options** → **Start recording** with the zoom and blur focus; the Activities panel goes from starting to active. |
+| `live-meeting` | live (4 ppl) | extra/meeting | Mic and camera off/on, chat message, participants panel. |
+| `console-tour` | ui, seeds 3 rooms | extra/console | Clicks through Rooms, Recordings, Users, Configuration and back. |
+| `room-lifecycle` | lifecycle | extra/meeting | One authed take split into create / join / record clips; needs an empty room list. |
 
 ## Key selectors (verified against the frontend source)
 
 - **Console side-nav:** `#nav-link-overview` · `#nav-link-rooms` · `#nav-link-recordings` · `#nav-link-users` · `#nav-link-config` · `#nav-link-embedded` (id is `nav-link-<route>`).
-- **Rooms list / wizard:** `#create-room-btn` (list) → `/rooms/new` opens in basic mode → `.room-basic-creation-form input` (name, prefilled "Room") + `#create-room-button` (submit). Advanced wizard nav: `#wizard-next-btn` · `#wizard-finish-btn`.
+- **Rooms list / wizard:** `#create-room-btn` (list) → `/rooms/new` opens in basic mode → `.room-basic-creation-form input` (name, prefilled "Room") + `#create-room-button` (submit). Advanced wizard nav: `#wizard-next-btn` · `#wizard-finish-btn`; five steps (Room Details, Meeting, Recording, Live broadcast, Room Access).
+- **Row actions:** rooms `[id^="access-room-btn-"]` (opens a new tab: `access-room` replaces `window.open` to stay in one recorded page), `[id^="more-actions-btn-"]` → `share-link-btn-` / `toggle-room-status-btn-` / `delete-room-btn-`; users `update-role-btn-` / `reset-password-btn-` / `delete-user-btn-`. Dialogs: `.mat-mdc-dialog-container`, confirm `.confirm-button`, share dialog `.generate-button` / `.copy-button`.
 - **Lobby / prejoin:** `#participant-name-input` · `#participant-name-submit` · `#join-button` · `#layout-container` · `#media-buttons-container`.
 - **In-meeting toolbar:** `#mic-btn` · `#camera-btn` · `#screenshare-btn` · `#chat-panel-btn` · `#participants-panel-btn` · `#more-options-btn` · `#grid-layout-settings-btn` · `#leave-btn`. Chat: `#chat-input` · `#send-btn`. Remote tiles: `.OV_stream_video.remote`; participants panel: `ov-participants-panel`.
 
@@ -203,21 +212,18 @@ Same API as meet-screenshots. Login (seeding): `POST /internal-api/v1/auth/login
 
 ## Safety rules (important)
 
-- **Never deletes pre-existing rooms.** It snapshots room ids at startup, seeds its own demo rooms
-  for the UI flows, and the `create-room` flow makes one room through the UI. Cleanup removes ONLY
-  rooms that appeared during the run and weren't pre-existing (tracked by id) — pre-existing rooms
-  are always left alone. `--no-cleanup` keeps everything.
-- Live flows create + delete their own room per theme (self-cleaning), so they don't collide with
-  seeded data.
-- Cleanup issues backend `DELETE`s; in stricter permission modes those may prompt for approval. If
-  blocked/failed, the script reports what remains.
+- **Seeded flows need an empty backend** and check it before anything runs; between takes and at the end they
+  delete every room and every user but the admin. Use an isolated stack, never the shared :6080 backend.
+- **Live flows** create and delete their own room per theme and touch nothing else.
+- Cleanup issues backend `DELETE`s; in stricter permission modes those may prompt for approval.
 
 ## Extending coverage
 
-Add an entry to `ALL_FLOWS` in `record.mjs`. For a **UI flow** (`kind:'ui'`), write an async
-`drive(page)` that `page.goto`s the start route and uses `clickSelector`/`typeText`/`moveCursor` +
-`page.waitForTimeout(P(ms))` to script the tour; it runs in the shared logged-in browser with a
-fresh recording context per theme. For a **live flow** (`kind:'live'`, set `roomName` + `count`),
+Add an entry to `ALL_FLOWS` in `record.mjs`; for an openvidu.io clip, name it after the asset and set
+`out` to its folder. For a **UI flow** (`kind:'ui'`), write an async `drive(page)` that starts with
+`startOnList(page, route, marker)` (or `page.goto` + `startVideoHere()`) and uses
+`clickSelector`/`typeText`/`moveCursor` + `page.waitForTimeout(P(ms))`; give it a `seed` when the clip
+needs rooms or users. It runs in the shared logged-in browser with a fresh recording context per theme. For a **live flow** (`kind:'live'`, set `roomName` + `count`),
 write `drive(page, url, roster)` — the runner seeds the room, joins `count-1` background
 participants, then films participant `roster[0]`. Use the selector list above; pick stable ids and
 wait on a loaded-state marker before acting. Keep pauses generous (`P(...)`) so the motion reads
