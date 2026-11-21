@@ -370,6 +370,7 @@ with no replacement.
 - The console pages scrolled inside their own column, with the scrollbar in the middle of the screen, and the bottom of
   the page, the **Load more** button of a list included, was cut off. The whole page scrolls now, with the scrollbar at
   the window edge.
+- The API key section of the console Embedded page did not show when the key was generated. It shows the generation date.
 
 #### Deployment
 

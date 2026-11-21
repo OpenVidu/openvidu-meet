@@ -99,6 +99,7 @@
     "API_KEY_SUBTITLE_LINK": "REST API",
     "API_KEY_SUBTITLE_SUFFIX": "アクセス",
     "API_KEY_LABEL": "API キー",
+    "API_KEY_GENERATED_ON": "生成日: {date}",
     "TOGGLE_VISIBILITY": "表示を切り替える",
     "COPY": "コピー",
     "NO_API_KEY_TITLE": "API キーが生成されていません",

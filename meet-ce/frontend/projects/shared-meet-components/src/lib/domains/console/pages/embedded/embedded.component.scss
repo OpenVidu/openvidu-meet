@@ -50,6 +50,12 @@
 		}
 	}
 
+	.api-key-generated-on {
+		margin: var(--ov-meet-spacing-sm) 0 0;
+		font-size: var(--ov-meet-font-size-sm);
+		color: var(--ov-meet-text-secondary);
+	}
+
 	.no-api-key {
 		text-align: center;
 		padding: var(--ov-meet-spacing-sm);

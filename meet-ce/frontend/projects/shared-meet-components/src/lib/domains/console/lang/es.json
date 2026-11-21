@@ -99,6 +99,7 @@
     "API_KEY_SUBTITLE_LINK": "API REST",
     "API_KEY_SUBTITLE_SUFFIX": "",
     "API_KEY_LABEL": "Clave API",
+    "API_KEY_GENERATED_ON": "Generada el {date}",
     "TOGGLE_VISIBILITY": "Alternar visibilidad",
     "COPY": "Copiar",
     "NO_API_KEY_TITLE": "No se ha generado ninguna clave API",

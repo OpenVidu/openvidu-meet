@@ -99,6 +99,7 @@
     "API_KEY_SUBTITLE_LINK": "REST API",
     "API_KEY_SUBTITLE_SUFFIX": "访问的 API 密钥",
     "API_KEY_LABEL": "API 密钥",
+    "API_KEY_GENERATED_ON": "生成于 {date}",
     "TOGGLE_VISIBILITY": "切换可见性",
     "COPY": "复制",
     "NO_API_KEY_TITLE": "未生成 API 密钥",

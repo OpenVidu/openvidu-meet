@@ -76,6 +76,8 @@ const notification = (page: Page, text: string): Locator =>
 
 const apiKeyField = (page: Page): Locator => page.locator('.api-key-field input');
 
+const generatedOn = (page: Page): Locator => page.locator('#api-key-generated-on');
+
 test.describe('Console Embedded page placeholders E2E Tests', () => {
 	test('shows its title and both sections with placeholders while loading', async ({ page }) => {
 		let release!: () => void;
@@ -113,6 +115,7 @@ test.describe('Console Embedded page API key E2E Tests', () => {
 
 		await expect(apiKeyField(page)).toHaveValue('ovmeet-fake-key-1');
 		await expect(apiKeyField(page)).toHaveAttribute('type', 'text');
+		await expect(generatedOn(page)).toHaveText(/Generated on [A-Z][a-z]{2} \d{1,2}, \d{4}/);
 		await expect(page.getByRole('button', { name: 'Regenerate Key' })).toBeVisible();
 		await expect(page.locator('#revoke-key-btn')).toBeVisible();
 		expect(requests).toContain('POST');
@@ -120,11 +123,12 @@ test.describe('Console Embedded page API key E2E Tests', () => {
 
 	test('an existing key is masked until revealed and can be copied', async ({ page }) => {
 		await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
-		await fakeApiKey(page, { key: 'ovmeet-existing-key', creationDate: Date.now() });
+		await fakeApiKey(page, { key: 'ovmeet-existing-key', creationDate: Date.UTC(2026, 2, 15, 12) });
 		await fakeWebhooks(page, []);
 		await gotoEmbedded(page);
 
 		await expect(apiKeyField(page)).toHaveAttribute('type', 'password');
+		await expect(generatedOn(page)).toHaveText(/Generated on Mar (14|15|16), 2026/);
 
 		await page.locator('.toggle-visibility-button').click();
 		await expect(apiKeyField(page)).toHaveAttribute('type', 'text');

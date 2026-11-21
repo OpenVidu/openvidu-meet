@@ -62,16 +62,12 @@
 						</div>
 					</div>
 
-					<!-- <div class="api-key-info">
-					<p class="info-text">
-						<mat-icon class="info-icon">info</mat-icon>
-						Generated on: {{ apiKeyData()!.creationDate | date: 'medium' }}
+					<p class="api-key-generated-on" id="api-key-generated-on">
+						{{
+							'EMBEDDED.API_KEY_GENERATED_ON'
+								| translate: { date: (apiKeyData()!.creationDate | date: 'medium') ?? '' }
+						}}
 					</p>
-					<p class="warning-text">
-						<mat-icon class="warning-icon">warning</mat-icon>
-						Keep your API key secure. Do not share it publicly or expose it in client-side code.
-					</p>
-				</div> -->
 				} @else {
 					<div class="no-api-key">
 						<h3>{{ 'EMBEDDED.NO_API_KEY_TITLE' | translate }}</h3>

@@ -99,6 +99,7 @@
     "API_KEY_SUBTITLE_LINK": "REST API",
     "API_KEY_SUBTITLE_SUFFIX": "toegang",
     "API_KEY_LABEL": "API-sleutel",
+    "API_KEY_GENERATED_ON": "Gegenereerd op {date}",
     "TOGGLE_VISIBILITY": "Zichtbaarheid wisselen",
     "COPY": "Kopiëren",
     "NO_API_KEY_TITLE": "Geen API-sleutel gegenereerd",

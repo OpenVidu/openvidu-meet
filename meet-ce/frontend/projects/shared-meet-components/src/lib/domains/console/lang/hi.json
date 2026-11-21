@@ -99,6 +99,7 @@
     "API_KEY_SUBTITLE_LINK": "REST API",
     "API_KEY_SUBTITLE_SUFFIX": "पहुंच",
     "API_KEY_LABEL": "API कुंजी",
+    "API_KEY_GENERATED_ON": "बनाई गई: {date}",
     "TOGGLE_VISIBILITY": "दृश्यता टॉगल करें",
     "COPY": "कॉपी करें",
     "NO_API_KEY_TITLE": "कोई API कुंजी जनरेट नहीं की गई",

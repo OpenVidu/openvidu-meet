@@ -99,6 +99,7 @@
     "API_KEY_SUBTITLE_LINK": "REST API",
     "API_KEY_SUBTITLE_SUFFIX": "",
     "API_KEY_LABEL": "API-Schlüssel",
+    "API_KEY_GENERATED_ON": "Erstellt am {date}",
     "TOGGLE_VISIBILITY": "Sichtbarkeit umschalten",
     "COPY": "Kopieren",
     "NO_API_KEY_TITLE": "Kein API-Schlüssel generiert",

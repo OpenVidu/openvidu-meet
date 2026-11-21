@@ -1,4 +1,5 @@
 import { Clipboard } from '@angular/cdk/clipboard';
+import { DatePipe } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -40,7 +41,8 @@ const deleteWebhookDialogPreset = (t: Translator, url: string): DialogPreset => 
 		MatSlideToggleModule,
 		MatTooltipModule,
 		SkeletonRowsComponent,
-		TranslatePipe
+		TranslatePipe,
+		DatePipe
 	],
 	templateUrl: './embedded.component.html',
 	styleUrl: './embedded.component.scss'
