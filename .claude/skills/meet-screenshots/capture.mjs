@@ -3,8 +3,10 @@
  * meet-screenshots — capture documentation screenshots of the OpenVidu Meet frontend.
  *
  * Drives the running app with Playwright (Chromium): logs in through the UI, forces
- * light/dark theme, seeds demo rooms when a scene needs them, and writes PNGs named
- *   <out>/<domain>/<navpath>[-state]-<theme>.png
+ * light/dark theme, seeds demo rooms when a scene needs them, and writes
+ *   <out>/<domain>/<base>-<theme>.<ext>
+ * Scenes for openvidu.io use the asset folder under docs/assets as domain and the asset name as
+ * base, so `--out <openvidu.io>/docs/assets` overwrites the published asset (meet-docs-sync skill).
  *
  * The scene catalog below mirrors the UI routes declared in each domain's *.routes.ts
  * (see SKILL.md for the full route map). Standard documentation resolution is
@@ -20,6 +22,7 @@
  */
 import { chromium } from 'playwright';
 import { mkdir } from 'node:fs/promises';
+import { dirname } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -34,8 +37,10 @@ const flag = (name, def) => {
 };
 const has = (name) => argv.includes(`--${name}`);
 
-const ORIGIN = String(flag('origin', 'http://localhost:6080'));
-const BASE_PATH = String(flag('base', '/meet'));
+// `./meet.sh stack run <name> -- ...` exports MEET_API_URL, so the stack is the default target.
+const STACK_URL = process.env.MEET_API_URL ? new URL(process.env.MEET_API_URL) : null;
+const ORIGIN = String(flag('origin', STACK_URL?.origin ?? 'http://localhost:6080'));
+const BASE_PATH = String(flag('base', STACK_URL?.pathname.replace(/\/$/, '') || '/meet'));
 const APP = `${ORIGIN}${BASE_PATH}`;
 const API = `${APP}/api/v1`;
 const INTERNAL = `${APP}/internal-api/v1`;
@@ -122,21 +127,39 @@ const ALL_SCENES = [
 	// passphrase (who chat with each other) and one with a wrong one. Captures the wrong-key
 	// participant's view — everyone else is an encryption-error poster with a masked name and the
 	// chat stays empty behind the mismatch warning — demonstrating the symmetric E2EE lockout.
-	{ id: 'e2ee-wrong-key', live: true, shots: [{ domain: 'meeting', base: 'e2ee-wrong-key' }] },
+	{ id: 'wrong-key-meeting', live: true, shots: [{ domain: 'images/meet/meetings/e2e-encryption', base: 'wrong-key-meeting' }] },
 
 	// Smart-layout scenes (live, plain rooms). `layout-settings` opens the grid-layout settings
 	// panel (Mosaic / Smart Mosaic + visible-participants count); `layout-grid` shows the adaptive
 	// grid with 6 participants (4 visible remotes + a "+1" hidden badge) and the participants panel.
-	{ id: 'layout-settings', live: true, shots: [{ domain: 'meeting', base: 'layout-settings' }] },
-	{ id: 'layout-grid', live: true, shots: [{ domain: 'meeting', base: 'layout-grid' }] },
+	{ id: 'layout-settings', live: true, shots: [{ domain: 'images/meet/meetings/smart-layout', base: 'layout-settings' }] },
+	{ id: 'layout-grid', live: true, shots: [{ domain: 'images/meet/meetings/smart-layout', base: 'layout-grid' }] },
 
 	// Duration limit (live, room with `config.maxDurationMinutes`): the meeting enters its last five
 	// minutes, so the status rail counts down and the pinned "Meeting ending soon" notice is up.
-	{ id: 'meeting-ending-soon', live: true, shots: [{ domain: 'meeting', base: 'meeting-ending-soon' }] }
+	{ id: 'meeting-ending-soon', live: true, shots: [{ domain: 'images/meet/meetings/configuration', base: 'meeting-ending-soon', format: 'png' }] },
+
+	// --- openvidu.io scenes with their own script; outputs are the docs assets each one writes ---
+	{ id: 'device-view', scripted: captureDeviceView, outputs: ['images/meet/meetings/lifecycle/device-view'] },
+	{ id: 'virtual-bg-prejoin', scripted: captureVirtualBgPrejoin, outputs: ['images/meet/meetings/virtual-background/virtual-bg-prejoin'] },
+	{
+		id: 'room-wizard',
+		scripted: captureRoomWizard,
+		outputs: [
+			'images/meet/meetings/configuration/room-wizard-meeting',
+			...['', '-trigger', '-anonymous', '-layouts'].map((s) => `images/meet/recordings/configuration/room-wizard-recording${s}`)
+		]
+	},
+	{
+		id: 'participants-panel',
+		scripted: captureParticipantsPanel,
+		outputs: ['images/meet/meetings/moderation/participants-panel', 'images/meet/meetings/role-management/promote-moderator', 'images/meet/meetings/role-management/demote-moderator']
+	}
 ];
+const outputsOf = (scene) => scene.outputs ?? (scene.shots ?? []).map((sh) => `${sh.domain}/${sh.base}`);
 
 if (has('list')) {
-	console.log('Available scenes:\n' + ALL_SCENES.map((s) => `  ${s.id}`).join('\n'));
+	console.log(ALL_SCENES.map((s) => `${s.id}\t${outputsOf(s).join(',')}`).join('\n'));
 	process.exit(0);
 }
 const sceneFilter = flag('scenes', null);
@@ -213,17 +236,19 @@ async function uiLogin(page) {
 // Saves a screenshot of `target` (a Page or Locator) to `<OUT>/<relNoExt>.<ext>` in the chosen
 // FORMAT and returns the written relative path. WebP/JPEG are quality-compressed for much smaller
 // files than PNG; webp is transcoded from a throwaway PNG via ffmpeg (Playwright can't write webp).
-async function saveShot(target, relNoExt) {
-	if (FORMAT === 'png') {
-		await target.screenshot({ path: `${OUT}/${relNoExt}.png` });
+// `format` overrides --format for a docs asset published as png; `clip` crops the page.
+async function saveShot(target, relNoExt, { format = FORMAT, clip } = {}) {
+	await mkdir(dirname(`${OUT}/${relNoExt}`), { recursive: true });
+	if (format === 'png') {
+		await target.screenshot({ path: `${OUT}/${relNoExt}.png`, clip });
 		return `${relNoExt}.png`;
 	}
-	if (FORMAT === 'jpeg' || FORMAT === 'jpg') {
-		await target.screenshot({ path: `${OUT}/${relNoExt}.jpg`, type: 'jpeg', quality: QUALITY });
+	if (format === 'jpeg' || format === 'jpg') {
+		await target.screenshot({ path: `${OUT}/${relNoExt}.jpg`, type: 'jpeg', quality: QUALITY, clip });
 		return `${relNoExt}.jpg`;
 	}
 	const tmpPng = `${tmpdir()}/meet-shot-${relNoExt.replace(/[/\\]/g, '_')}.png`;
-	await target.screenshot({ path: tmpPng });
+	await target.screenshot({ path: tmpPng, clip });
 	execFileSync('ffmpeg', ['-y', '-i', tmpPng, '-c:v', 'libwebp', '-quality', String(QUALITY), `${OUT}/${relNoExt}.webp`], { stdio: 'ignore' });
 	return `${relNoExt}.webp`;
 }
@@ -241,7 +266,7 @@ async function capture(page, shot, theme) {
 			await page.goto(`${APP}${shot.path}`, { waitUntil: 'domcontentloaded' });
 			await page.waitForSelector(shot.waitFor, { state: 'attached', timeout: TIMEOUT });
 			await page.waitForTimeout(900); // settle fonts / material ripple / animations
-			const rel = await saveShot(page, relNoExt);
+			const rel = await saveShot(page, relNoExt, { format: shot.format });
 			console.log(`  ✓ ${rel}${attempt > 1 ? ` (attempt ${attempt})` : ''}`);
 			return;
 		} catch (e) {
@@ -317,16 +342,18 @@ function sampleY4mFor(file) {
 }
 // Launches a dedicated browser whose fake camera plays `file`'s portrait (or the green pattern if
 // the sample is unavailable). One per participant so every tile shows a different person.
-async function launchCamBrowser(file) {
+// Virtual backgrounds segment the camera on the GPU; under the default software GL they lag.
+const GPU_ARGS = ['--use-gl=angle', '--use-angle=gl', '--enable-gpu', '--ignore-gpu-blocklist'];
+async function launchCamBrowser(file, { gpu = false } = {}) {
 	const y4m = sampleY4mFor(file);
-	const args = [...FAKE_MEDIA_ARGS, ...(y4m ? [`--use-file-for-fake-video-capture=${y4m}`] : [])];
+	const args = [...FAKE_MEDIA_ARGS, ...(y4m ? [`--use-file-for-fake-video-capture=${y4m}`] : []), ...(gpu ? GPU_ARGS : [])];
 	return chromium.launch({ headless: !HEADED, args });
 }
 // Opens a themed page in its own browser+context for one participant with the given sample.
-async function newParticipant(theme, file) {
-	const browser = await launchCamBrowser(file);
+async function newParticipant(theme, file, { gpu = false, viewport = { width: WIDTH, height: HEIGHT } } = {}) {
+	const browser = await launchCamBrowser(file, { gpu });
 	const context = await browser.newContext({
-		viewport: { width: WIDTH, height: HEIGHT }, deviceScaleFactor: SCALE,
+		viewport, deviceScaleFactor: SCALE,
 		colorScheme: theme, permissions: ['camera', 'microphone']
 	});
 	await context.addInitScript((t) => { try { localStorage.setItem('ovMeet-theme', t); } catch {} }, theme);
@@ -381,7 +408,7 @@ async function captureE2eeWrongKey(token, shot) {
 	const ATTEMPTS = 2; // joining several participants is timing-sensitive; one retry absorbs races
 	for (const theme of THEMES) {
 		for (let attempt = 1; attempt <= ATTEMPTS; attempt++) {
-			console.log(`[${theme}] e2ee-wrong-key (live, 3 participants — intruder view)${attempt > 1 ? ` — retry ${attempt}` : ''}`);
+			console.log(`[${theme}] wrong-key-meeting (live, 3 participants — intruder view)${attempt > 1 ? ` — retry ${attempt}` : ''}`);
 			const room = await createE2eeRoom(token, 'Confidential Meeting');
 			const url = room.access.anonymous.moderator.url;
 			const browsers = [];
@@ -423,9 +450,9 @@ async function captureE2eeWrongKey(token, shot) {
 			} catch (e) {
 				const msg = String(e.message || e).split('\n')[0];
 				if (attempt < ATTEMPTS) {
-					console.warn(`  … retry e2ee-wrong-key-${theme} (attempt ${attempt} failed: ${msg})`);
+					console.warn(`  … retry wrong-key-meeting-${theme} (attempt ${attempt} failed: ${msg})`);
 				} else {
-					failures.push(`${shot.domain}/${shot.base}-${theme} (e2ee-wrong-key)`);
+					failures.push(`${shot.domain}/${shot.base}-${theme} (wrong-key-meeting)`);
 					console.warn(`  ✗ ${shot.domain}/${shot.base}-${theme}: ${msg}`);
 				}
 			} finally {
@@ -466,7 +493,7 @@ async function captureLayoutScene(token, shot, { count, config, afterJoin }) {
 				);
 				await afterJoin(viewer);
 				await viewer.waitForTimeout(2000); // settle layout transitions
-				const rel = await saveShot(viewer, `${shot.domain}/${shot.base}-${theme}`);
+				const rel = await saveShot(viewer, `${shot.domain}/${shot.base}-${theme}`, { format: shot.format });
 				console.log(`  ✓ ${rel}`);
 				break; // success — next theme
 			} catch (e) {
@@ -520,13 +547,198 @@ const captureMeetingEndingSoon = (token, shot) =>
 		}
 	});
 
+// ---------- openvidu.io scenes with their own script ----------
+// Runs a scripted scene once per theme, with one retry: live joins are timing-sensitive.
+async function runScripted(token, scene) {
+	for (const theme of THEMES) {
+		for (let attempt = 1; attempt <= 2; attempt++) {
+			console.log(`[${theme}] ${scene.id}${attempt > 1 ? ' — retry 2' : ''}`);
+			try {
+				await scene.scripted(token, theme);
+				break;
+			} catch (e) {
+				const msg = String(e.message || e).split('\n')[0];
+				if (attempt < 2) console.warn(`  … retry ${scene.id}-${theme} (${msg})`);
+				else {
+					failures.push(`${scene.id}-${theme} (${msg})`);
+					console.warn(`  ✗ ${scene.id}-${theme}: ${msg}`);
+				}
+			}
+		}
+	}
+}
+async function withRoom(token, name, take) {
+	const room = await createRoom(token, name);
+	try {
+		return await take(room);
+	} finally {
+		await deleteRooms(token, [room.roomId]);
+	}
+}
+async function openDeviceView(page, url, name) {
+	await page.goto(url, { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('#participant-name-input', { state: 'visible', timeout: TIMEOUT });
+	await page.fill('#participant-name-input', name);
+	await page.click('#participant-name-submit');
+	await page.waitForSelector('#join-button', { state: 'visible', timeout: TIMEOUT });
+}
+async function shotTo(target, rel, opts) {
+	console.log(`  ✓ ${await saveShot(target, rel, opts)}`);
+}
+
+// The device view card, with the camera and microphone controls and the moving microphone level.
+async function captureDeviceView(token, theme) {
+	await withRoom(token, 'Weekly Sync', async (room) => {
+		const { browser: cam, page } = await newParticipant(theme, 'female_doctor_sample.jpg');
+		try {
+			await openDeviceView(page, room.access.anonymous.moderator.url, 'Emma');
+			await page.evaluate(() => document.activeElement?.blur());
+			await page.mouse.move(100, 900);
+			await page.waitForTimeout(3500);
+			const card = await page.locator('.prejoin-main').boundingBox();
+			const clip = { x: card.x - 30, y: card.y - 30, width: card.width + 60, height: card.height + 60 };
+			await shotTo(page, `images/meet/meetings/lifecycle/device-view-${theme}`, { format: 'png', clip });
+		} finally {
+			await cam.close();
+		}
+	});
+}
+
+// The device view in a 1080x720 window with the background panel open and the first office applied.
+async function captureVirtualBgPrejoin(token, theme) {
+	await withRoom(token, 'Weekly Sync', async (room) => {
+		const { browser: cam, page } = await newParticipant(theme, 'girl-sample01.jpg', { gpu: true, viewport: { width: 1080, height: 720 } });
+		try {
+			await openDeviceView(page, room.access.anonymous.moderator.url, 'Sarah');
+			await page.click('#backgrounds-button');
+			const office = page.locator('#background-effects-container .grid .effect-button').first();
+			await office.click();
+			await page.mouse.move(40, 690);
+			await page.waitForTimeout(5000);
+			await shotTo(page, `images/meet/meetings/virtual-background/virtual-bg-prejoin-${theme}`, { format: 'webp' });
+		} finally {
+			await cam.close();
+		}
+	});
+}
+
+// The Meeting and Recording steps of the advanced room wizard, full page, as the room pages show them.
+async function captureRoomWizard(token, theme) {
+	const { context, page } = await newThemedPage(browser, theme, true);
+	const away = () => page.mouse.move(1700, 700);
+	try {
+		await page.goto(`${APP}/rooms/new`, { waitUntil: 'domcontentloaded' });
+		await page.click('#wizard-advanced-mode-btn');
+		await page.waitForSelector('.room-details-step', { timeout: TIMEOUT });
+		await page.click('#wizard-next-btn');
+		await page.waitForSelector('#room-feature-max-participants', { timeout: TIMEOUT });
+		await page.locator('#room-feature-max-participants input').fill('10');
+		await page.locator('#room-feature-max-duration input').fill('60');
+		await away();
+		await page.waitForTimeout(600);
+		await shotTo(page, `images/meet/meetings/configuration/room-wizard-meeting-${theme}`, { format: 'png' });
+
+		const recording = (suffix) => `images/meet/recordings/configuration/room-wizard-recording${suffix}-${theme}`;
+		// Reached from the step list, which stays hovered in this shot.
+		await page.locator('ov-step-indicator').getByText('Recording', { exact: true }).click();
+		await page.waitForSelector('#recording-trigger-section', { timeout: TIMEOUT });
+		await page.waitForTimeout(700);
+		await shotTo(page, recording(''), { format: 'png' });
+
+		await away();
+		await page.click('#recording-trigger-section mat-select');
+		await page.waitForSelector('mat-option', { timeout: TIMEOUT });
+		await page.waitForTimeout(500);
+		await shotTo(page, recording('-trigger'), { format: 'png' });
+		await page.keyboard.press('Escape');
+		await page.waitForTimeout(400);
+
+		const box = await page.locator('#recording-anonymous-access').boundingBox();
+		await page.evaluate((b) => {
+			const frame = document.createElement('div');
+			frame.id = 'docs-highlight';
+			frame.style.cssText = `position:fixed;left:${b.x - 6}px;top:${b.y - 4}px;width:${b.width + 12}px;height:${b.height + 8}px;` +
+				'border:4px solid #00ff00;border-radius:10px;box-sizing:border-box;pointer-events:none;z-index:2147483647';
+			document.body.appendChild(frame);
+		}, box);
+		await shotTo(page, recording('-anonymous'), { format: 'png' });
+		await page.evaluate(() => document.getElementById('docs-highlight')?.remove());
+
+		await page.click('#recording-layout-section .layout-tile:has-text("Speaker")');
+		await away();
+		await page.waitForTimeout(600);
+		await shotTo(page, recording('-layouts'), { format: 'png' });
+	} finally {
+		await context.close();
+	}
+}
+
+// Draws the docs green arrow with its tip at `tip`, pointing up and to the right.
+const drawArrow = (page, tip) =>
+	page.evaluate((t) => {
+		const ns = 'http://www.w3.org/2000/svg';
+		const svg = document.createElementNS(ns, 'svg');
+		svg.id = 'docs-arrow';
+		svg.setAttribute('style', 'position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:2147483647');
+		svg.innerHTML = `<polygon transform="translate(${t.x} ${t.y}) rotate(-45)" points="0,0 -34,-26 -34,-11 -118,-11 -118,11 -34,11 -34,26"
+			fill="#00ff00" stroke="#000" stroke-width="3" stroke-linejoin="round"/>`;
+		document.body.appendChild(svg);
+	}, tip);
+
+// Emma (moderator, captured) with David and Sarah (speakers, Sarah's camera off): the participants panel,
+// then David's menu cropped with the arrow on Promote, and again on Downgrade once David is promoted.
+async function captureParticipantsPanel(token, theme) {
+	await withRoom(token, 'Design Review', async (room) => {
+		const [emma, david, sarah] = rosterFor(3);
+		const cams = [];
+		try {
+			for (const p of [david, sarah]) {
+				const { browser: cam, page } = await newParticipant(theme, p.file);
+				cams.push(cam);
+				await joinMeeting(page, room.access.anonymous.speaker.url, { name: p.name });
+				if (p === sarah) await page.click('#camera-btn');
+			}
+			const { browser: cam, page } = await newParticipant(theme, emma.file);
+			cams.push(cam);
+			await joinMeeting(page, room.access.anonymous.moderator.url, { name: emma.name });
+			await page.waitForTimeout(2500);
+			await page.click('#participants-panel-btn');
+			await page.waitForSelector('ov-participants-panel', { state: 'visible', timeout: TIMEOUT });
+			await page.mouse.move(700, 120);
+			await page.waitForTimeout(1500);
+			await shotTo(page, `images/meet/meetings/moderation/participants-panel-${theme}`, { format: 'png' });
+
+			const panel = await page.locator('ov-participants-panel').boundingBox();
+			const menuItem = (text) => page.locator('.mat-mdc-menu-panel button', { hasText: text });
+			const openMenu = async (text) => {
+				if (!(await menuItem(text).isVisible())) await page.locator('.participant-menu-btn').first().click();
+				await menuItem(text).waitFor({ timeout: TIMEOUT });
+				await page.waitForTimeout(500);
+			};
+			const cropMenu = async (name, text) => {
+				await openMenu(text);
+				const menu = await page.locator('.mat-mdc-menu-panel').boundingBox();
+				const item = await menuItem(text).boundingBox();
+				await drawArrow(page, { x: menu.x, y: item.y + item.height / 2 - 6 });
+				const self = await page.locator('ov-participants-panel').getByText(emma.name).first().boundingBox();
+				const clip = { x: panel.x - 22, y: self.y + self.height / 2 - 60, width: 397, height: 395 };
+				await shotTo(page, `images/meet/meetings/role-management/${name}-${theme}`, { format: 'png', clip });
+				await page.evaluate(() => document.getElementById('docs-arrow')?.remove());
+			};
+			await cropMenu('promote-moderator', 'Promote to moderator');
+			await openMenu('Promote to moderator');
+			await menuItem('Promote to moderator').click();
+			await page.waitForTimeout(1500);
+			await cropMenu('demote-moderator', 'Downgrade');
+		} finally {
+			for (const c of cams) await c.close();
+		}
+	});
+}
+
 // ---------- Main ----------
 const token = await apiLogin();
-for (const domain of new Set(SCENES.flatMap((s) => (s.shots ? s.shots.map((sh) => sh.domain) : [])))) {
-	await mkdir(`${OUT}/${domain}`, { recursive: true });
-}
-for (const d of ['rooms']) await mkdir(`${OUT}/${d}`, { recursive: true }); // dynamic (build) scenes write here
-console.log(`Output: ${OUT}  |  ${WIDTH}x${HEIGHT}@${SCALE}x  |  ${FORMAT}  |  themes: ${THEMES.join(', ')}  |  scenes: ${SCENES.length}`);
+console.log(`Output: ${OUT}  |  ${APP}  |  ${FORMAT}  |  themes: ${THEMES.join(', ')}  |  scenes: ${SCENES.length}`);
 
 // Shared browser for static (non-live) scenes. Live scenes launch their own per-participant
 // browsers (each with its own fake-webcam sample) inside their capture functions.
@@ -536,8 +748,9 @@ try {
 	const anon = SCENES.filter((s) => s.auth === 'anon');
 	const empties = SCENES.filter((s) => s.requiresEmpty);
 	const roomScenes = SCENES.filter((s) => (s.rooms || 0) > 0);
-	const agnostic = SCENES.filter((s) => s.auth !== 'anon' && !s.requiresEmpty && !((s.rooms || 0) > 0) && !s.live);
-	const needsAuth = empties.length || agnostic.length || roomScenes.length;
+	const scripted = SCENES.filter((s) => s.scripted);
+	const agnostic = SCENES.filter((s) => s.auth !== 'anon' && !s.requiresEmpty && !((s.rooms || 0) > 0) && !s.live && !s.scripted);
+	const needsAuth = empties.length || agnostic.length || roomScenes.length || scripted.length;
 
 	// Wave A — public pages, no login.
 	await runWave(browser, anon, { authenticated: false });
@@ -580,7 +793,7 @@ try {
 	// Wave D — live multi-participant meeting scenes (own rooms, self-cleaning).
 	if (liveScenes.length && process.exitCode !== 2) {
 		const liveRunners = {
-			'e2ee-wrong-key': captureE2eeWrongKey,
+			'wrong-key-meeting': captureE2eeWrongKey,
 			'layout-settings': captureLayoutSettings,
 			'layout-grid': captureLayoutGrid,
 			'meeting-ending-soon': captureMeetingEndingSoon
@@ -591,6 +804,9 @@ try {
 			else console.warn(`No live runner for scene '${scene.id}', skipping.`);
 		}
 	}
+
+	// Wave E — openvidu.io scenes with their own script (own rooms, self-cleaning).
+	if (process.exitCode !== 2) for (const scene of scripted) await runScripted(token, scene);
 } finally {
 	await browser.close();
 }
