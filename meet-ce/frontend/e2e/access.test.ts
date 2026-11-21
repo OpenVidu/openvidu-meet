@@ -13,6 +13,7 @@ import {
 	createRoom,
 	createRoomAsUser,
 	createRoomMember,
+	deleteRoomMember,
 	deleteRooms,
 	deleteUsers,
 	getRecordingShareUrl,
@@ -138,12 +139,15 @@ test.describe('Access E2E Tests', () => {
 		navigate: (page: Page, url: string) => Promise<void>;
 		/** Asserts the expected view is shown (the name is only used by the join screen). */
 		expectShown: (page: Page, name?: NameExpect) => Promise<void>;
+		/** Title of the error screen a denied scenario shows, when the view states it. */
+		deniedTitle?: string;
 	};
 
 	const joinScreenView: View = {
 		buildUrl: (url) => url,
 		navigate: (page, url) => openJoinScreen(page, url, { checkNameInput: false }),
-		expectShown: (page, name) => expectNameInput(page, name!)
+		expectShown: (page, name) => expectNameInput(page, name!),
+		deniedTitle: 'Forbidden room access'
 	};
 
 	const recordingsListView: View = {
@@ -201,7 +205,7 @@ test.describe('Access E2E Tests', () => {
 					}
 
 					if (scenario.outcome === 'denied') {
-						await expectRoomAccessDenied(page);
+						await expectRoomAccessDenied(page, view.deniedTitle);
 						return;
 					}
 
@@ -499,6 +503,57 @@ test.describe('Access E2E Tests', () => {
 
 	test.describe('Join screen access', () => {
 		runScenarios(joinScreenView, accessScenarios);
+
+		const accessErrorScreens: {
+			title: string;
+			errorTitle: string;
+			getUrl: () => Promise<string>;
+		}[] = [
+			{
+				title: 'a link with an unknown secret',
+				errorTitle: 'Invalid link',
+				getUrl: async () => withRoomSecret(room.access.anonymous.speaker.url, 'unknown-secret')
+			},
+			{
+				title: 'a role link whose anonymous access is disabled',
+				errorTitle: 'Anonymous access disabled',
+				getUrl: async () => {
+					const noAnonymousRoom = await createRoom({
+						access: { anonymous: { speaker: { enabled: false } } }
+					});
+					createdRoomIds.push(noAnonymousRoom.roomId);
+					return noAnonymousRoom.access.anonymous.speaker.url;
+				}
+			},
+			{
+				title: 'the personal link of a removed identified guest',
+				errorTitle: 'Invalid member',
+				getUrl: async () => {
+					const guest = await createRoomMember(room.roomId, {
+						name: 'Removed Guest',
+						baseRole: MeetRoomMemberRole.SPEAKER
+					});
+					await deleteRoomMember(room.roomId, guest.memberId);
+					return guest.accessUrl;
+				}
+			},
+			{
+				title: 'a link to a deleted room',
+				errorTitle: 'Invalid room',
+				getUrl: async () => {
+					const deletedRoom = await createRoom();
+					await deleteRooms([deletedRoom.roomId]);
+					return deletedRoom.access.anonymous.speaker.url;
+				}
+			}
+		];
+
+		for (const { title, errorTitle, getUrl } of accessErrorScreens) {
+			test(`${title} shows the "${errorTitle}" error screen`, async ({ page }) => {
+				await openJoinScreen(page, await getUrl(), { checkNameInput: false });
+				await expectRoomAccessDenied(page, errorTitle);
+			});
+		}
 
 		test('another room entered in the same tab by its user access link asks to log in', async ({ page }) => {
 			const otherRoom = await createRoom();

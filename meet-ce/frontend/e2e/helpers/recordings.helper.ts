@@ -132,6 +132,18 @@ export const expectStartRecordingButtonVisible = async (page: Page, timeoutMs = 
 };
 
 /**
+ * Asserts that the activities panel offers to start a recording but cannot use it, and says the room
+ * records on its own.
+ */
+export const expectStartRecordingDisabledForAutoStartRoom = async (page: Page): Promise<void> => {
+	await ensureRecordingActivityExpanded(page);
+	await expect(page.locator(START_RECORDING_BUTTON)).toBeDisabled();
+	await expect(page.locator(`${RECORDING_ACTIVITY} .activity-note`)).toContainText(
+		'This room starts recording on its own, so it cannot be started manually.'
+	);
+};
+
+/**
  * Asserts that the stop-recording button is visible within the recording activity panel.
  */
 export const expectStopRecordingButtonVisible = async (page: Page, timeoutMs = 10_000): Promise<void> => {

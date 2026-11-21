@@ -715,6 +715,22 @@ export const getPublishedAudioBitrateCaps = (page: Page): Promise<Record<string,
 		)
 	);
 
+/**
+ * Codec every audio track the page sends is encoded with, keyed by track id: the first one the sender
+ * negotiated ({@link capturePeerConnections} must have run). `audio/red` means each packet also
+ * carries the previous audio frame.
+ */
+export const getPublishedAudioCodecs = (page: Page): Promise<Record<string, string | undefined>> =>
+	page.evaluate(() =>
+		Object.fromEntries(
+			((window as PeerConnectionWindow).__peerConnections ?? [])
+				.filter((connection) => connection.connectionState !== 'closed')
+				.flatMap((connection) => connection.getSenders())
+				.filter((sender) => sender.track?.kind === 'audio')
+				.map((sender) => [sender.track!.id, sender.getParameters().codecs[0]?.mimeType])
+		)
+	);
+
 type AudioProcessing = Pick<MediaTrackSettings, 'echoCancellation' | 'noiseSuppression' | 'autoGainControl'>;
 
 /**

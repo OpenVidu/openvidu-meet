@@ -134,6 +134,10 @@ export const gapBesidePinnedTile = (tiles: GridVideoFraming[]): number => {
 		: Math.min(...others.map((tile) => tile.top)) - (pinned.top + pinned.height);
 };
 
+/** Whether every tile the grid lays out has the size of the first one, give or take a pixel or two. */
+export const hasEqualTiles = (tiles: GridVideoFraming[]): boolean =>
+	tiles.every((tile) => Math.abs(tile.width - tiles[0].width) <= 2 && Math.abs(tile.height - tiles[0].height) <= 2);
+
 /**
  * Share of the camera that `object-fit: cover` cuts away to fill the tile: a tile taller than the
  * camera loses its sides, a wider one loses its top and bottom.

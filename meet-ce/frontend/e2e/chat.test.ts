@@ -134,12 +134,12 @@ test.describe('Chat E2E Tests', () => {
 		await expectChatLinkHrefContains(page, 0, 'demos\\.openvidu\\.io');
 	});
 
-	test('should notify a message received with the chat panel closed, and open the chat from it', async ({
+	test('should notify a message received with the chat panel closed, open the chat from it and show none to a late joiner', async ({
 		browser
 	}) => {
 		const senderName = `sender`;
 		const receiverName = `receiver`;
-		const { byName, removeAllParticipants } = await joinParticipants(browser, {
+		const { byName, addParticipant, removeAllParticipants } = await joinParticipants(browser, {
 			roomId,
 			accessUrl,
 			participants: [
@@ -162,6 +162,12 @@ test.describe('Chat E2E Tests', () => {
 			await expectChatMessageCount(receiverPage, 1);
 			await expectChatMessageTextAt(receiverPage, 0, message);
 			await expectFirstMessageSender(receiverPage, senderName);
+
+			const latePage = await addParticipant({ name: 'late' });
+			await toggleChatPanel(latePage);
+			await sendChatMessage(senderPage, 'message after the late join');
+			await expectChatMessageCount(latePage, 1);
+			await expectChatMessageTextAt(latePage, 0, 'message after the late join');
 		} finally {
 			await removeAllParticipants();
 		}

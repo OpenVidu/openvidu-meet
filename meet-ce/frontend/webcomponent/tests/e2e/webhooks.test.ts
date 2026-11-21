@@ -1,6 +1,6 @@
-import { MeetRoomStatus, MeetWebhookEventType } from '@openvidu-meet/typings';
+import { MeetParticipantJoinedPayload, MeetRoomStatus, MeetWebhookEventType } from '@openvidu-meet/typings';
 import { expect, test } from '@playwright/test';
-import { createRoom, deleteRooms, getRoom } from '../helpers/meet-api.helper';
+import { createRoom, deleteRooms, getRoom, listMeetingParticipants } from '../helpers/meet-api.helper';
 import { endMeetingCommand, expectWebhook, openMeeting } from '../helpers/testapp.helper';
 import { getWebhookFromStorage } from '../helpers/ui-utils.helper';
 import { INTEGRATIONS } from '../helpers/webcomponent.helper';
@@ -36,6 +36,32 @@ test.describe('Webhooks E2E Tests', () => {
 			const meetingEndedWebhook = await getWebhookFromStorage(page, roomId, MeetWebhookEventType.MEETING_ENDED);
 			actualRoom.status = MeetRoomStatus.OPEN;
 			expect(meetingEndedWebhook.data).toMatchObject(actualRoom as any);
+		});
+
+		test(`should hold only the encrypted name in the participantJoined webhook and the REST participants of an encrypted room, with the correlation fields in clear [${integration}]`, async ({
+			page
+		}) => {
+			const { roomId: encryptedRoomId } = await createRoom({ config: { e2ee: { enabled: true } } });
+			createdRoomIds.push(encryptedRoomId);
+			const name = 'Secret Name';
+			await openMeeting(page, encryptedRoomId, {
+				integration,
+				role: 'moderator',
+				name,
+				externalId: 'crm-user_42',
+				metadata: '{"plan":"premium"}',
+				e2eeKey: 'super-secret-key-123'
+			});
+
+			const webhook = await getWebhookFromStorage(page, encryptedRoomId, MeetWebhookEventType.PARTICIPANT_JOINED);
+			const [restParticipant] = await listMeetingParticipants(encryptedRoomId);
+
+			for (const participant of [(webhook.data as MeetParticipantJoinedPayload).participant, restParticipant]) {
+				expect(participant.participantName).toBeTruthy();
+				expect(participant.participantName).not.toContain(name);
+				expect(participant.externalId).toBe('crm-user_42');
+				expect(participant.metadata).toBe('{"plan":"premium"}');
+			}
 		});
 	}
 });

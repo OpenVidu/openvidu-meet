@@ -52,13 +52,17 @@ export const expectNameInput = async (page: Page, expected: { value: string; edi
 // ─── Access-denied / restricted views ───────────────────────────────────────────
 
 /**
- * Asserts that access to the room/recordings was denied: the app renders the error page and no
- * join screen name input is shown. Used for individuals that cannot access the resource at all (e.g. a
- * non-member user when the room's user access is disabled).
+ * Asserts that access to the room/recordings was denied: the app renders the error page (with the given
+ * title, when one is expected) and no join screen name input is shown. Used for individuals that cannot
+ * access the resource at all (e.g. a non-member user when the room's user access is disabled).
  */
-export const expectRoomAccessDenied = async (page: Page): Promise<void> => {
+export const expectRoomAccessDenied = async (page: Page, errorTitle?: string): Promise<void> => {
 	await expect(page.locator('.error-page')).toBeVisible({ timeout: 15_000 });
 	await expect(page.locator('#participant-name-input')).toHaveCount(0);
+
+	if (errorTitle) {
+		await expect(page.locator('.error-title')).toHaveText(errorTitle);
+	}
 };
 
 /**

@@ -340,6 +340,28 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 				await expect(meet('#join-button')).toHaveText('Meeting beitreten');
 			});
 
+			test('should keep the participant choice when room-url changes to another room without changing language', async ({
+				page
+			}) => {
+				const nextRoom = await createRoom();
+				createdRoomIds.push(nextRoom.roomId);
+				const { meet } = await openMeetingAtMediaSetup(page, languageRoomId, {
+					role: 'moderator',
+					language: 'es'
+				});
+				await expect(meet('#join-button')).toHaveText('Unirme ahora');
+				await pickLanguage(meet, 'de');
+				await expect(meet('#join-button')).toHaveText('Meeting beitreten');
+
+				await wcHost(page).evaluate(
+					(element, [attribute, url]) => element.setAttribute(attribute, url),
+					[EmbeddedAttribute.ROOM_URL, nextRoom.access.anonymous.moderator.url]
+				);
+				await meet('#participant-name-submit').click();
+
+				await expect(meet('#join-button')).toHaveText('Meeting beitreten', { timeout: 15_000 });
+			});
+
 			test('should ignore an unsupported language', async ({ page }) => {
 				await openWebcomponentWithAttributes(page, {
 					[EmbeddedAttribute.ROOM_URL]: languageAccessUrl,
@@ -377,6 +399,10 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 				await meet('#general-opt').click();
 				await expect(meet('#settings-display-name')).toBeVisible();
 				await expect(meet('ov-lang-selector')).toHaveCount(0);
+				await leaveMeeting(page);
+
+				await openMeetingAtMediaSetup(page, languageRoomId, { role: 'moderator' });
+				await expect(meet('ov-lang-selector')).toBeVisible();
 			});
 
 			test('should hide the language selector on the iframe transport', async ({ page }) => {

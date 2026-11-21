@@ -182,6 +182,20 @@ export const expectKickedFromMeeting = async (page: Page, timeoutMs = 20_000): P
 };
 
 /**
+ * Asserts the end screen shows the given title and message, which state the reason the meeting ended
+ * for the participant.
+ */
+export const expectEndScreen = async (
+	page: Page,
+	title: string,
+	message: string,
+	timeoutMs = 20_000
+): Promise<void> => {
+	await expect(page.locator('.disconnect-title')).toHaveText(title, { timeout: timeoutMs });
+	await expect(page.locator('.disconnect-subtitle')).toHaveText(message);
+};
+
+/**
  * Asserts that the participant's access to the meeting was revoked (e.g. after a role change that
  * removes their access): the app redirects to the error page.
  */

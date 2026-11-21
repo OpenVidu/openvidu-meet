@@ -21,6 +21,7 @@ import {
 	toggleChatPanel
 } from './helpers/chat.helper';
 import {
+	applyBackgroundEffect,
 	expectBackgroundsButtonAvailable,
 	expectCameraButtonAvailable,
 	expectMicButtonAvailable,
@@ -28,9 +29,11 @@ import {
 	expectNoCameraButton,
 	expectNoMicButton,
 	expectNoScreenshareButton,
-	expectScreenshareButtonAvailable
+	expectScreenshareButtonAvailable,
+	openRoomBackgroundsPanel
 } from './helpers/media-controls.helper';
 import {
+	closeRoom,
 	createRoom,
 	createRoomAsUser,
 	createRoomMember,
@@ -61,7 +64,8 @@ import {
 	expectParticipantBadge,
 	getLocalParticipantId,
 	getParticipantIdByName,
-	joinParticipants
+	joinParticipants,
+	makeParticipantModerator
 } from './helpers/participant-management.helper';
 import {
 	openRecording,
@@ -82,6 +86,7 @@ import {
 	recordRoom
 } from './helpers/recordings.helper';
 import { expectShareAccessLinkAvailable } from './helpers/share-link.helper';
+import { captureVideoElementScreenshot, expectSignificantImageDifference } from './helpers/ui-utils.helper';
 
 test.describe('Permissions E2E Tests', () => {
 	const createdUserIds: string[] = [];
@@ -164,6 +169,21 @@ test.describe('Permissions E2E Tests', () => {
 			await page.goto(member.accessUrl, { waitUntil: 'domcontentloaded' });
 
 			await expectJoinScreenAccessRestricted(page);
+		});
+
+		test('closed room: the join screen shows the closed notice with no name field and no join button', async ({
+			page
+		}) => {
+			const closedRoom = await createRoom();
+			createdRoomIds.push(closedRoom.roomId);
+			await closeRoom(closedRoom.roomId);
+
+			await page.goto(closedRoom.access.anonymous.speaker.url, { waitUntil: 'domcontentloaded' });
+
+			await expectJoinScreenAccessRestricted(page);
+			await expect(page.locator('.room-closed-message')).toContainText('this room is closed');
+			await expect(page.locator('#participant-name-submit')).toHaveCount(0);
+			await expect(page.locator('#join-button')).toHaveCount(0);
 		});
 	});
 
@@ -587,6 +607,92 @@ test.describe('Permissions E2E Tests', () => {
 			await expectPermissionsUpdatedNotification(page);
 			await expectChatWriteDisabled(page);
 		});
+
+		test('revoking canReadChat live removes the chat button', async ({ page }) => {
+			const guest = await createRoomMember(room.roomId, {
+				name: 'Live Chat Reader',
+				baseRole: MeetRoomMemberRole.SPEAKER,
+				customPermissions: { canReadChat: true, canWriteChat: true }
+			});
+
+			await openMeeting(page, guest.accessUrl);
+			await expectChatAvailable(page);
+
+			await updateRoomMemberPermissions(room.roomId, guest.memberId, {
+				customPermissions: { canReadChat: false }
+			});
+
+			await expectPermissionsUpdatedNotification(page);
+			await expectNoChat(page);
+		});
+
+		test('promoting a speaker without canWriteChat to moderator lets them send chat messages', async ({
+			browser
+		}) => {
+			const chatRoom = await createRoom({ roles: { speaker: { permissions: { chatWrite: false } } } });
+			createdRoomIds.push(chatRoom.roomId);
+			const { byName, removeAllParticipants } = await joinParticipants(browser, {
+				roomId: chatRoom.roomId,
+				skipRemoteStreamCheck: true,
+				participants: [
+					{ name: 'Promoter', baseRole: MeetRoomMemberRole.MODERATOR },
+					{ name: 'Promoted', baseRole: MeetRoomMemberRole.SPEAKER }
+				]
+			});
+
+			try {
+				const promoterPage = byName['Promoter'];
+				const promotedPage = byName['Promoted'];
+				await toggleChatPanel(promotedPage, 'open');
+				await expectChatWriteDisabled(promotedPage);
+
+				await toggleParticipantsPanel(promoterPage);
+				await makeParticipantModerator(promoterPage, await getParticipantIdByName(promoterPage, 'Promoted'));
+
+				await expectChatWriteEnabled(promotedPage);
+				await sendChatMessage(promotedPage, 'Promoted and writing');
+				await toggleChatPanel(promoterPage, 'open');
+				await expectChatMessageTextAt(promoterPage, 0, 'Promoted and writing');
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+
+		for (const [revoked, customPermissions] of [
+			['canChangeVirtualBackground', { canChangeVirtualBackground: false }],
+			['canPublishVideo', { canPublishVideo: false }]
+		] as const) {
+			test(`revoking ${revoked} live removes the applied background effect and closes its panel`, async ({
+				page
+			}) => {
+				// A room of its own: a guest lingering from an earlier test would add a second camera tile.
+				const backgroundRoom = await createRoom();
+				createdRoomIds.push(backgroundRoom.roomId);
+				const guest = await createRoomMember(backgroundRoom.roomId, {
+					name: 'Live Background',
+					baseRole: MeetRoomMemberRole.SPEAKER
+				});
+
+				await openMeeting(page, guest.accessUrl);
+				await openRoomBackgroundsPanel(page);
+				await applyBackgroundEffect(page, 'professional-1');
+				const withEffect = await captureVideoElementScreenshot(page);
+
+				await updateRoomMemberPermissions(backgroundRoom.roomId, guest.memberId, {
+					customPermissions
+				});
+
+				await expectPermissionsUpdatedNotification(page);
+				await expect(page.locator('#background-effects-container')).toHaveCount(0);
+				await expectNoBackgroundsButton(page);
+
+				if (revoked === 'canChangeVirtualBackground') {
+					await expect(async () => {
+						expectSignificantImageDifference(withEffect, await captureVideoElementScreenshot(page));
+					}).toPass({ timeout: 15_000 });
+				}
+			});
+		}
 
 		test("updating a user member's permissions updates the meeting UI live", async ({ page }) => {
 			const { user, member } = await createReadyMemberUser(room.roomId, {

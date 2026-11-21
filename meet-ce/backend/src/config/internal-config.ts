@@ -34,6 +34,7 @@ export const INTERNAL_CONFIG = {
 	MEETING_MAX_PARTICIPANTS_LIMIT: 30, // Highest value config.maxParticipants may be set to
 	MEETING_MIN_DURATION_MINUTES_LIMIT: 1, // Lowest value config.maxDurationMinutes may be set to; 0 would be indistinguishable from the null that means no limit
 	MEETING_MAX_DURATION_MINUTES_LIMIT: 1_440, // Highest value config.maxDurationMinutes may be set to (1 day)
+	MEETING_DURATION_MINUTE: (process.env.MEETING_DURATION_MINUTE || '1m') as StringValue, // Length of each minute of config.maxDurationMinutes; only the e2e suites shorten it, to reach the limit without waiting minutes
 	REVOKED_TOKEN_SESSION_TTL: '1h' as StringValue, // Redis TTL for the mark of a session removed as it joined with a revoked room member token; consumed by its participant_left, this only bounds a mark whose departure never arrives
 	LIVEKIT_REQUEST_TIMEOUT_SECONDS: 10, // Timeout in seconds of each request to the media server API
 	PARTICIPANT_METADATA_LOCK_TTL: '30s' as StringValue, // Redis lock TTL serializing the read-modify-write of a participant's LiveKit metadata (role change, token regeneration); released as soon as the write lands, and above two media server requests (the read and the update) so it never lapses under them

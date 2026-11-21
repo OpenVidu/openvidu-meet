@@ -1,4 +1,4 @@
-import { MeetRecordingStatus, MeetRoomMemberRole } from '@openvidu-meet/typings';
+import { MeetRecordingAutoStartMode, MeetRecordingStatus, MeetRoomMemberRole } from '@openvidu-meet/typings';
 import { expect, test, type Page } from '@playwright/test';
 import {
 	createRoomAndGetAnonymousAccessUrl,
@@ -6,7 +6,8 @@ import {
 	deleteRooms,
 	getRoomRecordings,
 	requestRecording,
-	stopStartingRecording
+	stopStartingRecording,
+	updateRoomAccess
 } from './helpers/meet-api.helper';
 import { openMeeting } from './helpers/meeting-navigation.helper';
 import { openRecording, toIndividualRecordingUrl } from './helpers/recordings-navigation.helper';
@@ -23,6 +24,7 @@ import {
 	expectRecordingViewShown,
 	expectRoomRecordingsListShown,
 	expectStartRecordingButtonVisible,
+	expectStartRecordingDisabledForAutoStartRoom,
 	expectStopRecordingButtonVisible,
 	expectViewRecordingsButtonVisible,
 	generatePublicRecordingUrl,
@@ -85,6 +87,20 @@ test.describe('Recordings E2E Tests', () => {
 		const newPage = await clickViewRecordingsButton(page);
 		await expectRoomRecordingsListShown(newPage);
 	});
+
+	test('should not let a participant start a recording in a room that records on its own', async ({ page }) => {
+		const { room, accessUrl: autoStartUrl } = await createRoomAndGetAnonymousAccessUrl({
+			config: {
+				recording: { enabled: true, autoStart: MeetRecordingAutoStartMode.WHEN_SECOND_PARTICIPANT_JOINS }
+			}
+		});
+		createdRoomIds.push(room.roomId);
+
+		await openMeeting(page, autoStartUrl);
+
+		await expectStartRecordingDisabledForAutoStartRoom(page);
+	});
+
 	/**
 	 * A room whose participants publish nothing keeps the composite recorder waiting for its first
 	 * track, so the recording never starts on its own. The only way in is a participant that cannot
@@ -195,6 +211,31 @@ test.describe('Recordings E2E Tests', () => {
 				await expectNoContextMenuOnVideo(visitorPage);
 			} finally {
 				await visitorContext.close();
+			}
+		});
+
+		test('shared in a room without anonymous recording access is offered to OpenVidu Meet users only', async ({
+			page
+		}) => {
+			const member = await createRoomMember(linkRoomId, {
+				name: 'Sharer',
+				baseRole: MeetRoomMemberRole.MODERATOR
+			});
+			await updateRoomAccess(linkRoomId, { anonymous: { recording: { enabled: false } } });
+
+			try {
+				await openRecording(page, toIndividualRecordingUrl(member.accessUrl, recordingId));
+				await expectRecordingViewShown(page);
+				await openShareDialogFromRecordingView(page);
+
+				const dialog = page.locator('ov-share-recording-dialog');
+				await expect(dialog.locator('mat-radio-button[value="public"] input')).toBeDisabled();
+				await expect(dialog.locator('mat-radio-button[value="private"]')).not.toHaveClass(
+					/mat-mdc-radio-disabled/
+				);
+				await expect(dialog.locator('mat-radio-button[value="private"] input')).toBeChecked();
+			} finally {
+				await updateRoomAccess(linkRoomId, { anonymous: { recording: { enabled: true } } });
 			}
 		});
 

@@ -8,8 +8,7 @@ import {
 	deleteUsers,
 	updateRoomsAppearance
 } from './helpers/meet-api.helper';
-import { openJoinScreen } from './helpers/meeting-navigation.helper';
-import { leaveMeeting, openMeeting } from './helpers/meeting-navigation.helper';
+import { expectEndScreen, leaveMeeting, openJoinScreen, openMeeting } from './helpers/meeting-navigation.helper';
 import { openMoreOptionsMenu, toggleActivitiesPanel } from './helpers/panels.helper';
 import { expectHidden, expectVisible } from './helpers/ui-utils.helper';
 
@@ -81,6 +80,22 @@ test.describe('Room UI Features E2E Tests', () => {
 
 			await expectVisible(page, '#meeting-ending-soon');
 			await expectHidden(page, '#meeting-elapsed-time');
+		});
+
+		test('should end the meeting at its duration limit and say so on the end screen', async ({ page }) => {
+			const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl({
+				config: { maxDurationMinutes: 1 }
+			});
+			createdRoomIds.push(room.roomId);
+
+			await openMeeting(page, accessUrl);
+
+			await expectEndScreen(
+				page,
+				'Meeting Ended',
+				'This meeting was automatically ended because it reached its maximum duration',
+				30_000
+			);
 		});
 	});
 

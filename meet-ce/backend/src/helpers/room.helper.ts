@@ -11,6 +11,8 @@ import type {
 } from '@openvidu-meet/typings';
 import { MEET_ROOM_EXTRA_FIELDS, MEET_ROOM_FIELDS, MeetRecordingAutoStartMode } from '@openvidu-meet/typings';
 import type { Room } from 'livekit-server-sdk';
+import ms from 'ms';
+import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
 import { addHttpResponseMetadata, applyHttpFieldFiltering, buildFieldsForDbQuery } from './field-filter.helper.js';
 import { RecordingHelper } from './recording.helper.js';
@@ -79,7 +81,7 @@ export class MeetRoomHelper {
 	static meetingRemainingMs(room: Room, maxDurationMinutes: number, nowMs: number): number {
 		const deadlineMs =
 			this.extractMeetingEndDateFromMetadata(room.metadata) ??
-			Number(room.creationTime) * 1000 + maxDurationMinutes * 60_000;
+			Number(room.creationTime) * 1000 + maxDurationMinutes * ms(INTERNAL_CONFIG.MEETING_DURATION_MINUTE);
 		return deadlineMs - nowMs;
 	}
 
@@ -198,7 +200,9 @@ export class MeetRoomHelper {
 		return JSON.stringify({
 			createdBy: MEET_ENV.NAME_ID,
 			startDate: nowMs,
-			endDate: maxDurationMinutes ? nowMs + maxDurationMinutes * 60_000 : undefined,
+			endDate: maxDurationMinutes
+				? nowMs + maxDurationMinutes * ms(INTERNAL_CONFIG.MEETING_DURATION_MINUTE)
+				: undefined,
 			roomOptions: this.toRoomOptions(room)
 		});
 	}

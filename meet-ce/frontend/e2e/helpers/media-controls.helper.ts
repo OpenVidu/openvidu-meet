@@ -141,6 +141,21 @@ export const stopScreensharing = async (page: Page, timeoutMs = 10_000): Promise
 	await expect(page.locator('.OV_screen .local')).toHaveCount(0, { timeout: timeoutMs });
 };
 
+/**
+ * Ends the screen capture the way the browser's own sharing control does: the captured track stops
+ * and reports `ended`, which a script stopping its own track never triggers.
+ */
+export const endScreenCaptureFromBrowser = async (page: Page): Promise<void> => {
+	await page.evaluate(() => {
+		const video = document.querySelector('.OV_screen .local video') as HTMLVideoElement;
+
+		for (const track of (video.srcObject as MediaStream).getTracks()) {
+			track.stop();
+			track.dispatchEvent(new Event('ended'));
+		}
+	});
+};
+
 // ─── Remote participant mute ────────────────────────────────────────────────
 
 /**

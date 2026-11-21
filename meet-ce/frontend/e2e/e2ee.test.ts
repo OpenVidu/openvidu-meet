@@ -29,7 +29,7 @@ import {
 	muteParticipantMedia,
 	toggleHand
 } from './helpers/participant-management.helper';
-import { waitForRemoteStream } from './helpers/stream.helper';
+import { capturePeerConnections, getPublishedAudioCodecs, waitForRemoteStream } from './helpers/stream.helper';
 import { expectHidden, expectVisible } from './helpers/ui-utils.helper';
 
 test.describe('E2EE E2E Tests', () => {
@@ -354,9 +354,23 @@ test.describe('E2EE E2E Tests', () => {
 
 				const names2 = await page2.locator('.participant-name-container #participant-name').allTextContents();
 				expect(names2.join(' ')).toContain(participant1Name);
+
+				// P1 raises a hand: P2 reads the clear name in the notice, P3 (wrong key) a masked one
+				await toggleHand(page);
+				await expectHandRaisedNotice(page2, `${participant1Name} raised their hand`);
+				await expectHandRaisedNotice(page3, '****** raised their hand');
 			} finally {
 				await Promise.all([page2.close(), page3.close()]);
 			}
+		});
+
+		test('should send the microphone without redundant audio', async ({ page }) => {
+			const accessUrl = await createE2eeRoom();
+
+			await capturePeerConnections(page);
+			await openMeeting(page, accessUrl, { e2eeKey: 'test-key-audio-codecs' });
+
+			await expect.poll(async () => Object.values(await getPublishedAudioCodecs(page))).toEqual(['audio/opus']);
 		});
 
 		test('should keep the lock of the status rail on a phone, without its label', async ({ page }) => {
