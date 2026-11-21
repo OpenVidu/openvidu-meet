@@ -132,6 +132,8 @@ type OpenMeetingOptions = {
 	name?: string;
 	externalId?: string;
 	metadata?: string;
+	/** Sets the `e2ee-key` attribute/query param. Omitted by default (the participant types it). */
+	e2eeKey?: string;
 	/** Sets the `initial-audio-active` attribute/query param. Omitted by default (the room decides). */
 	initialAudioActive?: boolean;
 	/** Sets the `initial-video-active` attribute/query param. Omitted by default (the room decides). */
@@ -181,6 +183,7 @@ const submitJoinScreen = async (page: Page, roomId: string, options?: OpenMeetin
 		name,
 		externalId,
 		metadata,
+		e2eeKey,
 		initialAudioActive,
 		initialVideoActive,
 		language,
@@ -205,13 +208,9 @@ const submitJoinScreen = async (page: Page, roomId: string, options?: OpenMeetin
 	await page.getByTestId('input-roomUrl').fill(roomUrl);
 	await page.getByTestId('input-participantName').fill(participantName);
 
-	if (externalId) {
-		await page.getByTestId('input-participantExternalId').fill(externalId);
-	}
-
-	if (metadata) {
-		await page.getByTestId('input-participantMetadata').fill(metadata);
-	}
+	await page.getByTestId('input-participantExternalId').fill(externalId ?? '');
+	await page.getByTestId('input-participantMetadata').fill(metadata ?? '');
+	await page.getByTestId('input-e2eeKey').fill(e2eeKey ?? '');
 
 	// Tri-state selectors: the empty option omits the attribute, which is not the same request as
 	// setting it to `true` — only a value that is set outranks the room's own `config.initial*Active` default.
@@ -262,6 +261,7 @@ const submitJoinScreen = async (page: Page, roomId: string, options?: OpenMeetin
  * @param options.name - Participant display name (auto-generated when omitted).
  * @param options.externalId - Value for the `participant-external-id` attribute (app↔Meet correlation key).
  * @param options.metadata - Value for the `participant-metadata` attribute (opaque app payload).
+ * @param options.e2eeKey - Value for the `e2ee-key` attribute.
  * @param options.initialAudioActive - Sets the `initial-audio-active` attribute/query param.
  * @param options.initialVideoActive - Sets the `initial-video-active` attribute/query param.
  * @param options.language - Sets the `language` attribute/query param.

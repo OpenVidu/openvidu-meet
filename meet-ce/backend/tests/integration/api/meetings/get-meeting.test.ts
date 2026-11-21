@@ -12,6 +12,7 @@ import {
 	MeetRoomMemberUIBadge
 } from '@openvidu-meet/typings';
 import { Express } from 'express';
+import ms from 'ms';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import {
@@ -148,7 +149,9 @@ describe('Meetings API Tests', () => {
 			expect(response.status).toBe(200);
 
 			const meeting = response.body as MeetMeetingInfo;
-			expect(meeting.endDate! - meeting.startDate).toBe(MAX_DURATION_MINUTES * 60_000);
+			expect(meeting.endDate! - meeting.startDate).toBe(
+				MAX_DURATION_MINUTES * ms(INTERNAL_CONFIG.MEETING_DURATION_MINUTE)
+			);
 		});
 
 		it('should fail with 404 when the room has no active meeting', async () => {

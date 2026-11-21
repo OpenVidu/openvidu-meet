@@ -1,11 +1,17 @@
 import { EmbeddedAttribute } from '@openvidu-meet/typings';
 import { expect, test } from '@playwright/test';
 import { applyBackgroundEffect } from '../helpers/media-controls.helper';
-import { createRoom, deleteRooms, getRoom } from '../helpers/meet-api.helper';
+import { createRoom, deleteRooms, getRoom, listMeetingParticipants } from '../helpers/meet-api.helper';
 import { openMoreOptionsMenu } from '../helpers/panels.helper';
 import { startRecording, stopRecording } from '../helpers/recordings.helper';
 import { expectSignificantImageDifferenceEventually, screenshotWcElement } from '../helpers/stream.helper';
-import { ensureFixture, leaveMeeting, openMeeting, openMeetingAtMediaSetup } from '../helpers/testapp.helper';
+import {
+	ensureFixture,
+	joinedParticipantIdentity,
+	leaveMeeting,
+	openMeeting,
+	openMeetingAtMediaSetup
+} from '../helpers/testapp.helper';
 import { openWebcomponentWithAttributes } from '../helpers/webcomponent-attributes.helper';
 import { INTEGRATIONS, meetLocator, wcHost, wcLocator } from '../helpers/webcomponent.helper';
 
@@ -37,6 +43,50 @@ test.describe('Room Features E2E Tests', () => {
 			);
 
 			await expect(wcLocator(page, '#login-button')).toBeVisible({ timeout: 15_000 });
+		});
+
+		test('should show the join screen of room B, and no error, when the element is replaced by one on room B', async ({
+			page
+		}) => {
+			const [roomA, roomB] = await Promise.all([getRoom(roomId), createRoom({ roomName: 'Replacement room' })]);
+			createdRoomIds.push(roomB.roomId);
+			await openWebcomponentWithAttributes(page, {
+				[EmbeddedAttribute.ROOM_URL]: roomA.access.anonymous.speaker.url
+			});
+			await expect(wcLocator(page, '#participant-name-input')).toBeVisible({ timeout: 15_000 });
+
+			await wcHost(page).evaluate(
+				(element, [attribute, url]) => {
+					const replacement = document.createElement(element.tagName);
+					replacement.setAttribute(attribute, url);
+					element.replaceWith(replacement);
+				},
+				[EmbeddedAttribute.ROOM_URL, roomB.access.anonymous.speaker.url]
+			);
+
+			await expect(wcLocator(page, '.room-title')).toHaveText('Replacement room', { timeout: 15_000 });
+			await expect(wcLocator(page, '#participant-name-input')).toBeVisible();
+			await expect(wcLocator(page, '.error-title')).toHaveCount(0);
+		});
+
+		test('should leave the meeting of room A and show the join screen of room B when room-url changes to room B', async ({
+			page
+		}) => {
+			const roomB = await createRoom({ roomName: 'Next room' });
+			createdRoomIds.push(roomB.roomId);
+			await openMeeting(page, roomId, { role: 'speaker' });
+			const identity = await joinedParticipantIdentity(page);
+
+			await wcHost(page).evaluate(
+				(element, [attribute, url]) => element.setAttribute(attribute, url),
+				[EmbeddedAttribute.ROOM_URL, roomB.access.anonymous.speaker.url]
+			);
+
+			await expect(wcLocator(page, '.room-title')).toHaveText('Next room', { timeout: 15_000 });
+			await expect(wcLocator(page, '#layout-container')).toHaveCount(0);
+			await expect
+				.poll(async () => (await listMeetingParticipants(roomId)).map((p) => p.participantIdentity))
+				.not.toContain(identity);
 		});
 	});
 
@@ -247,7 +297,9 @@ test.describe('Room Features E2E Tests', () => {
 			await leaveMeeting(page);
 		});
 
-		test('should keep every toolbar button inside an element narrower than the window', async ({ page }) => {
+		test('should keep every toolbar button inside an element narrower than the window and open the panels beside the grid', async ({
+			page
+		}) => {
 			await openMeeting(page, roomId, { role: 'moderator' });
 			await wcHost(page).evaluate((element) => (element.style.width = '700px'));
 
@@ -276,6 +328,15 @@ test.describe('Room Features E2E Tests', () => {
 
 			expect(await wcHost(page).evaluate((element) => element.getBoundingClientRect().width)).toBeLessThan(750);
 			await expect.poll(outside).toEqual([]);
+
+			const grid = wcLocator(page, '.sidenav-main');
+			const widthBefore = (await grid.boundingBox())!.width;
+			await openMoreOptionsMenu(page);
+			await wcLocator(page, '#toolbar-settings-btn').click();
+
+			await expect(wcLocator(page, '.sidenav-menu')).toHaveClass(/mat-drawer-side/);
+			await expect(wcLocator(page, '.mat-drawer-backdrop.mat-drawer-shown')).toHaveCount(0);
+			await expect.poll(async () => (await grid.boundingBox())!.width).toBeLessThan(widthBefore);
 
 			await leaveMeeting(page, { role: 'moderator' });
 		});

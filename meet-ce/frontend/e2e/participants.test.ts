@@ -25,7 +25,7 @@ import {
 	deleteUsers,
 	getUserAccessToken
 } from './helpers/meet-api.helper';
-import { openMeeting } from './helpers/meeting-navigation.helper';
+import { clickJoinMeeting, expectEndScreen, openMeeting, openPrejoin } from './helpers/meeting-navigation.helper';
 import { toggleParticipantsPanel } from './helpers/panels.helper';
 import {
 	expectHandBadge,
@@ -351,6 +351,11 @@ test.describe('Participants E2E Tests', () => {
 
 				// The kicked participant is disconnected; the moderator stays in the meeting.
 				await expect(speakerPage.locator('#layout-container')).toHaveCount(0, { timeout: 10_000 });
+				await expectEndScreen(
+					speakerPage,
+					'Kicked from Meeting',
+					'You were kicked from the meeting by a moderator'
+				);
 				await expect(moderatorPage.locator('#layout-container')).toBeVisible();
 			} finally {
 				await removeAllParticipants();
@@ -464,6 +469,11 @@ test.describe('Participants E2E Tests', () => {
 
 				await openMeeting(secondTab, accessUrl);
 				await expect(firstTab.locator('#layout-container')).toHaveCount(0, { timeout: 10_000 });
+				await expectEndScreen(
+					firstTab,
+					'Disconnected from Meeting',
+					'This meeting was closed because you joined it from another tab or device'
+				);
 				await expect(participantRows.filter({ hasText: guestName })).toHaveCount(1);
 				await expect(participantRows.filter({ hasText: `${guestName}_` })).toHaveCount(0);
 			} finally {
@@ -894,6 +904,32 @@ test.describe('Participants E2E Tests', () => {
 				await expectTileReaction(moderatorPage, speakerName, '👏');
 				await expectReactionPulse(speakerPage, ['😮1', '👏1']);
 			} finally {
+				await removeAllParticipants();
+			}
+		});
+
+		test('should not show a participant who joins later the reactions sent before they joined', async ({
+			browser
+		}) => {
+			const { byName, removeAllParticipants } = await joinModeratorAndSpeaker(browser);
+			const latePage = await browser.newPage();
+
+			try {
+				const moderatorPage = byName[moderatorName];
+				await openPrejoin(latePage, room.access.anonymous.speaker.url, { name: 'Late Joiner' });
+
+				await sendReaction(byName[speakerName], MeetReaction.THUMBS_UP);
+				await expectTileReaction(moderatorPage, speakerName, '👍');
+				await clickJoinMeeting(latePage);
+				await expect(latePage.locator('#participant-name', { hasText: speakerName })).toBeVisible({
+					timeout: 15_000
+				});
+
+				await expect(latePage.locator('.tile-reaction')).toHaveCount(0);
+				await expect(latePage.locator('#reaction-pulse')).toHaveCount(0);
+				await expectTileReaction(moderatorPage, speakerName, '👍');
+			} finally {
+				await latePage.close();
 				await removeAllParticipants();
 			}
 		});

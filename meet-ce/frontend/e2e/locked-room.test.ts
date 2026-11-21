@@ -202,6 +202,27 @@ test.describe('Locked room E2E Tests', () => {
 			expect((await admitWaitingParticipants(roomId, await identityOf('Ana'))).status).toBe(200);
 			await expectInMeeting(page);
 		});
+
+		test('should enter the meeting with the room initial media, without the device setup screen, when the room is unlocked before asking', async ({
+			page
+		}) => {
+			await createLockedRoom({ initialVideoActive: false });
+
+			await openJoinScreen(page, speakerUrl);
+			await page.locator('#participant-name-input').fill('Ana');
+			const submit = page.locator('#participant-name-submit');
+			await expect(submit).toHaveText(/Ask to join/);
+
+			await updateRoomAccess(roomId, { lock: { enabled: false } });
+			await expect(submit).toHaveText(/Ask to join/);
+			await click(submit, 10_000);
+
+			await expectInMeeting(page);
+			await expect(page.locator('#join-button')).toHaveCount(0);
+			await expect(page.locator('#waiting-screen')).toHaveCount(0);
+			await expect(page.locator('#camera-btn #videocam_off')).toBeVisible();
+			await expect(page.locator('#mic-btn #mic')).toBeVisible();
+		});
 	});
 
 	test.describe('Waiting', () => {

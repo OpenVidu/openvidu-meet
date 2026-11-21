@@ -1,6 +1,8 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, jest } from '@jest/globals';
 import { MeetRoomStatus } from '@openvidu-meet/typings';
 import type { Room } from 'livekit-server-sdk';
+import ms from 'ms';
+import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { MeetRoomHelper } from '../../../../src/helpers/room.helper.js';
 import { RoomRepository } from '../../../../src/repositories/room.repository.js';
@@ -97,8 +99,9 @@ describe('Meeting Duration Limit GC Tests', () => {
 
 		expect(endDate).toBeDefined();
 		// Written when Meet created the room, which this test's own setup did moments ago
-		expect(endDate! - Date.now()).toBeLessThanOrEqual(maxDurationMinutes * 60_000);
-		expect(endDate! - Date.now()).toBeGreaterThan(maxDurationMinutes * 60_000 - 30_000);
+		const limitMs = maxDurationMinutes * ms(INTERNAL_CONFIG.MEETING_DURATION_MINUTE);
+		expect(endDate! - Date.now()).toBeLessThanOrEqual(limitMs);
+		expect(endDate! - Date.now()).toBeGreaterThan(limitMs - 30_000);
 	});
 
 	it('should not end a meeting before its duration limit', async () => {

@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import {
 	dismissMicMutedSpeakingAlert,
+	endScreenCaptureFromBrowser,
 	startScreensharing,
 	stopScreensharing,
 	toggleCamera,
@@ -56,6 +57,29 @@ test.describe('Screensharing E2E Tests', () => {
 		await stopScreensharing(page);
 		await expectScreenSourceCount(page, 0);
 		await expectVideoCount(page, 1);
+	});
+
+	test('should end the share for everyone when it is stopped from the browser', async ({ browser }) => {
+		const { pages, removeAllParticipants } = await joinParticipants(browser, {
+			roomId,
+			accessUrl,
+			participants: [{ name: 'sharer' }, { name: 'viewer', headless: true }]
+		});
+		const [sharerPage, viewerPage] = pages;
+
+		try {
+			await startScreensharing(sharerPage);
+			await expectScreenSourceCount(viewerPage, 1);
+
+			await endScreenCaptureFromBrowser(sharerPage);
+
+			await expectScreenSourceCount(sharerPage, 0);
+			await expect(sharerPage.locator('#screenshare-btn')).not.toHaveClass(/active-btn/);
+			await expectScreenSourceCount(viewerPage, 0);
+			await expectVideoCount(viewerPage, 2);
+		} finally {
+			await removeAllParticipants();
+		}
 	});
 
 	test('should show screenshare and muted camera (camera off, screenshare on)', async ({ page }) => {

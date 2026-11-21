@@ -8,6 +8,7 @@ import {
 	getGridVideoFraming,
 	getSharedScreenFraming,
 	gridShareOf,
+	hasEqualTiles,
 	paintedShareOfContainer,
 	runScreenShareRotationCycles,
 	selectMosaicLayout,
@@ -38,6 +39,7 @@ import {
 	recordRemoteAudio,
 	setTabVisibility,
 	toggleStreamPin,
+	unpinCurrentPinnedStream,
 	waitForRemoteStream,
 	waitForSubscribedRemoteVideos,
 	waitForVisibleRemoteParticipants
@@ -106,6 +108,44 @@ test.describe('Layout E2E Tests', () => {
 
 			await expect(page.locator('#own-video-floating')).toHaveAttribute('aria-checked', 'true');
 		});
+
+		test('should dock the own video when it is pinned and disable the choice while it is', async ({
+			browser,
+			page
+		}) => {
+			const { removeAllParticipants } = await joinParticipants(browser, {
+				roomId,
+				accessUrl,
+				participants: [{ name: 'remote', headless: true }]
+			});
+
+			try {
+				await openMeeting(page, accessUrl);
+				await expect(localCameraStream(page)).toHaveClass(/OV_floating/);
+				await openLayoutSettingsPanel(page);
+				const ownVideoHelp = page.locator('.own-video-help');
+				const helpBeforePin = await ownVideoHelp.innerText();
+				await closeSettingsPanel(page);
+
+				await toggleStreamPin(page, '.OV_stream_video.local');
+
+				await expect(localCameraStream(page)).not.toHaveClass(/OV_floating/);
+				await openLayoutSettingsPanel(page);
+				await expect(page.locator('#own-video-floating')).toBeDisabled();
+				await expect(page.locator('#own-video-docked')).toBeDisabled();
+				await expect(ownVideoHelp).toHaveText('Unpin your video to float it or dock it.');
+				await closeSettingsPanel(page);
+
+				await toggleStreamPin(page, '.OV_stream_video.local');
+
+				await openLayoutSettingsPanel(page);
+				await expect(page.locator('#own-video-floating')).toBeEnabled();
+				await expect(page.locator('#own-video-docked')).toBeEnabled();
+				await expect(ownVideoHelp).toHaveText(helpBeforePin);
+			} finally {
+				await removeAllParticipants();
+			}
+		});
 	});
 
 	test.describe('Layout preferences', () => {
@@ -122,6 +162,36 @@ test.describe('Layout E2E Tests', () => {
 			await selectSmartMosaicLayout(nextMeeting);
 			await expect(nextMeeting.locator('#participant-count-3')).toHaveAttribute('aria-checked', 'true');
 			await leaveMeeting(nextMeeting);
+		});
+
+		test('should keep the own video docked in the next meeting when the participant docked it', async ({
+			browser,
+			page
+		}) => {
+			const { removeAllParticipants } = await joinParticipants(browser, {
+				roomId,
+				accessUrl,
+				participants: [{ name: 'remote', headless: true }]
+			});
+
+			try {
+				await openMeeting(page, accessUrl);
+				await expect(localCameraStream(page)).toHaveClass(/OV_floating/);
+				await openLayoutSettingsPanel(page);
+				await page.locator('#own-video-docked').click();
+				await expect(localCameraStream(page)).not.toHaveClass(/OV_floating/);
+				await leaveMeeting(page);
+
+				const nextMeeting = await page.context().newPage();
+				await openMeeting(nextMeeting, accessUrl);
+				await waitForRemoteStream(nextMeeting, 1);
+				await expect(localCameraStream(nextMeeting)).not.toHaveClass(/OV_floating/);
+				await openLayoutSettingsPanel(nextMeeting);
+				await expect(nextMeeting.locator('#own-video-docked')).toHaveAttribute('aria-checked', 'true');
+				await leaveMeeting(nextMeeting);
+			} finally {
+				await removeAllParticipants();
+			}
 		});
 
 		test('should keep following the default layout until the participant changes it', async ({ page, browser }) => {
@@ -157,7 +227,7 @@ test.describe('Layout E2E Tests', () => {
 			// pinned tile cannot fill belongs to the others, not to a gap between them.
 			const MAX_GAP = 24;
 
-			const { pages, removeAllParticipants } = await joinParticipants(browser, {
+			const { pages, byName, removeAllParticipants } = await joinParticipants(browser, {
 				roomId,
 				accessUrl,
 				participants: [
@@ -224,6 +294,26 @@ test.describe('Layout E2E Tests', () => {
 						expect(Math.abs(tile.width - first.width)).toBeLessThanOrEqual(2);
 						expect(Math.abs(tile.height - first.height)).toBeLessThanOrEqual(2);
 					}
+
+					expect(pinned.width * pinned.height).toBeGreaterThan(first.width * first.height);
+				});
+
+				await test.step('should change only the screen of the participant who pins', async () => {
+					for (const name of ['remote-a', 'remote-b']) {
+						await expect(byName[name].locator('.OV_big')).toHaveCount(0);
+						const tiles = await getGridVideoFraming(byName[name]);
+						expect(tiles).toHaveLength(3);
+						expect(hasEqualTiles(tiles)).toBe(true);
+					}
+				});
+
+				await test.step('should return to equal tiles when the participant unpins', async () => {
+					await unpinCurrentPinnedStream(pageA);
+
+					await expect
+						.poll(async () => hasEqualTiles(await getGridVideoFraming(pageA)), { timeout: 15_000 })
+						.toBe(true);
+					expect(await getGridVideoFraming(pageA)).toHaveLength(3);
 				});
 			} finally {
 				await removeAllParticipants();

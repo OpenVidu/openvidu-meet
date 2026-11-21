@@ -23,6 +23,7 @@ import { createRtmpSink, deleteRtmpSinks } from '../helpers/broadcast-sink.helpe
 import { INTEGRATIONS, meetLocator, waitForPageRedirect } from '../helpers/webcomponent.helper';
 import {
 	createRoom,
+	createRoomMember,
 	decideOnWaitingParticipants,
 	deleteRooms,
 	getWaitingParticipants,
@@ -208,6 +209,69 @@ for (const integration of INTEGRATIONS) {
 				expect(await hostEvents()).toEqual([]);
 				await expect(eventLocator(page, EmbeddedEventName.LEFT)).toHaveCount(0);
 				await expect(eventLocator(page, EmbeddedEventName.MEETING_LEFT)).toHaveCount(0);
+			});
+
+			test('should receive left and meetingLeft with the meeting_ended_by_duration_limit reason when the meeting reaches its limit', async ({
+				page
+			}) => {
+				const { roomId: limitedRoomId } = await createRoom({ config: { maxDurationMinutes: 1 } });
+				createdRoomIds.push(limitedRoomId);
+				await openMeeting(page, limitedRoomId, { integration, role: 'moderator' });
+
+				for (const eventName of [EmbeddedEventName.LEFT, EmbeddedEventName.MEETING_LEFT]) {
+					await expect(eventLocator(page, eventName)).toContainText(
+						`"reason":"${LeftEventReason.MEETING_ENDED_BY_DURATION_LIMIT}"`,
+						{ timeout: 30_000 }
+					);
+				}
+			});
+
+			test('should leave the first element with duplicate_identity when the same identified guest joins from a second tab', async ({
+				page,
+				browser
+			}) => {
+				const { accessUrl } = await createRoomMember(roomId, {
+					name: 'Returning Guest',
+					baseRole: MeetRoomMemberRole.SPEAKER
+				});
+
+				const joinAsGuest = async (guestPage: Page) => {
+					await openWebcomponentWithAttributes(
+						guestPage,
+						{ [EmbeddedAttribute.ROOM_URL]: accessUrl },
+						{ integration }
+					);
+					await meetLocator(guestPage, integration, '#participant-name-submit').click();
+					await meetLocator(guestPage, integration, '#join-button').click();
+					await expect(meetLocator(guestPage, integration, '#layout-container')).toBeVisible({
+						timeout: 15_000
+					});
+				};
+
+				await joinAsGuest(page);
+				const identity = await joinedParticipantIdentity(page);
+
+				const secondContext = await browser.newContext();
+
+				try {
+					const secondPage = await secondContext.newPage();
+					await joinAsGuest(secondPage);
+
+					for (const eventName of [EmbeddedEventName.LEFT, EmbeddedEventName.MEETING_LEFT]) {
+						await expect(eventLocator(page, eventName)).toContainText(
+							`"reason":"${LeftEventReason.DUPLICATE_IDENTITY}"`,
+							{ timeout: 15_000 }
+						);
+					}
+
+					await expect(eventLocator(secondPage, EmbeddedEventName.LEFT)).toHaveCount(0);
+					await expect(meetLocator(secondPage, integration, '#layout-container')).toBeVisible();
+					await expect
+						.poll(async () => (await listMeetingParticipants(roomId)).map((p) => p.participantIdentity))
+						.toEqual([identity]);
+				} finally {
+					await secondContext.close();
+				}
 			});
 
 			test('should receive left event when speaker leaves room', async ({ page }) => {
@@ -566,6 +630,29 @@ for (const integration of INTEGRATIONS) {
 					expect(leftPayload.participant.durationSeconds).toBeGreaterThanOrEqual(0);
 					expect(leftPayload.participant.externalId).toBe('crm-user_42');
 					expect(leftPayload.participant.metadata).toBe('{"plan":"premium"}');
+				});
+
+				await test.step('should not carry the correlation fields over to the next entry of the same element', async () => {
+					await openMeeting(speakerPage, roomId, { role: 'speaker', name: speakerName });
+
+					const joinedAgain = await expectEvent(page, EmbeddedEventName.PARTICIPANT_JOINED, { count: 2 });
+					const nextParticipant = await eventParticipant(joinedAgain.nth(1));
+					expect(nextParticipant.participantName).toBe(speakerName);
+					expect(nextParticipant.externalId).toBeUndefined();
+					expect(nextParticipant.metadata).toBeUndefined();
+
+					const nextWebhook = await getWebhookFromStorage(
+						page,
+						roomId,
+						MeetWebhookEventType.PARTICIPANT_JOINED,
+						{
+							matchIndex: 2
+						}
+					);
+					const nextPayload = (nextWebhook.data as MeetParticipantJoinedPayload).participant;
+					expect(nextPayload.participantName).toBe(speakerName);
+					expect(nextPayload.externalId).toBeUndefined();
+					expect(nextPayload.metadata).toBeUndefined();
 				});
 
 				await speakerContext.close();

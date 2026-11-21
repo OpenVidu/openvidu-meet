@@ -28,6 +28,7 @@ import {
 	getFirstVideoTrackDeviceId,
 	getFirstVideoTrackLabel,
 	getPublishedAudioBitrateCaps,
+	getPublishedAudioCodecs,
 	getPublishedTrackLabel,
 	getScreenTrackLabel,
 	getSettingsPreviewLabel
@@ -474,6 +475,7 @@ test.describe('Media Devices E2E Tests', () => {
 			await openMeeting(page, accessUrl);
 			await expect.poll(async () => Object.values(await getPublishedAudioBitrateCaps(page))).toEqual([24_000]);
 			const [microphoneTrackId] = Object.keys(await getPublishedAudioBitrateCaps(page));
+			expect((await getPublishedAudioCodecs(page))[microphoneTrackId]).toBe('audio/red');
 
 			await startScreensharing(page);
 

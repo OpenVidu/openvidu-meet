@@ -9,7 +9,7 @@ import {
 	togglePrejoinCamera
 } from './helpers/media-controls.helper';
 import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
-import { openMeeting, openPrejoin } from './helpers/meeting-navigation.helper';
+import { clickJoinMeeting, leaveMeeting, openMeeting, openPrejoin } from './helpers/meeting-navigation.helper';
 import { openMoreOptionsMenu } from './helpers/panels.helper';
 import {
 	captureVideoElementScreenshot,
@@ -91,5 +91,25 @@ test.describe('Virtual Background E2E Tests', () => {
 		const after = await captureVideoElementScreenshot(page);
 
 		expectSignificantImageDifference(before, after);
+	});
+
+	test('should apply the remembered background effect on the prejoin page and when joining', async ({ page }) => {
+		test.slow();
+		await openMeeting(page, accessUrl);
+		await openRoomBackgroundsPanel(page);
+		await applyBackgroundEffect(page, 'professional-1');
+		await leaveMeeting(page);
+
+		const { room, accessUrl: nextAccessUrl } = await createRoomAndGetAnonymousAccessUrl();
+		createdRoomIds.push(room.roomId);
+
+		await openPrejoin(page, nextAccessUrl);
+		await openPrejoinBackgroundsPanel(page);
+		await expect(page.locator('#effect-professional-1')).toHaveClass(/active-effect-btn/, { timeout: 15_000 });
+
+		await closePrejoinBackgroundsPanel(page);
+		await clickJoinMeeting(page);
+		await openRoomBackgroundsPanel(page);
+		await expect(page.locator('#effect-professional-1')).toHaveClass(/active-effect-btn/, { timeout: 15_000 });
 	});
 });
