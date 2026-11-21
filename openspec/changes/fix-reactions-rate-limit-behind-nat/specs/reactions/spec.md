@@ -4,7 +4,7 @@
 The reactions endpoint SHALL accept at most 2 reactions per second from each participant of a meeting, counted across every Meet replica, and answer `429` to the rest, as other rate-limited requests are answered (see `deployment`). Reactions SHALL NOT count toward the per-address API limit, and a participant over this limit SHALL keep every other request, as SHALL the other participants behind the same address. No limit SHALL apply when `NODE_ENV` is `development`, `test` or `ci`.
 
 #### Scenario: Flood from a modified client
-- **GIVEN** a participant in a meeting holding `participantReactionSend`
+- **GIVEN** a participant in a meeting holding `participantSendReaction`
 - **WHEN** their client sends 10 reactions within one second
 - **THEN** 2 of them are relayed and the others are answered `429`
 - **AND** a hand raise the participant sends right after answers 200
