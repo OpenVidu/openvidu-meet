@@ -65,6 +65,7 @@
       "COLUMN_ACTIONS": "操作",
       "VIEW_USER_PROFILE": "ユーザープロフィールを表示",
       "COPY_ACCESS_LINK": "アクセスリンクをコピー",
+      "DEPRECATED_ACCESS_LINK": "このリンクは OpenVidu Meet 3.10.0 より前に作成されたため、安全でない可能性があります。安全なリンクを取得するには、このメンバーを削除して再度追加してください。3.13.0 では Meet がこのリンクを置き換え、古いリンクは使用できなくなります。",
       "EDIT_MEMBER": "メンバーを編集",
       "REMOVE_MEMBER": "メンバーを削除",
       "LOAD_MORE_MEMBERS": "さらにメンバーを読み込む",

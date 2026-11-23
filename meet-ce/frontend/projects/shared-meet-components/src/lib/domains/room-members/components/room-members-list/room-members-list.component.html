@@ -298,9 +298,22 @@
 								<span>{{ RoomMemberUiUtils.getMemberInitials(member) }}</span>
 							</div>
 							<div class="member-details">
-								<span class="member-name" id="member-name-{{ member.memberId }}">{{
-									member.name
-								}}</span>
+								<div class="member-name-row">
+									<span class="member-name" id="member-name-{{ member.memberId }}">{{
+										member.name
+									}}</span>
+									@if (RoomMemberUiUtils.hasDeprecatedAccessUrl(member)) {
+										<mat-icon
+											class="deprecated-access-link-icon"
+											tabindex="0"
+											aria-hidden="false"
+											[attr.aria-label]="'ROOM_MEMBERS.LIST.DEPRECATED_ACCESS_LINK' | translate"
+											[matTooltip]="'ROOM_MEMBERS.LIST.DEPRECATED_ACCESS_LINK' | translate"
+											id="member-deprecated-access-link-{{ member.memberId }}"
+											>warning</mat-icon
+										>
+									}
+								</div>
 								@if (canViewUserProfiles() && RoomMemberUiUtils.isUserMember(member)) {
 									<a
 										class="member-id-link"

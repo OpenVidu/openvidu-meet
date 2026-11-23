@@ -148,6 +148,47 @@ test.describe('Console Room detail E2E Tests', () => {
 		await expectCopiedText(page, guest.accessUrl);
 	});
 
+	test('marks only the identified guest whose access link carries its member ID as the secret', async ({ page }) => {
+		const { user } = await createReadyUser('Console member', MeetUserRole.ROOM_MEMBER);
+
+		try {
+			const [oldGuest, currentGuest] = await Promise.all([
+				createRoomMember(room.roomId, { name: 'Old guest', baseRole: MeetRoomMemberRole.SPEAKER }),
+				createRoomMember(room.roomId, { name: 'Current guest', baseRole: MeetRoomMemberRole.SPEAKER }),
+				createRoomMember(room.roomId, { userId: user.userId, baseRole: MeetRoomMemberRole.SPEAKER })
+			]);
+			await page.route(
+				(url) => url.pathname.endsWith(`/api/v1/rooms/${room.roomId}/members`),
+				async (route) => {
+					const response = await route.fetch();
+					const body = await response.json();
+
+					for (const member of body.members) {
+						if (member.memberId === oldGuest.memberId) {
+							const accessUrl = new URL(member.accessUrl);
+							accessUrl.searchParams.set('secret', member.memberId);
+							member.accessUrl = accessUrl.toString();
+						}
+					}
+
+					await route.fulfill({ response, json: body });
+				}
+			);
+			await gotoRoomDetail(page, room.roomId);
+			await membersTab(page).click();
+			await expect(page.locator(`#member-name-${user.userId}`)).toBeVisible({ timeout: 20_000 });
+
+			await expect(page.locator(`#member-deprecated-access-link-${currentGuest.memberId}`)).toHaveCount(0);
+			await expect(page.locator(`#member-deprecated-access-link-${user.userId}`)).toHaveCount(0);
+			await page.locator(`#member-deprecated-access-link-${oldGuest.memberId}`).hover();
+			await expect(page.locator('.mat-mdc-tooltip')).toContainText(
+				'This link may be insecure because it was created before OpenVidu Meet 3.10.0. Remove this member and add them again to get a secure link.'
+			);
+		} finally {
+			await cleanupUsers([user.userId]);
+		}
+	});
+
 	test('keeps the room members tab in the URL when a member is edited and the user goes back', async ({ page }) => {
 		const guest = await createRoomMember(room.roomId, { name: 'Invitada', baseRole: MeetRoomMemberRole.SPEAKER });
 		await gotoRoomDetail(page, room.roomId);
