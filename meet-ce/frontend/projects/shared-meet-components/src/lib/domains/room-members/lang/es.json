@@ -65,6 +65,7 @@
       "COLUMN_ACTIONS": "Acciones",
       "VIEW_USER_PROFILE": "Ver perfil de usuario",
       "COPY_ACCESS_LINK": "Copiar enlace de acceso",
+      "DEPRECATED_ACCESS_LINK": "Este enlace puede ser inseguro porque se creó antes de OpenVidu Meet 3.10.0. Elimina este miembro y vuelve a añadirlo para obtener un enlace seguro. En 3.13.0 Meet lo sustituye y el enlace antiguo deja de funcionar.",
       "EDIT_MEMBER": "Editar miembro",
       "REMOVE_MEMBER": "Eliminar miembro",
       "LOAD_MORE_MEMBERS": "Cargar más miembros",

@@ -29,8 +29,9 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 
 ### Deprecated
 
-The link form below still works in this release and is removed in **3.13.0**. Removing such a guest and adding them
-again gives the guest a link of the current form and a new `memberId`.
+The link form below still works in this release. In **3.13.0** each guest still on it gets a link of the current form
+with the same `memberId`, and the old link stops working. The console's Room Members tab marks these guests, and
+removing such a guest and adding them again gives the guest a link of the current form and a new `memberId`.
 
 | Deprecated                                                                                   | Replacement                                                                                                         |
 | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |

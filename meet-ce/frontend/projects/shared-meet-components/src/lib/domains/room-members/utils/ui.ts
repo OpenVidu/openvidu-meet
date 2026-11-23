@@ -108,6 +108,14 @@ export class RoomMemberUiUtils {
 	}
 
 	/**
+	 * Checks whether a member's access link uses the deprecated form of identified guests added before 3.10.0,
+	 * whose secret is the member ID itself.
+	 */
+	static hasDeprecatedAccessUrl(member: MeetRoomMember): boolean {
+		return new URL(member.accessUrl).searchParams.get('secret') === member.memberId;
+	}
+
+	/**
 	 * Gets the i18n key for the member type label (resolve with the `translate` pipe at render).
 	 */
 	static getMemberTypeLabel(member: MeetRoomMember): string {

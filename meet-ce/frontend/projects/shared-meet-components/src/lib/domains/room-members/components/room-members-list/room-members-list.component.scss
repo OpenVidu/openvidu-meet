@@ -94,8 +94,20 @@
 		min-width: 0;
 	}
 
+	.member-name-row {
+		display: flex;
+		align-items: center;
+		gap: var(--ov-meet-spacing-xs);
+	}
+
 	.member-name {
 		@extend .primary-text;
+	}
+
+	.deprecated-access-link-icon {
+		@include design-tokens.ov-icon(sm);
+		color: var(--ov-meet-color-warning);
+		flex-shrink: 0;
 	}
 
 	.member-id {
