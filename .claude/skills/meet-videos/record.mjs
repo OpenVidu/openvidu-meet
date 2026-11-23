@@ -102,6 +102,9 @@ const ALL_FLOWS = [
 	{ id: 'delete-room', kind: 'ui', out: 'videos/meet/rooms/management', pace: 0.6, seed: () => seed({ rooms: ['Old Project Room'] }), drive: driveDeleteRoom },
 	{ id: 'update-room-status', kind: 'ui', out: 'videos/meet/rooms/management', pace: 0.6, seed: () => seed({ rooms: ['Product Demo'] }), drive: driveUpdateRoomStatus },
 	{ id: 'share-link', kind: 'ui', out: 'videos/meet/rooms/access', pace: 0.6, seed: () => seed({ rooms: ['Product Demo'] }), drive: driveShareLink },
+	{ id: 'remove-member', kind: 'ui', out: 'videos/meet/room-members/management', pace: 0.6,
+		seed: () => seed({ rooms: ['Weekly Team Sync'], members: [{ name: 'Bob Martin', baseRole: 'moderator' }, { name: 'Alice Turner', baseRole: 'speaker' }] }),
+		drive: driveRemoveMember },
 	{ id: 'create-user', kind: 'ui', out: 'videos/meet/users/management', pace: 0.6, seed: () => seed({}), drive: driveCreateUser },
 	{ id: 'delete-user', kind: 'ui', out: 'videos/meet/users/management', pace: 0.6, seed: () => seed({ users: [['ava_morgan', 'Ava Morgan']] }), drive: driveDeleteUser },
 	{ id: 'reset-user-password', kind: 'ui', out: 'videos/meet/users/management', pace: 0.6, seed: () => seed({ users: [['noah_bennett', 'Noah Bennett']] }), drive: driveResetUserPassword },
@@ -637,9 +640,19 @@ async function resetBackend() {
 		if (u.userId !== USER) await fetch(`${API}/users/${encodeURIComponent(u.userId)}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
 	}
 }
-async function seed({ rooms = [], users = [] }) {
-	for (const n of rooms) await createRoom(token, n);
+// `members` join the first room; its members list shows the last one first.
+async function seed({ rooms = [], users = [], members = [] }) {
+	const created = [];
+	for (const n of rooms) created.push(await createRoom(token, n));
 	if (rooms.length) await waitForRoomCount(token, rooms.length);
+	for (const member of members) {
+		const res = await fetch(`${API}/rooms/${created[0].roomId}/members`, {
+			method: 'POST',
+			headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+			body: JSON.stringify(member)
+		});
+		if (!res.ok) throw new Error(`addMember failed: ${res.status} ${await res.text()}`);
+	}
 	for (const [userId, name] of users) {
 		const res = await fetch(`${API}/users`, {
 			method: 'POST',
@@ -658,7 +671,7 @@ async function openRowMenu(page, optionSelector) {
 async function startOnList(page, route, marker) {
 	await page.goto(`${APP}/${route}`, { waitUntil: 'domcontentloaded' });
 	await page.waitForSelector(marker, { state: 'visible', timeout: TIMEOUT });
-	await page.waitForSelector('[id^="actions-cell-"]', { state: 'visible', timeout: TIMEOUT }).catch(() => {});
+	await page.waitForSelector('[id*="actions-cell-"]', { state: 'visible', timeout: TIMEOUT }).catch(() => {});
 	await page.waitForTimeout(P(500));
 	startVideoHere(0.2);
 	await parkCursor(page);
@@ -685,6 +698,15 @@ async function driveAccessRoom(page) {
 async function driveDeleteRoom(page) {
 	await startOnList(page, 'rooms', '#rooms-table');
 	await openRowMenu(page, '[id^="delete-room-btn-"]');
+	await page.waitForSelector(DIALOG, { state: 'visible', timeout: TIMEOUT });
+	await page.waitForTimeout(P(1200));
+	await clickSelector(page, `${DIALOG} .confirm-button`);
+	await page.waitForTimeout(P(2600));
+}
+async function driveRemoveMember(page) {
+	const [room] = await listRooms(token);
+	await startOnList(page, `rooms/${room.roomId}?tab=members`, '#members-table');
+	await openRowMenu(page, '[id^="delete-member-btn-"]');
 	await page.waitForSelector(DIALOG, { state: 'visible', timeout: TIMEOUT });
 	await page.waitForTimeout(P(1200));
 	await clickSelector(page, `${DIALOG} .confirm-button`);
