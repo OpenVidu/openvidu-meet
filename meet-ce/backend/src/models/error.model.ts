@@ -465,6 +465,14 @@ export const errorRoomMemberAlreadyExists = (roomId: string, userId: string): Op
 	return new OpenViduMeetError('Room Member Error', `User '${userId}' is already a member of room '${roomId}'`, 409);
 };
 
+export const errorRoomMemberNotIdentifiedGuest = (roomId: string, memberId: string): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Room Member Error',
+		`Room member '${memberId}' of room '${roomId}' is not an identified guest and has no personal link to regenerate`,
+		409
+	);
+};
+
 export const errorRoomMemberCannotBeOwnerOrAdmin = (roomId: string, userId: string): OpenViduMeetError => {
 	return new OpenViduMeetError(
 		'Room Member Error',

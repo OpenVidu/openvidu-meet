@@ -65,8 +65,10 @@
       "COLUMN_ACTIONS": "操作",
       "VIEW_USER_PROFILE": "查看用户资料",
       "COPY_ACCESS_LINK": "复制访问链接",
-      "DEPRECATED_ACCESS_LINK": "此链接创建于 OpenVidu Meet 3.10.0 之前，可能不安全。删除此成员并重新添加即可获得安全链接。在 3.13.0 中，Meet 会替换此链接，旧链接将失效。",
+      "DEPRECATED_ACCESS_LINK": "此链接创建于 OpenVidu Meet 3.10.0 之前，可能不安全。点击即可重新生成。在 3.13.0 中，Meet 会替换此链接，旧链接将失效。",
       "EDIT_MEMBER": "编辑成员",
+      "MORE_ACTIONS": "更多操作",
+      "REGENERATE_LINK": "重新生成链接",
       "REMOVE_MEMBER": "移除成员",
       "LOAD_MORE_MEMBERS": "加载更多成员",
       "MATCH_MODE_STARTS_WITH": "开头匹配",
@@ -220,6 +222,14 @@
         }
       }
     },
+    "DIALOGS": {
+      "REGENERATE_LINK_TITLE": "重新生成链接",
+      "REGENERATE_LINK_MESSAGE": "“{memberName}”的当前链接将失效。如果对方正在会议中，则会一直留在会议中，直到离开。您需要把新链接发给对方。",
+      "REGENERATE": "重新生成",
+      "NEW_LINK_TITLE": "新链接",
+      "NEW_LINK_MESSAGE": "这是“{memberName}”的新链接。请复制并发送给对方：",
+      "COPY_LINK": "复制链接"
+    },
     "NOTICES": {
       "LINK_COPIED": "成员访问链接已复制到剪贴板",
       "REMOVED": "成员“{memberName}”已成功移除",
@@ -229,7 +239,8 @@
       "BULK_NOT_REMOVED_ONE": "{count} 位成员无法移除。",
       "BULK_NOT_REMOVED_MANY": "{count} 位成员无法移除。",
       "BULK_REMOVE_FAILED": "移除成员失败",
-      "LOAD_FAILED": "加载房间成员失败"
+      "LOAD_FAILED": "加载房间成员失败",
+      "REGENERATE_LINK_FAILED": "重新生成链接失败"
     }
   }
 }

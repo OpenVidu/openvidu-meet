@@ -1,5 +1,6 @@
 import type { DialogPreset } from '../../../shared/models/notification.model';
 import type { Translator } from '../../../shared/models/translator.model';
+import { escapeHtml } from '../../../shared/utils/format.utils';
 
 export const deleteRoomDialogPreset = (t: Translator, roomId: string): DialogPreset => ({
 	title: t.translate('ROOMS.DIALOGS.DELETE_ROOM_TITLE'),
@@ -24,12 +25,28 @@ export const removeMemberDialogPreset = (
 ): DialogPreset => ({
 	title: t.translate('ROOMS.DIALOGS.REMOVE_MEMBER_TITLE'),
 	icon: 'person_remove',
-	message: t.translate('ROOMS.DIALOGS.REMOVE_MEMBER_MESSAGE', { memberName }),
+	message: t.translate('ROOMS.DIALOGS.REMOVE_MEMBER_MESSAGE', { memberName: escapeHtml(memberName) }),
 	showWarningBox: showMeetingKickWarning,
 	warningTitle: t.translate('ROOMS.DIALOGS.MEETING_WARNING_TITLE'),
 	warningMessage: t.translate('ROOMS.DIALOGS.REMOVE_MEMBER_WARNING'),
 	confirmText: t.translate('ROOMS.DIALOGS.REMOVE'),
 	cancelText: t.translate('ROOMS.COMMON.CANCEL')
+});
+
+export const regenerateMemberLinkDialogPreset = (t: Translator, memberName: string): DialogPreset => ({
+	title: t.translate('ROOM_MEMBERS.DIALOGS.REGENERATE_LINK_TITLE'),
+	icon: 'autorenew',
+	message: t.translate('ROOM_MEMBERS.DIALOGS.REGENERATE_LINK_MESSAGE', { memberName: escapeHtml(memberName) }),
+	confirmText: t.translate('ROOM_MEMBERS.DIALOGS.REGENERATE'),
+	cancelText: t.translate('ROOM_MEMBERS.COMMON.CANCEL')
+});
+
+export const newMemberLinkDialogPreset = (t: Translator, memberName: string, accessUrl: string): DialogPreset => ({
+	title: t.translate('ROOM_MEMBERS.DIALOGS.NEW_LINK_TITLE'),
+	icon: 'link',
+	message: `${t.translate('ROOM_MEMBERS.DIALOGS.NEW_LINK_MESSAGE', { memberName: escapeHtml(memberName) })}<br><br><code>${escapeHtml(accessUrl)}</code>`,
+	confirmText: t.translate('ROOM_MEMBERS.DIALOGS.COPY_LINK'),
+	cancelText: t.translate('ROOMS.COMMON.CLOSE')
 });
 
 export const bulkRemoveMembersDialogPreset = (

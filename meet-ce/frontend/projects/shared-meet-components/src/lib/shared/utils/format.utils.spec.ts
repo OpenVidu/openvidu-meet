@@ -1,4 +1,14 @@
-import { daysUntil } from './format.utils';
+import { daysUntil, escapeHtml } from './format.utils';
+
+describe('escapeHtml', () => {
+	it('shows markup as text', () => {
+		expect(escapeHtml(`<img src="x"> & 'y'`)).toBe('&lt;img src=&quot;x&quot;&gt; &amp; &#39;y&#39;');
+	});
+
+	it('leaves plain text as it is', () => {
+		expect(escapeHtml('Ana López')).toBe('Ana López');
+	});
+});
 
 describe('daysUntil', () => {
 	const from = new Date(2026, 10, 19, 23, 30);

@@ -49,7 +49,7 @@
     },
     "INVALID_MEMBER": {
       "TITLE": "Invalid member",
-      "MESSAGE": "You are no longer a member of this room or the member information is incorrect"
+      "MESSAGE": "This link is no longer valid. Ask the person who invited you for a new one."
     },
     "INVALID_PARTICIPANT_DATA": {
       "TITLE": "Invalid participant data",

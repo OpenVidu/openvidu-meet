@@ -49,7 +49,7 @@
     },
     "INVALID_MEMBER": {
       "TITLE": "Ongeldig lid",
-      "MESSAGE": "U bent geen lid meer van deze kamer of de ledeninformatie is onjuist"
+      "MESSAGE": "Deze link is niet meer geldig. Vraag de persoon die u heeft uitgenodigd om een nieuwe."
     },
     "INVALID_PARTICIPANT_DATA": {
       "TITLE": "Ongeldige deelnemersgegevens",

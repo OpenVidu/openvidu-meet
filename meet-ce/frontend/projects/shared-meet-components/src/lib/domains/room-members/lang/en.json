@@ -65,8 +65,10 @@
       "COLUMN_ACTIONS": "Actions",
       "VIEW_USER_PROFILE": "View user profile",
       "COPY_ACCESS_LINK": "Copy access link",
-      "DEPRECATED_ACCESS_LINK": "This link may be insecure because it was created before OpenVidu Meet 3.10.0. Remove this member and add them again to get a secure link. In 3.13.0 Meet replaces it and the old link stops working.",
+      "DEPRECATED_ACCESS_LINK": "This link may be insecure because it was created before OpenVidu Meet 3.10.0. Click to regenerate it. In 3.13.0 Meet replaces it and the old link stops working.",
       "EDIT_MEMBER": "Edit member",
+      "MORE_ACTIONS": "More actions",
+      "REGENERATE_LINK": "Regenerate link",
       "REMOVE_MEMBER": "Remove member",
       "LOAD_MORE_MEMBERS": "Load more members",
       "MATCH_MODE_STARTS_WITH": "Starts with",
@@ -220,6 +222,14 @@
         }
       }
     },
+    "DIALOGS": {
+      "REGENERATE_LINK_TITLE": "Regenerate link",
+      "REGENERATE_LINK_MESSAGE": "The current link of \"{memberName}\" will stop working. If they are in the meeting, they stay in it until they leave it. You will have to send them the new link.",
+      "REGENERATE": "Regenerate",
+      "NEW_LINK_TITLE": "New link",
+      "NEW_LINK_MESSAGE": "This is the new link of \"{memberName}\". Copy it and send it to them:",
+      "COPY_LINK": "Copy link"
+    },
     "NOTICES": {
       "LINK_COPIED": "Member access link copied to clipboard",
       "REMOVED": "Member \"{memberName}\" removed successfully",
@@ -229,7 +239,8 @@
       "BULK_NOT_REMOVED_ONE": "{count} member could not be removed.",
       "BULK_NOT_REMOVED_MANY": "{count} members could not be removed.",
       "BULK_REMOVE_FAILED": "Failed to remove members",
-      "LOAD_FAILED": "Failed to load room members"
+      "LOAD_FAILED": "Failed to load room members",
+      "REGENERATE_LINK_FAILED": "Failed to regenerate the link"
     }
   }
 }

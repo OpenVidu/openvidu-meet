@@ -1,0 +1,11 @@
+description: The room member is not an identified guest
+content:
+    application/json:
+        schema:
+            $ref: '../../../../shared/schemas/error.yaml'
+        examples:
+            not_identified_guest:
+                summary: The member is a user, who has no personal link of their own
+                value:
+                    error: 'Room Member Error'
+                    message: "Room member 'alice_smith' of room 'room_123' is not an identified guest and has no personal link to regenerate"

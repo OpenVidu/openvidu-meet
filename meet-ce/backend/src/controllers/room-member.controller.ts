@@ -129,6 +129,25 @@ export const updateRoomMember = async (req: Request, res: Response) => {
 	}
 };
 
+export const regenerateRoomMemberAccessUrl = async (req: Request, res: Response) => {
+	const logger = container.get(LoggerService);
+	const roomMemberService = container.get(RoomMemberService);
+
+	const { roomId, memberId } = req.params as Record<string, string>;
+
+	try {
+		logger.verbose(`Regenerating the access URL of member '${memberId}' in room '${roomId}'`);
+		const member = await roomMemberService.regenerateAccessUrl(roomId, memberId);
+		return res
+			.status(200)
+			.json(
+				MeetRoomMemberHelper.addResponseMetadata(memberToWire(MeetRoomMemberHelper.applyFieldFilters(member)))
+			);
+	} catch (error) {
+		handleError(res, error, `regenerating the access URL of member '${memberId}' in room '${roomId}'`);
+	}
+};
+
 export const deleteRoomMember = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomMemberService = container.get(RoomMemberService);

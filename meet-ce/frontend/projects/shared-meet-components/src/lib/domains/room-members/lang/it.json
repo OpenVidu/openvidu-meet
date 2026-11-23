@@ -65,8 +65,10 @@
       "COLUMN_ACTIONS": "Azioni",
       "VIEW_USER_PROFILE": "Visualizza profilo utente",
       "COPY_ACCESS_LINK": "Copia link di accesso",
-      "DEPRECATED_ACCESS_LINK": "Questo link potrebbe non essere sicuro perché è stato creato prima di OpenVidu Meet 3.10.0. Rimuovi questo membro e aggiungilo di nuovo per ottenere un link sicuro. Nella versione 3.13.0 Meet lo sostituisce e il vecchio link smette di funzionare.",
+      "DEPRECATED_ACCESS_LINK": "Questo link potrebbe non essere sicuro perché è stato creato prima di OpenVidu Meet 3.10.0. Fai clic per rigenerarlo. Nella versione 3.13.0 Meet lo sostituisce e il vecchio link smette di funzionare.",
       "EDIT_MEMBER": "Modifica membro",
+      "MORE_ACTIONS": "Altre azioni",
+      "REGENERATE_LINK": "Rigenera link",
       "REMOVE_MEMBER": "Rimuovi membro",
       "LOAD_MORE_MEMBERS": "Carica altri membri",
       "MATCH_MODE_STARTS_WITH": "Inizia con",
@@ -220,6 +222,14 @@
         }
       }
     },
+    "DIALOGS": {
+      "REGENERATE_LINK_TITLE": "Rigenera link",
+      "REGENERATE_LINK_MESSAGE": "Il link attuale di \"{memberName}\" smetterà di funzionare. Se è nella riunione, vi resta finché non la lascia. Dovrai inviargli il nuovo link.",
+      "REGENERATE": "Rigenera",
+      "NEW_LINK_TITLE": "Nuovo link",
+      "NEW_LINK_MESSAGE": "Questo è il nuovo link di \"{memberName}\". Copialo e invialo:",
+      "COPY_LINK": "Copia link"
+    },
     "NOTICES": {
       "LINK_COPIED": "Link di accesso del membro copiato negli appunti",
       "REMOVED": "Membro \"{memberName}\" rimosso con successo",
@@ -229,7 +239,8 @@
       "BULK_NOT_REMOVED_ONE": "Impossibile rimuovere {count} membro.",
       "BULK_NOT_REMOVED_MANY": "Impossibile rimuovere {count} membri.",
       "BULK_REMOVE_FAILED": "Impossibile rimuovere i membri",
-      "LOAD_FAILED": "Impossibile caricare i membri della stanza"
+      "LOAD_FAILED": "Impossibile caricare i membri della stanza",
+      "REGENERATE_LINK_FAILED": "Impossibile rigenerare il link"
     }
   }
 }

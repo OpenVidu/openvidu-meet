@@ -95,3 +95,44 @@
                 $ref: '../../shared/responses/errors/internal-server.yaml'
             '503':
                 $ref: '../../shared/responses/errors/service-unavailable.yaml'
+
+/rooms/{roomId}/members/{memberId}/access-url:
+    post:
+        operationId: roomRegenerateMemberAccessUrl
+        summary: Regenerate an identified guest's access URL
+        description: >
+            Gives an identified guest a new `accessUrl`: the room URL carrying as its `secret` the same `memberId`,
+            a hyphen and new random characters. From then on the previous link grants no access, including the
+            admission of a guest waiting in a locked room's waiting room, which is refused with `404`. The guest's
+            identity, base role, permissions and membership date do not change, and the room member tokens already
+            issued stay valid, so a guest in a meeting stays in it until they leave.
+
+
+            The request has no body and the response carries no extra fields. It answers `409` when the member is a
+            user, who has no personal link of their own.
+
+
+            **Access token roles**: `admin`, `room_manager`. Only an admin or the room's owner may call it; an API
+            key or a room member token answers `401`.
+        tags:
+            - Internal API - Room Members
+        security:
+            - accessTokenHeader: []
+        parameters:
+            - $ref: '../../rooms/parameters/room-id-path.yaml'
+            - $ref: '../parameters/room-member-id.yaml'
+        responses:
+            '200':
+                $ref: './responses/success/regenerate-room-member-access-url.yaml'
+            '401':
+                $ref: '../../shared/responses/errors/unauthorized.yaml'
+            '403':
+                $ref: '../../shared/responses/errors/forbidden.yaml'
+            '404':
+                $ref: '../responses/errors/room-member-not-found.yaml'
+            '409':
+                $ref: './responses/errors/room-member-not-identified-guest.yaml'
+            '429':
+                $ref: '../../shared/responses/errors/too-many-requests.yaml'
+            '500':
+                $ref: '../../shared/responses/errors/internal-server.yaml'

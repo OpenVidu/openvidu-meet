@@ -33,7 +33,7 @@ import { RoomMemberUiUtils } from '../../utils/ui';
 
 export interface MemberTableAction {
 	members: MeetRoomMember[];
-	action: 'addMember' | 'edit' | 'copyLink' | 'delete' | 'bulkDelete';
+	action: 'addMember' | 'edit' | 'copyLink' | 'regenerateLink' | 'delete' | 'bulkDelete';
 }
 
 export interface MemberTableFilter {
@@ -53,7 +53,7 @@ export interface MemberTableFilter {
  * - Display room members in a Material Design table
  * - Filter by member name
  * - Multi-selection for bulk operations
- * - Individual member actions (copy link, delete)
+ * - Individual member actions (copy link, regenerate link, edit, delete)
  * - Responsive design with mobile optimization
  *
  * @example
@@ -296,6 +296,10 @@ export class RoomMembersListsComponent implements OnInit {
 
 	editMember(member: MeetRoomMember) {
 		this.memberAction.emit({ members: [member], action: 'edit' });
+	}
+
+	regenerateMemberLink(member: MeetRoomMember) {
+		this.memberAction.emit({ members: [member], action: 'regenerateLink' });
 	}
 
 	deleteMember(member: MeetRoomMember) {

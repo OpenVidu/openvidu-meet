@@ -575,6 +575,72 @@ describe('Room Members API Security Tests', () => {
 		});
 	});
 
+	describe('Regenerate Room Member Access URL Tests', () => {
+		let guestId: string;
+
+		const regenerate = () => request(app).post(`${INTERNAL_ROOMS_PATH}/${roomId}/members/${guestId}/access-url`);
+
+		beforeAll(async () => {
+			const response = await createRoomMember(roomId, {
+				name: 'Regenerated Guest',
+				baseRole: MeetRoomMemberRole.SPEAKER
+			});
+			guestId = response.body.memberId;
+		});
+
+		it('should succeed when user is authenticated as ADMIN', async () => {
+			const response = await regenerate().set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.admin.accessToken);
+			expect(response.status).toBe(200);
+		});
+
+		it('should succeed when user is authenticated as ROOM_MANAGER and is room owner', async () => {
+			const response = await regenerate().set(
+				INTERNAL_CONFIG.ACCESS_TOKEN_HEADER,
+				roomUsers.roomManagerOwner.accessToken
+			);
+			expect(response.status).toBe(200);
+		});
+
+		it('should fail when using API key', async () => {
+			const response = await regenerate().set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
+			expectMeetError(response, errorUnauthorized());
+		});
+
+		it('should fail when using room member token', async () => {
+			const response = await regenerate().set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.moderatorToken);
+			expectMeetError(response, errorUnauthorized());
+		});
+
+		it('should fail when user is not authenticated', async () => {
+			const response = await regenerate();
+			expectMeetError(response, errorUnauthorized());
+		});
+
+		it('should fail when user is authenticated as ROOM_MANAGER and is room member', async () => {
+			const response = await regenerate().set(
+				INTERNAL_CONFIG.ACCESS_TOKEN_HEADER,
+				roomUsers.roomManagerMember.accessToken
+			);
+			expectMeetError(response, errorInsufficientPermissions());
+		});
+
+		it('should fail when user is authenticated as ROOM_MANAGER without access to the room', async () => {
+			const response = await regenerate().set(
+				INTERNAL_CONFIG.ACCESS_TOKEN_HEADER,
+				testUsers.roomManager.accessToken
+			);
+			expectMeetError(response, errorInsufficientPermissions());
+		});
+
+		it('should fail when user is authenticated as ROOM_MEMBER', async () => {
+			const response = await regenerate().set(
+				INTERNAL_CONFIG.ACCESS_TOKEN_HEADER,
+				roomUsers.roomMember.accessToken
+			);
+			expectMeetError(response, errorInsufficientPermissions());
+		});
+	});
+
 	describe('Generate Room Member Token Tests', () => {
 		it('should succeed when using room moderator secret', async () => {
 			const response = await request(app).post(`${INTERNAL_ROOMS_PATH}/${roomId}/members/token`).send({

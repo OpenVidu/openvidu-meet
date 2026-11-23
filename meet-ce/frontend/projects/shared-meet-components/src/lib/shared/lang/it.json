@@ -49,7 +49,7 @@
     },
     "INVALID_MEMBER": {
       "TITLE": "Membro non valido",
-      "MESSAGE": "Non sei più un membro di questa stanza oppure le informazioni sul membro non sono corrette"
+      "MESSAGE": "Questo link non è più valido. Chiedine uno nuovo alla persona che ti ha invitato."
     },
     "INVALID_PARTICIPANT_DATA": {
       "TITLE": "Dati del partecipante non validi",

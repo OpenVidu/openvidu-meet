@@ -17,6 +17,7 @@ import {
 	deleteRooms,
 	deleteUsers,
 	getRecordingShareUrl,
+	regenerateRoomMemberAccessUrl,
 	updateRoomRoles
 } from './helpers/meet-api.helper';
 import { openJoinScreen } from './helpers/meeting-navigation.helper';
@@ -507,6 +508,7 @@ test.describe('Access E2E Tests', () => {
 		const accessErrorScreens: {
 			title: string;
 			errorTitle: string;
+			errorMessage?: string;
 			getUrl: () => Promise<string>;
 		}[] = [
 			{
@@ -538,6 +540,21 @@ test.describe('Access E2E Tests', () => {
 				}
 			},
 			{
+				title: 'the previous personal link of a regenerated identified guest',
+				errorTitle: 'Invalid member',
+				errorMessage: 'This link is no longer valid. Ask the person who invited you for a new one.',
+				getUrl: async () => {
+					const { user, accessToken } = await createReadyUser('Link Admin');
+					createdUserIds.push(user.userId);
+					const guest = await createRoomMember(room.roomId, {
+						name: 'Regenerated Guest',
+						baseRole: MeetRoomMemberRole.SPEAKER
+					});
+					await regenerateRoomMemberAccessUrl(accessToken, room.roomId, guest.memberId);
+					return guest.accessUrl;
+				}
+			},
+			{
 				title: 'a link to a deleted room',
 				errorTitle: 'Invalid room',
 				getUrl: async () => {
@@ -548,10 +565,14 @@ test.describe('Access E2E Tests', () => {
 			}
 		];
 
-		for (const { title, errorTitle, getUrl } of accessErrorScreens) {
+		for (const { title, errorTitle, errorMessage, getUrl } of accessErrorScreens) {
 			test(`${title} shows the "${errorTitle}" error screen`, async ({ page }) => {
 				await openJoinScreen(page, await getUrl(), { checkNameInput: false });
 				await expectRoomAccessDenied(page, errorTitle);
+
+				if (errorMessage) {
+					await expect(page.locator('.error-message')).toHaveText(errorMessage);
+				}
 			});
 		}
 

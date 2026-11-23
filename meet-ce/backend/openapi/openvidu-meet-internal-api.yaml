@@ -34,6 +34,8 @@ paths:
         $ref: './room-members/internal/room-members.yaml#/~1rooms~1{roomId}~1members~1token'
     /rooms/{roomId}/members/token/refresh:
         $ref: './room-members/internal/room-members.yaml#/~1rooms~1{roomId}~1members~1token~1refresh'
+    /rooms/{roomId}/members/{memberId}/access-url:
+        $ref: './room-members/internal/room-members.yaml#/~1rooms~1{roomId}~1members~1{memberId}~1access-url'
     /meetings/{roomId}/reactions:
         $ref: './meetings/internal/meetings.yaml#/~1meetings~1{roomId}~1reactions'
     /meetings/{roomId}/waiting-participants/leave:

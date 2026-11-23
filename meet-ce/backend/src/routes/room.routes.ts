@@ -213,6 +213,14 @@ internalRoomRouter.post(
 	roomMemberCtrl.generateRoomMemberToken
 );
 internalRoomRouter.post(
+	'/:roomId/members/:memberId/access-url',
+	apiLimiter,
+	withAuth(accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.ROOM_MANAGER)),
+	withValidRoomId,
+	authorizeRoomManagement,
+	roomMemberCtrl.regenerateRoomMemberAccessUrl
+);
+internalRoomRouter.post(
 	'/:roomId/members/token/refresh',
 	tokenIssuanceLimiter,
 	withValidRoomId,
