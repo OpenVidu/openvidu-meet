@@ -49,7 +49,7 @@
     },
     "INVALID_MEMBER": {
       "TITLE": "成员无效",
-      "MESSAGE": "您已不再是此房间的成员，或成员信息有误"
+      "MESSAGE": "此链接已失效。请向邀请您的人索取新链接。"
     },
     "INVALID_PARTICIPANT_DATA": {
       "TITLE": "参与者数据无效",

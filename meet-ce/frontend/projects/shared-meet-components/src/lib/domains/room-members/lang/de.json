@@ -65,8 +65,10 @@
       "COLUMN_ACTIONS": "Aktionen",
       "VIEW_USER_PROFILE": "Benutzerprofil anzeigen",
       "COPY_ACCESS_LINK": "Zugangslink kopieren",
-      "DEPRECATED_ACCESS_LINK": "Dieser Link ist möglicherweise unsicher, weil er vor OpenVidu Meet 3.10.0 erstellt wurde. Entfernen Sie dieses Mitglied und fügen Sie es erneut hinzu, um einen sicheren Link zu erhalten. In 3.13.0 ersetzt Meet ihn und der alte Link funktioniert nicht mehr.",
+      "DEPRECATED_ACCESS_LINK": "Dieser Link ist möglicherweise unsicher, weil er vor OpenVidu Meet 3.10.0 erstellt wurde. Klicken Sie, um ihn neu zu generieren. In 3.13.0 ersetzt Meet ihn und der alte Link funktioniert nicht mehr.",
       "EDIT_MEMBER": "Mitglied bearbeiten",
+      "MORE_ACTIONS": "Weitere Aktionen",
+      "REGENERATE_LINK": "Link neu generieren",
       "REMOVE_MEMBER": "Mitglied entfernen",
       "LOAD_MORE_MEMBERS": "Weitere Mitglieder laden",
       "MATCH_MODE_STARTS_WITH": "Beginnt mit",
@@ -220,6 +222,14 @@
         }
       }
     },
+    "DIALOGS": {
+      "REGENERATE_LINK_TITLE": "Link neu generieren",
+      "REGENERATE_LINK_MESSAGE": "Der aktuelle Link von \"{memberName}\" funktioniert nicht mehr. Befindet sich die Person im Meeting, bleibt sie darin, bis sie es verlässt. Sie müssen ihr den neuen Link senden.",
+      "REGENERATE": "Neu generieren",
+      "NEW_LINK_TITLE": "Neuer Link",
+      "NEW_LINK_MESSAGE": "Dies ist der neue Link von \"{memberName}\". Kopieren Sie ihn und senden Sie ihn der Person:",
+      "COPY_LINK": "Link kopieren"
+    },
     "NOTICES": {
       "LINK_COPIED": "Zugangslink des Mitglieds in die Zwischenablage kopiert",
       "REMOVED": "Mitglied \"{memberName}\" erfolgreich entfernt",
@@ -229,7 +239,8 @@
       "BULK_NOT_REMOVED_ONE": "{count} Mitglied konnte nicht entfernt werden.",
       "BULK_NOT_REMOVED_MANY": "{count} Mitglieder konnten nicht entfernt werden.",
       "BULK_REMOVE_FAILED": "Mitglieder konnten nicht entfernt werden",
-      "LOAD_FAILED": "Raummitglieder konnten nicht geladen werden"
+      "LOAD_FAILED": "Raummitglieder konnten nicht geladen werden",
+      "REGENERATE_LINK_FAILED": "Der Link konnte nicht neu generiert werden"
     }
   }
 }

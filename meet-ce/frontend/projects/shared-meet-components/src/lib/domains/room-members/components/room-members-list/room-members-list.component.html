@@ -305,8 +305,12 @@
 									@if (RoomMemberUiUtils.hasDeprecatedAccessUrl(member)) {
 										<mat-icon
 											class="deprecated-access-link-icon"
+											role="button"
 											tabindex="0"
 											aria-hidden="false"
+											(click)="regenerateMemberLink(member)"
+											(keydown.enter)="regenerateMemberLink(member)"
+											(keydown.space)="regenerateMemberLink(member); $event.preventDefault()"
 											[attr.aria-label]="'ROOM_MEMBERS.LIST.DEPRECATED_ACCESS_LINK' | translate"
 											[matTooltip]="'ROOM_MEMBERS.LIST.DEPRECATED_ACCESS_LINK' | translate"
 											id="member-deprecated-access-link-{{ member.memberId }}"
@@ -420,17 +424,38 @@
 								<mat-icon>edit</mat-icon>
 							</button>
 
-							<!-- Remove Member -->
+							<!-- More Actions -->
 							<button
 								mat-icon-button
-								[matTooltip]="'ROOM_MEMBERS.LIST.REMOVE_MEMBER' | translate"
-								(click)="deleteMember(member)"
+								[matMenuTriggerFor]="actionsMenu"
+								[matTooltip]="'ROOM_MEMBERS.LIST.MORE_ACTIONS' | translate"
 								[disabled]="loading()"
-								class="delete-action"
-								id="delete-member-btn-{{ member.memberId }}"
+								id="more-actions-btn-{{ member.memberId }}"
 							>
-								<mat-icon>person_remove</mat-icon>
+								<mat-icon>more_vert</mat-icon>
 							</button>
+
+							<mat-menu #actionsMenu="matMenu" id="actions-menu-{{ member.memberId }}">
+								@if (!RoomMemberUiUtils.isUserMember(member)) {
+									<button
+										mat-menu-item
+										(click)="regenerateMemberLink(member)"
+										id="regenerate-member-link-btn-{{ member.memberId }}"
+									>
+										<mat-icon>autorenew</mat-icon>
+										<span>{{ 'ROOM_MEMBERS.LIST.REGENERATE_LINK' | translate }}</span>
+									</button>
+								}
+								<button
+									mat-menu-item
+									(click)="deleteMember(member)"
+									class="delete-action"
+									id="delete-member-btn-{{ member.memberId }}"
+								>
+									<mat-icon>person_remove</mat-icon>
+									<span>{{ 'ROOM_MEMBERS.LIST.REMOVE_MEMBER' | translate }}</span>
+								</button>
+							</mat-menu>
 						</div>
 					</td>
 				</ng-container>

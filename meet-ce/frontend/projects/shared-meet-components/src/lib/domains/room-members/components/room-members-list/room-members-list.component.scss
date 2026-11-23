@@ -107,6 +107,7 @@
 	.deprecated-access-link-icon {
 		@include design-tokens.ov-icon(sm);
 		color: var(--ov-meet-color-warning);
+		cursor: pointer;
 		flex-shrink: 0;
 	}
 

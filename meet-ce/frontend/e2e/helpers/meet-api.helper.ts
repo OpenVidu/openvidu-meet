@@ -366,6 +366,26 @@ export const deleteRoomMember = async (roomId: string, memberId: string): Promis
 };
 
 /**
+ * Gives an identified guest a new access link, as the console does with the access token of an admin
+ * or of the room's owner. The previous link stops granting access.
+ */
+export const regenerateRoomMemberAccessUrl = async (
+	accessToken: string,
+	roomId: string,
+	memberId: string
+): Promise<MeetRoomMember> => {
+	const response = await fetch(
+		withInternalApiPath(`/rooms/${encodeURIComponent(roomId)}/members/${encodeURIComponent(memberId)}/access-url`),
+		{ method: 'POST', headers: { authorization: `Bearer ${accessToken}` } }
+	);
+
+	const responseText = await response.text();
+	assertOk(response, responseText, 'regenerate room member access url');
+
+	return JSON.parse(responseText) as MeetRoomMember;
+};
+
+/**
  * Lists the members of the specified room.
  */
 export const getRoomMembers = async (roomId: string): Promise<MeetRoomMember[]> => {

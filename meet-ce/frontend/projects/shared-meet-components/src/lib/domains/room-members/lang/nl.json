@@ -65,8 +65,10 @@
       "COLUMN_ACTIONS": "Acties",
       "VIEW_USER_PROFILE": "Gebruikersprofiel bekijken",
       "COPY_ACCESS_LINK": "Toegangslink kopiëren",
-      "DEPRECATED_ACCESS_LINK": "Deze link is mogelijk onveilig omdat hij vóór OpenVidu Meet 3.10.0 is aangemaakt. Verwijder dit lid en voeg het opnieuw toe om een veilige link te krijgen. In 3.13.0 vervangt Meet hem en werkt de oude link niet meer.",
+      "DEPRECATED_ACCESS_LINK": "Deze link is mogelijk onveilig omdat hij vóór OpenVidu Meet 3.10.0 is aangemaakt. Klik om hem opnieuw te genereren. In 3.13.0 vervangt Meet hem en werkt de oude link niet meer.",
       "EDIT_MEMBER": "Lid bewerken",
+      "MORE_ACTIONS": "Meer acties",
+      "REGENERATE_LINK": "Link opnieuw genereren",
       "REMOVE_MEMBER": "Lid verwijderen",
       "LOAD_MORE_MEMBERS": "Meer leden laden",
       "MATCH_MODE_STARTS_WITH": "Begint met",
@@ -220,6 +222,14 @@
         }
       }
     },
+    "DIALOGS": {
+      "REGENERATE_LINK_TITLE": "Link opnieuw genereren",
+      "REGENERATE_LINK_MESSAGE": "De huidige link van \"{memberName}\" werkt niet meer. Als deze persoon in de vergadering zit, blijft hij daar tot hij ze verlaat. Je moet de nieuwe link naar hem sturen.",
+      "REGENERATE": "Opnieuw genereren",
+      "NEW_LINK_TITLE": "Nieuwe link",
+      "NEW_LINK_MESSAGE": "Dit is de nieuwe link van \"{memberName}\". Kopieer hem en stuur hem door:",
+      "COPY_LINK": "Link kopiëren"
+    },
     "NOTICES": {
       "LINK_COPIED": "Toegangslink van lid naar klembord gekopieerd",
       "REMOVED": "Lid \"{memberName}\" succesvol verwijderd",
@@ -229,7 +239,8 @@
       "BULK_NOT_REMOVED_ONE": "{count} lid kon niet worden verwijderd.",
       "BULK_NOT_REMOVED_MANY": "{count} leden konden niet worden verwijderd.",
       "BULK_REMOVE_FAILED": "Leden verwijderen mislukt",
-      "LOAD_FAILED": "Ruimteleden laden mislukt"
+      "LOAD_FAILED": "Ruimteleden laden mislukt",
+      "REGENERATE_LINK_FAILED": "Link opnieuw genereren mislukt"
     }
   }
 }

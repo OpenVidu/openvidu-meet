@@ -31,7 +31,7 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 
 The link form below still works in this release. In **3.13.0** each guest still on it gets a link of the current form
 with the same `memberId`, and the old link stops working. The console's Room Members tab marks these guests, and
-removing such a guest and adding them again gives the guest a link of the current form and a new `memberId`.
+its Regenerate link action gives the guest a link of the current form with the same `memberId`.
 
 | Deprecated                                                                                   | Replacement                                                                                                         |
 | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
@@ -106,6 +106,8 @@ with no replacement.
   camera preview) and an outcome screen for each way a wait ends, a Waiting to join section in the Participants panel
   with Admit, Deny, Admit all, Deny all and the free places, a chip in the status rail and a notification for the
   participants who admit, and a Locked room section in the room wizard.
+- The Room Members tab regenerates an identified guest's link, keeping their `memberId`, from a more options menu that
+  also holds Remove member.
 
 #### Deployment
 

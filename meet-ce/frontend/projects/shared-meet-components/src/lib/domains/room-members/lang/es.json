@@ -65,8 +65,10 @@
       "COLUMN_ACTIONS": "Acciones",
       "VIEW_USER_PROFILE": "Ver perfil de usuario",
       "COPY_ACCESS_LINK": "Copiar enlace de acceso",
-      "DEPRECATED_ACCESS_LINK": "Este enlace puede ser inseguro porque se creó antes de OpenVidu Meet 3.10.0. Elimina este miembro y vuelve a añadirlo para obtener un enlace seguro. En 3.13.0 Meet lo sustituye y el enlace antiguo deja de funcionar.",
+      "DEPRECATED_ACCESS_LINK": "Este enlace puede ser inseguro porque se creó antes de OpenVidu Meet 3.10.0. Haz clic para regenerarlo. En 3.13.0 Meet lo sustituye y el enlace antiguo deja de funcionar.",
       "EDIT_MEMBER": "Editar miembro",
+      "MORE_ACTIONS": "Más acciones",
+      "REGENERATE_LINK": "Regenerar enlace",
       "REMOVE_MEMBER": "Eliminar miembro",
       "LOAD_MORE_MEMBERS": "Cargar más miembros",
       "MATCH_MODE_STARTS_WITH": "Empieza por",
@@ -220,6 +222,14 @@
         }
       }
     },
+    "DIALOGS": {
+      "REGENERATE_LINK_TITLE": "Regenerar enlace",
+      "REGENERATE_LINK_MESSAGE": "El enlace actual de \"{memberName}\" dejará de funcionar. Si está en la reunión, permanecerá en ella hasta que salga. Tendrás que enviarle el nuevo enlace.",
+      "REGENERATE": "Regenerar",
+      "NEW_LINK_TITLE": "Nuevo enlace",
+      "NEW_LINK_MESSAGE": "Este es el nuevo enlace de \"{memberName}\". Cópialo y envíaselo:",
+      "COPY_LINK": "Copiar enlace"
+    },
     "NOTICES": {
       "LINK_COPIED": "Enlace de acceso del miembro copiado al portapapeles",
       "REMOVED": "Miembro \"{memberName}\" quitado correctamente",
@@ -229,7 +239,8 @@
       "BULK_NOT_REMOVED_ONE": "No se pudo quitar {count} miembro.",
       "BULK_NOT_REMOVED_MANY": "No se pudieron quitar {count} miembros.",
       "BULK_REMOVE_FAILED": "Error al quitar los miembros",
-      "LOAD_FAILED": "Error al cargar los miembros de la sala"
+      "LOAD_FAILED": "Error al cargar los miembros de la sala",
+      "REGENERATE_LINK_FAILED": "Error al regenerar el enlace"
     }
   }
 }

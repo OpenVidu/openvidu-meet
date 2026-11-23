@@ -31,3 +31,8 @@ const startOfDay = (date: Date) => new Date(date.getFullYear(), date.getMonth(),
 /** Calendar days from `from` to `date`: 0 for the same day, negative for a day before it. */
 export const daysUntil = (date: number | Date, from: Date): number =>
 	Math.round((startOfDay(new Date(date)) - startOfDay(from)) / DAY_MS);
+
+const HTML_ESCAPES: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+
+/** Escapes text that a template renders as HTML, such as a dialog message, so it shows as written. */
+export const escapeHtml = (text: string): string => text.replace(/[&<>"']/g, (char) => HTML_ESCAPES[char]);

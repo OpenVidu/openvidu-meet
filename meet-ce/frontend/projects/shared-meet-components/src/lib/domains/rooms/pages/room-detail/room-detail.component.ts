@@ -25,7 +25,12 @@ import {
 import { BreadcrumbComponent, BreadcrumbItem } from '../../../../shared/components/breadcrumb/breadcrumb.component';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
-import { bulkRemoveMembersDialogPreset, removeMemberDialogPreset } from '../../utils/dialog-presets';
+import {
+	bulkRemoveMembersDialogPreset,
+	newMemberLinkDialogPreset,
+	regenerateMemberLinkDialogPreset,
+	removeMemberDialogPreset
+} from '../../utils/dialog-presets';
 import { EntityListState } from '../../../../shared/models/entity-list.model';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { DialogService } from '../../../../shared/services/dialog.service';
@@ -390,6 +395,9 @@ export class RoomDetailComponent implements OnInit {
 			case 'copyLink':
 				this.copyMemberLink(action.members[0]);
 				break;
+			case 'regenerateLink':
+				this.regenerateMemberLink(action.members[0]);
+				break;
 			case 'delete':
 				this.deleteMember(action.members[0]);
 				break;
@@ -410,6 +418,30 @@ export class RoomDetailComponent implements OnInit {
 	private copyMemberLink(member: MeetRoomMember) {
 		this.clipboard.copy(member.accessUrl);
 		this.notificationService.showMessage(this.translateService.translate('ROOM_MEMBERS.NOTICES.LINK_COPIED'));
+	}
+
+	private regenerateMemberLink(member: MeetRoomMember) {
+		this.dialogService.showDialog({
+			...regenerateMemberLinkDialogPreset(this.translateService, member.name),
+			confirmCallback: async () => {
+				try {
+					const updated = await this.roomMemberService.regenerateAccessUrl(this.roomId(), member.memberId);
+
+					this.memberList.update((members) =>
+						members.map((m) => (m.memberId === updated.memberId ? updated : m))
+					);
+					this.dialogService.showDialog({
+						...newMemberLinkDialogPreset(this.translateService, member.name, updated.accessUrl),
+						confirmCallback: () => this.copyMemberLink(updated)
+					});
+				} catch (error) {
+					this.log.e('Error regenerating member link:', error);
+					this.notificationService.showMessage(
+						this.translateService.translate('ROOM_MEMBERS.NOTICES.REGENERATE_LINK_FAILED')
+					);
+				}
+			}
+		});
 	}
 
 	copyRoomId() {

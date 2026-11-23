@@ -49,7 +49,7 @@
     },
     "INVALID_MEMBER": {
       "TITLE": "Ungültiges Mitglied",
-      "MESSAGE": "Sie sind kein Mitglied dieses Raums mehr oder die Mitgliedsinformationen sind fehlerhaft"
+      "MESSAGE": "Dieser Link ist nicht mehr gültig. Bitten Sie die Person, die Sie eingeladen hat, um einen neuen."
     },
     "INVALID_PARTICIPANT_DATA": {
       "TITLE": "Ungültige Teilnehmerdaten",

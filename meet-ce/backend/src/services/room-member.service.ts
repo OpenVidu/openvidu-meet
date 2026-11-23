@@ -51,6 +51,7 @@ import {
 	errorRoomMemberAlreadyExists,
 	errorRoomMemberCannotBeOwnerOrAdmin,
 	errorRoomMemberNotFound,
+	errorRoomMemberNotIdentifiedGuest,
 	errorUnauthorized,
 	errorUserNotFound,
 	errorWaitEnded,
@@ -177,7 +178,7 @@ export class RoomMemberService {
 			memberId = `guest-${secureUid(10)}`;
 			memberName = name;
 			memberType = MeetRoomMemberType.IDENTIFIED_GUEST;
-			accessUrl += `?secret=${memberId}-${secureUid(10)}`;
+			accessUrl = this.buildIdentifiedGuestAccessUrl(roomId, memberId);
 		} else {
 			throw new Error('Either userId or name must be provided');
 		}
@@ -204,6 +205,35 @@ export class RoomMemberService {
 			permissionsUpdatedAt: now
 		};
 		return this.roomMemberRepository.create(roomMember);
+	}
+
+	/**
+	 * Gives an identified guest a new access URL, so the previous one grants no access. The member's
+	 * permissions and the tokens already issued are left as they are.
+	 *
+	 * @param roomId - The ID of the room
+	 * @param memberId - The ID of the identified guest
+	 * @returns A promise that resolves to the updated MeetRoomMember object
+	 * @throws Error if the member does not exist or is not an identified guest
+	 */
+	async regenerateAccessUrl(roomId: string, memberId: string): Promise<MeetRoomMember> {
+		const member = await this.getRoomMember(roomId, memberId, ['type']);
+
+		if (!member) {
+			throw errorRoomMemberNotFound(roomId, memberId);
+		}
+
+		if (member.type !== MeetRoomMemberType.IDENTIFIED_GUEST) {
+			throw errorRoomMemberNotIdentifiedGuest(roomId, memberId);
+		}
+
+		return this.roomMemberRepository.updatePartial(roomId, memberId, {
+			accessUrl: this.buildIdentifiedGuestAccessUrl(roomId, memberId)
+		});
+	}
+
+	protected buildIdentifiedGuestAccessUrl(roomId: string, memberId: string): string {
+		return `/room/${roomId}?secret=${memberId}-${secureUid(10)}`;
 	}
 
 	/**

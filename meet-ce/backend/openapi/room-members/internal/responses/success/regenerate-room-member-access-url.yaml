@@ -1,0 +1,16 @@
+description: Access URL regenerated successfully
+content:
+    application/json:
+        schema:
+            allOf:
+                - $ref: '../../../schemas/meet-room-member.yaml'
+                - type: object
+                  properties:
+                      _extraFields:
+                          type: array
+                          description: >
+                              List of extra fields that can be requested when reading the member. The response
+                              carries none of them.
+                          items:
+                              type: string
+                              example: effectivePermissions

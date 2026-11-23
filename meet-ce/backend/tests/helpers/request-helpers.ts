@@ -917,6 +917,16 @@ export const generateRoomMemberToken = async (
 	return `Bearer ${response.body.token}`;
 };
 
+export const regenerateRoomMemberAccessUrl = async (roomId: string, memberId: string, accessToken: string) => {
+	checkAppIsRunning();
+
+	return await request(app)
+		.post(
+			getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms/${roomId}/members/${memberId}/access-url`)
+		)
+		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken);
+};
+
 export const refreshRoomMemberTokenRequest = async (roomId: string, previousToken: string) => {
 	checkAppIsRunning();
 

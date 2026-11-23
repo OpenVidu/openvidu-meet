@@ -16,6 +16,7 @@ import {
 	createRoom,
 	createRoomMember,
 	deleteRoomMember,
+	getRoomMembers,
 	MEET_BASE_URL,
 	updateRoomRoles
 } from '../helpers/meet-api.helper';
@@ -27,6 +28,10 @@ signInAdminBeforeEach();
 
 const notificationText = (page: Page) => page.locator('.ov-notification[data-kind="message"] .notification-message');
 const membersTab = (page: Page) => page.getByRole('tab', { name: /member/i });
+const openMemberActionsMenu = (page: Page, memberId: string) => page.locator(`#more-actions-btn-${memberId}`).click();
+
+const savedAccessUrl = async (roomId: string, memberId: string) =>
+	(await getRoomMembers(roomId)).find((member) => member.memberId === memberId)?.accessUrl;
 
 test.describe('Console Room detail E2E Tests', () => {
 	let room: MeetRoom;
@@ -182,11 +187,121 @@ test.describe('Console Room detail E2E Tests', () => {
 			await expect(page.locator(`#member-deprecated-access-link-${user.userId}`)).toHaveCount(0);
 			await page.locator(`#member-deprecated-access-link-${oldGuest.memberId}`).hover();
 			await expect(page.locator('.mat-mdc-tooltip')).toContainText(
-				'This link may be insecure because it was created before OpenVidu Meet 3.10.0. Remove this member and add them again to get a secure link.'
+				'This link may be insecure because it was created before OpenVidu Meet 3.10.0. Click to regenerate it.'
 			);
 		} finally {
 			await cleanupUsers([user.userId]);
 		}
+	});
+
+	test('a member row offers copy link, edit and a menu to regenerate the link and remove the member', async ({
+		page
+	}) => {
+		const guest = await createRoomMember(room.roomId, { name: 'Invitada', baseRole: MeetRoomMemberRole.SPEAKER });
+		await gotoRoomDetail(page, room.roomId);
+		await membersTab(page).click();
+
+		const rowButtons = page.locator(`#member-action-buttons-${guest.memberId} > button`);
+		await expect(rowButtons).toHaveCount(3, { timeout: 20_000 });
+		await expect(page.locator(`#copy-member-link-btn-${guest.memberId}`)).toBeVisible();
+		await expect(page.locator(`#edit-member-btn-${guest.memberId}`)).toBeVisible();
+		await expect(page.locator(`#delete-member-btn-${guest.memberId}`)).toHaveCount(0);
+
+		await openMemberActionsMenu(page, guest.memberId);
+
+		await expect(page.locator(`#regenerate-member-link-btn-${guest.memberId}`)).toBeVisible();
+		await expect(page.locator(`#delete-member-btn-${guest.memberId}`)).toBeVisible();
+	});
+
+	test('the menu of a user member offers no regenerate link action', async ({ page }) => {
+		const { user } = await createReadyUser('Console member', MeetUserRole.ROOM_MEMBER);
+
+		try {
+			await createRoomMember(room.roomId, { userId: user.userId, baseRole: MeetRoomMemberRole.SPEAKER });
+			await gotoRoomDetail(page, room.roomId);
+			await membersTab(page).click();
+			await expect(page.locator(`#member-name-${user.userId}`)).toBeVisible({ timeout: 20_000 });
+
+			await openMemberActionsMenu(page, user.userId);
+
+			await expect(page.locator(`#delete-member-btn-${user.userId}`)).toBeVisible();
+			await expect(page.locator(`#regenerate-member-link-btn-${user.userId}`)).toHaveCount(0);
+		} finally {
+			await cleanupUsers([user.userId]);
+		}
+	});
+
+	test('regenerating the link of a guest shows the new link and copies it', async ({ page }) => {
+		const guest = await createRoomMember(room.roomId, { name: 'Invitada', baseRole: MeetRoomMemberRole.SPEAKER });
+		await gotoRoomDetail(page, room.roomId);
+		await installClipboardCapture(page);
+		await membersTab(page).click();
+
+		await openMemberActionsMenu(page, guest.memberId);
+		await page.locator(`#regenerate-member-link-btn-${guest.memberId}`).click();
+		await expect(page.locator('.dialog-message')).toContainText('Invitada');
+		await confirmDialog(page);
+
+		const newLink = page.locator('.dialog-message code');
+		await expect(newLink).toBeVisible();
+		await expect(page.locator('.dialog-message')).toHaveCount(1);
+		const newAccessUrl = (await newLink.textContent())!;
+		expect(newAccessUrl).not.toBe(guest.accessUrl);
+		expect(newAccessUrl).toBe(await savedAccessUrl(room.roomId, guest.memberId));
+		await confirmDialog(page);
+
+		await expectCopiedText(page, newAccessUrl);
+	});
+
+	test('cancelling the confirmation leaves the link of the guest as it was', async ({ page }) => {
+		const guest = await createRoomMember(room.roomId, { name: 'Invitada', baseRole: MeetRoomMemberRole.SPEAKER });
+		const regenerateRequests: string[] = [];
+		page.on('request', (request) => {
+			if (request.url().endsWith('/access-url')) regenerateRequests.push(request.url());
+		});
+		await gotoRoomDetail(page, room.roomId);
+		await membersTab(page).click();
+
+		await openMemberActionsMenu(page, guest.memberId);
+		await page.locator(`#regenerate-member-link-btn-${guest.memberId}`).click();
+		await expect(page.locator('.dialog-message')).toContainText('Invitada');
+		await page.locator('.cancel-button').click();
+
+		await expect(page.locator('.dialog-message')).toHaveCount(0);
+		expect(regenerateRequests).toEqual([]);
+		expect(await savedAccessUrl(room.roomId, guest.memberId)).toBe(guest.accessUrl);
+	});
+
+	test('clicking the warning icon of a guest added before 3.10.0 regenerates its link', async ({ page }) => {
+		const guest = await createRoomMember(room.roomId, { name: 'Old guest', baseRole: MeetRoomMemberRole.SPEAKER });
+		await page.route(
+			(url) => url.pathname.endsWith(`/api/v1/rooms/${room.roomId}/members`),
+			async (route) => {
+				const response = await route.fetch();
+				const body = await response.json();
+
+				for (const member of body.members) {
+					const accessUrl = new URL(member.accessUrl);
+					accessUrl.searchParams.set('secret', member.memberId);
+					member.accessUrl = accessUrl.toString();
+				}
+
+				await route.fulfill({ response, json: body });
+			}
+		);
+		await gotoRoomDetail(page, room.roomId);
+		await membersTab(page).click();
+		const icon = page.locator(`#member-deprecated-access-link-${guest.memberId}`);
+		await expect(icon).toBeVisible({ timeout: 20_000 });
+
+		await icon.click();
+		await expect(page.locator('.dialog-message')).toContainText('Old guest');
+		await confirmDialog(page);
+
+		const newLink = page.locator('.dialog-message code');
+		await expect(newLink).toBeVisible();
+		expect(await newLink.textContent()).toBe(await savedAccessUrl(room.roomId, guest.memberId));
+		await expect(icon).toHaveCount(0);
 	});
 
 	test('keeps the room members tab in the URL when a member is edited and the user goes back', async ({ page }) => {
@@ -208,6 +323,7 @@ test.describe('Console Room detail E2E Tests', () => {
 
 		const openRemoveDialog = async () => {
 			await page.goto(`${MEET_BASE_URL}/rooms/${room.roomId}?tab=members`, { waitUntil: 'domcontentloaded' });
+			await openMemberActionsMenu(page, guest.memberId);
 			await page.locator(`#delete-member-btn-${guest.memberId}`).click();
 			await expect(page.locator('.dialog-message')).toContainText('Invitada');
 		};

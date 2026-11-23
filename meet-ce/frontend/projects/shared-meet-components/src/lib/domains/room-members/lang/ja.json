@@ -65,8 +65,10 @@
       "COLUMN_ACTIONS": "操作",
       "VIEW_USER_PROFILE": "ユーザープロフィールを表示",
       "COPY_ACCESS_LINK": "アクセスリンクをコピー",
-      "DEPRECATED_ACCESS_LINK": "このリンクは OpenVidu Meet 3.10.0 より前に作成されたため、安全でない可能性があります。安全なリンクを取得するには、このメンバーを削除して再度追加してください。3.13.0 では Meet がこのリンクを置き換え、古いリンクは使用できなくなります。",
+      "DEPRECATED_ACCESS_LINK": "このリンクは OpenVidu Meet 3.10.0 より前に作成されたため、安全でない可能性があります。クリックして再生成してください。3.13.0 では Meet がこのリンクを置き換え、古いリンクは使用できなくなります。",
       "EDIT_MEMBER": "メンバーを編集",
+      "MORE_ACTIONS": "その他の操作",
+      "REGENERATE_LINK": "リンクを再生成",
       "REMOVE_MEMBER": "メンバーを削除",
       "LOAD_MORE_MEMBERS": "さらにメンバーを読み込む",
       "MATCH_MODE_STARTS_WITH": "前方一致",
@@ -220,6 +222,14 @@
         }
       }
     },
+    "DIALOGS": {
+      "REGENERATE_LINK_TITLE": "リンクを再生成",
+      "REGENERATE_LINK_MESSAGE": "「{memberName}」の現在のリンクは使用できなくなります。ミーティングに参加中の場合は、退出するまで参加したままです。新しいリンクを送る必要があります。",
+      "REGENERATE": "再生成",
+      "NEW_LINK_TITLE": "新しいリンク",
+      "NEW_LINK_MESSAGE": "これは「{memberName}」の新しいリンクです。コピーして送ってください:",
+      "COPY_LINK": "リンクをコピー"
+    },
     "NOTICES": {
       "LINK_COPIED": "メンバーのアクセスリンクをクリップボードにコピーしました",
       "REMOVED": "メンバー「{memberName}」を削除しました",
@@ -229,7 +239,8 @@
       "BULK_NOT_REMOVED_ONE": "{count} 人のメンバーを削除できませんでした。",
       "BULK_NOT_REMOVED_MANY": "{count} 人のメンバーを削除できませんでした。",
       "BULK_REMOVE_FAILED": "メンバーの削除に失敗しました",
-      "LOAD_FAILED": "ルームのメンバーの読み込みに失敗しました"
+      "LOAD_FAILED": "ルームのメンバーの読み込みに失敗しました",
+      "REGENERATE_LINK_FAILED": "リンクの再生成に失敗しました"
     }
   }
 }

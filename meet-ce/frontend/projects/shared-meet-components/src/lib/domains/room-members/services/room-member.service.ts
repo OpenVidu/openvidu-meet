@@ -183,6 +183,18 @@ export class RoomMemberService {
 	}
 
 	/**
+	 * Gives an identified guest a new access link: the previous one stops granting access.
+	 *
+	 * @param roomId - The unique identifier of the room
+	 * @param memberId - The unique identifier of the identified guest
+	 * @returns A promise that resolves to the MeetRoomMember with its new `accessUrl`
+	 */
+	async regenerateAccessUrl(roomId: string, memberId: string): Promise<MeetRoomMember> {
+		const path = `${this.getRoomMemberApiPath(roomId, true)}/${memberId}/access-url`;
+		return this.httpService.postRequest(path);
+	}
+
+	/**
 	 * Bulk deletes multiple room members by their IDs.
 	 *
 	 * @param roomId - The unique identifier of the room
