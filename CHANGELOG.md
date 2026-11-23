@@ -9,393 +9,91 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 
 ## 3.10.0 (unreleased)
 
+This release adds live broadcasts, locked rooms with a waiting room, raise hand and reactions, and moves the meeting's
+moderation, recording and role commands to the embedded API.
+
 ### Upgrade notes
 
-- The first start migrates the stored rooms and room members, and a 3.9 server does not start on the migrated
-  database.
-- Meet no longer starts when `MEET_INITIAL_ADMIN_USER` is shorter than 5 characters.
-- Meet no longer starts with a `MEET_BLOB_STORAGE_MODE` other than `s3`, `gcs` or `abs`, which 3.9 took as `s3`.
-- A `SERVER_TRUST_PROXY` subnet in IPv4-mapped IPv6 notation with a prefix shorter than 96, such as
-  `::ffff:10.0.0.0/8`, matches no IPv4 address, so the proxies it named are no longer trusted.
-- Existing rooms get raise hand and reactions turned on, and live broadcast and the locked room turned off, with
-  `broadcastControl` and `broadcastEdit` granted to no role or member, and `accessBypassLock` and `waitingParticipantAdmin` granted
-  to their moderator role.
-- Webhooks registered without `events`, the one of `MEET_INITIAL_WEBHOOK_URL` included, also receive
-  `participantRoleChanged`, `participantHandChanged`, `waitingParticipantKnocked`, `waitingParticipantStatusChanged`,
-  `broadcastStarted`, `broadcastUpdated` and `broadcastEnded`.
-- Meet opens a WebSocket on its own path, `<base path>/internal-api/v1/ws`: a proxy or load balancer of the operator's
-  own in front of Meet passes WebSocket upgrades on the Meet path and keeps idle connections open for more than 20
-  seconds, and an external Redis whose Meet user is restricted by ACL grants it the channel permission `&ov_meet:*`.
+- Meet does not start when `MEET_INITIAL_ADMIN_USER` or `MEET_INITIAL_ADMIN_PASSWORD` is shorter than 5 characters, or
+  when `MEET_BLOB_STORAGE_MODE` is not `s3`, `gcs` or `abs` (3.9 took any other value as `s3`).
+- Identified guest **access links** created before this release **are insecure and must be regenerated** via the console, or by deleting and re-adding the guest. The old link will stop working once regenerated.
+  This process will be performed automatically starting with version 3.13.0.
 
-### Deprecated
+### Breaking changes
 
-The link form below still works in this release. In **3.13.0** each guest still on it gets a link of the current form
-with the same `memberId`, and the old link stops working. The console's Room Members tab marks these guests, and
-its Regenerate link action gives the guest a link of the current form with the same `memberId`.
-
-| Deprecated                                                                                   | Replacement                                                                                                         |
-| -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| The `accessUrl` of an identified guest added before 3.10.0, whose `secret` is the `memberId` | The `accessUrl` whose `secret` is the `memberId`, a `-` and a random part, which every guest added from 3.10.0 gets |
-
-`SENSITIVE_ROOM_FIELDS_ENTRIES` and `MeetRoomSensitiveFieldPath` of `@openvidu-meet/typings` are removed in **3.12.0**,
-with no replacement.
+**None.**
 
 ### Added
 
 #### Integration
 
-- Embedded commands `recordingStart` and `recordingStop`, gated by `recordingControl`, and the embedded events
-  `recordingStarted`, `recordingUpdated` and `recordingEnded`, carrying the recording to every participant.
-- Embedded attributes and URL parameters `language`, which sets the initial interface language, meeting and
-  recording screens alike (a BCP 47 language tag, or `auto` for the browser's), over the participant's stored
-  preference without replacing it, and `show-language-selector`, which hides the language selectors when `false`.
-- Embedded command `participantUpdateRole`, gated by `participantPromote`, promotes a participant to moderator or
-  demotes them back. Every promotion and demotion is reported as the
-  [`participantRoleChanged`][3.10-participant-role-changed] webhook and as the embedded event of the same name to the
-  affected participant.
-- Raise hand, in the meeting and through the REST API, the embedded commands `participantRaiseHand`,
-  `participantLowerHand` and `participantLowerAllHands` and the embedded event and webhook `participantHandChanged`,
-  with the `participantLowerHand` permission to lower other participants' hands and the room config
-  `raiseHand.enabled` to turn it off.
-- Reactions, in the meeting and through the embedded command `participantSendReaction` and the embedded event
-  `participantReactionSent`, with the `participantSendReaction` permission to send them and the room config
-  `reactions.enabled` to turn them off.
-- [Broadcasts API][3.10-broadcasts] under `/api/v1/broadcasts`: stream a live meeting to one or more RTMP
-  destinations, one broadcast per destination, each with its own status and its own `broadcastId`, as a
-  recording has, read them and stop one or several, in a room whose `config.broadcast.enabled` is `true` (`false` by
-  default). Starting and stopping use the new [`broadcastControl`][3.10-permissions] permission and streaming to a
-  destination the room does not have uses `broadcastEdit`, both granted to the moderator role of rooms created from
-  this release on, and reading them uses `meetingRead`. The embedded API gets the `broadcastStart`, `broadcastStop`
-  and `broadcastStopAll` commands and the `broadcastStarted`, `broadcastUpdated` and `broadcastEnded` events, the
-  webhooks [`broadcastStarted`][3.10-broadcast-started], [`broadcastUpdated`][3.10-broadcast-updated] and
-  [`broadcastEnded`][3.10-broadcast-ended] report the same, and the [meeting info][3.10-meetings] carries
-  `broadcastActive`.
-- Rooms save the destinations a broadcast streams to by default, and the layout and encoding it streams
-  with, in [`config.broadcast`][3.10-room-config].
-  Every response replaces the stream key of a destination URL with `********`, and a redacted URL sent back
-  keeps the saved key.
-- Locked rooms, on the REST API, the webhooks and the embedded API: in a room whose
-  [`access.lock`][3.10-room-access], set with `roomCreate` and `roomUpdateAccess`, has `enabled` set, participants
-  without the new
-  [`accessBypassLock`][3.10-permissions] permission ask to join and wait until a holder of `waitingParticipantAdmin` admits or rejects
-  them. [`waitingParticipantList`][3.10-waiting-participant-list], `waitingParticipantGet`,
-  [`waitingParticipantAdmit`][3.10-waiting-participant-admit], `waitingParticipantAdmitAll`,
-  [`waitingParticipantReject`][3.10-waiting-participant-reject] and
-  [`waitingParticipantBulkReject`][3.10-waiting-participant-bulk-reject], and the embedded commands
-  `waitingParticipantAdmit`, `waitingParticipantAdmitAll`, `waitingParticipantReject` and
-  `waitingParticipantRejectAll`, are gated by `waitingParticipantAdmin`. The webhooks
-  [`waitingParticipantKnocked`][3.10-waiting-participant-knocked] and
-  [`waitingParticipantStatusChanged`][3.10-waiting-participant-status-changed] and the embedded events
-  `waitingParticipantKnocked`, `waitingParticipantListUpdated` and `waitingParticipantStatusChanged` report who waits
-  and what became of each wait. In these rooms a room member token acts on the meeting (reads, moderation, recording and
-  broadcast control, admission) only if it carries a participant identity, and locking the room invalidates the room
-  member tokens issued before and updates `rolesUpdatedAt`.
-- [`meetingGet`][3.10-meetings] returns the participants and the waiting participants of the meeting on request, with
-  `extraFields=participants` and `extraFields=waitingParticipants`, the latter for callers with
-  `waitingParticipantAdmin`.
-- User responses carry `isRootAdmin`, `true` for the `MEET_INITIAL_ADMIN_USER` account.
+- **Live broadcasting:** Added support for streaming meetings to one or more RTMP destinations. Includes the new `broadcastControl` and `broadcastEdit` permissions. See the [Broadcasts API documentation][3.10-broadcasts].
+- **Locked rooms:** Added support for restricting room access and managing participants through a waiting room. Configured via `access.lock`. See the [Room Access documentation][3.10-room-access].
+- **Raise hand:** Added support for participants to raise and lower their hands through the API and embedded commands.
+- **Reactions:** Added support for participants to send reactions during meetings.
+- **Participant roles:** Added the `participantUpdateRole` command to promote or demote participants. See the [Participant Role documentation][3.10-participant-role-changed].
+- **Recording controls:** Added embedded commands to start and stop recordings.
+- **Language settings:** Added the `language` and `show-language-selector` embedded attributes.
+- **Meeting information:** Extended `meetingGet` to include participant and waiting room information. User responses now include `isRootAdmin`.
 
 #### UI
 
-- The room wizard gets a Broadcast step to save the room's default RTMP destinations and layout, the meeting's activities
-  panel a Live broadcast activity to go live to them, add one for the meeting, and stop or restart each, and
-  the status rail a `LIVE` chip with the time on air.
-- The device setup screen shows the microphone's live level in its microphone button, and its camera, microphone and
-  background effects controls are split controls with a separate toggle and menu button.
-- Locked rooms have a waiting screen for the participant who asks to join (time waited, the room's message and a
-  camera preview) and an outcome screen for each way a wait ends, a Waiting to join section in the Participants panel
-  with Admit, Deny, Admit all, Deny all and the free places, a chip in the status rail and a notification for the
-  participants who admit, and a Locked room section in the room wizard.
-- The Room Members tab regenerates an identified guest's link, keeping their `memberId`, from a more options menu that
-  also holds Remove member.
+- **Live broadcasting:** Added broadcast configuration to the room wizard and live broadcast indicators during meetings.
+- **Locked rooms:** Added waiting room screens and participant management indicators, along with room access configuration in the room wizard.
+- **Participant interactions:** Added raise hand and reactions to the meeting interface.
+- **Device setup:** Improved the device setup screen with microphone level indicators and separate controls for camera, microphone and background effects.
+- **Room members:** Added a Regenerate link action to the Room Members tab that gives an identified guest a link of the current form, keeping their `memberId`.
 
 #### Deployment
 
-- Live broadcasts need the OpenVidu egress, which reports the tag Meet gives each stream URL.
-- Azure Blob Storage authenticates with the Azure managed identity of the VM or pod running Meet when
-  `MEET_AZURE_ACCOUNT_KEY` is empty.
+- **Live broadcasting:** Requires OpenVidu Egress to be enabled.
+- **Azure Blob Storage:** Added support for managed identity authentication, allowing deployments to authenticate without configuring an account key.
 
 ### Improved
 
 #### Integration
 
-- The embedded event `participantLeft` carries the participant's `leaveReason`, the same one the
-  [`participantLeft`][3.9-participant-left] webhook carries.
-- [`participantList`][3.10-participant-list], `participantGet`, the webhooks
-  [`participantJoined`][3.9-participant-joined] and [`participantLeft`][3.9-participant-left] and their embedded events
-  carry the participant's `type` (`user`, `identified_guest` or `anonymous`).
-- `chatWrite` lets a participant send chat messages only together with `chatRead`, and
-  `mediaChangeVirtualBackground` offers background effects only together with `mediaPublishVideo`. The room
-  wizard and the member form disable each of these switches while the permission it needs is off.
-- [`recordingList`][3.10-recording-list] filters by several statuses at once, given in `status` as a comma-separated
-  list.
+- **Participant information:** Extended participant-related APIs and events with additional information, including the participant `type` and the `leaveReason` attribute. See the [Participant API documentation][3.10-participant-list].
+- **Permission dependencies:** Improved permission validation to ensure that related permissions, such as `chatRead` and `chatWrite`, are used consistently.
+- **Recording management:** Enhanced `recordingList` to support filtering by multiple statuses. See the [Recording API documentation][3.10-recording-list].
 
 #### UI
 
-- The meeting settings panel takes the width of the other panels and groups its options in three tabs: Audio &
-  video, with on and off switches and a camera preview and a microphone level meter that, in Chrome, Edge and
-  Firefox on a computer, show a picked camera or microphone before Apply switches the one the others receive;
-  Layout, which More options > Adjust layout opens directly and which also sets the own video floating or in the
-  grid; and General.
-- The microphone is sent at speech quality, 24 kbps instead of 48 kbps.
-- The audio of a shared screen is captured as played, without echo cancellation, noise suppression or automatic
-  gain control.
-- The console lists of rooms, recordings and users no longer open an item at the end of a text selection, open it in a
-  new tab on a middle click or a Ctrl or Cmd click, and show the ids of rooms and users as links, the room id among
-  them on the recordings list.
-- The console lists of rooms, users and recordings keep their search, filters and order in the URL, and the room page its
-  selected tab, so a reload or a shared link shows the same view.
-- The console lists keep their rows, dimmed, while a search, a sort or a new page loads, and show placeholder rows when
-  they have none yet, instead of replacing the list with a spinner, and the Embedded page shows its sections with
-  placeholder rows instead of a loading screen.
-- The console Rooms, Recordings and Users pages show their key figures above the list, counted over what the user can
-  see: the rooms by status and those reaching their auto-deletion date within 7 days, the recordings by status and the
-  users by role. Selecting a figure filters the list, and the status filter of every recordings list takes several
-  statuses.
-- The console overview shows the rooms by status (open, in a meeting now and closed), the recordings by status
-  (available for playback, in progress and failed) and the rooms that reach their auto-deletion date within 7 days, and
-  refreshes every 30 seconds while its tab is visible or on Refresh; `analyticsGet` returns them as `openRooms`,
-  `closedRooms`, `recordingsInProgress`, `failedRecordings`, `roomsExpiringSoon` and `nextExpiringRoom`.
+- **Meeting settings:** Reorganized settings into three tabs (Audio & video, Layout and General), with previews for camera and microphone changes.
+- **Audio quality:** Improved microphone audio quality and screen-sharing audio capture.
+- **Console lists:** Improved list navigation and usability, including key figures, persistent search and filters, URL-based state and more responsive loading.
+- **Console overview:** Added room and recording statistics grouped by status, with automatic refresh.
 
 ### Fixed
 
 #### Integration
 
-- A room member token issued before its participant was demoted through
-  [`participantUpdateRole`][3.10-participant-update-role] or the embedded command of the same name stayed valid until
-  it expired, so they kept their moderator permissions. It is now rejected.
-- A room member token held by a participant kicked through [`participantKick`][3.10-participant-kick] or the embedded
-  command of the same name stayed valid for up to 2 hours, so they could reconnect with it. It is now rejected.
-- `roomRefreshMemberToken` renewed room member tokens without the checks that invalidate them after a change of the
-  room's roles or access, of the member's permissions or of the user's role, or the deletion of the member or the
-  user. It now applies them, and the meeting renews a refused token with the
-  credentials it joined with.
-- The `memberId` of an identified guest, which every participant of a meeting can read as their identity, also
-  worked as the `secret` of the guest's `accessUrl`, so anyone who saw it could get room member tokens as that guest.
-  Guests added from this release get an `accessUrl` whose `secret` adds a random part to the `memberId`, and only
-  that exact secret grants their access.
-- A room member holding `roomShareAccessLinks` received every anonymous link of the room from
-  [`roomGet`][3.10-room-get] and [`roomList`][3.10-room-list], the moderator link included. Each link is now returned
-  only to a caller that also holds every permission it grants.
-- [`recordingGetUrl`][3.10-recording-get-url] returned a link that downloads the recording to a caller holding
-  `recordingPlay` without `recordingDownload`, and the recording player's context menu saved the video for any viewer.
-  Such a caller now gets a link that only plays the recording, and the player opens no context menu.
-- A `participantName` of any length was accepted when requesting a room member token to join a meeting. It is now
-  limited to 1024 characters, and a longer one answers `422`.
-- A request whose credentials could not be checked because MongoDB or Redis failed answered `401`. It now answers
-  `500`.
-- A request whose path held a percent escape that does not decode, such as `/api/v1/rooms/%ZZ`, answered `500`. It
-  now answers `400`.
-- Kicking a participant answered `404` when the media server stopped answering during the kick. It now answers `503`.
-- A list request with a `maxItems` below 1, such as `0.5`, answered an empty page marked as truncated and without a
-  `nextPageToken`. Such a value now returns one item.
-- The pages after the first of [`roomList`][3.10-room-list] and [`recordingList`][3.10-recording-list] requested by a
-  `room_manager` or `room_member` user listed rooms and recordings outside that user's scope, and those of
-  [`userList`][3.10-user-list] with both `userId` and `name` ignored both filters. Every page now keeps the scope and the
-  filters of the first.
-- When `fields` left out the field the list is sorted by, the second page of `roomList`, `recordingList` and
-  [`roomListMembers`][3.10-room-list-members] was empty. It now continues the listing.
-- [`participantUpdateRole`][3.10-participant-update-role], [`participantMute`][3.9-participant-mute],
-  [`participantMuteAll`][3.9-participant-mute-all], `roomUpdateMember` and the embedded commands that use them
-  answered with an error when the notice to the affected participants could not be delivered, although the change
-  was already applied. They now succeed.
-- Two simultaneous [`participantUpdateRole`][3.10-participant-update-role] requests for the same participant both
-  succeeded, and a promotion made while the participant's token was being regenerated could be undone by it. Both
-  now apply one after the other, so the second promotion answers `409`.
-- [`participantKick`][3.9-participant-kick] and the embedded command of the same name could disconnect the recorder
-  of a recording in progress or the live captions assistant, which `participantGet` answers as not in the meeting.
-  They now answer the same 404 for them.
-- The embedded commands `meetingEnd` and `endMeeting` reported `meeting_ended` in the `meetingLeft` event of the
-  participant whose host ended the meeting. They now report `meeting_ended_by_self`, as ending it from the leave menu
-  does.
-- The `joinDate` of the embedded event `participantJoined` was the moment the join reached the browser, by the
-  browser's clock, and the one of `participantLeft` was rounded down to the second. Both now carry the `joinDate` of
-  the [`participantJoined`][3.9-participant-joined] webhook.
-- The [`meetingEnded`][3.9-meeting-ended] webhook could be sent twice for one meeting when the media server's notice
-  of its end and the periodic meeting status check handled it at the same time. It is now sent once.
-- [`recordingStart`][3.10-recording-start] checked the target room before `recordingControl`, so a room member token of
-  another room got `404` for a room that does not exist and learned whether a room could be recorded. It now answers
-  `403` first.
-- [`recordingStart`][3.10-recording-start] answered `500` when the media server did not accept the recording, and `500`
-  or `409` (no participants) when it could not be reached. It now answers `503`.
-- A recording encoding the media server cannot use, such as an odd width, was accepted in a room's
-  `recording.encoding` and in the `config.encoding` of [`recordingStart`][3.10-recording-start], and the start then
-  failed with a server error. Both now answer `422`.
-- [`recordingStop`][3.10-recording-stop] answered `404` for a recording that had ended more than 24 hours earlier, and
-  `500` for one that ended while the stop was being processed. It now answers `409` for both, as for any recording
-  already stopped.
-- [`recordingBulkDelete`][3.10-recording-bulk-delete] and [`recordingBulkDownload`][3.10-recording-bulk-download] accepted any
-  number of `recordingIds`, and a long list failed with a server or proxy error. They now accept up to 100 distinct ids
-  and answer `422` to more, and the recording lists disable ZIP download and bulk delete beyond 100 selected
-  recordings.
-- A recording whose egress service died stayed in progress for good: stopping it answered 500 and starting another one
-  in the room 409. It ends as `failed`, with its [`recordingEnded`][3.10-recording-ended] webhook, and the room can
-  record again.
-- [`recordingBulkDownload`][3.10-recording-bulk-download] with more than 50 recordings, two large ZIPs at once or a cancelled
-  ZIP left every later recording playback and download on that server hanging until it restarted. Each ZIP now
-  releases what it opened, whatever its size or however it ends.
-- A recording ended by the stale-recordings clean-up sent no [`recordingEnded`][3.9-recording-ended] webhook and stayed
-  in progress in the meeting. Its end is now reported like any other, once.
-- The access token of a user with a pending password change also reached public endpoints whose path ends in `/me`
-  or `/change-password`, such as `GET /api/v1/users/me`. Only `userGetMe` and `userChangePassword` accept it now.
-- Two simultaneous API key regenerations could leave two API keys, both accepted. Exactly one remains now, the last
-  one generated.
-- Logging out, changing one's own password and refreshing with rotation left the earlier user tokens valid until
-  they expired. `authLogout` now revokes the session's tokens, `userChangePassword` revokes every earlier token of
-  the user and returns new ones, and a rotated refresh token is accepted once.
-- Two simultaneous [`userCreate`][3.10-user-create] requests with the same `userId` could answer `500`. The one that
-  finds the `userId` taken now answers `409`.
-- [`roomUpdateStatus`][3.10-room-update-status] with `open` during a meeting set the room `open` while the meeting
-  went on, cancelling a scheduled close or deletion and sending a second `meetingStarted` webhook, and `closed` turned
-  a scheduled deletion into a close. During a meeting the room now stays `active_meeting`: `open` cancels only a
-  scheduled close and answers `409` when a deletion is scheduled, and `closed` keeps a scheduled deletion.
-- The room returned by `roomDelete` and `roomBulkDelete` carried its `roles` with the current permission keys only. It
-  now carries the deprecated `can*` keys next to them, as every other room response does.
-- [`roomDelete`][3.10-room-delete], [`roomBulkDelete`][3.10-room-bulk-delete] and the automatic deletion of expired
-  rooms could leave a room `open` with a pending deletion when its meeting ended at the same moment, and the next
-  meeting then deleted the room and its recordings; a meeting starting at the same moment could have its room deleted
-  under it. A deletion now acts on the meeting state the room has when it is written.
-- `roomGetMember` answered `404` for a member that does not exist before checking the caller, so a caller without
-  access could tell which `memberId` values belong to the room. Such a caller now gets `403` whether or not the member
-  exists.
-- A room member token of one room got `404` for a room that does not exist and `403` for one that does on `roomGet`,
-  `roomGetConfig`, `roomGetMember` and the meeting and broadcast operations, so it could tell which rooms exist. It
-  now gets `403` for both.
-- A permission change made with `roomUpdateMember` during a meeting reached the media server only when the
-  participant's client renewed its token, so a client that skipped the renewal kept publishing what it had lost. The
-  server now applies the new media grant at once.
-- A `roomUpdateMember` that changed nothing, such as one with an empty body, revoked the member's room member tokens
-  and told a member in the meeting that their permissions were updated. Only an update that changes the member's
-  effective permissions does so now.
-- The name an identified guest, a member user or a signed-in user joined a meeting with was locked by the join screen
-  only, so a modified client could join under any name. Outside encrypted rooms the server now uses the member's or
-  the user's name.
-- `chatRead` was enforced in the interface only: every chat message reached every participant's client. Messages now
-  reach only the participants holding `chatRead`.
-- A room's `config.chat.enabled` `false` was enforced in the interface only, so a modified client holding `chatWrite`
-  could still send chat messages. The media server now refuses them.
-- A room with end-to-end encryption could have live captions on, although the captions assistant only receives
-  encrypted audio and produced no captions. As with recording, `captions.enabled` is now stored as `false` while
-  `e2ee.enabled` is `true`, in existing rooms too, and the room wizard turns captions off when encryption is turned on.
-- Registering the same callback twice with `on()` on `<openvidu-meet>` called it twice per event and left one
-  registration that `off()` could not remove, and a callback registered with `once()` could not be removed with
-  `off()`. A callback is now registered once per event, and `off()` removes it however it was added.
-- A join refused because `participant-external-id` or `participant-metadata` exceed their limits showed the generic
-  error screen. It now shows an "Invalid participant data" error screen and logs the server's reason in the browser
-  console.
-- Inside `<openvidu-meet>`, `F11` pressed anywhere on the host page was taken by the meeting, and the browser did not
-  toggle its own fullscreen. The meeting now takes it only with the focus inside the element.
-- **Fullscreen** in More options and `F11` did nothing in `<openvidu-meet>`. They now put the meeting in fullscreen, with
-  its menus and dialogs visible.
-- The styles of `<openvidu-meet>` reached the host page, restyling its own elements such as Angular Material
-  components, and the host page's `<style>` rules reached inside the element. Each side's styles now stay on its side
-  of the element's shadow root.
-- On the device setup screen, the toolbar of `<openvidu-meet>` covered the top of the host page across its full width
-  and took its clicks. It now stays inside the element.
-- Meet in an iframe did not post `embeddedCloseRequested` to the host page from a recording screen or from an access
-  error screen shown before the join screen, and dropped commands posted before the join screen without a console
-  warning. It now listens to the host page and posts events from the moment it loads.
-- With `leave-redirect-url` set, the redirect could replace the host page before `embeddedCloseRequested` reached it,
-  in the embedded element and in the iframe. The redirect now follows the event.
-- A `leave-redirect-url` stayed in effect for the next element or iframe of the same page, which then sent the host
-  page to the earlier URL on Back. Each entry now uses only its own.
-- Replacing an `<openvidu-meet>` element with a new one on another room could end on an error dialog instead of
-  the new room's join screen. The new element now enters its room undisturbed.
-- A room URL opened in an iframe or a direct link with `show-only-recordings` and no value, or a value other than
-  `true` such as `1`, showed the meeting. It now shows the room recordings page unless the value is `false`, as the
-  attribute of `<openvidu-meet>` does.
-- Moving `<openvidu-meet>` to another container dropped the callbacks registered with `on()` and `once()`. They are
-  now kept.
+- **Access security:** Fixed several issues affecting room access, guest links and authentication. Room member tokens are now invalidated when access rights or roles change, guest access links use independent secrets, and user tokens are revoked after logout or password changes.
+- **API authorization:** Fixed access control issues affecting room and recording links, chat functionality and participant information. Sensitive resources and operations are now properly protected by server-side permission checks.
+- **Room and participant management:** Fixed issues with room status changes, member permissions, moderation requests and participant removal during meetings.
+- **Recording management:** Fixed issues affecting recording lifecycle events, playback and downloads, including failed recording processes and large or cancelled ZIP downloads. Improved access restrictions and bulk operation handling.
+- **Meeting lifecycle and events:** Fixed inconsistencies in meeting and participant events, including incorrect timestamps and leave reasons, as well as duplicate events caused by concurrent operations.
+- **API consistency:** Fixed incorrect HTTP status codes, access-related error responses, pagination filters and scope handling. Bulk recording operations are now limited to 100 items.
+- **Embedded integration:** Fixed event listener registration, iframe communication, command handling, redirection and isolation issues in the `<openvidu-meet>` component.
+- **Captions and encryption:** Fixed an issue that allowed live captions to be enabled in rooms using end-to-end encryption.
+- **Configuration and validation:** Fixed issues with recording-only mode and invalid participant data.
 
 #### UI
 
-- The Duration and Size headers of the console recordings list were shown in English whatever the language. They are now
-  translated.
-- After leaving a meeting that was being recorded, joining another meeting with the same `<openvidu-meet>`
-  element showed that recording as still in progress. The recording indicator starts over with each meeting.
-- A participant able to chat could publish a message imitating the server's, to show a recording as started or stopped,
-  turn off other participants' devices or force a permission refresh, when the other meetings did not list them yet.
-  Only messages the server sent take effect now.
-- After leaving a meeting, joining another meeting with the same `<openvidu-meet>` element showed the earlier
-  meeting's chat messages and counted them as unread. The chat now starts empty in every meeting.
-- A browser tab, or an `<openvidu-meet>` element, that had entered a room with a secret or an encryption key reused
-  them for any other room entered without them, so a user access link opened afterwards showed the "Invalid link"
-  error screen. They are now kept only for the room they were given for.
-- On the join screen of a meeting in an iframe without `leave-redirect-url`, a signed-in user got a **Back to Rooms**
-  button that only emitted `embeddedCloseRequested`, and an anonymous participant got none. The iframe's access error
-  screens, and a recording opened in an iframe by its link, offered no button either. The join, error and recording
-  screens of an iframe now always offer one that emits `embeddedCloseRequested`, as its end screen does.
-- A room member or user who joined a meeting again before their earlier session had left it, from a second tab, after
-  reloading or by rejoining quickly, was renamed with a numeric suffix such as `Ana_1` everywhere the meeting shows or
-  reports names. They now keep their name.
-- A participant promoted and demoted in quick succession, or whose permissions changed right after their role, could
-  be left with the permissions of the earlier change. The changes are now applied in the order they happen.
-- A participant promoted and demoted several times in a row got one notice per change, stacked over the meeting. Only
-  the notice of their current role is shown now.
-- A participant promoted to moderator or demoted while still joining a meeting kept the permissions of the role they
-  joined with. They now get the new role's permissions, and its notice, once in the meeting.
-- A participant whose room member token could not be renewed for a moment, because the server was unreachable or
-  failing, was taken out of the meeting to an access-revoked error page. They now stay in the meeting, and only losing
-  access to the room takes them out.
-- The notices a participant sees when promoted to moderator, demoted or given updated permissions were always in
-  English. They now follow the selected language.
-- In a narrow desktop browser window or a narrow `<openvidu-meet>`, the meeting toolbar overflowed and hid some of its
-  buttons. A window or an element too narrow for the whole toolbar now gets the compact toolbar a phone gets.
-- On a phone, the status rail overflowed the screen and hid its last chips, such as the participants left out of the
-  layout. Narrower than 790 px, the raised hands, the reactions and the participants left out of the layout now move
-  to a second row of the rail when they do not fit beside the rest.
-- The microphone button of the meeting toolbar stayed enabled while the microphone was being turned on or off, so a quick
-  second press started the opposite change before the first one ended. It is now disabled until the change ends, like
-  the camera button.
-- The notifications in the top corner of a meeting covered the header of an open side panel, its close button
-  included. They now sit beside the panel, or below its header when the panel fills the screen.
-- In a meeting in fullscreen, menus and dialogs were no longer shown once a participant left. They stay visible.
-- The record button of the toolbar and **Start recording** in the activities panel stayed disabled when a participant
-  already in the meeting published their first track while nobody else was publishing. They are enabled as soon as a
-  track is published.
-- With more than three captions at once, a participant still speaking whose caption had left the screen got no caption
-  until they paused. Their caption is shown again with their next words.
-- In `<openvidu-meet>`, the send button of the chat overflowed the message box. It sits inside it.
-- In a chat message, a bare domain followed by a query or a fragment, such as `example.com?x=1`, was linked without
-  them. The whole address is linked now.
-- The notices of the console room detail page about copying a member's link, removing members, deleting the room and
-  failing to load members or recordings were always in English, as were the notice and the error dialog of deleting a
-  room on the Rooms page. They now follow the selected language.
-- The recording lists of the console and the room recordings page offered play and share on every recording, even to a
-  user or room member without `recordingPlay`, and those actions then failed. They are now disabled, with a tooltip,
-  without `recordingPlay`.
-- The console treated the earliest registered user as the root admin, so after a change of
-  `MEET_INITIAL_ADMIN_USER` it protected the wrong account. It now protects the `MEET_INITIAL_ADMIN_USER` account.
-- In a room whose anonymous speaker access is disabled, the meeting still offered the anonymous speaker link to share,
-  a link every recipient was refused with. The meeting no longer offers it.
-- The console overview showed the getting-started view of an empty deployment when its request failed. It now keeps its
-  last figures, or shows an error notice when it has none.
-- The console pages scrolled inside their own column, with the scrollbar in the middle of the screen, and the bottom of
-  the page, the **Load more** button of a list included, was cut off. The whole page scrolls now, with the scrollbar at
-  the window edge.
-- The API key section of the console Embedded page did not show when the key was generated. It shows the generation date.
+- **Meeting state:** Fixed issues where recording indicators, chat messages and room information could carry over between meetings in the same tab or embedded component.
+- **Participant management:** Fixed issues with role and permission updates, participant reconnections and system notifications.
+- **Meeting controls:** Fixed issues affecting microphone and recording controls, fullscreen menus and chat interactions.
+- **Responsive layout:** Fixed toolbar, status rail and notification overflow issues on narrow screens and mobile devices.
+- **Chat and captions:** Fixed issues with links, message sending and caption display when multiple speakers are present. Also prevented participants from impersonating system messages.
+- **Recording permissions:** Fixed an issue that exposed playback and sharing actions to users without the required permissions.
+- **Console:** Fixed issues with administrator protection, navigation, overview error handling, translations and API key information.
 
 #### Deployment
 
-- A `SERVER_TRUST_PROXY` subnet in IPv4-mapped IPv6 notation with a short prefix, such as `::ffff:10.0.0.0/8`,
-  trusted every client as a proxy, so rate limiting took the client address from `X-Forwarded-For`. Such a
-  subnet now matches no IPv4 address.
-- A request with a compressed body followed by extra bytes could stop the server, with no authentication needed.
-  Such a request no longer does.
-- An unknown `MEET_BLOB_STORAGE_MODE` value, including `GCS` or `ABS` in capitals, made Meet use S3 storage. Values
-  now match in any case, and any other value stops startup naming the variable.
-- With `MEET_BLOB_STORAGE_MODE=abs`, recordings were written under `MEET_S3_SUBBUCKET` but read under
-  `MEET_AZURE_SUBCONTAINER_NAME`, so they could not be played, downloaded or deleted when the two differed. They are
-  now written under `MEET_AZURE_SUBCONTAINER_NAME`.
-- A `MEET_S3_SUBBUCKET` or `MEET_AZURE_SUBCONTAINER_NAME` that begins the recordings path, such as `rec` or
-  `recordings`, made Meet look for recordings outside the prefix they were written under, so they could not be played,
-  downloaded or deleted. They are now read under the prefix.
-- A `MEET_INITIAL_ADMIN_USER` or `MEET_INITIAL_ADMIN_PASSWORD` shorter than 5 characters created a root admin that
-  could never log in. Meet now refuses to start with such a value and names the variable.
-- A `MEET_BASE_URL` whose port starts with `80` or `443`, such as `http://example.com:8080`, lost part of its port in
-  every URL Meet returned. Only the default port of its scheme is now removed.
-- A `MEET_BASE_PATH` that begins another path segment, such as `/r` before `/room`, cut that segment short in the
-  access URLs of rooms. Only a whole leading segment is now removed.
+- **Proxy configuration:** Fixed an issue where certain IPv4-mapped IPv6 subnet configurations could cause untrusted clients to be treated as trusted proxies.
+- **Request handling:** Fixed a server stability issue caused by malformed compressed request bodies.
+- **Azure storage:** Fixed playback, download and deletion of recordings stored in Azure Blob Storage, including recordings stored in subdirectories.
+- **URL configuration:** Fixed access URL generation when using custom ports or base paths through `MEET_BASE_URL` and `MEET_BASE_PATH`.
 
 ## 3.9.0
 
@@ -532,7 +230,6 @@ registered on both receives it twice.
 - Unanswered webhooks caused active connections to grow continuously. Every webhook is answered.
 - The `openvidu/openvidu-meet` Docker image resolved its dependencies anew on every build instead of installing the versions in the lockfile. It now installs the locked versions.
 
-[3.10-participant-kick]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/participantKick
 [3.10-participant-list]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/participantList
 [3.10-participant-role-changed]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/participantRoleChangedWebhook
 [3.9-api]: https://openvidu.io/3.9/meet/embedded/reference/api.html
@@ -543,7 +240,6 @@ registered on both receives it twice.
 [3.9-meeting-ended]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/webhooks/meetingEndedWebhook
 [3.9-participant-mute]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/participantMute
 [3.9-participant-mute-all]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/participantMuteAll
-[3.9-participant-kick]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/participantKick
 [3.9-download]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/downloadRecording
 [3.9-room-config]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/schemas/MeetRoomConfig
 [3.9-permissions]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/schemas/MeetPermissions
@@ -551,34 +247,17 @@ registered on both receives it twice.
 [3.9-create-room]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/createRoom
 [3.9-start-recording]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/operations/startRecording
 [3.9-recording-ended]: https://openvidu.io/3.9/meet/embedded/reference/api.html#/webhooks/recordingEndedWebhook
-
-[3.10-recording-ended]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/recordingEndedWebhook
 [3.10-broadcasts]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/broadcastStart
 [3.10-permissions]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/schemas/MeetPermissions
 [3.10-room-config]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/schemas/MeetRoomConfig
 [3.10-room-access]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/schemas/MeetRoomAccess
 [3.10-meetings]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/meetingGet
-[3.10-broadcast-started]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/broadcastStartedWebhook
-[3.10-broadcast-updated]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/broadcastUpdatedWebhook
-[3.10-broadcast-ended]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/broadcastEndedWebhook
 [3.10-waiting-participant-list]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/waitingParticipantList
-[3.10-waiting-participant-admit]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/waitingParticipantAdmit
-[3.10-waiting-participant-reject]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/waitingParticipantReject
-[3.10-waiting-participant-knocked]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/waitingParticipantKnockedWebhook
-[3.10-waiting-participant-status-changed]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/waitingParticipantStatusChangedWebhook
-[3.10-participant-update-role]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/participantUpdateRole
 [3.10-recording-bulk-delete]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/recordingBulkDelete
 [3.10-recording-bulk-download]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/recordingBulkDownload
 [3.10-recording-get-url]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/recordingGetUrl
 [3.10-recording-list]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/recordingList
-[3.10-recording-start]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/recordingStart
-[3.10-recording-stop]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/recordingStop
-[3.10-room-bulk-delete]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/roomBulkDelete
-[3.10-room-delete]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/roomDelete
 [3.10-room-get]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/roomGet
 [3.10-room-list]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/roomList
-[3.10-room-list-members]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/roomListMembers
 [3.10-room-update-status]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/roomUpdateStatus
-[3.10-user-create]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/userCreate
 [3.10-user-list]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/userList
-[3.10-waiting-participant-bulk-reject]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/waitingParticipantBulkReject

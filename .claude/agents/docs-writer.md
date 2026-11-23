@@ -11,7 +11,7 @@ typings, never from memory.
 
 ## Changelog
 
-Open `CHANGELOG.md`: its writing rules load with it (`.claude/rules/changelog.md`). One line per change in
+Open `CHANGELOG.md`: its writing rules load with it (`.claude/rules/changelog.md`). One bullet per feature in
 the unreleased release, or none when the rules say so; then say why in your report. Check the route and
 the service before naming the permission that gates a capability. If the user removed a line before, do
 not add it back: ask.
