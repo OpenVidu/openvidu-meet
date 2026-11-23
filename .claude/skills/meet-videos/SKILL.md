@@ -182,6 +182,7 @@ A failed take prints the failing line of `record.mjs` and the path of a screensh
 | `delete-room` | ui, seeds "Old Project Room" | videos/meet/rooms/management | Row menu → **Delete room** → confirms. |
 | `update-room-status` | ui, seeds "Product Demo" | videos/meet/rooms/management | Row menu → **Close room**. |
 | `share-link` | ui, seeds "Product Demo" | videos/meet/rooms/access | Row menu → **Share link** → **Anonymous Moderator** → **Get Link** → copy. |
+| `remove-member` | ui, seeds "Weekly Team Sync" with Bob Martin and Alice Turner | videos/meet/room-members/management | Room Members tab → Alice's menu → **Remove member** → confirms. |
 | `create-user` | ui | videos/meet/users/management | **Create User** → olivia_brooks, Olivia Brooks, Room Member, a password → **Create User**. |
 | `delete-user` | ui, seeds Ava Morgan | videos/meet/users/management | Delete button → confirms. |
 | `reset-user-password` | ui, seeds Noah Bennett | videos/meet/users/management | Reset button → **Auto generate** → **Reset Password**. |
@@ -198,7 +199,7 @@ A failed take prints the failing line of `record.mjs` and the path of a screensh
 
 - **Console side-nav:** `#nav-link-overview` · `#nav-link-rooms` · `#nav-link-recordings` · `#nav-link-users` · `#nav-link-config` · `#nav-link-embedded` (id is `nav-link-<route>`).
 - **Rooms list / wizard:** `#create-room-btn` (list) → `/rooms/new` opens in basic mode → `.room-basic-creation-form input` (name, prefilled "Room") + `#create-room-button` (submit). Advanced wizard nav: `#wizard-next-btn` · `#wizard-finish-btn`; five steps (Room Details, Meeting, Recording, Live broadcast, Room Access).
-- **Row actions:** rooms `[id^="access-room-btn-"]` (opens a new tab: `access-room` replaces `window.open` to stay in one recorded page), `[id^="more-actions-btn-"]` → `share-link-btn-` / `toggle-room-status-btn-` / `delete-room-btn-`; users `update-role-btn-` / `reset-password-btn-` / `delete-user-btn-`. Dialogs: `.mat-mdc-dialog-container`, confirm `.confirm-button`, share dialog `.generate-button` / `.copy-button`.
+- **Row actions:** rooms `[id^="access-room-btn-"]` (opens a new tab: `access-room` replaces `window.open` to stay in one recorded page), `[id^="more-actions-btn-"]` → `share-link-btn-` / `toggle-room-status-btn-` / `delete-room-btn-`; users `update-role-btn-` / `reset-password-btn-` / `delete-user-btn-`; members (room detail, `?tab=members`) `copy-member-link-btn-` / `edit-member-btn-` / `more-actions-btn-` → `regenerate-member-link-btn-` / `delete-member-btn-`. Dialogs: `.mat-mdc-dialog-container`, confirm `.confirm-button`, share dialog `.generate-button` / `.copy-button`.
 - **Lobby / prejoin:** `#participant-name-input` · `#participant-name-submit` · `#join-button` · `#layout-container` · `#media-buttons-container`.
 - **In-meeting toolbar:** `#mic-btn` · `#camera-btn` · `#screenshare-btn` · `#chat-panel-btn` · `#participants-panel-btn` · `#more-options-btn` · `#grid-layout-settings-btn` · `#leave-btn`. Chat: `#chat-input` · `#send-btn`. Remote tiles: `.OV_stream_video.remote`; participants panel: `ov-participants-panel`.
 

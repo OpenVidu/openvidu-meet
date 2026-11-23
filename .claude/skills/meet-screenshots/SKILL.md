@@ -124,6 +124,8 @@ retries up to 3× with backoff (data-heavy pages occasionally stall late in a lo
 | `virtual-bg-prejoin` | images/meet/meetings/virtual-background (webp) | device view in a 1080x720 window, first office background applied (GPU flags) | anon | **own room** | `#background-effects-container` |
 | `room-wizard` | images/meet/{meetings,recordings}/configuration (png) | advanced wizard: Meeting step (10 participants, 60 min) and Recording step plain, trigger menu open, green frame on Anonymous Recording Access, Speaker layout | admin | — | `#recording-trigger-section` |
 | `participants-panel` | images/meet/meetings/{moderation,role-management} (png) | Emma (moderator) with David and Sarah (speakers, Sarah's camera off): full page with the panel, then 397x395 crops of David's menu with the green arrow on Promote and on Downgrade | anon | **own room** | `ov-participants-panel` |
+| `room-members-list` | images/meet/room-members/management (png) | `/rooms/:id?tab=members` of "Weekly Team Sync": David Lee and Sarah Johnson (users), Bob Martin and Alice Turner (identified guests) | admin | **own room and users** | `[id^="members-actions-cell-"]` |
+| `copy-member-link` | images/meet/room-members/management (png) | same room, 184x198 crop of David's actions cell with the "Copy access link" tooltip and the green arrow on the button | admin | **own room and users** | `.mat-mdc-tooltip` |
 
 ## Full UI route map (source: `domains/<domain>/routes/*.routes.ts`)
 

@@ -154,7 +154,9 @@ const ALL_SCENES = [
 		id: 'participants-panel',
 		scripted: captureParticipantsPanel,
 		outputs: ['images/meet/meetings/moderation/participants-panel', 'images/meet/meetings/role-management/promote-moderator', 'images/meet/meetings/role-management/demote-moderator']
-	}
+	},
+	{ id: 'room-members-list', scripted: captureRoomMembersList, outputs: ['images/meet/room-members/management/room-members-list'] },
+	{ id: 'copy-member-link', scripted: captureCopyMemberLink, outputs: ['images/meet/room-members/management/copy-member-link'] }
 ];
 const outputsOf = (scene) => scene.outputs ?? (scene.shots ?? []).map((sh) => `${sh.domain}/${sh.base}`);
 
@@ -222,6 +224,18 @@ async function waitForRoomCount(token, n) {
 		if ((await listRooms(token)).length >= n) return;
 		await new Promise((r) => setTimeout(r, 250));
 	}
+}
+async function apiPost(token, path, body) {
+	const res = await fetch(`${API}${path}`, {
+		method: 'POST',
+		headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+		body: JSON.stringify(body)
+	});
+	if (!res.ok) throw new Error(`POST ${path} failed: ${res.status} ${await res.text()}`);
+	return await res.json();
+}
+async function deleteUsers(token, ids) {
+	for (const id of ids) await fetch(`${API}/users/${encodeURIComponent(id)}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
 }
 
 // ---------- UI helpers ----------
@@ -673,17 +687,17 @@ async function captureRoomWizard(token, theme) {
 	}
 }
 
-// Draws the docs green arrow with its tip at `tip`, pointing up and to the right.
-const drawArrow = (page, tip) =>
-	page.evaluate((t) => {
+// Draws the docs green arrow with its tip at `tip`, pointing up and to the right (-45) or down and to the right (45).
+const drawArrow = (page, tip, angle = -45) =>
+	page.evaluate(({ t, angle }) => {
 		const ns = 'http://www.w3.org/2000/svg';
 		const svg = document.createElementNS(ns, 'svg');
 		svg.id = 'docs-arrow';
 		svg.setAttribute('style', 'position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:2147483647');
-		svg.innerHTML = `<polygon transform="translate(${t.x} ${t.y}) rotate(-45)" points="0,0 -34,-26 -34,-11 -118,-11 -118,11 -34,11 -34,26"
+		svg.innerHTML = `<polygon transform="translate(${t.x} ${t.y}) rotate(${angle})" points="0,0 -34,-26 -34,-11 -118,-11 -118,11 -34,11 -34,26"
 			fill="#00ff00" stroke="#000" stroke-width="3" stroke-linejoin="round"/>`;
 		document.body.appendChild(svg);
-	}, tip);
+	}, { t: tip, angle });
 
 // Emma (moderator, captured) with David and Sarah (speakers, Sarah's camera off): the participants panel,
 // then David's menu cropped with the arrow on Promote, and again on Downgrade once David is promoted.
@@ -733,6 +747,61 @@ async function captureParticipantsPanel(token, theme) {
 		} finally {
 			for (const c of cams) await c.close();
 		}
+	});
+}
+
+// "Weekly Team Sync" on its Room Members tab: David Lee and Sarah Johnson (users), Bob Martin and Alice Turner
+// (identified guests). The list shows the newest member first, so they are added in reverse.
+async function withMembersTab(token, theme, take) {
+	const users = [['sarah_manager', 'Sarah Johnson', 'room_manager'], ['david_member', 'David Lee', 'room_member']];
+	const members = [
+		{ name: 'Alice Turner', baseRole: 'speaker' },
+		{ name: 'Bob Martin', baseRole: 'moderator' },
+		{ userId: 'sarah_manager', baseRole: 'moderator' },
+		{ userId: 'david_member', baseRole: 'speaker' }
+	];
+	const created = [];
+	try {
+		for (const [userId, name, role] of users) {
+			await apiPost(token, '/users', { userId, name, role, password: 'demo-pass-123' });
+			created.push(userId);
+		}
+		await withRoom(token, 'Weekly Team Sync', async (room) => {
+			for (const member of members) await apiPost(token, `/rooms/${room.roomId}/members`, member);
+			const { context, page } = await newThemedPage(browser, theme, true);
+			try {
+				await page.goto(`${APP}/rooms/${room.roomId}?tab=members`, { waitUntil: 'domcontentloaded' });
+				await page.locator('[id^="members-actions-cell-"]').nth(members.length - 1).waitFor({ timeout: TIMEOUT });
+				await page.mouse.move(1800, 1000);
+				await page.waitForTimeout(900);
+				await take(page);
+			} finally {
+				await context.close();
+			}
+		});
+	} finally {
+		await deleteUsers(token, created);
+	}
+}
+
+async function captureRoomMembersList(token, theme) {
+	await withMembersTab(token, theme, (page) =>
+		shotTo(page, `images/meet/room-members/management/room-members-list-${theme}`, { format: 'png' })
+	);
+}
+
+// The actions cell of the first member, with its "Copy access link" tooltip and the arrow on the button.
+async function captureCopyMemberLink(token, theme) {
+	await withMembersTab(token, theme, async (page) => {
+		const button = page.locator('[id^="copy-member-link-btn-"]').first();
+		await button.hover();
+		await page.locator('.mat-mdc-tooltip').waitFor({ state: 'visible', timeout: TIMEOUT });
+		await page.waitForTimeout(600);
+		const box = await button.boundingBox();
+		const center = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+		await drawArrow(page, { x: center.x - 1, y: center.y - 20 }, 45);
+		const clip = { x: center.x - 104, y: center.y - 122, width: 184, height: 198 };
+		await shotTo(page, `images/meet/room-members/management/copy-member-link-${theme}`, { format: 'png', clip });
 	});
 }
 
