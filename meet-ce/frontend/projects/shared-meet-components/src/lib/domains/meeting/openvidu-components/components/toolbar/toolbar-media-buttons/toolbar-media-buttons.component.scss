@@ -64,6 +64,13 @@
 		background-color: var(--ov-accent-action-color) !important;
 	}
 
+	#more-options-btn {
+		width: 32px;
+		border-radius: 16px;
+		padding-left: 0;
+		padding-right: 0;
+	}
+
 	#leave-btn,
 	::ng-deep #leave-btn {
 		background-color: var(--ov-error-color) !important;
