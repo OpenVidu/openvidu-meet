@@ -15,8 +15,8 @@ paths:
   integration and the e2e suites start only if none of them failed. It ends
   in `All tests passed`, the only required status check of `main`: renaming, splitting or adding jobs
   never touches the ruleset. Repeated steps are YAML anchors defined at their first use, so a version
-  is pinned in one place. Suites use Node `24.22.1` (same pin as `meet-ce/docker/Dockerfile`) and pnpm
-  `11.28.9`. Every job runs on GitHub-hosted `ubuntu-24.04` runners, free for this public repo (the
+  is pinned in one place. Suites use Node `24.22.3` (same pin as `meet-ce/docker/Dockerfile`) and pnpm
+  `11.29.0`. Every job runs on GitHub-hosted `ubuntu-24.04` runners, free for this public repo (the
   integration and e2e jobs start the OpenVidu local deployment there, faster than on the shared
   self-hosted runners, which Meet no longer uses). pnpm is pinned by
   `packageManager` in the root `package.json`, which the Docker build follows; `pnpm/action-setup`

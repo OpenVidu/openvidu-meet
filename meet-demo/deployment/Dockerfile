@@ -1,4 +1,4 @@
-FROM node:24.22.1-alpine
+FROM node:24.22.3-alpine
 
 # Install tzdata package for timezone data, and the Alpine fixes published after the base image was built
 RUN apk upgrade --no-cache && apk add --no-cache tzdata
