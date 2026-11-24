@@ -202,6 +202,8 @@ describe('OverviewComponent', () => {
 			await open(busy({ totalRooms: 0, totalRecordings: 0 }));
 
 			expect(el('#create-first-room-button')).not.toBeNull();
+			expect(refreshButton()).toBeNull();
+			expect(el('#overview-updated-at')).toBeNull();
 			expect(el('.stats-grid')).toBeNull();
 		});
 	});
