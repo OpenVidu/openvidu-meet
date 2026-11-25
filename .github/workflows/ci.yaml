@@ -7,7 +7,7 @@ on:
   push:
     branches: [main]
   schedule:
-    - cron: '17 0 * * *'
+    - cron: '0 6 * * *'
   workflow_dispatch:
     inputs:
       suites:
@@ -277,6 +277,21 @@ jobs:
           path: meet_backend.log
           retention-days: 2
 
+      - &collect-deployment-logs
+        name: Collect OpenVidu Local Deployment logs
+        if: failure()
+        run: ./scripts/ci/collect-deployment-logs.sh "$RUNNER_TEMP/deployment-logs"
+
+      - &upload-deployment-logs
+        name: Upload OpenVidu Local Deployment logs
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ github.job }}-deployment-logs-${{ strategy.job-index }}
+          path: ${{ runner.temp }}/deployment-logs/
+          if-no-files-found: ignore
+          retention-days: 2
+
       - *publish-test-report
 
   backend-recordings:
@@ -397,6 +412,9 @@ jobs:
           path: meet_backend.log
           retention-days: 2
 
+      - *collect-deployment-logs
+      - *upload-deployment-logs
+
       - name: Clean up credentials
         if: always() && matrix.storage-provider == 'gcs'
         run: |
@@ -498,6 +516,9 @@ jobs:
             find meet-ce/frontend/test-results -type f 2>/dev/null | head -20 >> $GITHUB_STEP_SUMMARY || echo "No test-results directory found" >> $GITHUB_STEP_SUMMARY
           fi
 
+      - *collect-deployment-logs
+      - *upload-deployment-logs
+
   console-e2e:
     name: Console
     needs: [changes, backend-unit, frontend-unit, wc-unit]
@@ -521,6 +542,9 @@ jobs:
 
       - *upload-e2e-results
       - *e2e-report
+
+      - *collect-deployment-logs
+      - *upload-deployment-logs
 
   wc-e2e:
     name: ${{ matrix.group }}
@@ -594,6 +618,9 @@ jobs:
           name: wc-e2e-meet-logs-${{ strategy.job-index }}
           path: meet_backend.log
           retention-days: 2
+
+      - *collect-deployment-logs
+      - *upload-deployment-logs
 
   # Runs even when the run is cancelled, so a superseded run never leaves a skipped (that is, passing)
   # check behind.
