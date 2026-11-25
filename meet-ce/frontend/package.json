@@ -38,7 +38,7 @@
 		"jwt-decode": "4.0.0",
 		"linkify-string": "4.4.0",
 		"linkifyjs": "4.4.0",
-		"livekit-client": "2.23.0",
+		"livekit-client": "2.25.0",
 		"rxjs": "7.8.2",
 		"tslib": "2.9.1"
 	},
