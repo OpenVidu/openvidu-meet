@@ -59,11 +59,16 @@
 
 	.event-options {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+		grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
 		gap: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-md);
 		margin-top: var(--ov-meet-spacing-md);
 
+		.event-option {
+			min-width: 0;
+		}
+
 		.event-option ::ng-deep .mdc-label {
+			overflow-wrap: anywhere;
 			font-family: monospace;
 			font-size: var(--ov-meet-font-size-sm);
 			color: var(--ov-meet-text-primary);
