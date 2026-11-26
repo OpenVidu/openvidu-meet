@@ -69,6 +69,11 @@ the session that opened this change.
   to the value it had, as it does for recording, broadcast and captions; the server never turns saving back on by
   itself: the user, 2026-11-26.
 - When the history cannot be loaded, the chat panel shows the live messages and no error: the user, 2026-11-26.
+- The "Anonymous" label is shown on every message of an anonymous sender, live or saved, in every room, including rooms
+  that do not save their chat and encrypted ones, so one chat never labels the same person in two ways: the user,
+  2026-11-26.
+- When a participant's connection comes back after being lost, the chat panel of a room that saves its chat loads the
+  history again and adds the messages sent meanwhile, once and without a notice: the user, 2026-11-26.
 - When the Meet server cannot reach the media server over WebRTC, meetings and the live chat work, nothing is stored and
   the server logs an error naming the room each time it fails to join: the user, 2026-11-26.
 - Before merging, one backend saving 50 meetings is measured and the saver is checked on an OpenVidu Elastic deployment:
@@ -80,8 +85,6 @@ the session that opened this change.
 ## Assumptions
 
 - The English labels "Save the room's chat" (wizard) and "Anonymous" (chat).
-- The "Anonymous" label is shown on every message of an anonymous sender, saved or live, so one chat never labels the
-  same person in two ways.
 - An anonymous participant's own messages are recognized after a reload from the ids the browser kept for that meeting.
 - Only an encrypted room's chat panel says that messages are not saved, as the deck shows; a room with saving off says
   nothing, as today.
@@ -134,8 +137,9 @@ None.
 - **Webhooks**: `chat.persist` appears, additively, in the room config the `meetingStarted` and `meetingEnded` payloads
   carry. The hidden participant emits no `participantJoined` or `participantLeft`.
 - **Embedded API**: none.
-- **Meeting UI**: the chat panel loads the current meeting's history, pages it and labels anonymous senders; the sender
-  keeps unconfirmed messages and sends them again.
+- **Meeting UI**: the chat panel loads the current meeting's history on joining, reloading, being granted `chatRead` and
+  reconnecting, and pages it; anonymous senders are labelled in every room; the sender keeps unconfirmed messages and
+  sends them again.
 - **Console UI**: the room wizard's Meeting step gains the saving toggle.
 - **Deployment**: the `openvidu/openvidu-meet` image is based on Debian slim instead of Alpine; the backend opens WebRTC
   connections to the media server (`LIVEKIT_URL_PRIVATE`) for the meetings of rooms that save; a new MongoDB collection

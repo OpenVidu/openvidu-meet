@@ -157,7 +157,9 @@ expired-rooms sweep) also deletes the room's `chat_messages`. Removing a member 
 ### Chat panel
 
 In a room that saves its chat (the room config the meeting already loads), `ChatService` loads the first page once the
-LiveKit room is connected and the participant holds `chatRead`: on join, on reload, or on a grant during the meeting,
+LiveKit room is connected and the participant holds `chatRead`: on join, on reload, on the LiveKit room's `Reconnected`
+event (it loads the first page again and merges it, so the messages sent while the connection was lost appear; a
+sender only addresses the participants it sees, so they never arrive live), or on a grant during the meeting,
 whether it comes from a member update or a user role change (`MEET_PARTICIPANT_PERMISSIONS_UPDATED`) or from a
 promotion (LiveKit metadata), once the participant's token has been renewed with `chatRead`, since the read checks the
 token. A page answered after the participant left the meeting is discarded. It marks loaded messages
@@ -167,7 +169,8 @@ message scrolls to the newest, so the panel's scroll effect, which today scrolls
 list, changes. Live messages carry the same `messageId`, and the panel merges by sender identity and `messageId`, so a
 message seen live and then loaded, or sent again, is shown once. The toolbar's unread count, which today counts any
 growth of `chatMessages` (`ToolbarComponent.chatMessagesEffect`), counts only messages added live. A failed load is logged and leaves the live messages.
-Messages of anonymous senders get the "Anonymous" label. An encrypted room's panel says messages are not saved.
+Messages of anonymous senders get the "Anonymous" label in every room, from the sender's metadata for live messages and
+from `participant.type` for loaded ones. An encrypted room's panel says messages are not saved.
 
 ### Room wizard
 

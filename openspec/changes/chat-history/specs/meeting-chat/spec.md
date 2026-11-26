@@ -35,7 +35,7 @@ While a room has `config.chat.enabled` and `config.chat.persist` true and `confi
 - **THEN** it returns `chat.persist` `false`, and its meetings store no chat message
 
 ### Requirement: What a participant who joins sees
-In a meeting of a room that saves its chat, a participant who holds `chatRead` when they join, when they reload the page or when it is granted during the meeting SHALL find in the chat panel, before any newer message, the messages of the current meeting, each shown once. Messages of earlier meetings SHALL NOT be shown. Messages loaded this way SHALL NOT raise a new-message notice, play a sound or add to the unread count on the chat button.
+In a meeting of a room that saves its chat, a participant who holds `chatRead` when they join, reload the page or reconnect after losing the connection, or when it is granted during the meeting, SHALL find in the chat panel, before any newer message, the messages of the current meeting, each shown once. Messages of earlier meetings SHALL NOT be shown. Messages loaded this way SHALL NOT raise a new-message notice, play a sound or add to the unread count on the chat button.
 
 #### Scenario: Late joiner
 - **GIVEN** a meeting of a room that saves its chat where `alice` sent `hello` and `bob` sent `hi alice`
@@ -51,6 +51,11 @@ In a meeting of a room that saves its chat, a participant who holds `chatRead` w
 - **GIVEN** a participant in a meeting of a room that saves its chat that exchanged `hello`
 - **WHEN** they reload the page and enter the meeting again
 - **THEN** their chat panel shows `hello`
+
+#### Scenario: Connection lost for a while
+- **GIVEN** a participant in a meeting of a room that saves its chat
+- **WHEN** their connection drops, `alice` sends `missed you` meanwhile, and their connection comes back
+- **THEN** their chat panel shows `missed you`, once, with no notice and no unread count for it
 
 #### Scenario: chatRead granted during the meeting
 - **GIVEN** a participant without `chatRead` in a meeting of a room that saves its chat where `hello` was sent
@@ -81,8 +86,8 @@ The chat panel SHALL show the last 20 messages of the history on joining and loa
 - **WHEN** a participant joins and another participant then sends `hello`
 - **THEN** the chat panel shows `hello` and no error
 
-### Requirement: Senders of saved messages
-The server SHALL store each message with the sender the media server reports, whatever the client claims, and the display name and participant type (`user`, `identified_guest` or `anonymous`) that sender has in the meeting. A participant SHALL see the history's messages they sent labelled as their own: a user or an identified guest always, an anonymous participant in the same browser. A message of an anonymous sender SHALL be labelled "Anonymous" next to the sender's name, saved or live.
+### Requirement: Senders and their labels
+The server SHALL store each message with the sender the media server reports, whatever the client claims, with that sender's display name and participant type (`user`, `identified_guest` or `anonymous`). A participant SHALL see their own saved messages as their own: a user or identified guest always, an anonymous participant in the same browser. An anonymous sender's messages SHALL be labelled "Anonymous" next to the name in every room, saved or live.
 
 #### Scenario: Anonymous participant reloads
 - **GIVEN** an anonymous participant who sent `hello` in a meeting of a room that saves its chat
@@ -95,7 +100,7 @@ The server SHALL store each message with the sender the media server reports, wh
 - **THEN** their chat panel shows `hello` labelled `dave` and "Anonymous", as a message of another participant
 
 #### Scenario: Anonymous sender
-- **GIVEN** an anonymous participant `sara` in a meeting
+- **GIVEN** an anonymous participant `sara` in a meeting of a room that does not save its chat
 - **WHEN** she sends `hi`
 - **THEN** the other participants see `hi` labelled `sara` and "Anonymous"
 
