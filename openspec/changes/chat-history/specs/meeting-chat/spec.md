@@ -176,6 +176,11 @@ The server SHALL serve a room's history only to a participant in its meeting: th
 - **WHEN** a client without a room member token asks the server for the history of a room
 - **THEN** the server answers `401`
 
+#### Scenario: Room that does not save its chat
+- **GIVEN** a participant holding `chatRead` in a meeting of a room with `config.chat.persist` false
+- **WHEN** their client asks the server for the history
+- **THEN** the server answers with no messages
+
 ### Requirement: Saved messages are deleted only with their room
 A room's stored messages SHALL stay after each of its meetings ends and SHALL be deleted together with the room, however it is deleted: `roomDelete`, `roomBulkDelete`, a deletion that waited for the meeting to end, or auto-deletion. Turning saving or chat off, turning encryption on, removing a member or deleting a user SHALL NOT delete or change them; while the room does not save its chat, the server SHALL serve none of them.
 
@@ -193,6 +198,11 @@ A room's stored messages SHALL stay after each of its meetings ends and SHALL be
 - **GIVEN** an identified guest `diego` who sent `see you` in a meeting of a room that saves its chat
 - **WHEN** a room manager removes `diego` from the room and a participant then joins the meeting
 - **THEN** the participant's chat panel shows `see you` labelled `diego`
+
+#### Scenario: Settings changed after a meeting
+- **GIVEN** a room that saves its chat whose meeting stored `hello`, sent by the user `ana`, and ended
+- **WHEN** its owner turns saving off and encryption on, and an administrator deletes `ana`
+- **THEN** `hello` stays stored with `ana` as its sender
 
 ### Requirement: Chat saving toggle in the room wizard
 While chat is on, the console room wizard's Meeting step SHALL show a "Save the room's chat" toggle bound to `config.chat.persist`. While end-to-end encryption is on, the toggle SHALL be disabled and off and the restrictions the wizard lists for encryption SHALL say that chat messages are not saved; turning encryption off again, from the Meeting or the Recording step, SHALL restore the value the toggle had.

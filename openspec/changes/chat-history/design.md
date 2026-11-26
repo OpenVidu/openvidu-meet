@@ -141,7 +141,7 @@ object omits it, as it does for `recording.layout`; the default object used when
 `persist: true`, since zod 4 returns a default without running the transform. The chat schema shared with the update keeps it optional with no
 default, so an update that leaves it out keeps the stored value. `disableFeaturesExcludedByE2EE` sets `persist` false.
 Room schema 10 to 11 sets `persist: false` on every existing room, with a
-new `MIGRATION_REV`. The OpenAPI room config schema documents both fields.
+new `MIGRATION_REV`. The OpenAPI room config schema documents the field.
 
 ### Deleting the history
 
@@ -150,8 +150,8 @@ expired-rooms sweep) also deletes the room's `chat_messages`. Removing a member 
 
 ### Chat panel
 
-`ChatService` loads the first page once the LiveKit room is connected and the participant holds `chatRead` (join,
-reload, or a grant once the token has
+In a room that saves its chat (the room config the meeting already loads), `ChatService` loads the first page once the
+LiveKit room is connected and the participant holds `chatRead` (join, reload, or a grant once the token has
 been regenerated on `MEET_PARTICIPANT_PERMISSIONS_UPDATED`, since the read checks the token), marks loaded messages
 so they never notify, merges them with the live ones by `messageId`, and loads the next page when the list is scrolled
 to the top. Prepending a page keeps the scroll position on the message that was at the top; only an appended (live)
@@ -176,15 +176,15 @@ encryption turned off from the Recording step.
 The `prod-deps` stage moves from `node:24.22.3-alpine` to `node:24.22.3-slim` and the `production` stage from
 `node:24-alpine` to `node:24-slim` (`apt-get upgrade`, `tzdata`, same removal of npm, npx, corepack and yarn), keeping
 whatever Node pin the Dockerfile carries when this is implemented. `entrypoint.sh` stops node with
-`kill -TERM "$node_pid"` instead of `pkill`, which Debian slim does not ship. `prod-deps` already runs on the target platform, so `pnpm deploy`
-installs the `linux-x64-gnu` or `linux-arm64-gnu` binding. Measured: 455 MB to 579 MB on disk and 94 MB to 123 MB to
+`kill -TERM "$node_pid"` instead of `pkill`, which Debian slim does not ship, and its trap waits for node to exit, since
+today the script exits first. `prod-deps` already runs on the target platform, so `pnpm deploy` installs the `linux-x64-gnu` or `linux-arm64-gnu` binding. Measured: 455 MB to 579 MB on disk and 94 MB to 123 MB to
 download, of which 16 MB is Debian and 12.5 MB the binding.
 
 ## Several replicas
 
 Any replica can host a meeting's saver; at most one connection per meeting survives a race; a stopped replica's savers
-are rejoined by whoever receives their `participant_left`, or by the next participant join, or by the startup sweep if
-every replica restarted. MongoDB's unique index makes resends and duplicates idempotent across replicas. The history
+are rejoined by whoever receives their `participant_left`, or by the next participant join, or by the room status sweep
+if every replica restarted. MongoDB's unique index makes resends and duplicates idempotent across replicas. The history
 read is a plain query, served the same by any replica.
 
 ## Risks / Trade-offs

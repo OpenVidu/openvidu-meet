@@ -62,7 +62,7 @@ the session that opened this change.
   room `activeRecording` and a hidden standard participant counts as an attendee in the dashboard.
 - The saver is ensured when the media server room starts, on every standard participant's join, on its own departure
   while participants remain, and once at startup; replicas racing to join resolve by identity, with no lock: the user,
-  2026-11-26.
+  2026-11-26. The startup run is the cluster's room status sweep, which also repeats on its interval.
 - Messages are sent again to the saver only, never to the other participants: the user, 2026-11-26.
 - The history is ordered as the server stored it, which keeps each sender's order: the user, 2026-11-26.
 - In the room wizard, turning encryption off again, from the Meeting or the Recording step, restores the saving toggle
