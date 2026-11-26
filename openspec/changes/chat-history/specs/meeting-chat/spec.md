@@ -57,6 +57,11 @@ In a meeting of a room that saves its chat, a participant who holds `chatRead` w
 - **WHEN** a room manager updates the member with `chatRead` true
 - **THEN** the chat button appears and the chat panel shows `hello`, once
 
+#### Scenario: Promoted to a role with chatRead
+- **GIVEN** a speaker without `chatRead` in a meeting of a room that saves its chat where `hello` was sent, and a moderator role holding `chatRead`
+- **WHEN** a moderator promotes them
+- **THEN** the chat button appears and the chat panel shows `hello`, once
+
 #### Scenario: Joining a meeting with history
 - **GIVEN** a meeting of a room that saves its chat where messages were exchanged
 - **WHEN** a participant joins it with the chat panel closed
@@ -125,6 +130,12 @@ What the server does to save a meeting's chat SHALL NOT show as a participant: i
 - **GIVEN** a meeting of a room that saves its chat with two participants
 - **WHEN** an integrator calls `participantList` and `meetingGet`
 - **THEN** both list two participants
+- **AND** no `participantJoined` webhook or embedded event is emitted beyond those two participants
+
+#### Scenario: Recording with only the saver left
+- **GIVEN** a meeting of a room that saves its chat whose participants have all left, before it ends
+- **WHEN** an integrator calls `recordingStart` or `broadcastStart`
+- **THEN** the server answers `409`
 
 #### Scenario: Last free place
 - **GIVEN** a room that saves its chat with `maxParticipants` 2 and one participant in its meeting
@@ -149,8 +160,18 @@ With several Meet replicas, each message of a meeting SHALL be stored once, whic
 - **WHEN** replica A stops and a participant who stays in the meeting sends `are you there`
 - **THEN** a participant who joins afterwards sees `are you there` in the history, once
 
+#### Scenario: Replicas with different clocks
+- **GIVEN** two Meet replicas whose clocks differ by a minute and a meeting of a room that saves its chat whose saver moves from one to the other
+- **WHEN** a participant sends `one` before the move and `two` after it
+- **THEN** the history holds `one` before `two`
+
+#### Scenario: The only server restarts
+- **GIVEN** one Meet server and a meeting of a room that saves its chat
+- **WHEN** the server restarts and a participant who stays in the meeting sends `back`
+- **THEN** a participant who joins afterwards sees `back` in the history, once
+
 ### Requirement: Reading the history needs chatRead
-The server SHALL serve a room's history only to a participant in its meeting: the holder of a join token of that room with `chatRead` whose identity is in the meeting, and only while the room saves its chat. Any other room member token SHALL get `403`.
+The server SHALL serve a room's history only to a participant in its meeting: the holder of a join token of that room with `chatRead` whose identity is in the meeting, and only while the room saves its chat. Any other valid room member token SHALL get `403`; a revoked one, such as a kicked participant's, `401` (see `meeting-moderation`).
 
 #### Scenario: Without chatRead
 - **GIVEN** an identified guest with `chatRead` false in a meeting of a room that saves its chat
@@ -171,6 +192,11 @@ The server SHALL serve a room's history only to a participant in its meeting: th
 - **GIVEN** a participant who left the meeting of a room that saves its chat, holding the join token they joined with
 - **WHEN** they ask the server for the history with that token
 - **THEN** the server answers `403`
+
+#### Scenario: Kicked participant
+- **GIVEN** a participant kicked from the meeting of a room that saves its chat
+- **WHEN** they ask the server for the history with the token they held
+- **THEN** the server answers `401`
 
 #### Scenario: Without a room member token
 - **WHEN** a client without a room member token asks the server for the history of a room
@@ -205,7 +231,7 @@ A room's stored messages SHALL stay after each of its meetings ends and SHALL be
 - **THEN** `hello` stays stored with `ana` as its sender
 
 ### Requirement: Chat saving toggle in the room wizard
-While chat is on, the console room wizard's Meeting step SHALL show a "Save the room's chat" toggle bound to `config.chat.persist`. While end-to-end encryption is on, the toggle SHALL be disabled and off and the restrictions the wizard lists for encryption SHALL say that chat messages are not saved; turning encryption off again, from the Meeting or the Recording step, SHALL restore the value the toggle had.
+While chat is on, the console room wizard's Meeting step SHALL show a "Save the room's chat" toggle bound to `config.chat.persist`. While end-to-end encryption is on, the toggle SHALL be disabled and off and the restrictions the wizard lists for encryption SHALL say that chat messages are not saved; turning encryption off again, from any step of the wizard, SHALL restore the value the toggle had.
 
 #### Scenario: Chat turned off hides the saving toggle
 - **GIVEN** a room manager creating a room in the wizard
@@ -265,7 +291,7 @@ A sent message SHALL reach, through the media server, only the participants of t
 - **THEN** the participant receives and sees it, and does not see the messages sent before the grant
 
 ### Requirement: Messages last only the meeting
-In a room that does not save its chat (`config.chat.persist` false or end-to-end encryption enabled), chat messages SHALL exist only among the participants of the meeting: a participant who joins later SHALL NOT see earlier messages, and the next meeting a participant enters SHALL start with an empty chat. Whatever the room, chat messages SHALL be exposed through no public REST operation, webhook or embedded event.
+In a room that does not save its chat (`config.chat.persist` false, chat disabled or end-to-end encryption enabled), chat messages SHALL exist only among the participants of the meeting: a participant who joins later SHALL NOT see earlier messages, and the next meeting a participant enters SHALL start with an empty chat. Whatever the room, chat messages SHALL be exposed through no public REST operation, webhook or embedded event.
 
 #### Scenario: Late joiner
 - **GIVEN** a meeting of a room that does not save its chat where messages were exchanged

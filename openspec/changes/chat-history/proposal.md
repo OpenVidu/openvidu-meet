@@ -131,7 +131,8 @@ None.
 
 - **REST API**: `config.chat.persist` is added to the room config, additively. A new
   internal operation serves a room's history to a participant in the meeting who holds `chatRead`.
-- **Webhooks**: none. The hidden participant emits no `participantJoined` or `participantLeft`.
+- **Webhooks**: `chat.persist` appears, additively, in the room config the `meetingStarted` and `meetingEnded` payloads
+  carry. The hidden participant emits no `participantJoined` or `participantLeft`.
 - **Embedded API**: none.
 - **Meeting UI**: the chat panel loads the current meeting's history, pages it and labels anonymous senders; the sender
   keeps unconfirmed messages and sends them again.
