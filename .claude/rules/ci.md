@@ -24,10 +24,10 @@ paths:
   them, so dev-mode logic lives in `scripts/dev/` (`dev.sh`, `doctor.mjs`, `stack.mjs`), which no suite
   watches. Markdown and `nodemon*.json` never select a suite.
 - CI runs on pull requests: a branch gets CI once it has a PR (a draft is enough) or by dispatching
-  `Tests` (input `suites`, `all` by default, or a comma-separated list). A push to `main` runs the suites it
-  affects, like a pull request, except that a change touching only the backend does not select the e2e
+  `Tests` (input `suites`, `all` by default, or a comma-separated list). A pull request or a push to `main`
+  runs the suites it affects, except that a change touching only the backend does not select the e2e
   suites (the integration suite covers it), and the nightly (06:00 UTC) runs every suite, only when `main` moved
-  since the last green nightly. On a pull request or a push, recordings run on S3 only, unless the change
+  since the last green nightly, so a backend change that breaks an e2e suite shows up there. On a pull request or a push, recordings run on S3 only, unless the change
   touches `meet-ce/backend/src/services/storage/` or the pull request carries the `ci:storage` label
   (read when a run starts, so add it before pushing): GCS and ABS share one bucket each, which every
   recordings job empties first. The nightly and dispatched runs use S3, GCS and ABS. Dependabot groups all
