@@ -138,7 +138,7 @@ None.
   carry. The hidden participant emits no `participantJoined` or `participantLeft`.
 - **Embedded API**: none.
 - **Typings** (`@openvidu-meet/typings`, additive): `MeetChatConfig.persist`, `MeetChatConfigOptions`, `MeetChatMessage`
-  and `MeetSignalType.MEET_CHAT_MESSAGE_SAVED`.
+  and `MeetSignalType.MEET_CHAT_MESSAGE_SAVED`, the `meet.messageId` attribute name and the chat saver identity constant.
 - **Meeting UI**: the chat panel loads the current meeting's history on joining, reloading, being granted `chatRead` and
   reconnecting, and pages it; anonymous senders are labelled in every room; the sender keeps unconfirmed messages and
   sends them again.

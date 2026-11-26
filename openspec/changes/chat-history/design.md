@@ -72,8 +72,12 @@ neither reaches the Meet participant events or webhooks.
 - this replica is not opening a connection for that meeting and holds none that LiveKit lists. A connection it holds
   that LiveKit no longer lists (its network dropped while the process lived) is disconnected and replaced.
 
-Once connected, if the LiveKit room has another sid (it closed meanwhile and the join created a new one), the saver
-leaves at once and deletes that LiveKit room when it holds no standard participant. `ensureSaver` runs:
+The saver's token carries a LiveKit room configuration whose metadata is `{ "createdBy": "meet-chat-saver" }`. LiveKit
+applies it only when the saver's join creates the room (it closed meanwhile), so Meet's webhook filter, which ignores
+rooms whose metadata is not its own, ignores that room's `room_started` and `room_finished`: no `meetingStarted`,
+`meetingEnded` or `ensureSaver` follows. Once connected, if the LiveKit room has another sid than the one read before
+joining, the saver leaves at once and deletes that LiveKit room when it holds no standard participant. `ensureSaver`
+runs:
 
 - on `room_started`, once the room is activated (never for a closed room or a stale event, which `handleRoomStarted`
   already returns early on);
@@ -110,7 +114,8 @@ It keeps the unconfirmed messages in an ordered in-memory buffer. While the buff
 message is sent live to the readers without the saver and joins the end of the buffer. The buffer sends the saver only
 its oldest message, again every 5 s until it is confirmed, and the next one as soon as the previous one is confirmed, so
 the saver stores each sender's messages in the order they were sent and the other participants never get a second copy.
-The buffer is emptied when the participant leaves, reloads the page or loses `chatWrite`.
+The buffer is emptied when the participant leaves, reloads the page or loses `chatWrite` or `chatRead` (publishing
+data needs both).
 
 The ids of the messages it sent in the current meeting are kept, each with the identity it was sent under, through
 `BrowserStorageService` (local, keyed by room and meeting, older meetings dropped). A loaded message counts as the
@@ -121,17 +126,21 @@ theirs.
 ### Storing and confirming
 
 The saver handler stops reading a stream once it passes 2,000 bytes and drops it, before any other check. It then drops
-a stream whose `meet.messageId` is missing or not a UUID, empty after trimming, or over 500 characters. It takes the
-sender's name and type (Meet metadata: `userId`, `memberId` or neither) from the participants it keeps; a stream from a
-sender it does not know yet is dropped unconfirmed, and the resend stores it.
+a stream whose `meet.messageId` is missing or not a UUID. A stream with a valid `meet.messageId` whose text is refused
+(empty after trimming, which the interface can send as a lone line break, tab or non-breaking space, or over 500
+characters) is confirmed without being stored, so it never holds the sender's buffer; only an unknown sender and a
+failed write leave a message unconfirmed. It takes the sender's name and type (Meet metadata: `userId`, `memberId` or
+neither) from the participants it keeps; a stream from a sender it does not know yet is dropped unconfirmed, and the
+resend stores it.
 
 It writes `{ schemaVersion, roomId, meetingId: LiveKit room sid, meetingStartDate (from the LiveKit room metadata,
-MeetRoomHelper.extractMeetingStartDateFromMetadata), messageId, channel: 'all', text, participant: { identity, name,
-type } }` into a new `chat_messages` collection with an upsert whose filter is the unique key
-`(roomId, participant.identity, messageId)` plus `sendDate: { $exists: false }`, `$setOnInsert` for the message and
-`$currentDate: { sendDate: true }`. A first write inserts the message with MongoDB's time. A resend matches nothing and
-fails on the unique key; that duplicate-key error counts as stored and is confirmed, so a stored `sendDate` never
-changes. The key includes the identity so a participant who copies another's `messageId` cannot keep that message out
+MeetRoomHelper.extractMeetingStartDateFromMetadata, or the LiveKit room's creation time when it carries none),
+messageId, channel: 'all', text, participant: { identity, name, type } }` into a new `chat_messages` collection with a
+pipeline upsert (Mongoose `updatePipeline: true`) whose filter is the unique key `(roomId, participant.identity,
+messageId)` plus `sendDate: { $exists: false }`, and whose single stage `$set`s the message and `sendDate: { $toLong:
+'$$NOW' }`. A first write inserts the message with MongoDB's time in milliseconds. Every stored message has a
+`sendDate`, so a resend matches nothing, tries an insert and fails on the unique key; that duplicate-key error counts as
+stored and is confirmed, so a stored `sendDate` never changes. The key includes the identity so a participant who copies another's `messageId` cannot keep that message out
 of the history. `schemaVersion` is a new `CHAT_MESSAGE_SCHEMA_VERSION` 1 in the internal config, registered in the
 migration registry like every collection's.
 
@@ -141,9 +150,9 @@ server, not the hidden participant, confirms. Any other failed write sends nothi
 
 `sendDate` is MongoDB's time, so the history orders by when each message was stored, whichever replica stored it. One
 sender's messages keep their order because the buffer sends the saver one message at a time; two senders whose messages
-were stored after an outage keep the order their resends arrived in. `sendDate` is stored as a BSON date (typed `Date`
-in the Mongoose schema); the repository returns it in milliseconds like every other Meet date, and `nextPageToken`
-carries `(sendDate in ms, _id)`, compared as `new Date(ms)`. The read index is `(roomId, meetingId, sendDate, _id)`.
+were stored after an outage keep the order their resends arrived in. `sendDate` is a number of milliseconds like every
+other Meet date, so the history read reuses the repositories' `findMany` paging unchanged. The read index is
+`(roomId, meetingId, sendDate, _id)`.
 
 ### Reading the history
 
@@ -156,7 +165,8 @@ the history route lives in `MeetingService`, or `isInMeeting`, `protected` today
 - `403` with a token of another room, without `chatRead`, without a participant identity (a token that does not join),
   or whose participant is not in the meeting (waiting, left);
 - `422` and `400` for `maxItems` and `nextPageToken` under the rules of `roomList`;
-- `503` when LiveKit refuses the connection;
+- `503` when LiveKit refuses the connection; the active meeting's sid is read after `isInMeeting`, and a refused
+  connection there also answers `503`;
 - an empty page when the room does not save its chat; otherwise the active meeting's messages (filtered on its LiveKit
   room sid), newest first, sorted by `(sendDate, _id)` descending, with the usual `{ items, pagination: { isTruncated,
   nextPageToken, maxItems } }`.
@@ -199,12 +209,17 @@ LiveKit room is connected and the participant holds `chatRead`:
   (`MEET_PARTICIPANT_PERMISSIONS_UPDATED`) or from a promotion (LiveKit metadata), once the participant's token has been
   renewed with `chatRead`, since the read checks the token: the first page;
 - on the LiveKit room's `Reconnected` event, after a resume or a full reconnect: pages from the newest until one holds a
-  message already shown, or the history ends, so no gap is left however many messages were missed. Messages sent while
-  the connection was lost may arrive live (after a resume LiveKit delivers what it buffered) or only through the
-  history; a live chat message received between `Reconnecting` and the answer to that load raises no notice and adds no
-  unread count, so either way they appear once and quietly.
+  message already shown, or the history ends (with nothing shown, the first page only), so no gap is left however many
+  messages were missed. Messages sent while the connection was lost may arrive live or only through the history; a live
+  chat message received between `SignalReconnecting` or `Reconnecting` (the pinned livekit-client emits only
+  `SignalReconnecting` on a resume, `Reconnecting` on a full reconnect) and the answer to that load raises no notice and
+  adds no unread count, so either way they appear once and quietly. The loaded messages not shown yet go where the
+  connection was lost, in the history's order: after the messages received before it dropped and before those received
+  since.
 
-A page answered after the participant left the meeting is discarded. Loaded messages never notify: they are not new
+The request sends `HTTP_HEADERS.SKIP_AUTH_RECOVERY`, as the occupancy read does (`meeting-livekit.service.ts`), so a
+`401` or `403` is only logged and never regenerates the room member token. A page answered after the participant left
+the meeting is discarded. Loaded messages never notify: they are not new
 messages in the sense of `New-message notice`. They merge with the live ones by sender identity and `messageId` (live
 messages carry the same attribute), so a message seen live and then loaded, or sent again, is shown once. The next page
 loads when the list is scrolled to the top; prepending a page keeps the scroll position on the message that was at the
@@ -225,8 +240,9 @@ restores it, through `setE2EEEnabled`'s remember-and-restore of `E2EE_EXCLUSIVE_
 `chatPersist`) whose control is the saving toggle and whose patch writes `config.chat.persist`, not
 `config.chat.enabled`. The saving toggle never calls `setFeatureEnabled`: it is disabled while encryption is on, so
 turning it on never has to turn encryption off. Encryption also goes off when recording or live broadcast is allowed
-from their steps (`setFeatureEnabled`), which restores nothing today; `fix-captions-off-with-encryption-in-wizard`
-routes that through the same restore.
+from their steps (`setFeatureEnabled`), and back on when they are disallowed again (`patchE2EE(true)`), neither of which
+restores or turns off anything today; `fix-captions-off-with-encryption-in-wizard` routes those changes through the
+same remember-and-restore, so every change of the encryption value, in both directions, keeps the toggle right.
 
 ### Docker image
 
@@ -254,8 +270,8 @@ clock orders their writes. The history read is a plain query, served the same by
 - [A native crash in the binding takes the whole backend down] → none in the trial; reported upstream if seen.
 - [Debian slim shows more low-severity CVEs in scanners than Alpine] → accepted with the image change.
 - [`ensureSaver` costs one LiveKit API call per join in rooms that save] → acceptable at join rates.
-- [A saver joining as LiveKit closes the room recreates it] → it leaves and deletes it at once; at most a
-  `meetingStarted`/`meetingEnded` pair is sent, as a participant's raw reconnect can cause today.
+- [A saver joining as LiveKit closes the room recreates it] → the room carries the saver's metadata, Meet ignores its
+  webhooks and the saver deletes it; no Meet webhook is sent.
 - [A restarted server finds its own dead saver still listed for about 21 s and skips it] → it rejoins on that saver's
   `participant_left`, on the next participant join or on the next room status sweep; senders resend meanwhile.
 - [After a replica crash the meeting has no saver for about 21 s] → its messages are confirmed late, once their senders
