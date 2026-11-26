@@ -17,7 +17,7 @@ the session that opened this change.
   disabled while saving is off. Labels say what the participant notices: the user, 2026-11-26.
 - This change delivers `config.chat.persist` and the current meeting's history; `config.chat.history`, earlier
   meetings, the meeting separators and the "Former member" label go to the next change, `chat-history-across-meetings`,
-  to keep each change small. This one still exceeds the 10-delta limit (18 since the forwarding requirement below), accepted because saving, resending, several
+  to keep each change small. This one still exceeds the 10-delta limit (19 with the forwarding requirement below and the notice requirement it touches), accepted because saving, resending, several
   replicas and invisibility are not useful apart: the user, 2026-11-26.
 - New rooms save (`persist` `true`) and, with the next change, show `current_meeting`; rooms that existed before keep
   their behavior (`persist` `false`): the user, deck X4 and X5 (2026-11-21) and `history` default (2026-11-26).
@@ -64,7 +64,7 @@ the session that opened this change.
   room `activeRecording` and a hidden standard participant counts as an attendee in the dashboard.
 - The saver is ensured when the media server room starts, on every standard participant's join, on its own departure
   while participants remain, and once at startup; replicas racing to join resolve by identity, with no lock: the user,
-  2026-11-26. The startup run is the cluster's room status sweep, which also repeats on its interval.
+  2026-11-26. The startup run is the room status sweep each replica runs when it starts, which also repeats on its interval.
 - Messages are sent again to the saver only, never to the other participants: the user, 2026-11-26. One exception: a
   sender's client sends its still unconfirmed messages, once, to each participant who starts reading the chat while
   they are unconfirmed (joins holding `chatRead` or is granted it), since that participant never received them, so
@@ -72,6 +72,18 @@ the session that opened this change.
   the newcomer but stored after the newcomer's history loads may be missing for them until they reload; that network
   race is accepted: the user, 2026-11-26, rather than making the history read wait, which cannot know about messages the
   server has not received yet.
+- Of a sender's unconfirmed messages only the 20 newest are sent to a participant who starts reading; the sender keeps
+  all of them, so all are stored once saving works again, and the newcomer sees the older ones after reloading or
+  reconnecting: the user, 2026-11-26.
+- When the media server's notice that the hidden participant left reaches no replica, the meeting stays unsaved until
+  the next participant joins or the next room status sweep, at most 15 minutes; no mechanism is added for it: the user,
+  2026-11-26.
+- In the room wizard, while chat is off the saving toggle is shown disabled and keeps its value, like the chat
+  permissions: the user, 2026-11-26.
+- `MeetChatMessage` is exported from the typings in this change with provisional names; this change and
+  `chat-integration-api` ship in the same release, so they can change until then: the user, 2026-11-26.
+- In every room, saving or not, a message received after a `chatRead` grant and before the participant's chat appears
+  is kept and shown when it appears, with no notice, sound or unread count; today it is dropped: the user, 2026-11-26.
 - The history is ordered as the server stored it, which keeps each sender's order: the user, 2026-11-26.
 - In the room wizard, turning encryption off again, from the Meeting, Recording or Live broadcast step, restores the saving toggle
   to the value it had, as it does for recording, broadcast and captions; the server never turns saving back on by
@@ -92,12 +104,11 @@ the session that opened this change.
 
 ## Assumptions
 
-- The English labels "Save the room's chat" (wizard) and "Anonymous" (chat).
+- The English label "Anonymous" (chat).
 - An anonymous participant's own messages are recognized after a reload from the ids the browser kept for that meeting.
 - The history is read through the internal API, `/internal-api/v1`, so its route and shape carry no compatibility promise.
-  The type of a stored message is defined in the typings here for that use; its public exposure and its final field
-  names (`meetingId` included, a meeting identifier that no public contract carries today) are decided in
-  `chat-integration-api`.
+  The final field names of a stored message (`meetingId` included, a meeting identifier that no public contract carries
+  today) are decided in `chat-integration-api` (see Decisions).
 
 ## Why
 
@@ -145,6 +156,8 @@ None.
 - **Embedded API**: none.
 - **Typings** (`@openvidu-meet/typings`, additive): `MeetChatConfig.persist`, `MeetChatConfigOptions`, `MeetChatMessage`
   and `MeetSignalType.MEET_CHAT_MESSAGE_SAVED`, the `meet.messageId` and `meet.forwarded` attribute names and the chat saver identity constant.
+- **Media server**: a LiveKit room that the hidden participant's join creates by accident (the meeting closed at that
+  moment) carries its own metadata and closes by itself in about a second; Meet never treats it as a meeting.
 - **Meeting UI**: the chat panel loads the current meeting's history on joining, reloading, being granted `chatRead` and
   reconnecting, and pages it; anonymous senders are labelled in every room; the sender keeps unconfirmed messages and
   sends them again.

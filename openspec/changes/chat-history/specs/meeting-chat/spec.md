@@ -3,7 +3,7 @@
 ## ADDED Requirements
 
 ### Requirement: Saving the room's chat
-While a room has `config.chat.enabled` and `config.chat.persist` true and `config.e2ee.enabled` false, the server SHALL store every chat message of its meetings with the sender the media server reports and the time it stored it. A message that is empty, only spaces or over 500 characters SHALL be confirmed to its sender without being stored; one without the interface's message id SHALL be dropped. `config.chat.persist` SHALL be a boolean (`422` otherwise); earlier rooms have it `false`.
+While a room has `config.chat.enabled` and `config.chat.persist` true and `config.e2ee.enabled` false, the server SHALL store every chat message of its meetings with the time it stored it, under the settings the room had when each began. A message that is empty, only whitespace or over 500 characters SHALL be confirmed to its sender without being stored; one without the interface's message id SHALL be dropped. `config.chat.persist` SHALL be a boolean (`422` otherwise), `false` in earlier rooms.
 
 #### Scenario: Message stored
 - **GIVEN** a room with chat enabled, `config.chat.persist` true and end-to-end encryption disabled
@@ -14,6 +14,11 @@ While a room has `config.chat.enabled` and `config.chat.persist` true and `confi
 - **GIVEN** a room with `config.chat.persist` false
 - **WHEN** a participant sends `hello` in its meeting
 - **THEN** the participants in the meeting see `hello` and the room's history does not hold it
+
+#### Scenario: Setting changed while a participant waits to join
+- **GIVEN** a participant on the join screen of a room with `config.chat.persist` false and no meeting in progress
+- **WHEN** the room's owner sets `config.chat.persist` true, and the participant then joins and sends `hello`
+- **THEN** the room's history holds `hello`
 
 #### Scenario: Oversized message
 - **GIVEN** a meeting of a room that saves its chat
@@ -134,13 +139,24 @@ A sent message SHALL reach the others without waiting to be stored, and a failed
 - **THEN** the participants in the meeting saw `bye`, and a participant who joins later does not see it
 
 ### Requirement: Messages still being saved reach those who join
-While a message is unconfirmed, its sender's client SHALL send it, once, to each participant who starts holding `chatRead` in the meeting (joining or granted it), so one who joins while a message is being saved receives it; it SHALL be shown once and, like loaded messages, raise no notice. A message stored after a newcomer's history loads but confirmed before its sender saw them MAY be missing for them until they reload.
+While a message is unconfirmed, its sender's client SHALL send it, once, to each participant who starts holding `chatRead` in the meeting (joining, also after a reload or a full reconnection, or granted it), the 20 newest of a sender at most; it SHALL be shown once and, like loaded messages, raise no notice. A message stored after a newcomer's history loads but confirmed before its sender saw them MAY be missing for them until they reload.
 
 #### Scenario: Joining while a message is being saved
 - **GIVEN** a meeting of a room that saves its chat whose server cannot store messages, where `alice` sent `pending` and stays
 - **WHEN** `carol`, holding `chatRead`, joins the meeting with the chat panel closed
 - **THEN** `carol`'s chat panel shows `pending`, with no notice and no unread count
 - **AND** once storage is back and `pending` is stored, `carol` still sees it once
+
+#### Scenario: More than 20 messages being saved
+- **GIVEN** a meeting of a room that saves its chat whose server cannot store messages, where `alice` sent `message-1` to `message-25` and stays
+- **WHEN** `carol`, holding `chatRead`, joins the meeting
+- **THEN** `carol`'s chat panel shows `message-6` to `message-25`, in order, and not `message-1` to `message-5`
+- **AND** once storage is back, all 25 are stored, and `carol` sees `message-1` to `message-5` after reloading the page and scrolling to the top
+
+#### Scenario: Reloading while a message is being saved
+- **GIVEN** a meeting of a room that saves its chat whose server cannot store messages, where `alice` sent `pending` and `bob`, a room member holding `chatRead`, received it
+- **WHEN** `bob` reloads the page and enters the meeting again
+- **THEN** `bob`'s chat panel shows `pending`, once
 
 #### Scenario: Granted chatRead while a message is being saved
 - **GIVEN** a meeting of a room that saves its chat whose server cannot store messages, where `alice` sent `pending` and `bob` has no `chatRead`
@@ -157,7 +173,7 @@ What the server does to save a meeting's chat SHALL NOT show as a participant: i
 - **AND** no `participantJoined` webhook or embedded event is emitted beyond those two participants
 
 #### Scenario: Recording with only the saver left
-- **GIVEN** a meeting of a room that saves its chat, with recording allowed and a live broadcast destination saved, whose participants have all left, before it ends
+- **GIVEN** a meeting of a room that saves its chat, with recording and live broadcast enabled and a broadcast destination saved, whose participants have all left, before it ends
 - **WHEN** an integrator calls `recordingStart` or `broadcastStart`
 - **THEN** the server answers `409`
 
@@ -218,6 +234,11 @@ The server SHALL serve a room's history only to a participant in its meeting (a 
 - **WHEN** they ask the server for the history with that token
 - **THEN** the server answers `403`
 
+#### Scenario: No meeting in progress
+- **GIVEN** a room that saves its chat with no meeting in progress, and a join token of it holding `chatRead`
+- **WHEN** its holder asks the server for the history
+- **THEN** the server answers `403`
+
 #### Scenario: Kicked participant
 - **GIVEN** a participant kicked from the meeting of a room that saves its chat
 - **WHEN** they ask the server for the history with the token they held
@@ -231,6 +252,16 @@ The server SHALL serve a room's history only to a participant in its meeting (a 
 - **GIVEN** a participant holding `chatRead` in a meeting of a room that saves its chat
 - **WHEN** their client asks the server for the history with `maxItems` 0
 - **THEN** the server answers `422`
+
+#### Scenario: Unknown page token
+- **GIVEN** a participant holding `chatRead` in a meeting of a room that saves its chat
+- **WHEN** their client asks the server for the history with a `nextPageToken` the server did not issue
+- **THEN** the server answers `400`
+
+#### Scenario: Media server unreachable
+- **GIVEN** a participant holding `chatRead` in a meeting of a room that saves its chat
+- **WHEN** their client asks the server for the history while the server cannot connect to the media server
+- **THEN** the server answers `503`
 
 #### Scenario: Room that does not save its chat
 - **GIVEN** a participant holding `chatRead` in a meeting of a room with `config.chat.persist` false
@@ -261,12 +292,13 @@ A room's stored messages SHALL stay after each of its meetings ends and SHALL be
 - **THEN** `hello` stays stored with `ana` as its sender
 
 ### Requirement: Chat saving toggle in the room wizard
-While chat is on, the console room wizard's Meeting step SHALL show a "Save the room's chat" toggle bound to `config.chat.persist`. While end-to-end encryption is on, the toggle SHALL be disabled and off and the restrictions the wizard lists for encryption SHALL say that chat messages are not saved; turning encryption off again, from any step of the wizard, SHALL restore the value the toggle had.
+The console room wizard's Meeting step SHALL show a "Save the room's chat" toggle bound to `config.chat.persist`, disabled and keeping its value while chat is off. While end-to-end encryption is on, it SHALL be disabled and off and the restrictions the wizard lists for encryption SHALL say that chat messages are not saved; turning encryption off again, from any step of the wizard, SHALL restore the value it had.
 
-#### Scenario: Chat turned off hides the saving toggle
-- **GIVEN** a room manager creating a room in the wizard
+#### Scenario: Chat turned off disables the saving toggle
+- **GIVEN** a room manager creating a room in the wizard, with "Save the room's chat" on
 - **WHEN** they turn chat off in the Meeting step
-- **THEN** the saving toggle is not shown
+- **THEN** the saving toggle is shown disabled and still on
+- **AND** turning chat on again enables it, still on
 
 #### Scenario: Defaults of a new room
 - **GIVEN** a room manager on the Meeting step of the wizard for a new room
@@ -302,7 +334,7 @@ While chat is on, the console room wizard's Meeting step SHALL show a "Save the 
 ## MODIFIED Requirements
 
 ### Requirement: Delivery and display
-A sent message SHALL reach, through the media server, only the participants of the meeting who hold `chatRead` when it is sent, and the server in a room that saves its chat (`Saving the room's chat`), in the order it was sent, so a participant without `chatRead` does not receive it even with a client that bypasses the interface. It SHALL be shown labelled with the sender's display name; the sender sees it labelled as their own. Addresses in a message SHALL be shown as links.
+A sent message SHALL reach, through the media server, only the participants of the meeting who hold `chatRead` when it is sent, and the server in a room that saves its chat (`Saving the room's chat`), in the order it was sent, so a participant without `chatRead` does not receive it even with a client that bypasses the interface. In a room that saves its chat it SHALL also reach those who start holding `chatRead` while it is unconfirmed (`Messages still being saved reach those who join`). It SHALL be shown labelled with the sender's display name; the sender sees it labelled as their own. Addresses in a message SHALL be shown as links.
 
 #### Scenario: Receiving a message
 - **GIVEN** two participants in a meeting, `sender` and `receiver`
@@ -329,6 +361,20 @@ A sent message SHALL reach, through the media server, only the participants of t
 - **GIVEN** a participant in a meeting of a room that does not save its chat, whose `chatRead` was just granted
 - **WHEN** another participant sends a message afterwards
 - **THEN** the participant receives and sees it, and does not see the messages sent before the grant
+
+### Requirement: New-message notice
+While the chat panel is closed, a message from another participant SHALL raise a notice naming the sender with an action that opens the chat, play a sound and add to the unread count on the chat button. A newer message SHALL replace the notice on screen, and opening the panel SHALL clear the unread count. Messages loaded from the history, received while the connection was lost in a room that saves its chat until its history reloads, received before the participant's chat appeared, or forwarded while unconfirmed (`What a participant who joins sees`, `Messages still being saved reach those who join`) are not new messages.
+
+#### Scenario: Message with the panel closed
+- **GIVEN** a participant with the chat panel closed
+- **WHEN** another participant sends a message
+- **THEN** a notice names the sender and offers to open the chat
+- **AND** using it opens the chat panel showing the message
+
+#### Scenario: No messages yet
+- **GIVEN** a participant who has just joined a meeting without messages
+- **WHEN** the meeting is shown
+- **THEN** the chat button shows no unread count
 
 ### Requirement: Messages last only the meeting
 In a room that does not save its chat (`config.chat.persist` false, chat disabled or end-to-end encryption enabled), chat messages SHALL exist only among the participants of the meeting: a participant who joins later SHALL NOT see earlier messages, and the next meeting a participant enters SHALL start with an empty chat. Whatever the room, chat messages SHALL be exposed through no public REST operation, webhook or embedded event.
