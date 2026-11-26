@@ -17,7 +17,7 @@ the session that opened this change.
   disabled while saving is off. Labels say what the participant notices: the user, 2026-11-26.
 - This change delivers `config.chat.persist` and the current meeting's history; `config.chat.history`, earlier
   meetings, the meeting separators and the "Former member" label go to the next change, `chat-history-across-meetings`,
-  to keep each change small. This one still exceeds the 10-delta limit (17), accepted because saving, resending, several
+  to keep each change small. This one still exceeds the 10-delta limit (18 since the forwarding requirement below), accepted because saving, resending, several
   replicas and invisibility are not useful apart: the user, 2026-11-26.
 - New rooms save (`persist` `true`) and, with the next change, show `current_meeting`; rooms that existed before keep
   their behavior (`persist` `false`): the user, deck X4 and X5 (2026-11-21) and `history` default (2026-11-26).
@@ -65,15 +65,21 @@ the session that opened this change.
 - The saver is ensured when the media server room starts, on every standard participant's join, on its own departure
   while participants remain, and once at startup; replicas racing to join resolve by identity, with no lock: the user,
   2026-11-26. The startup run is the cluster's room status sweep, which also repeats on its interval.
-- Messages are sent again to the saver only, never to the other participants: the user, 2026-11-26.
+- Messages are sent again to the saver only, never to the other participants: the user, 2026-11-26. One exception: a
+  sender's client sends its still unconfirmed messages, once, to each participant who starts reading the chat while
+  they are unconfirmed (joins holding `chatRead` or is granted it), since that participant never received them, so
+  someone who joins while a message is being saved does not miss it. A message confirmed just before its sender sees
+  the newcomer but stored after the newcomer's history loads may be missing for them until they reload; that network
+  race is accepted: the user, 2026-11-26, rather than making the history read wait, which cannot know about messages the
+  server has not received yet.
 - The history is ordered as the server stored it, which keeps each sender's order: the user, 2026-11-26.
 - In the room wizard, turning encryption off again, from the Meeting, Recording or Live broadcast step, restores the saving toggle
   to the value it had, as it does for recording, broadcast and captions; the server never turns saving back on by
   itself: the user, 2026-11-26.
 - When the history cannot be loaded, the chat panel shows the live messages and no error: the user, 2026-11-26.
 - The "Anonymous" label is shown on every message of an anonymous sender, live or saved, in every room, including rooms
-  that do not save their chat and encrypted ones, so one chat never labels the same person in two ways: the user,
-  2026-11-26.
+  that do not save their chat and encrypted ones, so one chat never labels the same person in two ways; a participant's
+  own messages show as their own, without it: the user, 2026-11-26.
 - When a participant's connection comes back after being lost, the chat panel of a room that saves its chat loads the
   history again and adds the messages sent meanwhile, once and without a notice: the user, 2026-11-26.
 - When the Meet server cannot reach the media server over WebRTC, meetings and the live chat work, nothing is stored and
@@ -138,7 +144,7 @@ None.
   carry. The hidden participant emits no `participantJoined` or `participantLeft`.
 - **Embedded API**: none.
 - **Typings** (`@openvidu-meet/typings`, additive): `MeetChatConfig.persist`, `MeetChatConfigOptions`, `MeetChatMessage`
-  and `MeetSignalType.MEET_CHAT_MESSAGE_SAVED`, the `meet.messageId` attribute name and the chat saver identity constant.
+  and `MeetSignalType.MEET_CHAT_MESSAGE_SAVED`, the `meet.messageId` and `meet.forwarded` attribute names and the chat saver identity constant.
 - **Meeting UI**: the chat panel loads the current meeting's history on joining, reloading, being granted `chatRead` and
   reconnecting, and pages it; anonymous senders are labelled in every room; the sender keeps unconfirmed messages and
   sends them again.

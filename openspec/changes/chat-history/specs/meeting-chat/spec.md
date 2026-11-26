@@ -40,7 +40,7 @@ While a room has `config.chat.enabled` and `config.chat.persist` true and `confi
 - **THEN** it returns `chat.persist` `false`, and its meetings store no chat message
 
 ### Requirement: What a participant who joins sees
-In a meeting of a room that saves its chat, a participant holding `chatRead` who joins, reloads, reconnects or is granted it during the meeting SHALL find in the chat panel, before newer messages, the current meeting's messages, each once; never earlier meetings'. Loaded messages, and those received while the connection was lost until the history reloads, are not new messages (`New-message notice`): they SHALL NOT raise a notice, play a sound or add to the unread count.
+In a meeting of a room that saves its chat, a participant holding `chatRead` who joins, reloads, reconnects or is granted it during the meeting SHALL find in the chat panel, before newer messages, the current meeting's stored messages, each once; never earlier meetings'. Loaded messages, and those received while the connection was lost until the history reloads, are not new messages (`New-message notice`): they SHALL NOT raise a notice, play a sound or add to the unread count.
 
 #### Scenario: Late joiner
 - **GIVEN** a meeting of a room that saves its chat where `alice` sent `hello` and `bob` sent `hi alice`
@@ -132,6 +132,20 @@ A sent message SHALL reach the others without waiting to be stored, and a failed
 - **GIVEN** a meeting of a room that saves its chat whose server cannot store messages
 - **WHEN** a participant sends `bye` and leaves the meeting before storage is back
 - **THEN** the participants in the meeting saw `bye`, and a participant who joins later does not see it
+
+### Requirement: Messages still being saved reach those who join
+While a message is unconfirmed, its sender's client SHALL send it, once, to each participant who starts holding `chatRead` in the meeting (joining or granted it), so one who joins while a message is being saved receives it; it SHALL be shown once and, like loaded messages, raise no notice. A message stored after a newcomer's history loads but confirmed before its sender saw them MAY be missing for them until they reload.
+
+#### Scenario: Joining while a message is being saved
+- **GIVEN** a meeting of a room that saves its chat whose server cannot store messages, where `alice` sent `pending` and stays
+- **WHEN** `carol`, holding `chatRead`, joins the meeting with the chat panel closed
+- **THEN** `carol`'s chat panel shows `pending`, with no notice and no unread count
+- **AND** once storage is back and `pending` is stored, `carol` still sees it once
+
+#### Scenario: Granted chatRead while a message is being saved
+- **GIVEN** a meeting of a room that saves its chat whose server cannot store messages, where `alice` sent `pending` and `bob` has no `chatRead`
+- **WHEN** a room manager updates `bob`'s member with `chatRead` true
+- **THEN** `bob`'s chat panel shows `pending`, once
 
 ### Requirement: Saving is invisible in the meeting
 What the server does to save a meeting's chat SHALL NOT show as a participant: it SHALL NOT appear in the participants panel or in `participantList`, count in `participantCount`, towards `maxParticipants` or as someone connected when `recordingStart` or `broadcastStart` checks the meeting has participants, emit `participantJoined` or `participantLeft` as a webhook or embedded event, or keep the meeting going once every participant has left.

@@ -117,6 +117,14 @@ the saver stores each sender's messages in the order they were sent and the othe
 The buffer is emptied when the participant leaves, reloads the page or loses `chatWrite` or `chatRead` (publishing
 data needs both).
 
+When a remote participant becomes a reader (a new identity with `canReadChat`, or an existing one whose `canReadChat`
+turns true), `ChatService` sends every message still in its buffer, in order, to that identity only, with the text
+stream attribute `meet.forwarded: true`. That participant never received them, so this is a first delivery, not a
+copy; it is the one exception to resending to the saver only. The receiver treats a forwarded message like a loaded
+one: no notice, no sound, no unread count, merged by sender identity and `messageId`, so it is shown once when the
+history later loads it too. The history read cannot do this instead: the server cannot wait for messages it has not
+received yet, which is where they are while they sit in a sender's buffer.
+
 The ids of the messages it sent in the current meeting are kept, each with the identity it was sent under, through
 `BrowserStorageService` (local, keyed by room and meeting, older meetings dropped). A loaded message counts as the
 participant's own when its sender identity is theirs, or when both its id and its sender identity match a kept pair, so
@@ -278,8 +286,10 @@ clock orders their writes. The history read is a plain query, served the same by
   send them again; only a sender who leaves within that window loses them.
 - [A message whose sender leaves unconfirmed is lost] → accepted by the user for phase 1.
 - [History order is MongoDB's storing order] → it keeps each sender's order; only an outage reorders senders.
-- [A participant who joins while a message is still unconfirmed gets neither its live copy nor its history copy until
-  they reload] → accepted: it only happens during a storage outage or the gap after a replica crash.
+- [A participant who joins while a message is unconfirmed (one round trip normally, longer during a burst, a storage
+  outage or after a replica crash) gets no live copy] → its sender forwards it to them. Only a message confirmed just
+  before its sender sees the newcomer but stored after the newcomer's history loads can still be missed until they
+  reload: a network race of milliseconds, accepted by the user.
 - [An image that builds on this backend and stays on Alpine fails when the binding loads] → it moves to a glibc base in
   the same release.
 
