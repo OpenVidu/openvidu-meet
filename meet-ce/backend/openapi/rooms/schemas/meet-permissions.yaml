@@ -103,9 +103,9 @@ properties:
         example: false
         description: >
             Can lower another participant's raised hand, one at a time or all at once. Raising and lowering
-            one's own hand is never gated. Has no deprecated `can*` equivalent. A room created from 3.10.0 on
-            grants it to the moderator role and denies it to the speaker role by default; a room or member
-            that existed before 3.10.0 starts without it.
+            one's own hand is never gated. Has no deprecated `can*` equivalent. Granted to the moderator role
+            and denied to the speaker role by default, also in the rooms and members that existed before
+            3.10.0.
     participantSendReaction:
         type: boolean
         example: true
