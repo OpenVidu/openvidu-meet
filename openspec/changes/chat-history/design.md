@@ -6,8 +6,10 @@ Chat messages travel today as LiveKit text streams with topic `chat`, published 
 `destinationIdentities` set to the remote participants holding `chatRead`; the server never sees them. The backend
 talks to LiveKit only through its HTTP API and receives LiveKit webhooks, deduplicated per event by the webhook lock.
 Every place that lists, counts or announces participants filters them with `MeetParticipantHelper.isStandardParticipant`
-(kind `STANDARD`), except `LiveKitService.roomHasParticipants` (used by `recordingStart`, `broadcastStart` and the stale
-recording sweep), which counts every LiveKit participant and which this change makes count standard ones only. LiveKit's own `maxParticipants` check, which Meet sets when it creates the LiveKit room, and its
+(kind `STANDARD`), except `LiveKitService.participantExists` and `LiveKitService.roomHasParticipants` (used by `recordingStart`,
+`broadcastStart` and the stale recording sweep), which count every LiveKit participant; this change makes
+`roomHasParticipants` count standard ones only. In the stale-recording sweep this makes a stale egress in a room with
+no standard participant stop slightly earlier, while the room waits to close; nothing else changes. LiveKit's own `maxParticipants` check, which Meet sets when it creates the LiveKit room, and its
 empty-room close both ignore agent-kind participants. `MeetRoomHelper.disableFeaturesExcludedByE2EE` already turns
 recording, broadcast and captions off for encrypted rooms. Room schema is at version 10.
 
@@ -76,7 +78,8 @@ the losing replica takes as a normal end and does not rejoin. A failed join (for
 server) is logged as an error naming the room and retried on the next trigger; the meeting goes on unsaved. The saver
 leaves when LiveKit closes the room, on the usual
 departure timeout, or when the meeting is ended. The `Room` objects are the only per-replica state, and they are live
-connections that LiveKit's webhooks recover, not request state; the service disconnects every one on shutdown.
+connections that LiveKit's webhooks recover, not request state. The backend has no shutdown handler, so a stopped
+replica's savers leave the way a crashed one's do, through `participant_left` about 21 s later.
 
 Alternatives for the kind: `egress` marks the LiveKit room `activeRecording`; a hidden `standard` participant counts as
 an attendee in the OpenVidu dashboard and keeps the room open until the empty timeout. Alternatives for coordination: a
@@ -116,9 +119,10 @@ an outage keep the order their resends arrived in. The read index is `(roomId, m
 
 `GET /internal-api/v1/meetings/{roomId}/chat/messages?maxItems=20&nextPageToken=` (operationId `chatMessageList`,
 internal OpenAPI), room member token of that room with `chatRead` and a `participantIdentity` that LiveKit lists in the
-room (`livekitService.participantExists`): without a token `401`; with one of another room, without `chatRead`, without
-a participant identity (a token that does not join) or whose participant is not in the meeting (kicked, waiting, left)
-`403`. It answers an empty page when the
+room (`MeetingService.isInMeeting`, as the reaction route checks its sender: standard participants only, `503` when
+LiveKit is unreachable): without a token `401`; with one of another room, without `chatRead`, without a participant
+identity (a token that does not join) or whose participant is not in the meeting (waiting, left) `403`; a kicked
+participant's tokens are already revoked, so they get `401` (`meeting-moderation`). It answers an empty page when the
 room does not save its chat, and otherwise filters on the active meeting's LiveKit room sid (empty without an active
 meeting). Pages are newest first, sorted by `(sendDate, _id)` descending, with the usual `{ items, pagination: {
 isTruncated, nextPageToken, maxItems } }`. The query takes the room's settings as input, so the next change adds the
@@ -153,7 +157,8 @@ so they never notify, merges them with the live ones by `messageId`, and loads t
 to the top. Prepending a page keeps the scroll position on the message that was at the top; only an appended (live)
 message scrolls to the newest, so the panel's scroll effect, which today scrolls to the bottom on any change of the
 list, changes. Live messages carry the same `messageId`, and the panel merges by sender identity and `messageId`, so a
-message seen live and then loaded, or sent again, is shown once. A failed load is logged and leaves the live messages.
+message seen live and then loaded, or sent again, is shown once. The toolbar's unread count, which today counts any
+growth of `chatMessages` (`ToolbarComponent.chatMessagesEffect`), counts only messages added live. A failed load is logged and leaves the live messages.
 Messages of anonymous senders get the "Anonymous" label. An encrypted room's panel says messages are not saved.
 
 ### Room wizard

@@ -168,8 +168,8 @@ The server SHALL serve a room's history only to a participant in its meeting: th
 - **THEN** the server answers `403`
 
 #### Scenario: Participant no longer in the meeting
-- **GIVEN** a participant kicked from the meeting of a room that saves its chat
-- **WHEN** their client asks the server for the history with their join token
+- **GIVEN** a participant who left the meeting of a room that saves its chat, holding the join token they joined with
+- **WHEN** they ask the server for the history with that token
 - **THEN** the server answers `403`
 
 #### Scenario: Without a room member token
