@@ -44,7 +44,7 @@ jobs:
         with:
           fetch-depth: 2
 
-      # Pull requests and pushes to main run the suites their files affect (a push leaves the e2e suites
+      # Pull requests and pushes to main run the suites their files affect (both leave the e2e suites
       # out when only the backend changed), and the nightly every suite when main moved since the last
       # green nightly. `static-base` is what the static checks diff against (`all` for every file, empty for none).
       - name: Select the suites the change affects
@@ -58,7 +58,7 @@ jobs:
 
           case "$GITHUB_EVENT_NAME" in
             pull_request)
-              git diff --name-only HEAD^1 HEAD | pick
+              git diff --name-only HEAD^1 HEAD | pick --without-backend
               echo 'static-base=HEAD^1' >> "$GITHUB_OUTPUT"
               ;;
             push)
