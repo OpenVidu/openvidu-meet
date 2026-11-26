@@ -51,6 +51,9 @@ the session that opened this change.
   author leaves before it is confirmed is lost from the history. Asking other participants for those messages is a
   future idea, not part of phase 1: the user, 2026-11-26 (this replaces the visible "Not saved" mark of D1.8).
 - A participant granted `chatRead` during the meeting loads the history as a late joiner would: the user, 2026-11-26.
+- Only a participant who is in the meeting reads its history: a join token of the room with `chatRead` whose identity
+  the media server lists in the meeting. A token that does not join, a kicked participant or someone waiting gets
+  `403`, so reading the history never reaches further than receiving the chat live: the user, 2026-11-26.
 - The hidden participant is subscribe-only like an egress (it sees every participant and resolves each sender itself,
   receiving no media) but of LiveKit kind `agent`, so the OpenVidu dashboard shows it apart from the attendees and the
   room is never reported as recording; it carries the attribute `meet.role: chatSaver` and Meet recognizes it by
@@ -126,7 +129,7 @@ None.
 ## Impact
 
 - **REST API**: `config.chat.persist` is added to the room config, additively. A new
-  internal operation serves a room's history to holders of a room member token with `chatRead`.
+  internal operation serves a room's history to a participant in the meeting who holds `chatRead`.
 - **Webhooks**: none. The hidden participant emits no `participantJoined` or `participantLeft`.
 - **Embedded API**: none.
 - **Meeting UI**: the chat panel loads the current meeting's history, pages it and labels anonymous senders; the sender

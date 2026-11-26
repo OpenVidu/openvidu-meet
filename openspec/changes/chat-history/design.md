@@ -6,7 +6,8 @@ Chat messages travel today as LiveKit text streams with topic `chat`, published 
 `destinationIdentities` set to the remote participants holding `chatRead`; the server never sees them. The backend
 talks to LiveKit only through its HTTP API and receives LiveKit webhooks, deduplicated per event by the webhook lock.
 Every place that lists, counts or announces participants filters them with `MeetParticipantHelper.isStandardParticipant`
-(kind `STANDARD`). LiveKit's own `maxParticipants` check, which Meet sets when it creates the LiveKit room, and its
+(kind `STANDARD`), except `LiveKitService.roomHasParticipants` (used by `recordingStart`, `broadcastStart` and the stale
+recording sweep), which counts every LiveKit participant and which this change makes count standard ones only. LiveKit's own `maxParticipants` check, which Meet sets when it creates the LiveKit room, and its
 empty-room close both ignore agent-kind participants. `MeetRoomHelper.disableFeaturesExcludedByE2EE` already turns
 recording, broadcast and captions off for encrypted rooms. Room schema is at version 10.
 
@@ -56,9 +57,11 @@ routing: its `participant_joined` is ignored, its `participant_left` triggers th
 Meet participant events or webhooks.
 
 `ensureSaver(roomId)` joins only when the room has `chat.enabled` and `chat.persist` true and `e2ee` off, the LiveKit
-room exists, and `getParticipant(roomId, MEET_CHAT_SAVER_IDENTITY)` answers not found. It runs:
+room exists, and LiveKit answers that `MEET_CHAT_SAVER_IDENTITY` is not in it; any other LiveKit error skips the join,
+so an outage never causes one. It runs:
 
-- on `room_started`;
+- on `room_started`, once the room is activated (never for a closed room or a stale event, which `handleRoomStarted`
+  already returns early on);
 - on `participant_joined` of a standard participant, so a lost webhook or a restart heals on the next join;
 - on `participant_left` of the saver itself, while the room still has standard participants: whichever replica gets the
   webhook rejoins it. After a crash LiveKit sends it about 21 s later; the messages sent meanwhile go unconfirmed and
@@ -73,7 +76,7 @@ the losing replica takes as a normal end and does not rejoin. A failed join (for
 server) is logged as an error naming the room and retried on the next trigger; the meeting goes on unsaved. The saver
 leaves when LiveKit closes the room, on the usual
 departure timeout, or when the meeting is ended. The `Room` objects are the only per-replica state, and they are live
-connections that LiveKit's webhooks recover, not request state.
+connections that LiveKit's webhooks recover, not request state; the service disconnects every one on shutdown.
 
 Alternatives for the kind: `egress` marks the LiveKit room `activeRecording`; a hidden `standard` participant counts as
 an attendee in the OpenVidu dashboard and keeps the room open until the empty timeout. Alternatives for coordination: a
@@ -112,8 +115,10 @@ an outage keep the order their resends arrived in. The read index is `(roomId, m
 ### Reading the history
 
 `GET /internal-api/v1/meetings/{roomId}/chat/messages?maxItems=20&nextPageToken=` (operationId `chatMessageList`,
-internal OpenAPI), room member token of that room with `chatRead`: without a token `401`, with one of another room or
-without `chatRead` `403`. It answers an empty page when the
+internal OpenAPI), room member token of that room with `chatRead` and a `participantIdentity` that LiveKit lists in the
+room (`livekitService.participantExists`): without a token `401`; with one of another room, without `chatRead`, without
+a participant identity (a token that does not join) or whose participant is not in the meeting (kicked, waiting, left)
+`403`. It answers an empty page when the
 room does not save its chat, and otherwise filters on the active meeting's LiveKit room sid (empty without an active
 meeting). Pages are newest first, sorted by `(sendDate, _id)` descending, with the usual `{ items, pagination: {
 isTruncated, nextPageToken, maxItems } }`. The query takes the room's settings as input, so the next change adds the
@@ -125,7 +130,9 @@ only through the internal API. Its `participant.type` is `MeetParticipantType | 
 
 ### Room config and migration
 
-`MeetChatConfig` gains `persist: boolean`. The create schema's transform fills `chat.persist` (`true`) when the `chat`
+`MeetChatConfig` gains `persist: boolean`, and a new `MeetChatConfigOptions` (`persist?: boolean`) types
+`MeetRoomConfigOptions.chat` and the backend `ChatConfigSchema`, as `MeetBroadcastConfigOptions` does for `broadcast`, so
+a request may leave `persist` out. The create schema's transform fills `chat.persist` (`true`) when the `chat`
 object omits it, as it does for `recording.layout`; the default object used when `config` is absent also gets
 `persist: true`, since zod 4 returns a default without running the transform. The chat schema shared with the update keeps it optional with no
 default, so an update that leaves it out keeps the stored value. `disableFeaturesExcludedByE2EE` sets `persist` false.
@@ -139,10 +146,13 @@ expired-rooms sweep) also deletes the room's `chat_messages`. Removing a member 
 
 ### Chat panel
 
-`ChatService` loads the first page when the participant gets `chatRead` (join, reload, or a grant once the token has
+`ChatService` loads the first page once the LiveKit room is connected and the participant holds `chatRead` (join,
+reload, or a grant once the token has
 been regenerated on `MEET_PARTICIPANT_PERMISSIONS_UPDATED`, since the read checks the token), marks loaded messages
 so they never notify, merges them with the live ones by `messageId`, and loads the next page when the list is scrolled
-to the top. Live messages carry the same `messageId`, and the panel merges by sender identity and `messageId`, so a
+to the top. Prepending a page keeps the scroll position on the message that was at the top; only an appended (live)
+message scrolls to the newest, so the panel's scroll effect, which today scrolls to the bottom on any change of the
+list, changes. Live messages carry the same `messageId`, and the panel merges by sender identity and `messageId`, so a
 message seen live and then loaded, or sent again, is shown once. A failed load is logged and leaves the live messages.
 Messages of anonymous senders get the "Anonymous" label. An encrypted room's panel says messages are not saved.
 
@@ -150,8 +160,11 @@ Messages of anonymous senders get the "Anonymous" label. An encrypted room's pan
 
 The Meeting step adds the "Save the room's chat" toggle under the chat toggle, disabled as the spec says, and the
 encryption restrictions gain the chat line. Turning encryption on keeps the toggle's value aside and turning it off
-restores it, through the mechanism the wizard uses for captions (`E2EE_EXCLUSIVE_FEATURES`), which
-`fix-captions-off-with-encryption-in-wizard` extends to encryption turned off from the Recording step.
+restores it, through `setE2EEEnabled`'s remember-and-restore of `E2EE_EXCLUSIVE_FEATURES`, with an entry (e.g.
+`chatPersist`) whose control is the saving toggle and whose patch writes `config.chat.persist`, not
+`config.chat.enabled`. The saving toggle never calls `setFeatureEnabled`: it is disabled while encryption is on, so
+turning it on never has to turn encryption off. `fix-captions-off-with-encryption-in-wizard` extends the restore to
+encryption turned off from the Recording step.
 
 ### Docker image
 

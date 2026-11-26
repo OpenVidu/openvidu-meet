@@ -69,7 +69,7 @@ The chat panel SHALL show the last 20 messages of the history on joining and loa
 - **GIVEN** a meeting of a room that saves its chat where 30 messages were sent, `message-1` to `message-30`
 - **WHEN** a participant joins and opens the chat panel
 - **THEN** the panel shows `message-11` to `message-30`
-- **AND** scrolling to the top adds `message-1` to `message-10` above them, in order
+- **AND** scrolling to the top adds `message-1` to `message-10` above them, in order, and the list stays where the participant scrolled
 
 #### Scenario: History unavailable
 - **GIVEN** a meeting of a room that saves its chat whose server cannot read its history
@@ -119,7 +119,7 @@ A sent message SHALL reach the others without waiting to be stored, and a failur
 - **THEN** the participants in the meeting saw `bye`, and a participant who joins later does not see it
 
 ### Requirement: Saving is invisible in the meeting
-What the server does to save a meeting's chat SHALL NOT show as a participant: it SHALL NOT appear in the participants panel or in `participantList`, count in `participantCount` or towards `maxParticipants`, emit `participantJoined` or `participantLeft` as a webhook or embedded event, or keep the meeting going once every participant has left.
+What the server does to save a meeting's chat SHALL NOT show as a participant: it SHALL NOT appear in the participants panel or in `participantList`, count in `participantCount`, towards `maxParticipants` or as someone connected when `recordingStart` or `broadcastStart` checks the meeting has participants, emit `participantJoined` or `participantLeft` as a webhook or embedded event, or keep the meeting going once every participant has left.
 
 #### Scenario: Participants of a meeting that saves its chat
 - **GIVEN** a meeting of a room that saves its chat with two participants
@@ -150,7 +150,7 @@ With several Meet replicas, each message of a meeting SHALL be stored once, whic
 - **THEN** a participant who joins afterwards sees `are you there` in the history, once
 
 ### Requirement: Reading the history needs chatRead
-The server SHALL serve a room's history only to holders of a room member token of that room with `chatRead`, and only while the room saves its chat.
+The server SHALL serve a room's history only to a participant in its meeting: the holder of a join token of that room with `chatRead` whose identity is in the meeting, and only while the room saves its chat. Any other room member token SHALL get `403`.
 
 #### Scenario: Without chatRead
 - **GIVEN** an identified guest with `chatRead` false in a meeting of a room that saves its chat
@@ -160,6 +160,16 @@ The server SHALL serve a room's history only to holders of a room member token o
 #### Scenario: Token of another room
 - **GIVEN** a room member token of room `B`
 - **WHEN** its holder asks the server for the history of room `A`
+- **THEN** the server answers `403`
+
+#### Scenario: Token that does not join
+- **GIVEN** a room member token of the room issued without `joinMeeting`, holding `chatRead`
+- **WHEN** its holder asks the server for the history
+- **THEN** the server answers `403`
+
+#### Scenario: Participant no longer in the meeting
+- **GIVEN** a participant kicked from the meeting of a room that saves its chat
+- **WHEN** their client asks the server for the history with their join token
 - **THEN** the server answers `403`
 
 #### Scenario: Without a room member token
