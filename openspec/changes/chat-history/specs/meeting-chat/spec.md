@@ -3,7 +3,7 @@
 ## ADDED Requirements
 
 ### Requirement: Saving the room's chat
-While a room has `config.chat.enabled` and `config.chat.persist` true and `config.e2ee.enabled` false, the server SHALL store every chat message sent in its meetings, with the sender the media server reports and the time the server received it, except an empty message, one of only spaces or one over 500 characters, which only a client bypassing the interface can send. `config.chat.persist` SHALL be a boolean, `422` naming it otherwise; rooms that existed before this version have it `false`.
+While a room has `config.chat.enabled` and `config.chat.persist` true and `config.e2ee.enabled` false, the server SHALL store every chat message of its meetings with the sender the media server reports and the time it stored it, except one that is empty, only spaces, over 500 characters or without the interface's message id, which only a modified client sends. `config.chat.persist` SHALL be a boolean, `422` naming it otherwise; rooms that existed before this version have it `false`.
 
 #### Scenario: Message stored
 - **GIVEN** a room with chat enabled, `config.chat.persist` true and end-to-end encryption disabled
@@ -35,7 +35,7 @@ While a room has `config.chat.enabled` and `config.chat.persist` true and `confi
 - **THEN** it returns `chat.persist` `false`, and its meetings store no chat message
 
 ### Requirement: What a participant who joins sees
-In a meeting of a room that saves its chat, a participant who holds `chatRead` when they join, reload the page or reconnect after losing the connection, or when it is granted during the meeting, SHALL find in the chat panel, before any newer message, the messages of the current meeting, each shown once. Messages of earlier meetings SHALL NOT be shown. Messages loaded this way SHALL NOT raise a new-message notice, play a sound or add to the unread count on the chat button.
+In a meeting of a room that saves its chat, a participant holding `chatRead` who joins, reloads the page, reconnects after losing the connection or is granted it during the meeting SHALL find in the chat panel, before any newer message, the current meeting's messages, each once; never those of earlier meetings. Loaded messages are not new messages (`New-message notice`): they SHALL NOT raise a notice, play a sound or add to the unread count.
 
 #### Scenario: Late joiner
 - **GIVEN** a meeting of a room that saves its chat where `alice` sent `hello` and `bob` sent `hi alice`
@@ -87,7 +87,7 @@ The chat panel SHALL show the last 20 messages of the history on joining and loa
 - **THEN** the chat panel shows `hello` and no error
 
 ### Requirement: Senders and their labels
-The server SHALL store each message with the sender the media server reports, whatever the client claims, with that sender's display name and participant type (`user`, `identified_guest` or `anonymous`). A participant SHALL see their own saved messages as their own: a user or identified guest always, an anonymous participant in the same browser. An anonymous sender's messages SHALL be labelled "Anonymous" next to the name in every room, saved or live.
+The server SHALL store each message with the sender the media server reports, whatever the client claims, with that sender's display name and participant type (`user`, `identified_guest` or `anonymous`). A participant SHALL see their own saved messages as their own: a user or identified guest always, an anonymous participant in the same browser. Other participants SHALL see an anonymous sender's messages labelled "Anonymous" next to the name in every room, saved or live.
 
 #### Scenario: Anonymous participant reloads
 - **GIVEN** an anonymous participant who sent `hello` in a meeting of a room that saves its chat
@@ -110,7 +110,7 @@ The server SHALL store each message with the sender the media server reports, wh
 - **THEN** the history holds the message with `mallory` as its sender
 
 ### Requirement: Unconfirmed messages are sent again
-A sent message SHALL reach the others without waiting to be stored, and a failure to store it SHALL be shown to no one. The server SHALL confirm each stored message to its sender, whose client SHALL send again, in order, each message unconfirmed after 5 seconds, until it is confirmed or the sender leaves. A message sent again SHALL be stored and shown once; one unconfirmed when its sender leaves SHALL be missing from the history.
+A sent message SHALL reach the others without waiting to be stored, and a failed store SHALL be shown to no one. The server SHALL confirm each stored message to its sender, whose client SHALL send again, in order, each message unconfirmed after 5 seconds, until it is confirmed or the sender leaves, reloads the page or loses `chatWrite`. A message sent again SHALL be stored and shown once; one still unconfirmed then SHALL be missing from the history.
 
 #### Scenario: Message delivered while storage is down
 - **GIVEN** a meeting of a room that saves its chat whose server cannot store messages
@@ -138,7 +138,7 @@ What the server does to save a meeting's chat SHALL NOT show as a participant: i
 - **AND** no `participantJoined` webhook or embedded event is emitted beyond those two participants
 
 #### Scenario: Recording with only the saver left
-- **GIVEN** a meeting of a room that saves its chat whose participants have all left, before it ends
+- **GIVEN** a meeting of a room that saves its chat, with recording allowed and a live broadcast destination saved, whose participants have all left, before it ends
 - **WHEN** an integrator calls `recordingStart` or `broadcastStart`
 - **THEN** the server answers `409`
 
@@ -151,6 +151,7 @@ What the server does to save a meeting's chat SHALL NOT show as a participant: i
 - **GIVEN** a meeting of a room that saves its chat
 - **WHEN** its last participant leaves
 - **THEN** the meeting ends after the same wait as in a room that does not save, and `meetingEnded` is emitted once
+- **AND** no `participantLeft` webhook is sent for anyone but the participants who were in it
 
 ### Requirement: Saving with several replicas
 With several Meet replicas, each message of a meeting SHALL be stored once, whichever replicas handle the meeting. When the replica saving a meeting's chat stops, another replica SHALL take over while the meeting goes on, and the messages sent meanwhile SHALL be stored once their senders send them again.
@@ -163,7 +164,7 @@ With several Meet replicas, each message of a meeting SHALL be stored once, whic
 #### Scenario: The saving replica stops
 - **GIVEN** two Meet replicas and a meeting of a room that saves its chat, saved through replica A
 - **WHEN** replica A stops and a participant who stays in the meeting sends `are you there`
-- **THEN** a participant who joins afterwards sees `are you there` in the history, once
+- **THEN** once its sender's client has sent it again to the replica that took over, a participant who joins sees `are you there` in the history, once
 
 #### Scenario: Replicas with different clocks
 - **GIVEN** two Meet replicas whose clocks differ by a minute and a meeting of a room that saves its chat whose saver moves from one to the other
@@ -173,10 +174,10 @@ With several Meet replicas, each message of a meeting SHALL be stored once, whic
 #### Scenario: The only server restarts
 - **GIVEN** one Meet server and a meeting of a room that saves its chat
 - **WHEN** the server restarts and a participant who stays in the meeting sends `back`
-- **THEN** a participant who joins afterwards sees `back` in the history, once
+- **THEN** once its sender's client has sent it again to the restarted server, a participant who joins sees `back` in the history, once
 
 ### Requirement: Reading the history needs chatRead
-The server SHALL serve a room's history only to a participant in its meeting: the holder of a join token of that room with `chatRead` whose identity is in the meeting, and only while the room saves its chat. Any other valid room member token SHALL get `403`; a revoked one, such as a kicked participant's, `401` (see `meeting-moderation`).
+The server SHALL serve a room's history only to a participant in its meeting (a join token of the room with `chatRead` whose identity is in the meeting) while the room saves its chat; other valid tokens SHALL get `403`, revoked ones such as a kicked participant's `401` (`meeting-moderation`). `maxItems` (20 by default, at most 100) and `nextPageToken` SHALL follow `roomList` (`422`, `400`), and the server SHALL answer `503` when the media server cannot be reached.
 
 #### Scenario: Without chatRead
 - **GIVEN** an identified guest with `chatRead` false in a meeting of a room that saves its chat
@@ -206,6 +207,11 @@ The server SHALL serve a room's history only to a participant in its meeting: th
 #### Scenario: Without a room member token
 - **WHEN** a client without a room member token asks the server for the history of a room
 - **THEN** the server answers `401`
+
+#### Scenario: Invalid page size
+- **GIVEN** a participant holding `chatRead` in a meeting of a room that saves its chat
+- **WHEN** their client asks the server for the history with `maxItems` 0
+- **THEN** the server answers `422`
 
 #### Scenario: Room that does not save its chat
 - **GIVEN** a participant holding `chatRead` in a meeting of a room with `config.chat.persist` false
@@ -258,6 +264,11 @@ While chat is on, the console room wizard's Meeting step SHALL show a "Save the 
 - **GIVEN** a wizard with "Save the room's chat" on
 - **WHEN** the room manager turns end-to-end encryption on and later off again
 - **THEN** the saving toggle is enabled and on again
+
+#### Scenario: Encryption turned off by allowing recording
+- **GIVEN** a wizard with "Save the room's chat" on and end-to-end encryption then turned on
+- **WHEN** the room manager allows recording in the Recording step
+- **THEN** encryption is off and "Save the room's chat" is enabled and on again
 
 #### Scenario: Editing a room keeps its setting
 - **GIVEN** a room with `config.chat.persist` false

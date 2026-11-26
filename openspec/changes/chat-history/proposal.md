@@ -23,6 +23,8 @@ the session that opened this change.
   their behavior (`persist` `false`): the user, deck X4 and X5 (2026-11-21) and `history` default (2026-11-26).
 - With end-to-end encryption nothing is saved and the chat stays as today; turning encryption on switches saving off,
   as it already does for recording, broadcast and captions: the user, deck X3 and X4, 2026-11-21.
+- Only an encrypted room's chat panel says that messages are not saved; a room with saving off says nothing, as today:
+  the user, deck mock of the encrypted room's chat panel, 2026-11-21.
 - Anonymous participants' messages are saved too, under their display name with an "Anonymous" label: the user, deck X2,
   2026-11-21.
 - A room that saves but does not show earlier meetings still stores them (D1.2); the history setting changes only in the
@@ -65,7 +67,7 @@ the session that opened this change.
   2026-11-26. The startup run is the cluster's room status sweep, which also repeats on its interval.
 - Messages are sent again to the saver only, never to the other participants: the user, 2026-11-26.
 - The history is ordered as the server stored it, which keeps each sender's order: the user, 2026-11-26.
-- In the room wizard, turning encryption off again, from the Meeting or the Recording step, restores the saving toggle
+- In the room wizard, turning encryption off again, from the Meeting, Recording or Live broadcast step, restores the saving toggle
   to the value it had, as it does for recording, broadcast and captions; the server never turns saving back on by
   itself: the user, 2026-11-26.
 - When the history cannot be loaded, the chat panel shows the live messages and no error: the user, 2026-11-26.
@@ -86,8 +88,6 @@ the session that opened this change.
 
 - The English labels "Save the room's chat" (wizard) and "Anonymous" (chat).
 - An anonymous participant's own messages are recognized after a reload from the ids the browser kept for that meeting.
-- Only an encrypted room's chat panel says that messages are not saved, as the deck shows; a room with saving off says
-  nothing, as today.
 - The history is read through the internal API, `/internal-api/v1`, so its route and shape carry no compatibility promise.
   The type of a stored message is defined in the typings here for that use; its public exposure and its final field
   names (`meetingId` included, a meeting identifier that no public contract carries today) are decided in
@@ -137,6 +137,8 @@ None.
 - **Webhooks**: `chat.persist` appears, additively, in the room config the `meetingStarted` and `meetingEnded` payloads
   carry. The hidden participant emits no `participantJoined` or `participantLeft`.
 - **Embedded API**: none.
+- **Typings** (`@openvidu-meet/typings`, additive): `MeetChatConfig.persist`, `MeetChatConfigOptions`, `MeetChatMessage`
+  and `MeetSignalType.MEET_CHAT_MESSAGE_SAVED`.
 - **Meeting UI**: the chat panel loads the current meeting's history on joining, reloading, being granted `chatRead` and
   reconnecting, and pages it; anonymous senders are labelled in every room; the sender keeps unconfirmed messages and
   sends them again.
