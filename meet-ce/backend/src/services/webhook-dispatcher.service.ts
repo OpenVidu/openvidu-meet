@@ -301,13 +301,13 @@ export class WebhookDispatcherService {
 	 * rejecting the whole send.
 	 */
 	protected async sendWebhookEvent(event: MeetWebhookEventType, payload: MeetWebhookPayload) {
+		const creationDate = Date.now();
 		const enabledWebhooks = await this.webhookRepository.findEnabled();
 		const roomId = extractWebhookRoomId(payload);
 		const webhooks = enabledWebhooks.filter((webhook) => webhookMatchesEvent(webhook, event, roomId));
 
 		if (webhooks.length === 0) return;
 
-		const creationDate = Date.now();
 		const data: MeetWebhookEvent = {
 			event,
 			creationDate,

@@ -175,7 +175,11 @@ describe('WebhookDispatcherService delivery', () => {
 	const webhook = (path: string, overrides: Partial<MeetWebhook> = {}) =>
 		({ webhookId: `wh-${path}`, url: `${base}${path}`, enabled: true, ...overrides }) as MeetWebhook;
 
-	const build = (webhooks: MeetWebhook[], apiKeys = [{ key: API_KEY }]) => {
+	const build = (
+		webhooks: MeetWebhook[],
+		apiKeys = [{ key: API_KEY }],
+		findEnabled: () => Promise<MeetWebhook[]> = async () => webhooks
+	) => {
 		const warnings: string[] = [];
 		const reasons: unknown[] = [];
 		const service = new WebhookDispatcherService(
@@ -188,7 +192,7 @@ describe('WebhookDispatcherService delivery', () => {
 						reasons.push(reason);
 					}
 				},
-				{ findEnabled: async () => webhooks },
+				{ findEnabled },
 				{ getApiKeys: async () => apiKeys }
 			] as unknown as ConstructorParameters<typeof WebhookDispatcherService>)
 		);
@@ -225,6 +229,30 @@ describe('WebhookDispatcherService delivery', () => {
 				crypto.createHmac('sha256', API_KEY).update(`${timestamp}.${body}`).digest('hex')
 			);
 		}
+	});
+
+	it('stamps creationDate in the order the events are raised, even when a lookup is slow', async () => {
+		let lookups = 0;
+		const { send } = build([webhook('/all')], [{ key: API_KEY }], async () => {
+			const slow = lookups++ === 0;
+
+			if (slow) await new Promise((resolve) => setTimeout(resolve, 60));
+
+			return [webhook('/all')];
+		});
+
+		await Promise.all([
+			send(MeetWebhookEventType.BROADCAST_STARTED, { broadcastId: 'b-1' }),
+			new Promise((resolve) => setTimeout(resolve, 20)).then(() =>
+				send(MeetWebhookEventType.BROADCAST_UPDATED, { broadcastId: 'b-1' })
+			)
+		]);
+
+		const byCreation = received
+			.map(({ body }) => JSON.parse(body) as { event: string; creationDate: number })
+			.sort((a, b) => a.creationDate - b.creationDate)
+			.map(({ event }) => event);
+		expect(byCreation).toEqual([MeetWebhookEventType.BROADCAST_STARTED, MeetWebhookEventType.BROADCAST_UPDATED]);
 	});
 
 	it('sends nothing when no endpoint matches, without needing an API key', async () => {
