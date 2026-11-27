@@ -1,4 +1,6 @@
 import { describe, expect, it, jest } from '@jest/globals';
+import { ParticipantInfo_Kind } from '@livekit/protocol';
+import { MEET_CHAT_SAVER_IDENTITY } from '@openvidu-meet/typings';
 import type { EgressInfo } from 'livekit-server-sdk';
 import { StartEgressRequest, TwirpError } from 'livekit-server-sdk';
 import type { OpenViduMeetError } from '../../../src/models/error.model.js';
@@ -150,6 +152,23 @@ describe('LiveKitService.roomHasParticipants', () => {
 		await expect(buildListingService(() => Promise.resolve([])).roomHasParticipants('room-1')).resolves.toBe(false);
 	});
 
+	it('does not count the chat saver, though every other participant counts', async () => {
+		const saver = {
+			identity: MEET_CHAT_SAVER_IDENTITY,
+			kind: ParticipantInfo_Kind.AGENT,
+			permission: { hidden: true },
+			attributes: { 'meet.role': 'chatSaver' }
+		};
+		const egress = { identity: 'EG_1', kind: ParticipantInfo_Kind.EGRESS };
+
+		await expect(buildListingService(() => Promise.resolve([saver])).roomHasParticipants('room-1')).resolves.toBe(
+			false
+		);
+		await expect(
+			buildListingService(() => Promise.resolve([saver, egress])).roomHasParticipants('room-1')
+		).resolves.toBe(true);
+	});
+
 	it('reports no participants for a room the media server does not have', async () => {
 		const service = buildListingService(() =>
 			Promise.reject(new TwirpError('not_found', 'requested room does not exist', 404, 'not_found'))
@@ -167,6 +186,37 @@ describe('LiveKitService.roomHasParticipants', () => {
 			statusCode: 503,
 			message: errorLivekitNotAvailable().message
 		});
+	});
+});
+
+describe('LiveKitService.findParticipant', () => {
+	const buildGettingService = (getParticipant: () => Promise<unknown>) => {
+		const service = Object.create(LiveKitService.prototype) as LiveKitService;
+		Object.assign(service as object, { lk: { room: { getParticipant } }, logger });
+		return service;
+	};
+
+	it('returns the participant, or nothing only when the media server says it is not there', async () => {
+		const participant = { identity: 'ana' };
+
+		await expect(
+			buildGettingService(() => Promise.resolve(participant)).findParticipant('room-1', 'ana')
+		).resolves.toBe(participant);
+		await expect(
+			buildGettingService(() =>
+				Promise.reject(new TwirpError('not_found', 'participant does not exist', 404, 'not_found'))
+			).findParticipant('room-1', 'ana')
+		).resolves.toBeUndefined();
+	});
+
+	it.each([
+		['the media server cannot be reached', new TypeError('fetch failed', { cause: { code: 'ECONNREFUSED' } })],
+		['the media server fails', new TwirpError('unavailable', 'no response from servers', 503, 'unavailable')],
+		['the call times out', timeout()]
+	])('throws when %s, since that says nothing about whether the participant is there', async (_, failure) => {
+		await expect(
+			buildGettingService(() => Promise.reject(failure)).findParticipant('room-1', 'ana')
+		).rejects.toMatchObject({ statusCode: 500 });
 	});
 });
 

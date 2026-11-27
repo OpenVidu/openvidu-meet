@@ -16,6 +16,7 @@ const roomMigrationV6ToV7Name = generateSchemaMigrationName(meetRoomCollectionNa
 const roomMigrationV7ToV8Name = generateSchemaMigrationName(meetRoomCollectionName, 7, 8);
 const roomMigrationV8ToV9Name = generateSchemaMigrationName(meetRoomCollectionName, 8, 9);
 const roomMigrationV9ToV10Name = generateSchemaMigrationName(meetRoomCollectionName, 9, 10);
+const roomMigrationV10ToV11Name = generateSchemaMigrationName(meetRoomCollectionName, 10, 11);
 
 const roomMigrationV1ToV2Transform: SchemaTransform<MeetRoomDocument> = (room) => {
 	room.config.captions = { enabled: true };
@@ -187,6 +188,12 @@ const roomMigrationV9ToV10Transform: SchemaTransform<MeetRoomDocument> = (room) 
 	return room;
 };
 
+// v11 adds saving the chat: existing rooms keep their live-only chat.
+const roomMigrationV10ToV11Transform: SchemaTransform<MeetRoomDocument> = (room) => {
+	room.config.chat.persist = false;
+	return room;
+};
+
 /**
  * Schema migrations for MeetRoom.
  * Key format: schema_{collection}_v{from}_to_v{to}
@@ -200,5 +207,6 @@ export const roomMigrations: SchemaMigrationMap<MeetRoomDocument> = new Map([
 	[roomMigrationV6ToV7Name, roomMigrationV6ToV7Transform],
 	[roomMigrationV7ToV8Name, roomMigrationV7ToV8Transform],
 	[roomMigrationV8ToV9Name, roomMigrationV8ToV9Transform],
-	[roomMigrationV9ToV10Name, roomMigrationV9ToV10Transform]
+	[roomMigrationV9ToV10Name, roomMigrationV9ToV10Transform],
+	[roomMigrationV10ToV11Name, roomMigrationV10ToV11Transform]
 ]);

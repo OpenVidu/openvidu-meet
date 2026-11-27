@@ -233,7 +233,7 @@ install_with_meet_pro() {
   local committed_lockfile
   local ce_dependencies_changed=false
 
-  git diff --quiet HEAD -- pnpm-lock.yaml pnpm-workspace.yaml package.json testapp/package.json \
+  git diff --quiet HEAD -- pnpm-lock.yaml pnpm-workspace.yaml package.json patches testapp/package.json \
     ':(glob)meet-ce/**/package.json' 2>/dev/null || ce_dependencies_changed=true
 
   committed_lockfile=$(mktemp)

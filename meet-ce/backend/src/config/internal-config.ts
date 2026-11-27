@@ -78,6 +78,14 @@ export const INTERNAL_CONFIG = {
 	MEETING_EMPTY_TIMEOUT: (process.env.MEETING_EMPTY_TIMEOUT || '20s') as StringValue, // Seconds to keep the meeting (LK room) open until the first participant joins
 	MEETING_DEPARTURE_TIMEOUT: (process.env.MEETING_DEPARTURE_TIMEOUT || '20s') as StringValue, // Seconds to keep the meeting (LK room) open after the last participant leaves
 
+	// Chat saver: the hidden participant that stores the chat of a meeting
+	CHAT_MESSAGE_MAX_LENGTH: 500, // Longest chat message the saver stores, in UTF-16 code units, which is what the chat input's maxlength counts
+	CHAT_SAVER_MAX_STREAM_BYTES: 2000, // Largest chat text stream the saver reads; the binding ends a bigger one with an error
+	CHAT_SAVER_STREAM_TIMEOUT: '10s' as StringValue, // How long the saver waits for a chat text stream to end before dropping it
+	CHAT_SAVER_ROOM_CLOSE_WAIT: '5s' as StringValue, // How long a join token request waits for the room a saver's join created to close
+	CHAT_SAVER_ROOM_CLOSE_POLL_INTERVAL: '250ms' as StringValue, // How often that wait reads the room again
+	CHAT_SAVER_SHUTDOWN_TIMEOUT: '5s' as StringValue, // How long a stopping replica waits for its chat savers to leave before exiting
+
 	// Participant name reservation
 	PARTICIPANT_MAX_CONCURRENT_NAME_REQUESTS: 20, // Maximum number of request by the same name at the same time allowed
 	PARTICIPANT_NAME_RESERVATION_TTL: '12h' as StringValue, // Time-to-live for participant name reservations
@@ -145,9 +153,10 @@ export const INTERNAL_CONFIG = {
 	GLOBAL_CONFIG_SCHEMA_VERSION: 4 as SchemaVersion, // MIGRATION_REV: 1789642617602
 	USER_SCHEMA_VERSION: 2 as SchemaVersion, // MIGRATION_REV: 1774181859233
 	API_KEY_SCHEMA_VERSION: 1 as SchemaVersion, // MIGRATION_REV: 1771328577054
-	ROOM_SCHEMA_VERSION: 10 as SchemaVersion, // MIGRATION_REV: 1794401382063
+	ROOM_SCHEMA_VERSION: 11 as SchemaVersion, // MIGRATION_REV: 1795735147000
 	ROOM_MEMBER_SCHEMA_VERSION: 7 as SchemaVersion, // MIGRATION_REV: 1794401382064
 	RECORDING_SCHEMA_VERSION: 4 as SchemaVersion, // MIGRATION_REV: 1794335592210
+	CHAT_MESSAGE_SCHEMA_VERSION: 1 as SchemaVersion, // MIGRATION_REV: 1795735310093
 	WEBHOOK_SCHEMA_VERSION: 1 as SchemaVersion // MIGRATION_REV: 1786634401242
 };
 

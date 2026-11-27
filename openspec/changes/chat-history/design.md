@@ -116,7 +116,7 @@ change when it happens.
 - on `room_started`, once the room is activated (never for a closed room or a stale event, which `handleRoomStarted`
   already returns early on);
 - on `participant_joined` of a standard participant, so a lost webhook or a restart heals on the next join;
-- on `participant_left` of the saver itself, while the room still has standard participants: whichever replica gets the
+- on `participant_left` of the saver itself, while the room still has other participants (`LiveKitService.roomHasParticipants`, which also counts a recording or a broadcast: joining a room only they are left in is harmless, LiveKit closes it on the departure timeout all the same): whichever replica gets the
   webhook rejoins it. After a crash LiveKit sends it about 21 s later; the messages sent meanwhile go unconfirmed and
   their senders send them again to the new saver;
 - in `validateRoomsStatusGC`, which every replica runs when it starts (skipped while another replica holds the task
@@ -194,7 +194,7 @@ resend stores it.
 
 It writes `{ schemaVersion, roomId, meetingId: LiveKit room sid, meetingStartDate (from the LiveKit room metadata,
 MeetRoomHelper.extractMeetingStartDateFromMetadata, or the LiveKit room's creation time when it carries none),
-messageId, channel: 'all', text, participant: { identity, name, type } }` into a new `chat_messages` collection with a
+messageId, channel: 'all', text, participant: { identity, name, type } }` into a new collection of chat messages (model `MeetChatMessage`, named as every other Meet collection) with a
 pipeline upsert (Mongoose `updatePipeline: true`) whose filter is the unique key `(roomId, participant.identity,
 messageId)` plus `sendDate: { $exists: false }`, and whose single stage `$set`s the message and `sendDate: { $toLong:
 '$$NOW' }`. Every value of that stage except `sendDate` is wrapped in `$literal`, since a pipeline reads a string that
@@ -212,7 +212,8 @@ server, not the hidden participant, confirms. Any other failed write sends nothi
 sender's messages keep their order because the buffer sends the saver one message at a time; two senders whose messages
 were stored after an outage keep the order their resends arrived in. `sendDate` is a number of milliseconds like every
 other Meet date, so the history read reuses the repositories' `findMany` paging unchanged. The read index is
-`(roomId, meetingId, sendDate, _id)`.
+`(roomId, meetingId, sendDate, _id)`; the collection also carries the `schemaVersion` index of every migrated collection,
+which the startup migration check sorts by.
 
 ### Reading the history
 
@@ -295,7 +296,8 @@ leaves the live messages.
 
 Messages of other anonymous participants get the "Anonymous" label in every room, from the sender's metadata for live
 messages and from `participant.type` for loaded ones; a participant's own messages show as their own, without it. An
-encrypted room's panel says messages are not saved.
+encrypted room's panel says messages are not saved and will be removed at the end of the meeting; a room with saving
+off keeps today's text (removed at the end of the meeting) and a room that saves shows neither.
 
 ### Room wizard
 
@@ -320,6 +322,20 @@ today the script exits first. `prod-deps` already runs on the target platform, s
 `linux-x64-gnu` or `linux-arm64-gnu` binding. Measured: 455 MB to 579 MB on disk and 94 MB to 123 MB to download, of
 which 16 MB is Debian and 12.5 MB the binding.
 
+### Measured on the built image (2026-11-27)
+
+The image built from this change (`node:24-slim`, 597 MB, 126 MB compressed; a recent Alpine build of the backend is
+about 445 MB), run as the backend of a local stack against the local deployment's LiveKit:
+
+- Its saver joins a meeting and stores messages: the integration tests of a Meet room pass against it.
+- `docker stop` ends the container in 0.7 s, node closing in order.
+- 50 meetings saved at once, one participant each: memory goes from about 215 MiB to about 500 MiB (some 6 MiB per
+  meeting saved) and CPU stays between 20 % and 30 % of one core, idle or with one message per second in every
+  meeting; every message sent was confirmed (5,200 in four rounds).
+- 14 rounds of 50 meetings one after another (700 meetings) with the JavaScript heap capped at 160 MB: the memory
+  left after each round goes 375, 412, 432, 441, 448, 451, 455, 455, 457, 462, 463, 466, 466, 469 MiB, so it levels
+  off and what a finished meeting leaves behind is released.
+
 ## Several replicas
 
 Any replica can host a meeting's saver; at most one connection per meeting survives a race; a stopped replica's savers
@@ -329,6 +345,17 @@ clock orders their writes. The history read is a plain query, served the same by
 
 ## Risks / Trade-offs
 
+- [`@livekit/rtc-node` 1.2.3 releases a room only in `disconnect()`, which does nothing once the server has
+  disconnected it, as it does at the end of every meeting: the room stays subscribed to the binding's event emitter,
+  every later event of any room is dispatched to it too, and its native handle is kept. Measured: 14 rounds of 50
+  rooms closed by the server ran several times slower, above one core, without the release] → `ChatSaverService`
+  removes that listener and disposes the handle on `disconnected`, through two private members of the binding
+  (`onFfiEvent`, `ffiHandle`) and its global emitter; an integration test fails if an upgrade of the binding breaks
+  the release. To be reported upstream.
+- [LiveKit reports a participant who publishes nothing to the others in batches, every 3 s (`subscriberUpdateInterval`),
+  so the saver may not know a sender for their first seconds in the meeting (about 2 s measured in the integration
+  tests)] → a message sent in that window is delivered live and stored by the 5 s resend; a participant who publishes
+  a track, as the meeting interface does with its microphone, is reported at once.
 - [One WebRTC connection per meeting that saves, on the replica that joined it] → measure memory and CPU of 50 savers
   in one backend before merging; the connection carries data only (no subscriptions).
 - [The Meet server must reach media nodes over WebRTC in Elastic and HA] → verify on an Elastic deployment before

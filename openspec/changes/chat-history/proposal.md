@@ -23,8 +23,10 @@ the session that opened this change.
   their behavior (`persist` `false`): the user, deck X4 and X5 (2026-11-21) and `history` default (2026-11-26).
 - With end-to-end encryption nothing is saved and the chat stays as today; turning encryption on switches saving off,
   as it already does for recording, broadcast and captions: the user, deck X3 and X4, 2026-11-21.
-- Only an encrypted room's chat panel says that messages are not saved; a room with saving off says nothing, as today:
-  the user, deck mock of the encrypted room's chat panel, 2026-11-21.
+- Only an encrypted room's chat panel says that messages are not saved; a room with saving off keeps today's text
+  (messages are removed at the end of the meeting): the user, deck mock of the encrypted room's chat panel, 2026-11-21.
+  The panel of a room that saves its chat shows no such text, since the server keeps its messages until the room is
+  deleted: the user, 2026-11-27.
 - Anonymous participants' messages are saved too, under their display name with an "Anonymous" label: the user, deck X2,
   2026-11-21.
 - A room that saves but does not show earlier meetings still stores them (D1.2); the history setting changes only in the

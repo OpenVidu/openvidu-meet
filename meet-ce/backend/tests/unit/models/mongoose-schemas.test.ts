@@ -8,6 +8,7 @@ import {
 } from '@openvidu-meet/typings';
 import type { Schema } from 'mongoose';
 import { MeetApiKeyModel } from '../../../src/models/mongoose-schemas/api-key.schema.js';
+import { MeetChatMessageModel } from '../../../src/models/mongoose-schemas/chat-message.schema.js';
 import { MeetGlobalConfigModel } from '../../../src/models/mongoose-schemas/global-config.schema.js';
 import { MeetRecordingModel } from '../../../src/models/mongoose-schemas/recording.schema.js';
 import { MeetRoomMemberModel } from '../../../src/models/mongoose-schemas/room-member.schema.js';
@@ -58,6 +59,7 @@ const roomPaths = {
 	'config.initialVideoActive': 'Boolean',
 	'config.chat': 'Embedded required',
 	'config.chat.enabled': 'Boolean required',
+	'config.chat.persist': 'Boolean required',
 	'config.recording': 'Embedded required',
 	'config.recording.enabled': 'Boolean required',
 	'config.recording.autoStart': 'String',
@@ -198,6 +200,21 @@ const webhookPaths = {
 	creationDate: 'Number required'
 };
 
+const chatMessagePaths = {
+	_id: 'ObjectId',
+	schemaVersion: 'Number required',
+	roomId: 'String required',
+	meetingId: 'String required',
+	messageId: 'String required',
+	channel: 'String required',
+	sendDate: 'Number required',
+	meetingStartDate: 'Number required',
+	text: 'String required',
+	'participant.identity': 'String',
+	'participant.name': 'String',
+	'participant.type': 'String required'
+};
+
 const schemas: [string, { schema: Schema; modelName: string }, Record<string, string>, unknown[]][] = [
 	[
 		'MeetRoom',
@@ -261,6 +278,16 @@ const schemas: [string, { schema: Schema; modelName: string }, Record<string, st
 		]
 	],
 	['MeetApiKey', MeetApiKeyModel, apiKeyPaths, [[{ key: 1 }, { unique: true }]]],
+	[
+		'MeetChatMessage',
+		MeetChatMessageModel,
+		chatMessagePaths,
+		[
+			[{ roomId: 1, 'participant.identity': 1, messageId: 1 }, { unique: true }],
+			[{ roomId: 1, meetingId: 1, sendDate: 1, _id: 1 }, {}],
+			[{ schemaVersion: 1 }, {}]
+		]
+	],
 	['MeetGlobalConfig', MeetGlobalConfigModel, globalConfigPaths, []],
 	['MeetWebhook', MeetWebhookModel, webhookPaths, [[{ webhookId: 1 }, { unique: true }]]]
 ];

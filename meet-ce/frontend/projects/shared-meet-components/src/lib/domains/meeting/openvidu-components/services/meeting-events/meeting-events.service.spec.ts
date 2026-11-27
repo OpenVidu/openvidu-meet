@@ -25,11 +25,22 @@ import { RecordingService } from '../recording/recording.service';
 import { MeetingTranslateService } from '../translate/meeting-translate.service';
 import { MeetingEventCallbacks, MeetingEventsService, MeetSignal } from './meeting-events.service';
 
+const chatServiceSpy = () =>
+	jasmine.createSpyObj<ChatService>('ChatService', [
+		'addRemoteMessage',
+		'confirmSaved',
+		'forwardUnconfirmedTo',
+		'connectionLost',
+		'connectionRestored'
+	]);
+
 class LoggerServiceStub {
 	get() {
 		return { d: () => {}, w: () => {}, e: () => {} };
 	}
 }
+
+type ChatStream = AsyncIterable<string> & { info: { attributes?: Record<string, string> } };
 
 describe('MeetingEventsService', () => {
 	let service: MeetingEventsService;
@@ -44,9 +55,9 @@ describe('MeetingEventsService', () => {
 		encryptionType?: Encryption_Type,
 		participantIdentity?: string
 	) => Promise<void>;
-	let onChat: (reader: AsyncIterable<string>, sender: { identity: string }) => Promise<void>;
+	let onChat: (reader: ChatStream, sender: { identity: string }) => Promise<void>;
 
-	const storedParticipant = { sid: 'sid1', identity: 'speaker1', name: 'Speaker 1' };
+	const storedParticipant = { sid: 'sid1', identity: 'speaker1', name: 'Speaker 1', isAnonymous: false };
 
 	type Packet = { identity?: string; encryptionType?: Encryption_Type; listedSender?: { sid: string } };
 
@@ -69,7 +80,7 @@ describe('MeetingEventsService', () => {
 	}
 
 	beforeEach(() => {
-		chatService = jasmine.createSpyObj<ChatService>('ChatService', ['addRemoteMessage']);
+		chatService = chatServiceSpy();
 		recordingService = jasmine.createSpyObj<RecordingService>('RecordingService', [
 			'setRecordingStarting',
 			'setRecordingStarted',
@@ -238,17 +249,33 @@ describe('MeetingEventsService', () => {
 		});
 	});
 
+	it('hands the chat the confirmation the server sends for a stored message', async () => {
+		await receive(MeetSignalType.MEET_CHAT_MESSAGE_SAVED, { messageId: 'id-1' });
+
+		expect(chatService.confirmSaved).toHaveBeenCalledOnceWith('id-1');
+	});
+
 	describe('chat stream', () => {
-		const stream = (...chunks: string[]): AsyncIterable<string> => ({
+		const streamWith = (attributes: Record<string, string> | undefined, ...chunks: string[]): ChatStream => ({
+			info: { attributes },
 			async *[Symbol.asyncIterator]() {
 				yield* chunks;
 			}
 		});
+		const stream = (...chunks: string[]) => streamWith(undefined, ...chunks);
 
 		it('delivers a chat message from a participant of the meeting, whole', async () => {
 			await onChat(stream('hel', 'lo'), { identity: storedParticipant.identity });
 
-			expect(chatService.addRemoteMessage).toHaveBeenCalledOnceWith('hello', 'Speaker 1');
+			expect(chatService.addRemoteMessage).toHaveBeenCalledOnceWith('hello', storedParticipant, undefined);
+		});
+
+		it('delivers the attributes the sender set on the message with it', async () => {
+			const attributes = { 'meet.messageId': 'id-1', 'meet.forwarded': 'true' };
+
+			await onChat(streamWith(attributes, 'hello'), { identity: storedParticipant.identity });
+
+			expect(chatService.addRemoteMessage).toHaveBeenCalledOnceWith('hello', storedParticipant, attributes);
 		});
 
 		it('discards a chat message from a participant that is not in the roster', async () => {
@@ -305,6 +332,7 @@ describe('MeetingEventsService (reconnection view state)', () => {
 	let callbacks: MeetingEventCallbacks;
 	let dialogService: jasmine.SpyObj<DialogService>;
 	let recordingService: jasmine.SpyObj<RecordingService>;
+	let chatService: jasmine.SpyObj<ChatService>;
 
 	beforeEach(() => {
 		remotes = [];
@@ -324,6 +352,7 @@ describe('MeetingEventsService (reconnection view state)', () => {
 			'closeBlockingDialog'
 		]);
 		recordingService = jasmine.createSpyObj<RecordingService>('RecordingService', ['setRecordingStopped']);
+		chatService = chatServiceSpy();
 
 		const participantServiceStub = {
 			addRemoteParticipant: () => remotes.push({} as ParticipantModel),
@@ -355,7 +384,7 @@ describe('MeetingEventsService (reconnection view state)', () => {
 					useValue: { getRoomName: () => 'room', shouldHandleClientInitiatedDisconnectEvent: true }
 				},
 				{ provide: MeetingTranslateService, useValue: { translate: (key: string) => key } },
-				{ provide: ChatService, useValue: {} },
+				{ provide: ChatService, useValue: chatService },
 				{ provide: MeetingUiConfigService, useValue: {} },
 				{ provide: RecordingService, useValue: recordingService },
 				{ provide: MeetStorageService, useValue: meetStorageService }
@@ -372,6 +401,53 @@ describe('MeetingEventsService (reconnection view state)', () => {
 			onParticipantLeft: jasmine.createSpy('onParticipantLeft')
 		};
 		service.bindRoom(doubles.room, callbacks);
+	});
+
+	describe('chat', () => {
+		const chatReader = (identity: string, chatRead: boolean) =>
+			({
+				sid: `sid-${identity}`,
+				identity,
+				metadata: JSON.stringify({ badge: 'other', permissions: { chatRead } })
+			}) as unknown as RemoteParticipant;
+
+		it('forwards the unconfirmed messages to a participant who connects holding chatRead', () => {
+			emit(RoomEvent.ParticipantConnected, chatReader('bob', true));
+
+			expect(chatService.forwardUnconfirmedTo).toHaveBeenCalledOnceWith('bob');
+		});
+
+		it('forwards nothing to a participant who connects without chatRead', () => {
+			emit(RoomEvent.ParticipantConnected, chatReader('bob', false));
+
+			expect(chatService.forwardUnconfirmedTo).not.toHaveBeenCalled();
+		});
+
+		it('forwards the unconfirmed messages to a participant granted chatRead while connected', () => {
+			const bob = chatReader('bob', true);
+			const withoutChatRead = chatReader('bob', false).metadata;
+
+			emit(RoomEvent.ParticipantMetadataChanged, withoutChatRead, bob);
+
+			expect(chatService.forwardUnconfirmedTo).toHaveBeenCalledOnceWith('bob');
+		});
+
+		it('forwards nothing when the metadata of a participant who already read the chat changes', () => {
+			const bob = chatReader('bob', true);
+
+			emit(RoomEvent.ParticipantMetadataChanged, bob.metadata, bob);
+
+			expect(chatService.forwardUnconfirmedTo).not.toHaveBeenCalled();
+		});
+
+		it('tells the chat the connection was lost, on a resume and on a full reconnect, and that it came back', () => {
+			emit(RoomEvent.SignalReconnecting);
+			emit(RoomEvent.Reconnecting);
+			emit(RoomEvent.Reconnected);
+
+			expect(chatService.connectionLost).toHaveBeenCalledTimes(2);
+			expect(chatService.connectionRestored).toHaveBeenCalledTimes(1);
+		});
 	});
 
 	it('docks the local floating video when the last remote participant genuinely leaves', async () => {
@@ -558,7 +634,7 @@ describe('MeetingEventsService (the room events it binds to)', () => {
 				},
 				{ provide: MeetingLiveKitService, useValue: { getRoomName: () => 'room' } },
 				{ provide: MeetingTranslateService, useValue: { translate: (key: string) => key } },
-				{ provide: ChatService, useValue: {} },
+				{ provide: ChatService, useValue: chatServiceSpy() },
 				{ provide: MeetingUiConfigService, useValue: {} },
 				{
 					provide: RecordingService,
@@ -586,6 +662,7 @@ describe('MeetingEventsService (the room events it binds to)', () => {
 				RoomEvent.EncryptionError,
 				RoomEvent.ActiveSpeakersChanged,
 				RoomEvent.ParticipantConnected,
+				RoomEvent.ParticipantMetadataChanged,
 				RoomEvent.ParticipantDisconnected,
 				RoomEvent.ParticipantNameChanged,
 				RoomEvent.ParticipantAttributesChanged,
@@ -733,7 +810,7 @@ describe('MeetingEventsService (remote roster across a full reconnect)', () => {
 					}
 				},
 				{ provide: MeetingTranslateService, useValue: { translate: (key: string) => key } },
-				{ provide: ChatService, useValue: {} },
+				{ provide: ChatService, useValue: chatServiceSpy() },
 				{ provide: MeetingUiConfigService, useValue: {} },
 				{ provide: RecordingService, useValue: {} },
 				{ provide: BroadcastStateService, useValue: {} },

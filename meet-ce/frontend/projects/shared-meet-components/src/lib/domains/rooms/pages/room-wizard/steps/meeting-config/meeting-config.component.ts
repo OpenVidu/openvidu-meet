@@ -62,7 +62,8 @@ export class MeetingConfigComponent {
 		const stepData: Partial<MeetRoomOptions> = {
 			config: {
 				chat: {
-					enabled: formValue.chatEnabled ?? false
+					enabled: formValue.chatEnabled ?? false,
+					persist: formValue.chatPersistEnabled ?? false
 				},
 				virtualBackground: {
 					enabled: formValue.virtualBackgroundEnabled ?? false
@@ -121,6 +122,10 @@ export class MeetingConfigComponent {
 		this.meetingForm.patchValue({ chatEnabled: isEnabled });
 	}
 
+	onChatPersistToggleChange(event: MatSlideToggleChange): void {
+		this.meetingForm.patchValue({ chatPersistEnabled: event.checked });
+	}
+
 	onVirtualBackgroundToggleChange(event: MatSlideToggleChange): void {
 		const isEnabled = event.checked;
 		this.meetingForm.patchValue({ virtualBackgroundEnabled: isEnabled });
@@ -141,6 +146,10 @@ export class MeetingConfigComponent {
 
 	get chatEnabled(): boolean {
 		return this.meetingForm.value.chatEnabled ?? false;
+	}
+
+	get chatPersistEnabled(): boolean {
+		return this.meetingForm.value.chatPersistEnabled ?? false;
 	}
 
 	get virtualBackgroundEnabled(): boolean {

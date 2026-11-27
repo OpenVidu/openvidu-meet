@@ -15,6 +15,8 @@ const handlers: Partial<Record<WebhookEventNames, WebhookHandler>> = {
 	egress_ended: (service, { egressInfo }) => service.handleEgressEnded(egressInfo!),
 	participant_joined: (service, { room, participant }) => service.handleParticipantJoined(room!, participant!),
 	participant_left: (service, { room, participant }) => service.handleParticipantLeft(room!, participant!),
+	participant_connection_aborted: (service, { room, participant }) =>
+		service.handleParticipantConnectionAborted(room!, participant!),
 	room_started: (service, { room }) => service.handleRoomStarted(room!),
 	room_finished: (service, { room }) => service.handleRoomFinished(room!)
 };

@@ -153,7 +153,8 @@ export const AREAS = {
 		]
 	},
 	'meeting-chat': {
-		paths: [`${MEETING}**/*chat*`],
+		paths: [`${BACKEND}**/*chat*`, `${MEETING}**/*chat*`, `${TYPINGS}**/chat*`],
+		backend: ['api/meetings/chat-messages.test.ts', 'api/meetings/chat-saver.test.ts'],
 		frontend: ['chat.test.ts', 'e2ee.test.ts']
 	},
 	'meeting-join': {

@@ -18,11 +18,17 @@
 		</div>
 	}
 
-	<div class="text-container">
-		<p class="text-info">{{ 'PANEL.CHAT.SUBTITLE' | translate }}</p>
-	</div>
+	@if (isEncrypted()) {
+		<div class="text-container">
+			<p class="text-info">{{ 'PANEL.CHAT.NOT_SAVED' | translate }}</p>
+		</div>
+	} @else if (!savesChat()) {
+		<div class="text-container">
+			<p class="text-info">{{ 'PANEL.CHAT.SUBTITLE' | translate }}</p>
+		</div>
+	}
 
-	<div class="messages-container" #chatScroll>
+	<div class="messages-container" #chatScroll (scroll)="onScroll()">
 		@for (data of messageList(); track data) {
 			<div class="message" [class.right]="data.isLocal" [class.left]="!data.isLocal">
 				<div class="msg-detail">
@@ -30,7 +36,12 @@
 						@if (data.isLocal) {
 							<p>{{ 'PANEL.CHAT.YOU' | translate }}</p>
 						} @else {
-							<p>{{ data.participantName }}</p>
+							<p>
+								{{ data.participantName }}
+								@if (data.anonymous) {
+									<span class="anonymous-label">{{ 'PANEL.CHAT.ANONYMOUS' | translate }}</span>
+								}
+							</p>
 						}
 					</div>
 					<div class="chat-message">

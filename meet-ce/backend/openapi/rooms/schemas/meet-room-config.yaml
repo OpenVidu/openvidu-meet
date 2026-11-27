@@ -89,6 +89,17 @@ MeetChatConfig:
             description: |
                 If true, the room's meetings offer a chat. If false, the meeting shows no chat and the media server
                 refuses chat messages from every participant, whatever their `chatRead` and `chatWrite` permissions.
+        persist:
+            type: boolean
+            default: true
+            example: true
+            description: |
+                If true, the server saves the chat messages of the room's meetings, so a participant who joins or
+                reloads sees the messages of the meeting in progress. Defaults to `true` when a room is created,
+                and a config update that omits it keeps the saved value; it is `false` in rooms created before
+                this setting existed. Saving needs `enabled` true and `e2ee.enabled` false: end-to-end encryption
+                forces it to `false`, and turning encryption off again does not turn it back on. Turning `enabled`
+                off keeps the value. The setting applies from the next meeting.
 MeetRecordingConfig:
     type: object
     required:

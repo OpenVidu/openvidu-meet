@@ -1,6 +1,6 @@
 import type {
 	MeetAppearanceConfig,
-	MeetChatConfig,
+	MeetChatConfigOptions,
 	MeetE2EEConfig,
 	MeetRaiseHandConfig,
 	MeetReactionsConfig,
@@ -82,8 +82,9 @@ const RecordingConfigSchema: z.ZodType<MeetRecordingConfig> = z.object({
 	encoding: encodingValidator.optional()
 });
 
-const ChatConfigSchema: z.ZodType<MeetChatConfig> = z.object({
-	enabled: z.boolean()
+const ChatConfigSchema: z.ZodType<MeetChatConfigOptions> = z.object({
+	enabled: z.boolean(),
+	persist: z.boolean().optional()
 });
 
 const VirtualBackgroundConfigSchema: z.ZodType<MeetVirtualBackgroundConfig> = z.object({
@@ -206,6 +207,7 @@ const CreateRoomConfigSchema: z.ZodType<MeetRoomConfigOptions> = z
 		data.broadcast.destinations ??= [];
 		data.broadcast.layout ??= MeetRecordingLayout.GRID;
 		data.broadcast.encoding ??= MeetRecordingEncodingPreset.H264_720P_30;
+		data.chat.persist ??= true;
 
 		MeetRoomHelper.disableFeaturesExcludedByE2EE(data);
 		return data;
@@ -325,7 +327,7 @@ export const RoomOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 			layout: MeetRecordingLayout.GRID,
 			encoding: MeetRecordingEncodingPreset.H264_720P_30
 		},
-		chat: { enabled: true },
+		chat: { enabled: true, persist: true },
 		virtualBackground: { enabled: true },
 		e2ee: { enabled: false },
 		captions: { enabled: true },

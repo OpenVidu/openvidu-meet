@@ -1,21 +1,56 @@
 import { MeetRoomMemberRole } from '@openvidu-meet/typings';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Browser, type Page } from '@playwright/test';
 import {
+	chatAlerts,
+	expectChatAvailable,
 	expectChatLinkCount,
 	expectChatLinkHrefContains,
 	expectChatMessageCount,
+	expectChatMessageFromAt,
 	expectChatMessageNotification,
 	expectChatMessageTextAt,
+	expectChatMessageTexts,
 	expectFirstMessageSender,
+	expectNoChat,
+	expectNoUnreadChatMessages,
+	expectOwnChatMessageAt,
 	openChatFromNotification,
 	receivedDataChannelText,
+	recordChatAlerts,
 	recordDataChannelMessages,
 	sendChatMessage,
-	toggleChatPanel
+	toggleChatPanel,
+	trackRoomMemberToken,
+	waitForChatHistoryResponse,
+	waitForChatStored
 } from './helpers/chat.helper';
-import { createRoomAndGetAnonymousAccessUrl, createRoomMember, deleteRooms } from './helpers/meet-api.helper';
-import { openMeeting } from './helpers/meeting-navigation.helper';
-import { disconnectAllBrowserFakeParticipants, joinParticipants } from './helpers/participant-management.helper';
+import {
+	createRoom,
+	createRoomAndGetAnonymousAccessUrl,
+	createRoomMember,
+	deleteRoomMember,
+	deleteRooms,
+	endMeeting,
+	updateRoomConfig,
+	updateRoomMemberPermissions,
+	waitForNoActiveMeeting
+} from './helpers/meet-api.helper';
+import {
+	clickJoinMeeting,
+	leaveMeeting,
+	openMeeting,
+	openPrejoin,
+	reopenPrejoin
+} from './helpers/meeting-navigation.helper';
+import { toggleParticipantsPanel } from './helpers/panels.helper';
+import {
+	cutNetwork,
+	disconnectAllBrowserFakeParticipants,
+	getParticipantIdByName,
+	joinParticipants,
+	makeParticipantModerator,
+	tapSignalling
+} from './helpers/participant-management.helper';
 import { waitForRemoteStream } from './helpers/stream.helper';
 
 test.describe('Chat E2E Tests', () => {
@@ -34,6 +69,15 @@ test.describe('Chat E2E Tests', () => {
 	test.afterAll(async () => {
 		await Promise.all([disconnectAllBrowserFakeParticipants(), deleteRooms(createdRoomIds)]);
 	});
+
+	/** A room whose chat lives only as long as each meeting. */
+	const createUnsavedRoom = async () => {
+		const { room, accessUrl: url } = await createRoomAndGetAnonymousAccessUrl({
+			config: { chat: { enabled: true, persist: false } }
+		});
+		createdRoomIds.push(room.roomId);
+		return { roomId: room.roomId, accessUrl: url };
+	};
 
 	test('should send messages', async ({ page }) => {
 		await openMeeting(page, accessUrl);
@@ -139,9 +183,10 @@ test.describe('Chat E2E Tests', () => {
 	}) => {
 		const senderName = `sender`;
 		const receiverName = `receiver`;
+		const unsaved = await createUnsavedRoom();
 		const { byName, addParticipant, removeAllParticipants } = await joinParticipants(browser, {
-			roomId,
-			accessUrl,
+			roomId: unsaved.roomId,
+			accessUrl: unsaved.accessUrl,
 			participants: [
 				{ name: receiverName, headless: false },
 				{ name: senderName, headless: true }
@@ -229,5 +274,440 @@ test.describe('Chat E2E Tests', () => {
 		} finally {
 			await Promise.all(pages.map((page) => page.close()));
 		}
+	});
+
+	test.describe('Saved chat', () => {
+		const pages: Page[] = [];
+
+		test.afterEach(async () => {
+			await Promise.all(pages.splice(0).map((page) => page.close().catch(() => undefined)));
+		});
+
+		type Joined = {
+			page: Page;
+			roomMemberToken: () => Promise<string>;
+			historyLoaded?: ReturnType<typeof waitForChatHistoryResponse>;
+		};
+
+		/**
+		 * Opens the meeting in a browser of its own, following the room member token it uses so a test can read what
+		 * the server stored as that participant.
+		 */
+		const join = async (
+			browser: Browser,
+			url: string,
+			name: string,
+			options: {
+				alerts?: boolean;
+				history?: boolean;
+				before?: (page: Page) => Promise<unknown>;
+				e2eeKey?: string;
+			} = {}
+		): Promise<Joined> => {
+			const page = await browser.newPage();
+			pages.push(page);
+			const roomMemberToken = trackRoomMemberToken(page);
+
+			if (options.alerts) await recordChatAlerts(page);
+
+			await options.before?.(page);
+			const historyLoaded = options.history ? waitForChatHistoryResponse(page) : undefined;
+			await openMeeting(page, url, { name, e2eeKey: options.e2eeKey });
+
+			return { page, roomMemberToken, historyLoaded };
+		};
+
+		/** Two participants in the meeting who can send each other messages. */
+		const joinPair = async (browser: Browser, url: string, names: [string, string]) => {
+			const first = await join(browser, url, names[0]);
+			const second = await join(browser, url, names[1]);
+			await Promise.all([waitForRemoteStream(first.page, 1), waitForRemoteStream(second.page, 1)]);
+			await Promise.all([toggleChatPanel(first.page), toggleChatPanel(second.page)]);
+
+			return [first, second] as const;
+		};
+
+		test('should say in the panel of a room that does not save its chat that messages are removed at the end of the meeting, and not in the panel of one that does', async ({
+			browser
+		}) => {
+			const unsaved = await createUnsavedRoom();
+			const saving = await join(browser, accessUrl, 'saving');
+			const notSaving = await join(browser, unsaved.accessUrl, 'not-saving');
+
+			await Promise.all([toggleChatPanel(saving.page), toggleChatPanel(notSaving.page)]);
+
+			await expect(notSaving.page.locator('#chat-container .text-info')).toHaveText(
+				/removed at the end of the meeting/i
+			);
+			await expect(saving.page.locator('#chat-container .text-info')).toHaveCount(0);
+		});
+
+		test('should show a late joiner the messages sent before they entered', async ({ browser }) => {
+			const [alice, bob] = await joinPair(browser, accessUrl, ['alice', 'bob']);
+
+			await sendChatMessage(alice.page, 'hello');
+			await expectChatMessageTexts(bob.page, ['hello']);
+			await sendChatMessage(bob.page, 'hi alice');
+			await expectChatMessageTexts(alice.page, ['hello', 'hi alice']);
+			await waitForChatStored(roomId, alice.roomMemberToken, ['hello', 'hi alice']);
+
+			const carol = await join(browser, accessUrl, 'carol');
+			await toggleChatPanel(carol.page);
+
+			await expectChatMessageTexts(carol.page, ['hello', 'hi alice']);
+			await expectChatMessageFromAt(carol.page, 0, 'alice', true);
+			await expectChatMessageFromAt(carol.page, 1, 'bob', true);
+		});
+
+		test('should save the chat of a room whose saving was turned on while a participant waited to join', async ({
+			browser
+		}) => {
+			const unsaved = await createUnsavedRoom();
+			const page = await browser.newPage();
+			pages.push(page);
+			const roomMemberToken = trackRoomMemberToken(page);
+
+			await openPrejoin(page, unsaved.accessUrl, { name: 'waiting' });
+			await updateRoomConfig(unsaved.roomId, { chat: { enabled: true, persist: true } });
+			await clickJoinMeeting(page);
+			await expect(page.locator('#layout-container')).toBeVisible();
+			await toggleChatPanel(page);
+			await sendChatMessage(page, 'hello');
+
+			await waitForChatStored(unsaved.roomId, roomMemberToken, ['hello']);
+		});
+
+		test('should not show the messages of an earlier meeting in the next one', async ({ browser }) => {
+			const alice = await join(browser, accessUrl, 'alice');
+			await toggleChatPanel(alice.page);
+			await sendChatMessage(alice.page, 'hello');
+			await waitForChatStored(roomId, alice.roomMemberToken, ['hello']);
+
+			await endMeeting(roomId);
+			await waitForNoActiveMeeting(roomId);
+
+			const bob = await join(browser, accessUrl, 'bob', { history: true });
+			await bob.historyLoaded;
+			await toggleChatPanel(bob.page);
+
+			await expectChatMessageTexts(bob.page, []);
+		});
+
+		test('should load earlier messages, 20 at a time, as the participant scrolls up', async ({ browser }) => {
+			test.setTimeout(120_000);
+			const texts = Array.from({ length: 30 }, (_, i) => `message-${i + 1}`);
+			const alice = await join(browser, accessUrl, 'alice');
+			await toggleChatPanel(alice.page);
+
+			for (const text of texts) {
+				await sendChatMessage(alice.page, text);
+			}
+
+			await waitForChatStored(roomId, alice.roomMemberToken, texts);
+
+			const carol = await join(browser, accessUrl, 'carol', { history: true });
+			await carol.historyLoaded;
+			await toggleChatPanel(carol.page);
+			await expectChatMessageTexts(carol.page, texts.slice(10));
+
+			const list = carol.page.locator('.messages-container');
+			const anchor = carol.page.getByText('message-11', { exact: true });
+			const distanceFromTop = () =>
+				anchor.evaluate((element) => {
+					const container = element.closest('.messages-container')!;
+					return element.getBoundingClientRect().top - container.getBoundingClientRect().top;
+				});
+			let releasePage!: () => void;
+			const pageHeld = new Promise<void>((resolve) => (releasePage = resolve));
+			await carol.page.route(/\/chat\/messages\?.*nextPageToken/, async (route) => {
+				await pageHeld;
+				await route.continue();
+			});
+			await list.evaluate((element) => (element.scrollTop = 0));
+			const before = await distanceFromTop();
+
+			releasePage();
+			await expectChatMessageTexts(carol.page, texts);
+			await expect.poll(async () => Math.abs((await distanceFromTop()) - before)).toBeLessThanOrEqual(2);
+		});
+
+		test('should show the live messages and no error when the history cannot be loaded', async ({ browser }) => {
+			let attempts = 0;
+			const alice = await join(browser, accessUrl, 'alice');
+			const carol = await join(browser, accessUrl, 'carol', {
+				before: (page) =>
+					page.route(/\/chat\/messages\?/, (route) => {
+						attempts++;
+						return route.fulfill({
+							status: 503,
+							contentType: 'application/json',
+							body: JSON.stringify({ error: 'Unavailable', message: 'The history cannot be read' })
+						});
+					})
+			});
+			await Promise.all([waitForRemoteStream(alice.page, 1), waitForRemoteStream(carol.page, 1)]);
+			await Promise.all([toggleChatPanel(alice.page), toggleChatPanel(carol.page)]);
+
+			await sendChatMessage(alice.page, 'hello');
+
+			await expectChatMessageTexts(carol.page, ['hello']);
+			expect(attempts).toBeGreaterThan(0);
+			await expect(
+				carol.page.locator('.error-page, .disconnected-container, .ov-notification[data-kind="error"]')
+			).toHaveCount(0);
+		});
+
+		test('should show the messages again when the participant reloads the page during the meeting', async ({
+			browser
+		}) => {
+			const [alice, bob] = await joinPair(browser, accessUrl, ['alice', 'bob']);
+			await sendChatMessage(alice.page, 'hello');
+			await expectChatMessageTexts(bob.page, ['hello']);
+			await sendChatMessage(bob.page, 'hi alice');
+			await waitForChatStored(roomId, alice.roomMemberToken, ['hello', 'hi alice']);
+
+			const loaded = waitForChatHistoryResponse(alice.page);
+			await reopenPrejoin(alice.page, accessUrl);
+			await clickJoinMeeting(alice.page);
+			await loaded;
+			await toggleChatPanel(alice.page);
+
+			await expectChatMessageTexts(alice.page, ['hello', 'hi alice']);
+		});
+
+		test('should show a message sent while the connection was lost once it resumes, without a notice', async ({
+			browser
+		}) => {
+			test.setTimeout(120_000);
+			const viewer = await join(browser, accessUrl, 'viewer', { alerts: true });
+			const alice = await join(browser, accessUrl, 'alice');
+			await Promise.all([waitForRemoteStream(viewer.page, 1), waitForRemoteStream(alice.page, 1)]);
+			await toggleChatPanel(alice.page);
+
+			const outage = await cutNetwork(viewer.page);
+			await outage.clientResuming;
+			await sendChatMessage(alice.page, 'missed you');
+			await waitForChatStored(roomId, alice.roomMemberToken, ['missed you']);
+
+			const reloaded = waitForChatHistoryResponse(viewer.page);
+			expect(await outage.restore()).toBe('reconnect');
+			await reloaded;
+			await toggleChatPanel(viewer.page);
+
+			await expectChatMessageTexts(viewer.page, ['missed you']);
+			expect(await chatAlerts(viewer.page)).toEqual({ notices: 0, sounds: 0, unread: 0 });
+		});
+
+		test('should show a message sent while the connection was lost once it is back after a full reconnect, without a notice', async ({
+			browser
+		}) => {
+			let signalling!: Awaited<ReturnType<typeof tapSignalling>>;
+			const viewer = await join(browser, accessUrl, 'viewer', {
+				alerts: true,
+				before: async (page) => {
+					signalling = await tapSignalling(page);
+				}
+			});
+			const alice = await join(browser, accessUrl, 'alice');
+			await Promise.all([waitForRemoteStream(viewer.page, 1), waitForRemoteStream(alice.page, 1)]);
+			await toggleChatPanel(alice.page);
+
+			const reloaded = waitForChatHistoryResponse(viewer.page);
+			await signalling.requestFullReconnect();
+			await sendChatMessage(alice.page, 'missed you');
+			await waitForChatStored(roomId, alice.roomMemberToken, ['missed you']);
+			signalling.completeReconnect();
+			await reloaded;
+			await toggleChatPanel(viewer.page);
+
+			await expectChatMessageTexts(viewer.page, ['missed you']);
+			expect(await chatAlerts(viewer.page)).toEqual({ notices: 0, sounds: 0, unread: 0 });
+		});
+
+		test('should show the messages sent before a participant was granted chatRead once they are', async ({
+			browser
+		}) => {
+			const reader = await createRoomMember(roomId, {
+				name: 'reader',
+				baseRole: MeetRoomMemberRole.SPEAKER,
+				customPermissions: { chatRead: false }
+			});
+			const alice = await join(browser, accessUrl, 'alice');
+			const readerJoined = await join(browser, reader.accessUrl, 'reader');
+			await expectNoChat(readerJoined.page);
+			await toggleChatPanel(alice.page);
+			await sendChatMessage(alice.page, 'hello');
+			await waitForChatStored(roomId, alice.roomMemberToken, ['hello']);
+
+			await updateRoomMemberPermissions(roomId, reader.memberId, { customPermissions: { chatRead: true } });
+			await expectChatAvailable(readerJoined.page);
+			await toggleChatPanel(readerJoined.page);
+
+			await expectChatMessageTexts(readerJoined.page, ['hello']);
+		});
+
+		test('should show the messages sent before a participant was promoted to a role with chatRead once they are', async ({
+			browser
+		}) => {
+			const chatRoom = await createRoom({
+				roles: { speaker: { permissions: { chatRead: false, chatWrite: false } } }
+			});
+			createdRoomIds.push(chatRoom.roomId);
+			const [promoter, promoted] = await Promise.all([
+				createRoomMember(chatRoom.roomId, { name: 'Promoter', baseRole: MeetRoomMemberRole.MODERATOR }),
+				createRoomMember(chatRoom.roomId, { name: 'Promoted', baseRole: MeetRoomMemberRole.SPEAKER })
+			]);
+			const promoterPage = await join(browser, promoter.accessUrl, 'Promoter');
+			const promotedPage = await join(browser, promoted.accessUrl, 'Promoted');
+			await expectNoChat(promotedPage.page);
+			await toggleChatPanel(promoterPage.page);
+			await sendChatMessage(promoterPage.page, 'hello');
+			await waitForChatStored(chatRoom.roomId, promoterPage.roomMemberToken, ['hello']);
+
+			await toggleParticipantsPanel(promoterPage.page);
+			await makeParticipantModerator(
+				promoterPage.page,
+				await getParticipantIdByName(promoterPage.page, 'Promoted')
+			);
+			await expectChatAvailable(promotedPage.page);
+			await toggleChatPanel(promotedPage.page);
+
+			await expectChatMessageTexts(promotedPage.page, ['hello']);
+		});
+
+		test('should raise no notice, sound or unread count for the history of a meeting a participant joins', async ({
+			browser
+		}) => {
+			const alice = await join(browser, accessUrl, 'alice');
+			await toggleChatPanel(alice.page);
+			const texts = ['one', 'two', 'three'];
+
+			for (const text of texts) {
+				await sendChatMessage(alice.page, text);
+			}
+
+			await waitForChatStored(roomId, alice.roomMemberToken, texts);
+
+			const bob = await join(browser, accessUrl, 'bob', { alerts: true, history: true });
+			await bob.historyLoaded;
+			await toggleChatPanel(bob.page);
+			await expectChatMessageTexts(bob.page, texts);
+			expect(await chatAlerts(bob.page)).toEqual({ notices: 0, sounds: 0, unread: 0 });
+
+			await toggleChatPanel(bob.page, 'close');
+			await waitForRemoteStream(alice.page, 1);
+			await sendChatMessage(alice.page, 'live');
+			await expectChatMessageNotification(bob.page);
+			expect(await chatAlerts(bob.page)).toMatchObject({ notices: 1, sounds: 1 });
+		});
+
+		test('should show an anonymous participant their own saved messages as their own after they reload', async ({
+			browser
+		}) => {
+			const [alice, bob] = await joinPair(browser, accessUrl, ['alice', 'bob']);
+			await sendChatMessage(alice.page, 'hello');
+			await expectChatMessageTexts(bob.page, ['hello']);
+			await waitForChatStored(roomId, alice.roomMemberToken, ['hello']);
+
+			const loaded = waitForChatHistoryResponse(alice.page);
+			await reopenPrejoin(alice.page, accessUrl);
+			await clickJoinMeeting(alice.page);
+			await loaded;
+			await toggleChatPanel(alice.page);
+
+			await expectChatMessageTexts(alice.page, ['hello']);
+			await expectOwnChatMessageAt(alice.page, 0);
+		});
+
+		test('should show an anonymous participant their saved messages as those of another participant when they join again from another browser', async ({
+			browser
+		}) => {
+			const [dave, bob] = await joinPair(browser, accessUrl, ['dave', 'bob']);
+			await sendChatMessage(dave.page, 'hello');
+			await expectChatMessageTexts(bob.page, ['hello']);
+			await waitForChatStored(roomId, bob.roomMemberToken, ['hello']);
+			await dave.page.close();
+
+			const again = await join(browser, accessUrl, 'dave', { history: true });
+			await again.historyLoaded;
+			await toggleChatPanel(again.page);
+
+			await expectChatMessageTexts(again.page, ['hello']);
+			await expectChatMessageFromAt(again.page, 0, 'dave', true);
+		});
+
+		test('should label the messages of an anonymous participant in a room that does not save its chat', async ({
+			browser
+		}) => {
+			const unsaved = await createUnsavedRoom();
+			const [sara, bob] = await joinPair(browser, unsaved.accessUrl, ['sara', 'bob']);
+
+			await sendChatMessage(sara.page, 'hi');
+
+			await expectChatMessageTexts(bob.page, ['hi']);
+			await expectChatMessageFromAt(bob.page, 0, 'sara', true);
+		});
+
+		test('should keep the messages of a member removed from the room during the meeting', async ({ browser }) => {
+			const diego = await createRoomMember(roomId, { name: 'diego', baseRole: MeetRoomMemberRole.SPEAKER });
+			const bob = await join(browser, accessUrl, 'bob');
+			const diegoPage = await join(browser, diego.accessUrl, 'diego');
+			await Promise.all([waitForRemoteStream(bob.page, 1), waitForRemoteStream(diegoPage.page, 1)]);
+			await toggleChatPanel(diegoPage.page);
+			await sendChatMessage(diegoPage.page, 'see you');
+			await waitForChatStored(roomId, bob.roomMemberToken, ['see you']);
+
+			await deleteRoomMember(roomId, diego.memberId);
+
+			const carol = await join(browser, accessUrl, 'carol', { history: true });
+			await carol.historyLoaded;
+			await toggleChatPanel(carol.page);
+
+			await expectChatMessageTexts(carol.page, ['see you']);
+			await expectChatMessageFromAt(carol.page, 0, 'diego', false);
+		});
+
+		test('should show a late joiner of an encrypted room no earlier messages and say that messages are not saved', async ({
+			browser
+		}) => {
+			const e2eeKey = 'chat-history-key';
+			const encrypted = await createRoomAndGetAnonymousAccessUrl({ config: { e2ee: { enabled: true } } });
+			createdRoomIds.push(encrypted.room.roomId);
+			const alice = await join(browser, encrypted.accessUrl, 'alice', { e2eeKey });
+			const bob = await join(browser, encrypted.accessUrl, 'bob', { e2eeKey });
+			await Promise.all([waitForRemoteStream(alice.page, 1), waitForRemoteStream(bob.page, 1)]);
+			await Promise.all([toggleChatPanel(alice.page), toggleChatPanel(bob.page)]);
+			await sendChatMessage(alice.page, 'secret');
+			await expectChatMessageTexts(bob.page, ['secret']);
+
+			const carol = await join(browser, encrypted.accessUrl, 'carol', { e2eeKey });
+			await toggleChatPanel(carol.page);
+			await expect(carol.page.locator('#chat-container .text-info')).toHaveText(/not saved/i);
+			await sendChatMessage(alice.page, 'after');
+
+			await expectChatMessageTexts(carol.page, ['after']);
+		});
+
+		test('should show none of the messages of one room in a meeting of another room entered in the same tab', async ({
+			browser
+		}) => {
+			const [alice, bob] = await joinPair(browser, accessUrl, ['alice', 'bob']);
+			await sendChatMessage(alice.page, 'from A');
+			await expectChatMessageTexts(bob.page, ['from A']);
+			await sendChatMessage(bob.page, 'to A');
+			await expectChatMessageTexts(alice.page, ['from A', 'to A']);
+			await waitForChatStored(roomId, alice.roomMemberToken, ['from A', 'to A']);
+			await leaveMeeting(alice.page);
+
+			const other = await createRoomAndGetAnonymousAccessUrl();
+			createdRoomIds.push(other.room.roomId);
+			const loaded = waitForChatHistoryResponse(alice.page);
+			await openMeeting(alice.page, other.accessUrl, { name: 'alice' });
+			await loaded;
+
+			await expectNoUnreadChatMessages(alice.page);
+			await toggleChatPanel(alice.page);
+			await expectChatMessageTexts(alice.page, []);
+		});
 	});
 });

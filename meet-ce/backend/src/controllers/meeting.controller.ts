@@ -11,6 +11,7 @@ import { container } from '../config/dependency-injector.config.js';
 import { addHttpResponseMetadata } from '../helpers/field-filter.helper.js';
 import { handleError, rejectRequestFromMeetError } from '../middlewares/error-handler.middleware.js';
 import { errorInsufficientPermissions } from '../models/error.model.js';
+import { ChatHistoryService } from '../services/chat-history.service.js';
 import { LiveKitService } from '../services/livekit.service.js';
 import { WaitingParticipantService } from '../services/waiting-participants/waiting-participant.service.js';
 import { LoggerService } from '../services/logger.service.js';
@@ -202,6 +203,32 @@ export const sendParticipantReaction = async (req: Request, res: Response) => {
 		});
 	} catch (error) {
 		handleError(res, error, `sending reaction of participant '${participantIdentity}' in room '${roomId}'`);
+	}
+};
+
+export const listChatMessages = async (req: Request, res: Response) => {
+	const logger = container.get(LoggerService);
+	const { roomId } = req.params as Record<string, string>;
+	const { maxItems, nextPageToken: pageToken } = res.locals.validatedQuery as {
+		maxItems: number;
+		nextPageToken?: string;
+	};
+	const participantIdentity = container.get(RequestSessionService).getParticipantIdentity();
+
+	if (!participantIdentity) {
+		logger.warn(
+			`Could not resolve the participant identity from the token when reading the chat of room '${roomId}'`
+		);
+		return rejectRequestFromMeetError(res, errorInsufficientPermissions());
+	}
+
+	try {
+		const { items, isTruncated, nextPageToken } = await container
+			.get(ChatHistoryService)
+			.listMessages(roomId, participantIdentity, { maxItems, nextPageToken: pageToken });
+		res.status(200).json({ items, pagination: { isTruncated, nextPageToken, maxItems } });
+	} catch (error) {
+		handleError(res, error, `reading the chat of room '${roomId}' for participant '${participantIdentity}'`);
 	}
 };
 

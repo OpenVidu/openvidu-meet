@@ -222,6 +222,26 @@ describe('RoomWizardStateService (end-to-end encryption excludes recording, live
 		expect(captions.value).toBeTrue();
 		expect(savedCaptions()).toBeTrue();
 	});
+
+	it('gives live captions and the chat saving back when allowing recording turns encryption off, and takes them again when it is disallowed', () => {
+		const { captionsEnabled, chatPersistEnabled } = service.getStepById(WizardStepId.MEETING)!.formGroup.controls;
+		const savedConfig = () => service.roomOptions().config;
+
+		toggleE2EE(true);
+		toggleFeature('recording', true);
+
+		expect(e2eeControl().value).toBeFalse();
+		expect([captionsEnabled.value, chatPersistEnabled.value]).toEqual([true, true]);
+		expect(savedConfig()?.captions?.enabled).toBeTrue();
+		expect(savedConfig()?.chat?.persist).toBeTrue();
+
+		toggleFeature('recording', false);
+
+		expect(e2eeControl().value).toBeTrue();
+		expect([captionsEnabled.value, chatPersistEnabled.value]).toEqual([false, false]);
+		expect(savedConfig()?.captions?.enabled).toBeFalse();
+		expect(savedConfig()?.chat?.persist).toBeFalse();
+	});
 });
 
 describe('RoomWizardStateService.initializeWizard (steps)', () => {
@@ -581,7 +601,7 @@ describe('RoomWizardStateService.initializeWizard (the room it proposes)', () =>
 		expect(service.roomOptions().config).toEqual({
 			recording: { enabled: true, layout: MeetRecordingLayout.GRID },
 			broadcast: { enabled: false, destinations: [], layout: MeetRecordingLayout.GRID },
-			chat: { enabled: true },
+			chat: { enabled: true, persist: true },
 			virtualBackground: { enabled: true },
 			e2ee: { enabled: false },
 			captions: { enabled: true },

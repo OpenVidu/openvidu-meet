@@ -9,6 +9,27 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 
 ## 3.11.0 (unreleased)
 
+### Upgrade notes
+
+- The `openvidu/openvidu-meet` image is based on Debian slim instead of Alpine; derived images that install packages with `apk` switch to `apt-get`.
+- To save the chat of a room, the Meet server needs WebRTC reach to the media nodes, as a browser has.
+
+### Added
+
+#### Integration
+
+- **Saved chat:** Added the `config.chat.persist` room setting to save the chat of a room's meetings on the server. Rooms created through the REST API save their chat unless `chat.persist` is `false`; rooms that existed before the upgrade keep not saving. Nothing is saved in rooms with end-to-end encryption. See the [Room configuration schema][3.11-room-config].
+
+#### UI
+
+- **Saved chat:** Participants who join, reload or reconnect to a meeting of a room that saves its chat, or are granted `chatRead`, see the messages of the meeting in progress, 20 at a time on scrolling up. The room wizard gains a "Save the room's chat" toggle in the Meeting step. Messages of anonymous participants are labelled "Anonymous" in every room.
+
+### Fixed
+
+#### UI
+
+- **Chat:** A message sent right after a participant is granted `chatRead` is no longer lost before their chat appears.
+
 ## 3.10.0
 
 This release adds live broadcasts, locked rooms with a waiting room, raise hand and reactions, and moves the meeting's
@@ -232,6 +253,7 @@ registered on both receives it twice.
 - Unanswered webhooks caused active connections to grow continuously. Every webhook is answered.
 - The `openvidu/openvidu-meet` Docker image resolved its dependencies anew on every build instead of installing the versions in the lockfile. It now installs the locked versions.
 
+[3.11-room-config]: https://openvidu.io/3.11/meet/embedded/reference/api.html#/schemas/MeetRoomConfig
 [3.10-participant-list]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/operations/participantList
 [3.10-participant-role-changed]: https://openvidu.io/3.10/meet/embedded/reference/api.html#/webhooks/participantRoleChangedWebhook
 [3.9-api]: https://openvidu.io/3.9/meet/embedded/reference/api.html

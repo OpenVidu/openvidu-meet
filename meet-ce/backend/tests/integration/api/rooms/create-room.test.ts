@@ -23,7 +23,14 @@ import {
 	expectValidRoom,
 	expectValidationError
 } from '../../../helpers/assertion-helpers.js';
-import { createRoom, deleteAllRooms, getFullPath, getRoom, startTestServer } from '../../../helpers/request-helpers.js';
+import {
+	createRoom,
+	deleteAllRooms,
+	getFullPath,
+	getRoom,
+	getRoomConfig,
+	startTestServer
+} from '../../../helpers/request-helpers.js';
 
 const ROOMS_PATH = getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`);
 
@@ -235,6 +242,40 @@ describe('Room API Tests', () => {
 				config: expectedConfig,
 				autoDeletionDate: validAutoDeletionDate
 			});
+		});
+
+		it('Should save the chat of a room created without config', async () => {
+			const room = await createRoom({ roomName: 'Chat saved by default' });
+
+			expect((await getRoomConfig(room.roomId)).body.chat).toEqual({ enabled: true, persist: true });
+		});
+
+		it('Should save the chat of a room whose chat object omits the saving setting', async () => {
+			const room = await createRoom({
+				roomName: 'Chat object with its switch only',
+				config: { chat: { enabled: true } }
+			});
+
+			expect((await getRoomConfig(room.roomId)).body.chat).toEqual({ enabled: true, persist: true });
+		});
+
+		it('Should keep the saving setting of a room created with chat saving off', async () => {
+			const room = await createRoom({
+				roomName: 'Chat not saved',
+				config: { chat: { enabled: true, persist: false } }
+			});
+
+			expect((await getRoomConfig(room.roomId)).body.chat).toEqual({ enabled: true, persist: false });
+		});
+
+		it('Should fail when chat.persist is not a boolean and create no room', async () => {
+			const response = await request(app)
+				.post(ROOMS_PATH)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+				.send({ roomName: 'Invalid persist', config: { chat: { enabled: true, persist: 'true' } } })
+				.expect(422);
+
+			expectValidationError(response, 'config.chat.persist', 'Expected boolean, received string');
 		});
 
 		it('should not include config nor roles properties by default (extraFields not specified)', async () => {

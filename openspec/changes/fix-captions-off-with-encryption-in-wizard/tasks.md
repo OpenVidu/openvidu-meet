@@ -2,7 +2,7 @@
 
 ## 1. Wizard
 
-- [ ] 1.1 In `meet-ce/frontend/projects/shared-meet-components/src/lib/domains/rooms/pages/room-wizard/steps/meeting-config/meeting-config.component.ts`, move the captions rule from the encryption toggle's `(change)` handler to the `valueChanges` of the encryption control (or to `updateStepData`), so `patchValue` from `recording-config.component.ts` triggers it, restoring captions when encryption turns off. Verified in `room-wizard.component.spec.ts` or the existing step specs: captions on, encryption on, recording enabled in the Recording step, recording disabled again, and the form shows captions on and enabled at the end.
+- [x] 1.1 (Done by the change `chat-history`, whose saving toggle needed the same rule: `applyE2EEExclusions` in `wizard-state.service.ts` runs on every change of the encryption value and `wizard-state.service.spec.ts` covers the captions path.) In `meet-ce/frontend/projects/shared-meet-components/src/lib/domains/rooms/pages/room-wizard/steps/meeting-config/meeting-config.component.ts`, move the captions rule from the encryption toggle's `(change)` handler to the `valueChanges` of the encryption control (or to `updateStepData`), so `patchValue` from `recording-config.component.ts` triggers it, restoring captions when encryption turns off. Verified in `room-wizard.component.spec.ts` or the existing step specs: captions on, encryption on, recording enabled in the Recording step, recording disabled again, and the form shows captions on and enabled at the end.
 - [ ] 1.2 e2e: in `meet-ce/frontend/e2e/room-wizard.test.ts`, the same path ends with a room created with captions on. Needs the OpenVidu local deployment; report as not run when unavailable.
 
 ## 2. Backend rule once

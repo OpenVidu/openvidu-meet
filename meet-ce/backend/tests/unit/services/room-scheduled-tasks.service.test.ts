@@ -1,5 +1,6 @@
-import { describe, expect, it } from '@jest/globals';
+import { describe, expect, it, jest } from '@jest/globals';
 import type { Room } from 'livekit-server-sdk';
+import { MeetRoomHelper } from '../../../src/helpers/room.helper.js';
 import type { IScheduledTask } from '../../../src/models/task-scheduler.model.js';
 import { RoomScheduledTasksService } from '../../../src/services/room-scheduled-tasks.service.js';
 
@@ -16,7 +17,7 @@ class FakeTaskSchedulerService {
 class FakeLiveKitService {
 	liveRoomNames: string[] = [];
 	existingRoomNames = new Set<string>();
-	rooms = new Map<string, { sid: string; creationTime: number }>();
+	rooms = new Map<string, { sid: string; creationTime: number; metadata?: string }>();
 	roomsExistError: Error | null = null;
 
 	async listRooms(): Promise<Room[]> {
@@ -89,6 +90,7 @@ class TestableRoomScheduledTasksService extends RoomScheduledTasksService {
 const buildService = (livekitService: FakeLiveKitService, roomRepository: FakeRoomRepository) => {
 	const livekitWebhookService = new FakeLivekitWebhookService();
 	const taskScheduler = new FakeTaskSchedulerService();
+	const chatSaverService = { ensureSaver: jest.fn(async (_roomId: string) => {}) };
 	const service = new TestableRoomScheduledTasksService(
 		...([
 			noopLogger,
@@ -96,10 +98,11 @@ const buildService = (livekitService: FakeLiveKitService, roomRepository: FakeRo
 			{},
 			taskScheduler,
 			livekitService,
-			livekitWebhookService
+			livekitWebhookService,
+			chatSaverService
 		] as unknown as ConstructorParameters<typeof RoomScheduledTasksService>)
 	);
-	return { service, livekitWebhookService, taskScheduler };
+	return { service, livekitWebhookService, taskScheduler, chatSaverService };
 };
 
 describe('RoomScheduledTasksService (the GC schedule it installs on construction)', () => {
@@ -159,6 +162,23 @@ describe('RoomScheduledTasksService.reconcileOpenRoomsGC (C2: lost room_started 
 		]);
 	});
 
+	it('leaves alone the LiveKit room a chat saver created, though the Meet room of that name is open', async () => {
+		const livekitService = new FakeLiveKitService();
+		livekitService.liveRoomNames = ['room-saver', 'room-open'];
+		livekitService.rooms.set('room-saver', {
+			sid: 'sid-saver',
+			creationTime: 1,
+			metadata: MeetRoomHelper.CHAT_SAVER_ROOM_METADATA
+		});
+		const roomRepository = new FakeRoomRepository();
+		roomRepository.openRoomIds = new Set(['room-saver', 'room-open']);
+		const { service, livekitWebhookService } = buildService(livekitService, roomRepository);
+
+		await service.runReconcileOpenRoomsGC();
+
+		expect(livekitWebhookService.reconciledRoomIds).toEqual(['room-open']);
+	});
+
 	it('keeps reconciling the other rooms when one fails', async () => {
 		const livekitService = new FakeLiveKitService();
 		livekitService.liveRoomNames = ['room-fails', 'room-succeeds'];
@@ -191,6 +211,21 @@ describe('RoomScheduledTasksService.reconcileActiveMeetingsGoneFromLiveKit (only
 		await service.runReconcileActiveMeetingsGoneFromLiveKit();
 
 		expect(livekitWebhookService.cleanedUpRoomIds).toEqual(['room-gone']);
+	});
+
+	it('makes sure every active meeting that is still live has its chat saver', async () => {
+		const livekitService = new FakeLiveKitService();
+		livekitService.existingRoomNames = new Set(['room-live', 'room-other']);
+		const roomRepository = new FakeRoomRepository();
+		roomRepository.activeRoomIds = ['room-live', 'room-gone', 'room-other'];
+		const { service, chatSaverService } = buildService(livekitService, roomRepository);
+
+		await service.runReconcileActiveMeetingsGoneFromLiveKit();
+
+		expect(chatSaverService.ensureSaver.mock.calls.map(([roomId]) => roomId).sort()).toEqual([
+			'room-live',
+			'room-other'
+		]);
 	});
 
 	it('touches nothing while every active room is still live in LiveKit', async () => {

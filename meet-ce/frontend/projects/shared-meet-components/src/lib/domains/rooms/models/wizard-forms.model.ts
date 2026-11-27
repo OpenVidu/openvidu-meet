@@ -43,6 +43,7 @@ export const MAX_DURATION_MINUTES_LIMIT = 1_440;
 
 export interface MeetingConfigFormValue {
 	chatEnabled: boolean;
+	chatPersistEnabled: boolean;
 	virtualBackgroundEnabled: boolean;
 	e2eeEnabled: boolean;
 	captionsEnabled: boolean;
@@ -57,6 +58,7 @@ export interface MeetingConfigFormValue {
 
 export type MeetingConfigFormGroup = FormGroup<{
 	chatEnabled: FormControl<boolean>;
+	chatPersistEnabled: FormControl<boolean>;
 	virtualBackgroundEnabled: FormControl<boolean>;
 	e2eeEnabled: FormControl<boolean>;
 	captionsEnabled: FormControl<boolean>;

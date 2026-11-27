@@ -1,4 +1,5 @@
 import {
+	MeetChatMessage,
 	MeetWaitingParticipantList,
 	MeetParticipantModerationAction,
 	MeetParticipantPayload,
@@ -124,6 +125,25 @@ export const listMeetingParticipants = async (roomId: string): Promise<MeetParti
 	assertOk(response, responseText, 'list meeting participants');
 
 	return (JSON.parse(responseText) as { participants: MeetParticipantPayload[] }).participants;
+};
+
+/**
+ * Reads the chat history of the room's current meeting the way the chat panel does, with the room member token
+ * of a participant in it, newest message first.
+ */
+export const getChatHistory = async (roomId: string, roomMemberToken: string): Promise<MeetChatMessage[]> => {
+	const response = await fetch(
+		`${MEET_API_URL}/internal-api/v1/meetings/${encodeURIComponent(roomId)}/chat/messages?maxItems=100`,
+		{
+			method: 'GET',
+			headers: { 'x-room-member-token': `Bearer ${roomMemberToken}` }
+		}
+	);
+
+	const responseText = await response.text();
+	assertOk(response, responseText, 'get chat history');
+
+	return (JSON.parse(responseText) as { items: MeetChatMessage[] }).items;
 };
 
 /**

@@ -140,6 +140,10 @@ const MeetChatConfigSchema = new Schema(
 		enabled: {
 			type: Boolean,
 			required: true
+		},
+		persist: {
+			type: Boolean,
+			required: true
 		}
 	},
 	{ _id: false }

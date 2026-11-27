@@ -1,0 +1,19 @@
+description: >
+    Forbidden: the room member token belongs to another room, lacks the `chatRead` permission or was obtained
+    without joining, or its participant is not in the meeting, which includes a participant who left it and a room
+    with no meeting in progress. A participant a moderator kicked holds a revoked token and gets `401`
+content:
+    application/json:
+        schema:
+            $ref: '../../../../shared/schemas/error.yaml'
+        examples:
+            insufficient_permissions:
+                summary: The token belongs to another room, lacks `chatRead` or carries no participant identity
+                value:
+                    error: Authorization Error
+                    message: 'Insufficient permissions to access this resource'
+            not_in_meeting:
+                summary: The participant is not in the meeting, or there is no meeting in progress
+                value:
+                    error: Chat Error
+                    message: "Participant 'alice_smith' is not in the meeting of room 'room-123'"

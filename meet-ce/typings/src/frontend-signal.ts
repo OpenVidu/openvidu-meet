@@ -21,7 +21,9 @@ export enum MeetSignalType {
 	/** Emitted to everyone in the meeting when the list of participants waiting to join changes */
 	MEET_WAITING_PARTICIPANT_LIST_UPDATED = 'meet_waiting_participant_list_updated',
 	/** Emitted to the participants in the meeting who hold `waitingParticipantAdmin` when a wait changes after the knock */
-	MEET_WAITING_PARTICIPANT_STATUS_CHANGED = 'meet_waiting_participant_status_changed'
+	MEET_WAITING_PARTICIPANT_STATUS_CHANGED = 'meet_waiting_participant_status_changed',
+	/** Emitted to the sender of a chat message once the server has stored it */
+	MEET_CHAT_MESSAGE_SAVED = 'meet_chat_message_saved'
 }
 
 /**
@@ -121,11 +123,21 @@ export interface MeetWaitingParticipantStatusChangedSignalPayload extends Omit<
 }
 
 /**
+ * Payload for MEET_CHAT_MESSAGE_SAVED signal: the server stored the chat message, so its sender stops
+ * sending it again.
+ */
+export interface MeetChatMessageSavedPayload {
+	/** Identifier the sender's client gave the message */
+	messageId: string;
+}
+
+/**
  * Union type representing the payload of a MeetSignal.
  * It can be either a {@link MeetRecordingUpdatedPayload}, {@link MeetBroadcastUpdatedPayload},
  * {@link MeetParticipantPermissionsUpdatedPayload}, {@link MeetParticipantMediaMutedPayload},
- * {@link MeetParticipantReactionSentPayload}, {@link MeetWaitingParticipantListUpdatedPayload} or
- * {@link MeetWaitingParticipantStatusChangedSignalPayload}, depending on the signal type.
+ * {@link MeetParticipantReactionSentPayload}, {@link MeetWaitingParticipantListUpdatedPayload},
+ * {@link MeetWaitingParticipantStatusChangedSignalPayload} or {@link MeetChatMessageSavedPayload},
+ * depending on the signal type.
  */
 export type MeetSignalPayload =
 	| MeetRecordingUpdatedPayload
@@ -134,4 +146,5 @@ export type MeetSignalPayload =
 	| MeetParticipantMediaMutedPayload
 	| MeetParticipantReactionSentPayload
 	| MeetWaitingParticipantListUpdatedPayload
-	| MeetWaitingParticipantStatusChangedSignalPayload;
+	| MeetWaitingParticipantStatusChangedSignalPayload
+	| MeetChatMessageSavedPayload;

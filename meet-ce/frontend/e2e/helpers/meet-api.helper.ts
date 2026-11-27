@@ -1,4 +1,5 @@
 import {
+	MeetChatMessage,
 	MeetDeprecatedPermissionKey,
 	MeetPermissionKey,
 	MeetBroadcastInfo,
@@ -8,6 +9,7 @@ import {
 	MeetRoomAccess,
 	MeetRoomAccessConfig,
 	MeetRoomConfig,
+	MeetRoomConfigOptions,
 	MeetRoomMember,
 	MeetRoomMemberOptions,
 	MeetRoomMemberRole,
@@ -171,6 +173,42 @@ export const getRoomConfig = async (roomId: string): Promise<MeetRoomConfig> => 
 	assertOk(response, responseText, 'get room config');
 
 	return (JSON.parse(responseText) as MeetRoom).config;
+};
+
+/**
+ * Updates a room's config (partial merge), as its owner does.
+ */
+export const updateRoomConfig = async (roomId: string, config: MeetRoomConfigOptions): Promise<void> => {
+	const response = await fetch(withApiPath(`/rooms/${encodeURIComponent(roomId)}/config`), {
+		method: 'PUT',
+		headers: {
+			'content-type': 'application/json',
+			'x-api-key': API_KEY
+		},
+		body: JSON.stringify({ config })
+	});
+
+	const responseText = await response.text();
+	assertOk(response, responseText, 'update room config');
+};
+
+/**
+ * Reads the chat history of the room's current meeting the way the chat panel does, with the room member
+ * token of a participant in it, newest message first.
+ */
+export const getChatHistory = async (roomId: string, roomMemberToken: string): Promise<MeetChatMessage[]> => {
+	const response = await fetch(
+		withInternalApiPath(`/meetings/${encodeURIComponent(roomId)}/chat/messages?maxItems=100`),
+		{
+			method: 'GET',
+			headers: { 'x-room-member-token': `Bearer ${roomMemberToken}` }
+		}
+	);
+
+	const responseText = await response.text();
+	assertOk(response, responseText, 'get chat history');
+
+	return (JSON.parse(responseText) as { items: MeetChatMessage[] }).items;
 };
 
 export const getRoomRoles = async (roomId: string): Promise<MeetRoomRoles> => {

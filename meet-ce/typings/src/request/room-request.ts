@@ -1,4 +1,4 @@
-import { MeetBroadcastConfig, MeetRoomConfig } from '../database/room-config.js';
+import { MeetBroadcastConfig, MeetChatConfig, MeetRoomConfig } from '../database/room-config.js';
 import { MeetRoomMemberPermissions } from '../database/room-member-permissions.js';
 import { MeetRoomAutoDeletionPolicy, MeetRoomLock } from '../database/room.entity.js';
 
@@ -39,10 +39,18 @@ export interface MeetRoomOptions {
  * field is optional. Omitted, a field takes its default on creation and keeps its current value on
  * an update. See {@link MeetRoomConfig} for details.
  */
-export type MeetRoomConfigOptions = Partial<Omit<MeetRoomConfig, 'broadcast'>> & {
+export type MeetRoomConfigOptions = Partial<Omit<MeetRoomConfig, 'broadcast' | 'chat'>> & {
 	/** Live broadcast configuration. See {@link MeetBroadcastConfigOptions} for details. */
 	broadcast?: MeetBroadcastConfigOptions;
+	/** Chat configuration. See {@link MeetChatConfigOptions} for details. */
+	chat?: MeetChatConfigOptions;
 };
+
+/**
+ * Chat configuration as a request sends it. `persist` is optional: omitted, a new room saves its
+ * chat and an update keeps the saved value. See {@link MeetChatConfig} for details.
+ */
+export type MeetChatConfigOptions = Omit<MeetChatConfig, 'persist'> & Partial<Pick<MeetChatConfig, 'persist'>>;
 
 /**
  * Live broadcast configuration as a request sends it. The destination list is optional: omitted, a

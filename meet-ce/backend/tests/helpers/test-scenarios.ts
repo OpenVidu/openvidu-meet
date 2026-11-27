@@ -2,7 +2,7 @@ import { expect } from '@jest/globals';
 import {
 	MeetPermissionsInput,
 	MeetRoomAccessConfig,
-	MeetRoomConfig,
+	MeetRoomConfigOptions,
 	MeetRoomMember,
 	MeetRoomMemberOptions,
 	MeetRoomMemberRole,
@@ -50,13 +50,14 @@ let mockWebhookServer: http.Server;
 export const setupSingleRoom = async (
 	withParticipant = false,
 	roomName = 'TEST_ROOM',
-	config?: Partial<MeetRoomConfig>,
+	config?: MeetRoomConfigOptions,
 	access?: MeetRoomAccessConfig
 ): Promise<RoomData> => {
 	const room = await createRoom(
 		{
 			roomName,
-			config,
+			// A room saves its chat unless the test exercises saving, so no hidden participant joins its meetings
+			config: { ...config, chat: { enabled: true, persist: false, ...config?.chat } },
 			access
 		},
 		undefined,
@@ -97,7 +98,7 @@ export const setupSingleRoom = async (
 export const setupMultiRoomTestContext = async (
 	numRooms: number,
 	withParticipants: boolean,
-	roomConfig?: Partial<MeetRoomConfig>
+	roomConfig?: MeetRoomConfigOptions
 ): Promise<TestContext> => {
 	const rooms: RoomData[] = [];
 

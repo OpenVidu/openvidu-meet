@@ -161,3 +161,34 @@ describe('MeetRoomHelper.extractMeetingStartDateFromMetadata', () => {
 		expect(MeetRoomHelper.extractMeetingStartDateFromMetadata('{"startDate":1e999}')).toBeUndefined();
 	});
 });
+
+// The config the meeting started with decides whether it saves its chat, for the saver, the history read and every
+// browser, whatever the room's stored config says by now.
+describe('MeetRoomHelper.metadataSavesChat', () => {
+	const savesWith = (config: unknown) =>
+		MeetRoomHelper.metadataSavesChat(
+			JSON.stringify({ createdBy: 'openvidu-meet', roomOptions: { roomName: 'Room', config } })
+		);
+
+	it('saves the chat of a meeting that started with chat and saving on and encryption off', () => {
+		expect(savesWith({ chat: { enabled: true, persist: true }, e2ee: { enabled: false } })).toBe(true);
+	});
+
+	it.each([
+		['saving off', { chat: { enabled: true, persist: false }, e2ee: { enabled: false } }],
+		['chat off', { chat: { enabled: false, persist: true }, e2ee: { enabled: false } }],
+		['encryption on', { chat: { enabled: true, persist: true }, e2ee: { enabled: true } }],
+		[
+			'no saving setting, as a room of an earlier version has',
+			{ chat: { enabled: true }, e2ee: { enabled: false } }
+		]
+	])('saves nothing with %s', (_name, config) => {
+		expect(savesWith(config)).toBe(false);
+	});
+
+	it('saves nothing for metadata that carries no config', () => {
+		expect(MeetRoomHelper.metadataSavesChat(undefined)).toBe(false);
+		expect(MeetRoomHelper.metadataSavesChat('{"createdBy":"meet-chat-saver"}')).toBe(false);
+		expect(MeetRoomHelper.metadataSavesChat('not json')).toBe(false);
+	});
+});

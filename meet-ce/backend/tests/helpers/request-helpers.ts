@@ -1052,6 +1052,25 @@ export const sendParticipantReaction = async (
 	return await req.send(reaction);
 };
 
+/** Reads a page of the chat messages saved in the meeting of a room with the given room member token. */
+export const listChatMessages = async (
+	roomId: string,
+	roomMemberToken?: string,
+	query: Record<string, unknown> = {}
+) => {
+	checkAppIsRunning();
+
+	const req = request(app)
+		.get(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}/chat/messages`))
+		.query(query);
+
+	if (roomMemberToken) {
+		req.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
+	}
+
+	return await req;
+};
+
 /** Reads the meeting of a room with the given room member token, or with the API key without one. */
 export const getMeeting = async (
 	roomId: string,

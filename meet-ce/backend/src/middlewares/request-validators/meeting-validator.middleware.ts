@@ -5,6 +5,7 @@ import {
 	BulkRejectWaitingParticipantsReqSchema,
 	WaitingParticipantLeaveReqSchema,
 	GetMeetingQuerySchema,
+	ListChatMessagesQuerySchema,
 	LowerAllHandsReqSchema,
 	MuteParticipantMediaReqSchema,
 	SendParticipantReactionReqSchema,
@@ -18,6 +19,17 @@ export const validateGetMeetingReq = (req: Request, res: Response, next: NextFun
 	mergeFieldsHeaderIntoQuery(req.headers, query, MEET_MEETING_EXTRA_FIELDS, 'extraFields');
 
 	const { success, error, data } = GetMeetingQuerySchema.safeParse(query);
+
+	if (!success) {
+		return rejectUnprocessableRequest(res, error);
+	}
+
+	res.locals.validatedQuery = data;
+	next();
+};
+
+export const validateListChatMessagesReq = (req: Request, res: Response, next: NextFunction) => {
+	const { success, error, data } = ListChatMessagesQuerySchema.safeParse(req.query);
 
 	if (!success) {
 		return rejectUnprocessableRequest(res, error);

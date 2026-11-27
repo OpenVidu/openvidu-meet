@@ -38,6 +38,8 @@ paths:
         $ref: './room-members/internal/room-members.yaml#/~1rooms~1{roomId}~1members~1{memberId}~1access-url'
     /meetings/{roomId}/reactions:
         $ref: './meetings/internal/meetings.yaml#/~1meetings~1{roomId}~1reactions'
+    /meetings/{roomId}/chat/messages:
+        $ref: './meetings/internal/meetings.yaml#/~1meetings~1{roomId}~1chat~1messages'
     /meetings/{roomId}/waiting-participants/leave:
         $ref: './meetings/internal/meetings.yaml#/~1meetings~1{roomId}~1waiting-participants~1leave'
     /recordings/summary:

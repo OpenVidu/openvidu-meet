@@ -5,11 +5,11 @@ import { FormGroup } from '@angular/forms';
  */
 /**
  * The features that end-to-end encryption excludes: enabling it turns them off. Recording and live
- * broadcast also turn it off when enabled; live captions cannot be enabled while it is on.
+ * broadcast also turn it off when enabled; live captions and saving the chat cannot be enabled while it is on.
  */
-export type E2EEExclusiveFeature = 'recording' | 'broadcast' | 'captions';
+export type E2EEExclusiveFeature = 'recording' | 'broadcast' | 'captions' | 'chatPersist';
 
-export const E2EE_EXCLUSIVE_FEATURES: E2EEExclusiveFeature[] = ['recording', 'broadcast', 'captions'];
+export const E2EE_EXCLUSIVE_FEATURES: E2EEExclusiveFeature[] = ['recording', 'broadcast', 'captions', 'chatPersist'];
 
 export enum WizardStepId {
 	ROOM_DETAILS = 'roomDetails',

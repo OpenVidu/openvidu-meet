@@ -1,0 +1,13 @@
+diff --git a/dist/ffi_client.cjs b/dist/ffi_client.cjs
+index f3a8cdb66a0c51e152bb62c9ee440e6b831655ac..9ac1359366167ac56a8e2cf98daf277b09cf2fa4 100644
+--- a/dist/ffi_client.cjs
++++ b/dist/ffi_client.cjs
+@@ -52,7 +52,7 @@ class FfiClient extends import_events.default {
+         const event = import_rtc_ffi_bindings.FfiEvent.fromBinary(event_data);
+         this.emit("ffi_event" /* FfiEvent */, event);
+       },
+-      true,
++      false,
+       import_version.SDK_VERSION
+     );
+   }

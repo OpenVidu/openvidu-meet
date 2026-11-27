@@ -164,6 +164,47 @@ describe('E2EE Room Configuration Tests', () => {
 		);
 	});
 
+	describe('E2EE and Chat Saving', () => {
+		const savesChat = async (roomId: string) => (await getRoomConfig(roomId)).body.chat.persist;
+
+		it('Should create an encrypted room without chat settings with chat saving off', async () => {
+			const room = await createRoom({ roomName: 'Encrypted no chat', config: { e2ee: { enabled: true } } });
+
+			expect(await savesChat(room.roomId)).toBe(false);
+		});
+
+		it('Should turn chat saving off when an update turns E2EE on in a room that saves its chat', async () => {
+			const room = await createRoom({ roomName: 'Saving then encrypted' });
+			expect(await savesChat(room.roomId)).toBe(true);
+
+			const response = await updateRoomConfig(room.roomId, { e2ee: { enabled: true } });
+
+			expect(response.status).toBe(200);
+			expect(response.body.chat).toEqual({ enabled: true, persist: false });
+			expect(await savesChat(room.roomId)).toBe(false);
+		});
+
+		it('Should keep chat saving off when an update turns it on in a room with E2EE enabled', async () => {
+			const room = await createRoom({ roomName: 'Encrypted saving', config: { e2ee: { enabled: true } } });
+
+			const response = await updateRoomConfig(room.roomId, { chat: { enabled: true, persist: true } });
+
+			expect(response.status).toBe(200);
+			expect(response.body.chat).toEqual({ enabled: true, persist: false });
+			expect(await savesChat(room.roomId)).toBe(false);
+		});
+
+		it('Should not turn chat saving back on when an update turns E2EE off again', async () => {
+			const room = await createRoom({ roomName: 'Encrypted then plain' });
+			await updateRoomConfig(room.roomId, { e2ee: { enabled: true } });
+
+			const response = await updateRoomConfig(room.roomId, { e2ee: { enabled: false } });
+
+			expect(response.status).toBe(200);
+			expect(await savesChat(room.roomId)).toBe(false);
+		});
+	});
+
 	describe('E2EE Validation Tests', () => {
 		it('Should fail when e2ee is not an object', async () => {
 			const payload = {

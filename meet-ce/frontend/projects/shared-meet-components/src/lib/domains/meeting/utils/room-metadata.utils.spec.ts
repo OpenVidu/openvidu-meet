@@ -1,4 +1,9 @@
-import { hasReachedMeetingEnd, parseMeetingEndDate, parseMeetingStartDate } from './room-metadata.utils';
+import {
+	hasReachedMeetingEnd,
+	parseMeetingEndDate,
+	parseMeetingSavesChat,
+	parseMeetingStartDate
+} from './room-metadata.utils';
 
 describe('parseMeetingStartDate', () => {
 	it('reads the start the backend wrote at room creation', () => {
@@ -86,5 +91,30 @@ describe('hasReachedMeetingEnd', () => {
 
 	it('is never reached by a meeting with no end at all', () => {
 		expect(hasReachedMeetingEnd(undefined)).toBe(false);
+	});
+});
+
+describe('parseMeetingSavesChat', () => {
+	const metadataOf = (config: unknown): string =>
+		JSON.stringify({ createdBy: 'openvidu-meet', roomOptions: { config } });
+
+	it('saves when chat and its saving are on and encryption is off', () => {
+		expect(
+			parseMeetingSavesChat(metadataOf({ chat: { enabled: true, persist: true }, e2ee: { enabled: false } }))
+		).toBe(true);
+	});
+
+	it('does not save when saving is off, chat is off or encryption is on', () => {
+		expect(parseMeetingSavesChat(metadataOf({ chat: { enabled: true, persist: false } }))).toBeFalse();
+		expect(parseMeetingSavesChat(metadataOf({ chat: { enabled: false, persist: true } }))).toBeFalse();
+		expect(
+			parseMeetingSavesChat(metadataOf({ chat: { enabled: true, persist: true }, e2ee: { enabled: true } }))
+		).toBeFalse();
+	});
+
+	it('does not save for metadata that carries no room config', () => {
+		expect(parseMeetingSavesChat(undefined)).toBeFalse();
+		expect(parseMeetingSavesChat('{"createdBy":"openvidu-meet"}')).toBeFalse();
+		expect(parseMeetingSavesChat('not json at all')).toBeFalse();
 	});
 });

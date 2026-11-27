@@ -2,6 +2,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, jest } from '@j
 import { ParticipantInfo_Kind } from '@livekit/protocol';
 import type { MeetRecordingInfo, MeetRoomMemberPermissions } from '@openvidu-meet/typings';
 import {
+	MEET_CHAT_SAVER_IDENTITY,
 	MEET_PERMISSION_KEYS,
 	MeetingEndAction,
 	MeetMeetingEndedReason,
@@ -15,12 +16,38 @@ import crypto from 'crypto';
 import { container, registerDependencies } from '../../../src/config/dependency-injector.config.js';
 import { MEET_ENV } from '../../../src/environment.js';
 import { RecordingHelper } from '../../../src/helpers/recording.helper.js';
+import { MeetRoomHelper } from '../../../src/helpers/room.helper.js';
 import { EGRESS_LOST_ERROR } from '../../../src/models/egress.model.js';
 import { RoomRepository } from '../../../src/repositories/room.repository.js';
 import { LivekitWebhookService } from '../../../src/services/livekit-webhook.service.js';
 import { MeetingDurationLimitService } from '../../../src/services/meeting-duration-limit.service.js';
 import { RedisService } from '../../../src/services/redis.service.js';
 import { TokenService } from '../../../src/services/token.service.js';
+
+/** An ensureSaver and a leave that do nothing, for the tests that are not about the chat saver. */
+const idleChatSaver = () => ({ ensureSaver: async () => {}, leave: async () => {} });
+
+/**
+ * The service under test: `dependencies` are its first constructor arguments, the ones a test does not
+ * give are empty objects, and the chat saver is `chatSaver`.
+ */
+const buildWebhookService = (dependencies: unknown[], chatSaver: unknown = idleChatSaver()) =>
+	new LivekitWebhookService(
+		...([
+			...Array.from({ length: 18 }, (_, index) => dependencies[index] ?? {}),
+			chatSaver
+		] as unknown as ConstructorParameters<typeof LivekitWebhookService>)
+	);
+
+const chatSaverParticipant = (overrides: Record<string, unknown> = {}) =>
+	({
+		identity: MEET_CHAT_SAVER_IDENTITY,
+		sid: 'PA_saver',
+		kind: ParticipantInfo_Kind.AGENT,
+		permission: { hidden: true },
+		attributes: { 'meet.role': 'chatSaver' },
+		...overrides
+	}) as unknown as ParticipantInfo;
 
 class FakeRedisService {
 	store = new Map<string, string>();
@@ -137,26 +164,24 @@ const buildRoomStartedService = (roomService: FakeRoomService) => {
 	const livekitService = new FakeLiveKitService();
 	const webhookDispatcherService = new FakeWebhookDispatcherService();
 	const meetingDurationLimit = new FakeMeetingDurationLimitService();
-	const service = new LivekitWebhookService(
-		...([
-			{},
-			{},
-			livekitService,
-			roomService,
-			roomRepository,
-			webhookDispatcherService,
-			{},
-			{},
-			{},
-			{},
-			{},
-			{},
-			{},
-			new FakeLogger(),
-			{},
-			meetingDurationLimit
-		] as unknown as ConstructorParameters<typeof LivekitWebhookService>)
-	);
+	const service = buildWebhookService([
+		{},
+		{},
+		livekitService,
+		roomService,
+		roomRepository,
+		webhookDispatcherService,
+		{},
+		{},
+		{},
+		{},
+		{},
+		{},
+		{},
+		new FakeLogger(),
+		{},
+		meetingDurationLimit
+	]);
 
 	return { service, roomRepository, livekitService, webhookDispatcherService, meetingDurationLimit };
 };
@@ -250,26 +275,24 @@ describe('LivekitWebhookService duration-limit timer wiring', () => {
 
 	it('disarms the timer when the meeting finishes by any other means', async () => {
 		const meetingDurationLimit = new FakeMeetingDurationLimitService();
-		const service = new LivekitWebhookService(
-			...([
-				{ reactivateAutoRecording: async () => {}, releaseRecordingLockIfNoEgress: async () => {} },
-				{},
-				new FakeLiveKitService(),
-				{},
-				new FakeRoomRepository(),
-				{ sendMeetingEndedWebhook: () => {} },
-				{},
-				{ cleanupParticipantNames: async () => {} },
-				{ removeRoomFromAllUsers: async () => {} },
-				{},
-				{ cleanupState: async () => {} },
-				{},
-				new FakeRedisService(),
-				new FakeLogger(),
-				{},
-				meetingDurationLimit
-			] as unknown as ConstructorParameters<typeof LivekitWebhookService>)
-		);
+		const service = buildWebhookService([
+			{ reactivateAutoRecording: async () => {}, releaseRecordingLockIfNoEgress: async () => {} },
+			{},
+			new FakeLiveKitService(),
+			{},
+			new FakeRoomRepository(),
+			{ sendMeetingEndedWebhook: () => {} },
+			{},
+			{ cleanupParticipantNames: async () => {} },
+			{ removeRoomFromAllUsers: async () => {} },
+			{},
+			{ cleanupState: async () => {} },
+			{},
+			new FakeRedisService(),
+			new FakeLogger(),
+			{},
+			meetingDurationLimit
+		]);
 
 		await service.handleRoomFinished({ name: 'room-1', sid: 'sid-1' } as unknown as Room);
 
@@ -301,31 +324,30 @@ describe('LivekitWebhookService.handleRoomFinished', () => {
 				{}
 			] as unknown as ConstructorParameters<typeof MeetingDurationLimitService>)
 		);
-		const service = new LivekitWebhookService(
-			...([
-				{
-					reactivateAutoRecording: async () => {},
-					releaseRecordingLockIfNoEgress: record('releaseRecordingLockIfNoEgress'),
-					deleteAllRoomRecordings: record('deleteAllRoomRecordings')
-				},
-				{},
-				new FakeLiveKitService(),
-				{},
-				roomRepository,
-				webhookDispatcherService,
-				{},
-				{ cleanupParticipantNames: record('cleanupParticipantNames') },
-				{ removeRoomFromAllUsers: record('removeRoomFromAllUsers') },
-				{ deleteAllByRoomId: record('deleteAllByRoomId') },
-				{ cleanupState: record('cleanupState') },
-				{},
-				redis,
-				new FakeLogger(),
-				{ cleanupRoom: record('cleanupRoom') },
-				meetingDurationLimitService,
-				{ closeRoom: record('endWaits') }
-			] as unknown as ConstructorParameters<typeof LivekitWebhookService>)
-		);
+		const service = buildWebhookService([
+			{
+				reactivateAutoRecording: async () => {},
+				releaseRecordingLockIfNoEgress: record('releaseRecordingLockIfNoEgress'),
+				deleteAllRoomRecordings: record('deleteAllRoomRecordings')
+			},
+			{},
+			new FakeLiveKitService(),
+			{},
+			roomRepository,
+			webhookDispatcherService,
+			{},
+			{ cleanupParticipantNames: record('cleanupParticipantNames') },
+			{ removeRoomFromAllUsers: record('removeRoomFromAllUsers') },
+			{ deleteAllByRoomId: record('deleteAllByRoomId') },
+			{ cleanupState: record('cleanupState') },
+			{},
+			redis,
+			new FakeLogger(),
+			{ cleanupRoom: record('cleanupRoom') },
+			meetingDurationLimitService,
+			{ closeRoom: record('endWaits') },
+			{ deleteAllByRoomId: record('deleteChatMessages') }
+		]);
 
 		return { service, webhookDispatcherService, roomRepository, cleanups };
 	};
@@ -348,7 +370,7 @@ describe('LivekitWebhookService.handleRoomFinished', () => {
 		]);
 	});
 
-	it('also deletes the members and recordings of a room the end deleted', async () => {
+	it('also deletes the members, chat messages and recordings of a room the end deleted', async () => {
 		const { service, roomRepository, cleanups } = buildFinishedService(new FakeRedisService());
 		roomRepository.endedRoom = {
 			roomId: 'room-1',
@@ -360,6 +382,7 @@ describe('LivekitWebhookService.handleRoomFinished', () => {
 
 		expect(cleanups).toContain('deleteAllRoomRecordings(room-1)');
 		expect(cleanups).toContain('deleteAllByRoomId(room-1)');
+		expect(cleanups).toContain('deleteChatMessages(room-1)');
 		expect(cleanups).toContain('endWaits(room-1)');
 	});
 
@@ -448,39 +471,37 @@ describe('LivekitWebhookService.handleParticipantLeft (an egress leaving the roo
 		const departures: { roomId: string; egressId: string }[] = [];
 		const released: string[] = [];
 		const finished: MeetRecordingInfo[] = [];
-		const service = new LivekitWebhookService(
-			...([
-				{
-					finishRecording: async (recording: MeetRecordingInfo) => {
-						finished.push(recording);
-						return true;
-					}
-				},
-				{
-					findByRecordingId: async (recordingId: string) => ({
-						recordingId,
-						roomId: 'room-1',
-						status: recordingStatus
-					})
-				},
-				{ getEgress: async () => [egress], isEgressReachable: async () => reachable },
-				{},
-				{},
-				{},
-				{},
-				{ releaseParticipantName: async (_roomId: string, name: string) => released.push(name) },
-				{},
-				{},
-				{},
-				{},
-				new FakeRedisService(),
-				new FakeLogger(),
-				{
-					handleEgressParticipantLeft: async (roomId: string, egressId: string) =>
-						departures.push({ roomId, egressId })
+		const service = buildWebhookService([
+			{
+				finishRecording: async (recording: MeetRecordingInfo) => {
+					finished.push(recording);
+					return true;
 				}
-			] as unknown as ConstructorParameters<typeof LivekitWebhookService>)
-		);
+			},
+			{
+				findByRecordingId: async (recordingId: string) => ({
+					recordingId,
+					roomId: 'room-1',
+					status: recordingStatus
+				})
+			},
+			{ getEgress: async () => [egress], isEgressReachable: async () => reachable },
+			{},
+			{},
+			{},
+			{},
+			{ releaseParticipantName: async (_roomId: string, name: string) => released.push(name) },
+			{},
+			{},
+			{},
+			{},
+			new FakeRedisService(),
+			new FakeLogger(),
+			{
+				handleEgressParticipantLeft: async (roomId: string, egressId: string) =>
+					departures.push({ roomId, egressId })
+			}
+		]);
 		const leave = () =>
 			service.handleParticipantLeft(
 				{ name: 'room-1' } as Room,
@@ -491,25 +512,23 @@ describe('LivekitWebhookService.handleParticipantLeft (an egress leaving the roo
 	};
 
 	it('does nothing when the media server no longer lists the egress that left', async () => {
-		const service = new LivekitWebhookService(
-			...([
-				{},
-				{},
-				{ getEgress: async () => [] },
-				{},
-				{},
-				{},
-				{},
-				{},
-				{},
-				{},
-				{},
-				{},
-				{},
-				new FakeLogger(),
-				{}
-			] as unknown as ConstructorParameters<typeof LivekitWebhookService>)
-		);
+		const service = buildWebhookService([
+			{},
+			{},
+			{ getEgress: async () => [] },
+			{},
+			{},
+			{},
+			{},
+			{},
+			{},
+			{},
+			{},
+			{},
+			{},
+			new FakeLogger(),
+			{}
+		]);
 
 		await expect(
 			service.handleParticipantLeft(
@@ -573,27 +592,25 @@ describe('LivekitWebhookService.handleEgressUpdated', () => {
 		};
 		const webhooks: MeetRecordingInfo[] = [];
 		const signals: MeetRecordingInfo[] = [];
-		const service = new LivekitWebhookService(
-			...([
-				{ toRecordingInfo: async () => reported },
-				repository,
-				{},
-				{},
-				{},
-				{ sendRecordingUpdatedWebhook: (recording: MeetRecordingInfo) => webhooks.push(recording) },
-				{
-					sendRecordingUpdatedSignal: async (_roomId: string, recording: MeetRecordingInfo) =>
-						signals.push(recording)
-				},
-				{},
-				{},
-				{},
-				{},
-				{},
-				{},
-				new FakeLogger()
-			] as unknown as ConstructorParameters<typeof LivekitWebhookService>)
-		);
+		const service = buildWebhookService([
+			{ toRecordingInfo: async () => reported },
+			repository,
+			{},
+			{},
+			{},
+			{ sendRecordingUpdatedWebhook: (recording: MeetRecordingInfo) => webhooks.push(recording) },
+			{
+				sendRecordingUpdatedSignal: async (_roomId: string, recording: MeetRecordingInfo) =>
+					signals.push(recording)
+			},
+			{},
+			{},
+			{},
+			{},
+			{},
+			{},
+			new FakeLogger()
+		]);
 		return { service, stored, webhooks, signals };
 	};
 
@@ -681,27 +698,25 @@ describe('LivekitWebhookService.handleParticipantJoined (a session that joined w
 		waitingParticipantService = { joined: jest.fn(async () => {}) };
 		const silent = () => {};
 
-		service = new LivekitWebhookService(
-			...([
-				{ startAutoRecordingIfNeeded: async () => {} },
-				{ findAllByRoomIdAndStatus: async () => [] },
-				{ getParticipant: async () => liveParticipant, deleteParticipant },
-				{ getMeetRoomName: async () => 'Room 1' },
-				{},
-				webhookDispatcherService,
-				{},
-				{ releaseParticipantName: async () => {} },
-				{},
-				{},
-				{ cleanupState: async () => {} },
-				container.get(TokenService),
-				redis,
-				{ info: silent, warn: silent, debug: silent, verbose: silent, error: silent },
-				{ getBroadcasts: async () => [] },
-				{},
-				waitingParticipantService
-			] as unknown as ConstructorParameters<typeof LivekitWebhookService>)
-		);
+		service = buildWebhookService([
+			{ startAutoRecordingIfNeeded: async () => {} },
+			{ findAllByRoomIdAndStatus: async () => [] },
+			{ getParticipant: async () => liveParticipant, deleteParticipant },
+			{ getMeetRoomName: async () => 'Room 1' },
+			{},
+			webhookDispatcherService,
+			{},
+			{ releaseParticipantName: async () => {} },
+			{},
+			{},
+			{ cleanupState: async () => {} },
+			container.get(TokenService),
+			redis,
+			{ info: silent, warn: silent, debug: silent, verbose: silent, error: silent },
+			{ getBroadcasts: async () => [] },
+			{},
+			waitingParticipantService
+		]);
 	});
 
 	afterEach(() => {
@@ -865,7 +880,9 @@ describe('LivekitWebhookService participant presence and meeting state', () => {
 				new FakeLogger(),
 				{ getBroadcasts: async () => roomBroadcasts },
 				{},
-				{ joined: async () => {} }
+				{ joined: async () => {} },
+				{},
+				idleChatSaver()
 			] as unknown as ConstructorParameters<typeof LivekitWebhookService>)
 		);
 
@@ -966,24 +983,22 @@ describe('LivekitWebhookService.webhookEventBelongsToOpenViduMeet', () => {
 	const foreignMetadata = JSON.stringify({ createdBy: 'someone-else' });
 
 	const build = ({ liveMetadata = '', existing = [] as string[] } = {}) => {
-		const service = new LivekitWebhookService(
-			...([
-				{},
-				{},
-				{ getRoomMetadata: async () => liveMetadata },
-				{ meetRoomExists: async (roomId: string) => existing.includes(roomId) },
-				{},
-				{},
-				{},
-				{},
-				{},
-				{},
-				{},
-				{},
-				{},
-				new FakeLogger()
-			] as unknown as ConstructorParameters<typeof LivekitWebhookService>)
-		);
+		const service = buildWebhookService([
+			{},
+			{},
+			{ getRoomMetadata: async () => liveMetadata },
+			{ meetRoomExists: async (roomId: string) => existing.includes(roomId) },
+			{},
+			{},
+			{},
+			{},
+			{},
+			{},
+			{},
+			{},
+			{},
+			new FakeLogger()
+		]);
 		return (event: object) => service.webhookEventBelongsToOpenViduMeet(event as never);
 	};
 
@@ -1018,6 +1033,18 @@ describe('LivekitWebhookService.webhookEventBelongsToOpenViduMeet', () => {
 	it('rejects an event that names no room at all', async () => {
 		expect(await build({ liveMetadata: meetMetadata, existing: [''] })({ egressInfo: {} })).toBe(false);
 	});
+
+	describe('the LiveKit room a chat saver created', () => {
+		const saverMetadata = MeetRoomHelper.CHAT_SAVER_ROOM_METADATA;
+
+		it('is rejected whether the event carries its metadata or LiveKit holds it, though the Meet room exists', async () => {
+			const belongs = build({ liveMetadata: saverMetadata, existing: ['room-1'] });
+
+			expect(await belongs({ room: { name: 'room-1', metadata: saverMetadata } })).toBe(false);
+			expect(await belongs({ room: { name: 'room-1', metadata: '' } })).toBe(false);
+			expect(await belongs({ egressInfo: { roomName: 'room-1' } })).toBe(false);
+		});
+	});
 });
 
 describe('LivekitWebhookService egress routing', () => {
@@ -1026,28 +1053,26 @@ describe('LivekitWebhookService egress routing', () => {
 		const created: MeetRecordingInfo[] = [];
 		const signals: string[] = [];
 		const startedWebhooks: MeetRecordingInfo[] = [];
-		const service = new LivekitWebhookService(
-			...([
-				{ toRecordingInfo: async (egress: EgressInfo) => RecordingHelper.toRecordingInfo(egress, 'Room 1') },
-				{ create: async (recording: MeetRecordingInfo) => created.push(recording) },
-				{},
-				{},
-				{},
-				{ sendRecordingStartedWebhook: (recording: MeetRecordingInfo) => startedWebhooks.push(recording) },
-				{
-					sendRecordingUpdatedSignal: async (roomId: string, recording: MeetRecordingInfo) =>
-						signals.push(`${roomId}:${recording.recordingId}`)
-				},
-				{},
-				{},
-				{},
-				{},
-				{},
-				{},
-				new FakeLogger(),
-				{ handleEgressEvent: async (egress: EgressInfo) => broadcastEvents.push(egress) }
-			] as unknown as ConstructorParameters<typeof LivekitWebhookService>)
-		);
+		const service = buildWebhookService([
+			{ toRecordingInfo: async (egress: EgressInfo) => RecordingHelper.toRecordingInfo(egress, 'Room 1') },
+			{ create: async (recording: MeetRecordingInfo) => created.push(recording) },
+			{},
+			{},
+			{},
+			{ sendRecordingStartedWebhook: (recording: MeetRecordingInfo) => startedWebhooks.push(recording) },
+			{
+				sendRecordingUpdatedSignal: async (roomId: string, recording: MeetRecordingInfo) =>
+					signals.push(`${roomId}:${recording.recordingId}`)
+			},
+			{},
+			{},
+			{},
+			{},
+			{},
+			{},
+			new FakeLogger(),
+			{ handleEgressEvent: async (egress: EgressInfo) => broadcastEvents.push(egress) }
+		]);
 		return { service, broadcastEvents, created, signals, startedWebhooks };
 	};
 
@@ -1110,27 +1135,25 @@ describe('LivekitWebhookService handlers whose collaborators fail', () => {
 		metadata: ''
 	} as ParticipantInfo;
 
-	const service = new LivekitWebhookService(
-		...([
-			{ startAutoRecordingIfNeeded: async () => {}, reactivateAutoRecording: async () => {} },
-			{ findAllByRoomIdAndStatus: failing },
-			{},
-			{ getMeetRoom: failing },
-			{ finishMeeting: failing },
-			{ sendParticipantJoinedWebhook: () => {}, sendParticipantLeftWebhook: () => {} },
-			{},
-			{ releaseParticipantName: failing },
-			{},
-			{},
-			{ cleanupState: async () => {} },
-			{},
-			{ get: async () => null, delete: failing },
-			new FakeLogger(),
-			{ getBroadcasts: async () => [] },
-			new FakeMeetingDurationLimitService(),
-			{ joined: async () => {} }
-		] as unknown as ConstructorParameters<typeof LivekitWebhookService>)
-	);
+	const service = buildWebhookService([
+		{ startAutoRecordingIfNeeded: async () => {}, reactivateAutoRecording: async () => {} },
+		{ findAllByRoomIdAndStatus: failing },
+		{},
+		{ getMeetRoom: failing },
+		{ finishMeeting: failing },
+		{ sendParticipantJoinedWebhook: () => {}, sendParticipantLeftWebhook: () => {} },
+		{},
+		{ releaseParticipantName: failing },
+		{},
+		{},
+		{ cleanupState: async () => {} },
+		{},
+		{ get: async () => null, delete: failing },
+		new FakeLogger(),
+		{ getBroadcasts: async () => [] },
+		new FakeMeetingDurationLimitService(),
+		{ joined: async () => {} }
+	]);
 
 	it.each([
 		['a participant join', () => service.handleParticipantJoined(ROOM, person)],
@@ -1154,25 +1177,7 @@ describe('LivekitWebhookService handlers whose collaborators fail', () => {
 });
 
 describe('LivekitWebhookService.getEventFromWebhook', () => {
-	const service = new LivekitWebhookService(
-		...([
-			{},
-			{},
-			{},
-			{},
-			{},
-			{},
-			{},
-			{},
-			{},
-			{},
-			{},
-			{},
-			{},
-			new FakeLogger(),
-			{}
-		] as unknown as ConstructorParameters<typeof LivekitWebhookService>)
-	);
+	const service = buildWebhookService([{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, new FakeLogger()]);
 	const body = JSON.stringify({ event: 'room_started', id: 'EV_1', room: { name: 'room-1' } });
 	const signed = async (payload: string, secret = MEET_ENV.LIVEKIT_API_SECRET) => {
 		const token = new AccessToken(MEET_ENV.LIVEKIT_API_KEY, secret);
@@ -1192,5 +1197,154 @@ describe('LivekitWebhookService.getEventFromWebhook', () => {
 		).rejects.toThrow();
 		await expect(service.getEventFromWebhook(body, await signed(body, 'another-secret'))).rejects.toThrow();
 		await expect(service.getEventFromWebhook(body)).rejects.toThrow();
+	});
+});
+
+/**
+ * The chat saver is a participant of the LiveKit room that is not part of the meeting: its own joins and
+ * departures reach no webhook and no participant event, and they are what keeps the meeting saved.
+ */
+describe('LivekitWebhookService chat saver', () => {
+	const room = { name: 'room-1', sid: 'RM_1', metadata: '{"createdBy":"openviduMeet"}' } as Room;
+	const person = {
+		identity: 'alice',
+		sid: 'PA_1',
+		name: 'Alice',
+		kind: ParticipantInfo_Kind.STANDARD
+	} as ParticipantInfo;
+
+	const build = ({ participantsRemain = true, activates = true } = {}) => {
+		const chatSaver = {
+			ensureSaver: jest.fn(async (..._args: unknown[]) => {}),
+			leave: jest.fn(async (..._args: unknown[]) => {})
+		};
+		const webhooks = {
+			sendParticipantJoinedWebhook: jest.fn(),
+			sendParticipantLeftWebhook: jest.fn(),
+			sendMeetingStartedWebhook: jest.fn()
+		};
+		const released = jest.fn(async () => {});
+		const service = buildWebhookService(
+			[
+				{ startAutoRecordingIfNeeded: async () => {}, reactivateAutoRecording: async () => {} },
+				{ findAllByRoomIdAndStatus: async () => [] },
+				{ roomHasParticipants: async () => participantsRemain },
+				{ getMeetRoomName: async () => 'Room 1', getMeetRoom: async () => ({ status: MeetRoomStatus.OPEN }) },
+				{ activateMeeting: async () => (activates ? { roomId: 'room-1', config: {} } : null) },
+				webhooks,
+				{},
+				{ releaseParticipantName: released },
+				{},
+				{},
+				{},
+				{},
+				new FakeRedisService(),
+				new FakeLogger(),
+				{ getBroadcasts: async () => [] },
+				new FakeMeetingDurationLimitService(),
+				{ joined: async () => {} }
+			],
+			chatSaver
+		);
+		return { service, chatSaver, webhooks, released };
+	};
+
+	it('is told to join when a participant joins and when the room starts', async () => {
+		const { service, chatSaver } = build();
+
+		await service.handleParticipantJoined(room, person);
+		await service.handleRoomStarted(room);
+
+		expect(chatSaver.ensureSaver.mock.calls).toEqual([
+			['room-1', room.metadata],
+			['room-1', room.metadata]
+		]);
+	});
+
+	it('is not waited for, since the webhook lock lasts 5 seconds and the connection can take longer', async () => {
+		const { service, chatSaver } = build();
+		chatSaver.ensureSaver.mockReturnValue(new Promise(() => {}));
+
+		await service.handleParticipantJoined(room, person);
+		await service.handleRoomStarted(room);
+	});
+
+	it('is not told to join for a room that is not activated', async () => {
+		const { service, chatSaver } = build({ activates: false });
+
+		await service.handleRoomStarted(room);
+
+		expect(chatSaver.ensureSaver).not.toHaveBeenCalled();
+	});
+
+	it('is not announced as a participant when it joins', async () => {
+		const { service, chatSaver, webhooks } = build();
+
+		await service.handleParticipantJoined(room, chatSaverParticipant());
+
+		expect(webhooks.sendParticipantJoinedWebhook).not.toHaveBeenCalled();
+		expect(chatSaver.ensureSaver).not.toHaveBeenCalled();
+	});
+
+	it('joins again when it leaves while participants remain, sending no participantLeft webhook', async () => {
+		const { service, chatSaver, webhooks, released } = build();
+
+		await service.handleParticipantLeft(room, chatSaverParticipant());
+
+		expect(chatSaver.ensureSaver).toHaveBeenCalledWith('room-1', room.metadata);
+		expect(webhooks.sendParticipantLeftWebhook).not.toHaveBeenCalled();
+		expect(released).not.toHaveBeenCalled();
+	});
+
+	it('joins again when its session is aborted while participants remain, as one that reconnects can be', async () => {
+		const { service, chatSaver, webhooks } = build();
+
+		await service.handleParticipantConnectionAborted(room, chatSaverParticipant());
+
+		expect(chatSaver.ensureSaver).toHaveBeenCalledWith('room-1', room.metadata);
+		expect(webhooks.sendParticipantLeftWebhook).not.toHaveBeenCalled();
+	});
+
+	it('ignores the aborted session of a participant that is not the chat saver', async () => {
+		const { service, chatSaver } = build();
+
+		await service.handleParticipantConnectionAborted(room, chatSaverParticipant({ identity: 'alice' }));
+
+		expect(chatSaver.ensureSaver).not.toHaveBeenCalled();
+	});
+
+	it('does not join again when it leaves a meeting nobody remains in', async () => {
+		const { service, chatSaver, webhooks } = build({ participantsRemain: false });
+
+		await service.handleParticipantLeft(room, chatSaverParticipant());
+
+		expect(chatSaver.ensureSaver).not.toHaveBeenCalled();
+		expect(webhooks.sendParticipantLeftWebhook).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		['a different identity', { identity: 'alice' }],
+		['a different kind', { kind: ParticipantInfo_Kind.INGRESS }],
+		['no hidden grant', { permission: { hidden: false } }],
+		['a different role', { attributes: { 'meet.role': 'other' } }]
+	])('does not take a participant with %s for the chat saver', async (_, overrides) => {
+		const { service, chatSaver } = build();
+
+		await service.handleParticipantJoined(
+			room,
+			chatSaverParticipant({ ...overrides, kind: ParticipantInfo_Kind.STANDARD })
+		);
+		expect(chatSaver.ensureSaver).toHaveBeenCalledTimes(1);
+
+		await service.handleParticipantLeft(room, chatSaverParticipant(overrides));
+		expect(chatSaver.ensureSaver).toHaveBeenCalledTimes(1);
+	});
+
+	it('leaves the meeting that finished', async () => {
+		const { service, chatSaver } = build();
+
+		await service.handleRoomFinished(room);
+
+		expect(chatSaver.leave).toHaveBeenCalledWith('room-1', 'RM_1');
 	});
 });

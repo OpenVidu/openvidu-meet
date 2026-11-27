@@ -1,4 +1,5 @@
 export * from './api-key-migrations.js';
+export * from './chat-message-migrations.js';
 export * from './global-config-migrations.js';
 export * from './migration-registry.js';
 export * from './recording-migrations.js';

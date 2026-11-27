@@ -207,7 +207,7 @@ const expectMigratedRoomToCurrentVersion = (migratedRoom: Record<string, unknown
 		owner: MEET_ENV.INITIAL_ADMIN_USER,
 		creationDate: expect.any(Number),
 		config: {
-			chat: { enabled: true },
+			chat: { enabled: true, persist: false },
 			recording: {
 				enabled: true,
 				layout: MeetRecordingLayout.GRID,
@@ -358,6 +358,21 @@ const buildLegacyRoomV9 = (roomId: string) => {
 				)
 			}
 		}
+	};
+};
+
+// v10 is what the room lock builds store: the current shape without the chat saving setting.
+const buildLegacyRoomV10 = (roomId: string) => {
+	const roomV9 = buildLegacyRoomV9(roomId);
+
+	return {
+		...roomV9,
+		schemaVersion: 10,
+		roles: {
+			moderator: { permissions: expectedCurrentModeratorPermissions },
+			speaker: { permissions: expectedCurrentSpeakerPermissions }
+		},
+		access: { ...roomV9.access, lock: { enabled: false } }
 	};
 };
 
@@ -562,6 +577,16 @@ describe('Room Schema Migrations', () => {
 		});
 	});
 
+	describe('Room Migration Transforms (chat saving)', () => {
+		it('should set chat saving off on a room that existed before the upgrade, from v10 to v11', () => {
+			const transform = roomMigrations.get(generateSchemaMigrationName(meetRoomCollectionName, 10, 11))!;
+
+			const migratedRoom = transform(buildLegacyRoomV10('room-v10') as unknown as MeetRoomDocument);
+
+			expect(migratedRoom.config.chat).toEqual({ enabled: true, persist: false });
+		});
+	});
+
 	describe('Room Migration Transforms (live captions)', () => {
 		const transform = roomMigrations.get(generateSchemaMigrationName(meetRoomCollectionName, 7, 8))!;
 		const roomV7 = (e2eeEnabled: boolean) =>
@@ -600,7 +625,8 @@ describe('Room Schema Migrations', () => {
 			{ fromVersion: 2, buildDocument: buildLegacyRoomV2 },
 			{ fromVersion: 3, buildDocument: buildLegacyRoomV3 },
 			{ fromVersion: 7, buildDocument: buildLegacyRoomV7 },
-			{ fromVersion: 9, buildDocument: buildLegacyRoomV9 }
+			{ fromVersion: 9, buildDocument: buildLegacyRoomV9 },
+			{ fromVersion: 10, buildDocument: buildLegacyRoomV10 }
 		])(
 			'should migrate a legacy room document from v$fromVersion to the current version',
 			async ({ buildDocument }) => {
