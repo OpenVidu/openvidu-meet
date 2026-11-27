@@ -7,7 +7,9 @@ Every release groups its `Added`, `Improved` and `Fixed` entries by who the chan
 - **UI**: the meeting and the console, what a person using Meet sees.
 - **Deployment**: configuration, limits and running the server.
 
-## 3.10.0 (unreleased)
+## 3.11.0 (unreleased)
+
+## 3.10.0
 
 This release adds live broadcasts, locked rooms with a waiting room, raise hand and reactions, and moves the meeting's
 moderation, recording and role commands to the embedded API.

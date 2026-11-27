@@ -197,8 +197,9 @@ show_help() {
   echo -e "  ${BLUE}set-version${NC} <version>"
   echo "    Set the \"version\" field in the root, backend, frontend and meet-demo package.json at once,"
   echo "    add the new release to CHANGELOG.md as \"(unreleased)\" if missing, and drop \"(unreleased)\""
-  echo "    from every other release"
-  echo "    Example: ./meet.sh set-version 3.10.0-dev (opens 3.10.0, marks 3.9.0 as released)"
+  echo "    from every other release, and from the new one too when the version has no prerelease suffix"
+  echo "    Examples: ./meet.sh set-version 3.10.0-dev (opens 3.10.0, marks 3.9.0 as released)"
+  echo "              ./meet.sh set-version 3.10.0 (marks 3.10.0 as released)"
   echo
 }
 
@@ -736,8 +737,13 @@ set_version() {
     sed -i "0,/^## /s//## ${release} (unreleased)\n\n&/" CHANGELOG.md
   fi
 
-  sed -i -E "/${heading}/! s/^(## [0-9.]+) \(unreleased\)$/\1/" CHANGELOG.md
-  echo -e "${GREEN}✓ CHANGELOG.md: ${release} is the only release left unreleased${NC}"
+  if [ "$resolved_version" = "$release" ]; then
+    sed -i -E "s/^(## [0-9.]+) \(unreleased\)$/\1/" CHANGELOG.md
+    echo -e "${GREEN}✓ CHANGELOG.md: ${release} is released, no release left unreleased${NC}"
+  else
+    sed -i -E "/${heading}/! s/^(## [0-9.]+) \(unreleased\)$/\1/" CHANGELOG.md
+    echo -e "${GREEN}✓ CHANGELOG.md: ${release} is the only release left unreleased${NC}"
+  fi
 }
 
 # Clone private meet-pro repository into repository root
