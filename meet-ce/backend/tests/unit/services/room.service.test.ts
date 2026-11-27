@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import type { MeetRoom, MeetRoomAccess, MeetRoomAccessConfig, MeetRoomConfig } from '@openvidu-meet/typings';
 import {
 	MeetingEndAction,
@@ -8,6 +8,10 @@ import {
 	MeetRoomDeletionSuccessCode,
 	MeetRoomStatus
 } from '@openvidu-meet/typings';
+import type { Room as LivekitRoom } from 'livekit-server-sdk';
+import ms from 'ms';
+import { INTERNAL_CONFIG } from '../../../src/config/internal-config.js';
+import { MeetRoomHelper } from '../../../src/helpers/room.helper.js';
 import type { RoomRepository } from '../../../src/repositories/room.repository.js';
 import type { LoggerService } from '../../../src/services/logger.service.js';
 import { RequestSessionService } from '../../../src/services/request-session.service.js';
@@ -49,6 +53,7 @@ describe('RoomService.getRequestRoomConfig and getRequestRoomName', () => {
 			{} as never,
 			{} as never,
 			requestSessionService,
+			{} as never,
 			{} as never
 		);
 	});
@@ -119,7 +124,8 @@ describe('RoomService.updateMeetRoomAccess (lock)', () => {
 			{} as never,
 			{} as never,
 			{} as never,
-			{ letEveryoneIn } as never
+			{ letEveryoneIn } as never,
+			{} as never
 		);
 		return { roomService, updateIdleRoomAccess, letEveryoneIn };
 	};
@@ -179,6 +185,7 @@ describe('RoomService.updateMeetRoomAccess (lock)', () => {
 describe('RoomService.deleteMeetRoom (a meeting that starts or ends while the room is deleted)', () => {
 	const buildDeletionService = (statuses: MeetRoomStatus[], repository: Record<string, unknown>) => {
 		const deleteAllByRoomId = jest.fn(async (_roomId: string) => {});
+		const deleteChatMessages = jest.fn(async (_roomId: string) => {});
 		const roomService = new RoomService(
 			{ verbose: () => {}, debug: () => {} } as unknown as LoggerService,
 			{ findByRoomId: async () => ({ status: statuses.shift() }), ...repository } as unknown as RoomRepository,
@@ -186,14 +193,15 @@ describe('RoomService.deleteMeetRoom (a meeting that starts or ends while the ro
 			{ hasRoomRecordings: async () => false } as never,
 			{} as never,
 			{} as never,
-			{ closeRoom: async () => {} } as never
+			{ closeRoom: async () => {} } as never,
+			{ deleteAllByRoomId: deleteChatMessages } as never
 		);
-		return { roomService, deleteAllByRoomId };
+		return { roomService, deleteAllByRoomId, deleteChatMessages };
 	};
 
 	it('deletes the room at once when its meeting ended before the deletion could be scheduled', async () => {
 		const deleteIdleRoom = jest.fn(async (_roomId: string) => true);
-		const { roomService, deleteAllByRoomId } = buildDeletionService(
+		const { roomService, deleteAllByRoomId, deleteChatMessages } = buildDeletionService(
 			[MeetRoomStatus.ACTIVE_MEETING, MeetRoomStatus.OPEN],
 			{ scheduleMeetingEndAction: async () => null, deleteIdleRoom }
 		);
@@ -205,10 +213,11 @@ describe('RoomService.deleteMeetRoom (a meeting that starts or ends while the ro
 		expect(response.successCode).toBe(MeetRoomDeletionSuccessCode.ROOM_DELETED);
 		expect(deleteIdleRoom).toHaveBeenCalledWith('room-1');
 		expect(deleteAllByRoomId).toHaveBeenCalledWith('room-1');
+		expect(deleteChatMessages).toHaveBeenCalledWith('room-1');
 	});
 
 	it('answers 409 and keeps the room when its meeting started before the deletion was written', async () => {
-		const { roomService, deleteAllByRoomId } = buildDeletionService(
+		const { roomService, deleteAllByRoomId, deleteChatMessages } = buildDeletionService(
 			[MeetRoomStatus.OPEN, MeetRoomStatus.ACTIVE_MEETING],
 			{ deleteIdleRoom: async () => false }
 		);
@@ -218,6 +227,7 @@ describe('RoomService.deleteMeetRoom (a meeting that starts or ends while the ro
 			name: MeetRoomDeletionErrorCode.ROOM_HAS_ACTIVE_MEETING
 		});
 		expect(deleteAllByRoomId).not.toHaveBeenCalled();
+		expect(deleteChatMessages).not.toHaveBeenCalled();
 	});
 });
 
@@ -258,7 +268,8 @@ describe('RoomService.deleteMeetRoom policies', () => {
 			} as never,
 			{ deleteRoom: async () => actions.push('endMeeting') } as never,
 			{} as never,
-			{ closeRoom: async () => actions.push('endWaits') } as never
+			{ closeRoom: async () => actions.push('endWaits') } as never,
+			{ deleteAllByRoomId: async () => actions.push('deleteChatMessages') } as never
 		);
 		return { roomService, actions };
 	};
@@ -275,7 +286,7 @@ describe('RoomService.deleteMeetRoom policies', () => {
 			M_FAIL,
 			R_FAIL,
 			MeetRoomDeletionSuccessCode.ROOM_DELETED,
-			['deleteRoom', 'deleteMembers', 'endWaits'],
+			['deleteRoom', 'deleteMembers', 'deleteChatMessages', 'endWaits'],
 			false
 		],
 		[
@@ -283,7 +294,7 @@ describe('RoomService.deleteMeetRoom policies', () => {
 			M_FORCE,
 			R_CLOSE,
 			MeetRoomDeletionSuccessCode.ROOM_DELETED,
-			['deleteRoom', 'deleteMembers', 'endWaits'],
+			['deleteRoom', 'deleteMembers', 'deleteChatMessages', 'endWaits'],
 			false
 		],
 		[
@@ -291,7 +302,7 @@ describe('RoomService.deleteMeetRoom policies', () => {
 			M_FAIL,
 			R_FORCE,
 			MeetRoomDeletionSuccessCode.ROOM_AND_RECORDINGS_DELETED,
-			['deleteRoom', 'deleteRecordings', 'deleteMembers', 'endWaits'],
+			['deleteRoom', 'deleteRecordings', 'deleteMembers', 'deleteChatMessages', 'endWaits'],
 			false
 		],
 		[withRecordings, M_FAIL, R_CLOSE, MeetRoomDeletionSuccessCode.ROOM_CLOSED, ['status:closed', 'endWaits'], true],
@@ -401,5 +412,123 @@ describe('RoomService.deleteMeetRoom policies', () => {
 		});
 
 		expect(response.room).toEqual({ roomId: 'room-1', status: MeetRoomStatus.CLOSED });
+	});
+});
+
+/**
+ * The LiveKit room a chat saver's join creates (the meeting closed between its check and its join) is
+ * no meeting: LiveKit closes it by itself within a second, so a join token request waits for that
+ * instead of handing it out, and deletes nothing, since requests deleting by name could delete the room
+ * another one just created.
+ */
+describe('RoomService.createLivekitRoom (the room a chat saver created)', () => {
+	const savingRoom = { name: 'room-1', metadata: MeetRoomHelper.CHAT_SAVER_ROOM_METADATA } as unknown as LivekitRoom;
+	const meetingRoom = { name: 'room-1', metadata: '{"createdBy":"openviduMeet"}' } as unknown as LivekitRoom;
+	const meetRoom = {
+		roomId: 'room-1',
+		roomName: 'Room',
+		config: {},
+		roles: {},
+		access: {
+			anonymous: { moderator: { enabled: true }, speaker: { enabled: true }, recording: { enabled: true } },
+			user: { enabled: false },
+			lock: { enabled: false }
+		}
+	};
+	const quietLogger = { verbose: () => {}, debug: () => {}, info: () => {} } as unknown as LoggerService;
+
+	/** LiveKit answers each read with the next room of `reads` (the last one from then on) */
+	const build = (reads: (LivekitRoom | undefined)[]) => {
+		const answers = [...reads];
+		const livekitService = {
+			findRoom: jest.fn(async () => (answers.length > 1 ? answers.shift() : answers[0])),
+			createRoom: jest.fn(async () => meetingRoom),
+			deleteRoom: jest.fn(async (_roomName: string) => true)
+		};
+		const roomService = new RoomService(
+			quietLogger,
+			{ findByRoomId: async () => meetRoom } as unknown as RoomRepository,
+			{} as never,
+			{} as never,
+			livekitService as never,
+			{} as never,
+			{} as never,
+			{} as never
+		);
+		return { roomService, livekitService };
+	};
+
+	beforeEach(() => {
+		jest.useFakeTimers();
+	});
+
+	afterEach(() => {
+		jest.useRealTimers();
+	});
+
+	const settled = async (request: Promise<LivekitRoom>) => {
+		await jest.advanceTimersByTimeAsync(ms(INTERNAL_CONFIG.CHAT_SAVER_ROOM_CLOSE_WAIT));
+		return request;
+	};
+
+	it('waits for the room to close and then creates the meeting room, deleting nothing', async () => {
+		const { roomService, livekitService } = build([savingRoom, savingRoom, savingRoom, undefined]);
+
+		const room = await settled(roomService.createLivekitRoom('room-1'));
+
+		expect(room).toBe(meetingRoom);
+		expect(livekitService.findRoom).toHaveBeenCalledTimes(4);
+		expect(livekitService.createRoom).toHaveBeenCalledTimes(1);
+		expect(livekitService.deleteRoom).not.toHaveBeenCalled();
+	});
+
+	it('returns the meeting room another request created meanwhile, without creating one', async () => {
+		const { roomService, livekitService } = build([savingRoom, meetingRoom]);
+
+		const room = await settled(roomService.createLivekitRoom('room-1'));
+
+		expect(room).toBe(meetingRoom);
+		expect(livekitService.createRoom).not.toHaveBeenCalled();
+		expect(livekitService.deleteRoom).not.toHaveBeenCalled();
+	});
+
+	it('reads the room every 250 milliseconds and deletes it, before creating the meeting room, only when it outlives 5 seconds', async () => {
+		const { roomService, livekitService } = build([savingRoom]);
+
+		const request = roomService.createLivekitRoom('room-1');
+		await jest.advanceTimersByTimeAsync(4_999);
+		expect(livekitService.deleteRoom).not.toHaveBeenCalled();
+		await jest.advanceTimersByTimeAsync(1);
+		await request;
+
+		expect(livekitService.findRoom).toHaveBeenCalledTimes(1 + 5_000 / 250);
+		expect(livekitService.deleteRoom).toHaveBeenCalledWith('room-1');
+		expect(livekitService.createRoom).toHaveBeenCalledTimes(1);
+	});
+
+	it('deletes nothing when two requests find the room together and it closes', async () => {
+		const reads = [savingRoom, savingRoom, undefined];
+		const livekitService = {
+			findRoom: jest.fn(async () => (reads.length > 1 ? reads.shift() : reads[0])),
+			createRoom: jest.fn(async () => meetingRoom),
+			deleteRoom: jest.fn(async (_roomName: string) => true)
+		};
+		const roomService = build([]).roomService;
+		(roomService as unknown as { livekitService: unknown }).livekitService = livekitService;
+
+		const requests = Promise.all([
+			roomService.createLivekitRoom('room-1'),
+			roomService.createLivekitRoom('room-1')
+		]);
+		await settled(requests as unknown as Promise<LivekitRoom>);
+
+		expect(livekitService.deleteRoom).not.toHaveBeenCalled();
+	});
+
+	it('returns a meeting room that exists as it did, without waiting', async () => {
+		const { roomService, livekitService } = build([meetingRoom]);
+
+		await expect(roomService.createLivekitRoom('room-1')).resolves.toBe(meetingRoom);
+		expect(livekitService.findRoom).toHaveBeenCalledTimes(1);
 	});
 });

@@ -64,6 +64,8 @@ describe('ToolbarComponent when the connection is lost', () => {
 	let reconnecting: ReturnType<typeof signal<boolean>>;
 	let panelOpen: ReturnType<typeof signal<{ isOpened: boolean }>>;
 	let closePanel: jasmine.Spy;
+	let newChatMessages: ReturnType<typeof signal<number>>;
+	let toolbar: ToolbarComponent;
 
 	/** A service whose members the toolbar reads at construction but this spec does not care about. */
 	const stubOf = (members: Record<string | symbol, unknown> = {}) =>
@@ -73,13 +75,14 @@ describe('ToolbarComponent when the connection is lost', () => {
 		reconnecting = signal(false);
 		panelOpen = signal({ isOpened: false });
 		closePanel = jasmine.createSpy('closePanel');
+		newChatMessages = signal(0);
 
 		TestBed.configureTestingModule({
 			providers: [
 				provideZonelessChangeDetection(),
 				{ provide: ElementRef, useValue: new ElementRef(document.createElement('div')) },
 				{ provide: DocumentService, useValue: stubOf() },
-				{ provide: ChatService, useValue: stubOf({ chatMessages: signal([]) }) },
+				{ provide: ChatService, useValue: stubOf({ newMessageCount: newChatMessages }) },
 				{
 					provide: PanelService,
 					useValue: stubOf({
@@ -110,7 +113,17 @@ describe('ToolbarComponent when the connection is lost', () => {
 			]
 		});
 
-		TestBed.runInInjectionContext(() => new ToolbarComponent());
+		toolbar = TestBed.runInInjectionContext(() => new ToolbarComponent());
+	});
+
+	it('counts as unread the chat messages that arrive live while the chat is closed, and no other', () => {
+		TestBed.tick();
+		expect(toolbar.unreadMessages()).toBe(0);
+
+		newChatMessages.set(2);
+		TestBed.tick();
+
+		expect(toolbar.unreadMessages()).toBe(2);
 	});
 
 	it('closes the panel that is open', () => {

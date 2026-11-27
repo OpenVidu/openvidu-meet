@@ -475,7 +475,12 @@ export class MeetingService {
 		return participant;
 	}
 
-	protected async isInMeeting(roomId: string, participantIdentity: string): Promise<boolean> {
+	/**
+	 * Whether a standard participant with the identity is in the meeting of a room.
+	 *
+	 * @throws A 503 error when LiveKit refuses the connection
+	 */
+	async isInMeeting(roomId: string, participantIdentity: string): Promise<boolean> {
 		try {
 			await this.getStandardParticipant(roomId, participantIdentity);
 			return true;

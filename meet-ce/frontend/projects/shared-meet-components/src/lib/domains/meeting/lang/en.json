@@ -82,6 +82,8 @@
 			"TITLE": "Chat",
 			"YOU": "You",
 			"SUBTITLE": "Messages will be removed at the end of the meeting",
+			"NOT_SAVED": "Messages are not saved and will be removed at the end of the meeting",
+			"ANONYMOUS": "Anonymous",
 			"PLACEHOLDER": "Send a message...",
 			"SEND": "Send",
 			"WRITE_DISABLED": "You don't have permission to send messages",

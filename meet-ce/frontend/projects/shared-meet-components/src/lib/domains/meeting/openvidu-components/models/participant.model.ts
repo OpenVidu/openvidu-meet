@@ -1,5 +1,11 @@
 import { computed, signal } from '@angular/core';
-import { handRaiseDateOf, MeetRoomMemberTokenMetadata, MeetRoomMemberUIBadge } from '@openvidu-meet/typings';
+import {
+	handRaiseDateOf,
+	MeetParticipantType,
+	MeetRoomMemberTokenMetadata,
+	MeetRoomMemberUIBadge,
+	participantTypeOf
+} from '@openvidu-meet/typings';
 import type { RemoteParticipant, Room, TrackPublication } from '../services/livekit';
 import {
 	AudioCaptureOptions,
@@ -405,7 +411,16 @@ export class ParticipantModel {
 	 * Whether the participant holds `chatRead`, as the server last wrote it in their metadata.
 	 */
 	get canReadChat(): boolean {
-		return parseParticipantMetadata(this.participant.metadata)?.permissions?.chatRead === true;
+		return canReadChatOf(this.participant.metadata);
+	}
+
+	/**
+	 * Whether the participant joined with a shared link of the room, as the server wrote it in their metadata.
+	 */
+	get isAnonymous(): boolean {
+		const metadata = parseParticipantMetadata(this.participant.metadata);
+
+		return metadata !== undefined && participantTypeOf(metadata) === MeetParticipantType.ANONYMOUS;
 	}
 
 	// ── Public setters ────────────────────────────────────────────────────────────────────────────
@@ -715,6 +730,12 @@ export const parseParticipantMetadata = (metadata: unknown): MeetRoomMemberToken
 
 	return parsed as MeetRoomMemberTokenMetadata;
 };
+
+/**
+ * Whether participant metadata, as {@link parseParticipantMetadata} reads it, grants `chatRead`.
+ */
+export const canReadChatOf = (metadata: unknown): boolean =>
+	parseParticipantMetadata(metadata)?.permissions?.chatRead === true;
 
 /**
  * The participants with a raised hand, in the order they raised it. Ties are broken by identity, so

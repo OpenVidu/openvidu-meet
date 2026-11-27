@@ -567,6 +567,14 @@ export const errorReactionsDisabled = (roomId: string): OpenViduMeetError => {
 	return new OpenViduMeetError('Reaction Error', `Reactions are disabled for room '${roomId}'`, 403);
 };
 
+export const errorChatReaderNotInMeeting = (participantIdentity: string, roomId: string): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Chat Error',
+		`Participant '${participantIdentity}' is not in the meeting of room '${roomId}'`,
+		403
+	);
+};
+
 export const errorReactionSenderNotInMeeting = (participantIdentity: string, roomId: string): OpenViduMeetError => {
 	return new OpenViduMeetError(
 		'Reaction Error',

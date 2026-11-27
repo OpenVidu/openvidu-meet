@@ -82,6 +82,8 @@
 			"TITLE": "Chat",
 			"YOU": "Tú",
 			"SUBTITLE": "Los mensajes se borrarán al finalizar la reunión",
+			"NOT_SAVED": "Los mensajes no se guardan y se borrarán al finalizar la reunión",
+			"ANONYMOUS": "Anónimo",
 			"PLACEHOLDER": "Enviar mensaje...",
 			"SEND": "Enviar",
 			"WRITE_DISABLED": "No tienes permiso para enviar mensajes",

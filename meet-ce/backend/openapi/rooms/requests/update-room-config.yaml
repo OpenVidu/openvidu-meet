@@ -23,5 +23,6 @@ content:
                           url: rtmp://a.rtmp.youtube.com/live2/abcd-1234-efgh-5678
                 chat:
                     enabled: true
+                    persist: true
                 virtualBackground:
                     enabled: true

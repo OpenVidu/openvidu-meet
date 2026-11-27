@@ -82,6 +82,8 @@
 			"TITLE": "Chat",
 			"YOU": "Jij",
 			"SUBTITLE": "Berichten worden aan het einde van de meeting verwijderd",
+			"NOT_SAVED": "Berichten worden niet opgeslagen en aan het einde van de meeting verwijderd",
+			"ANONYMOUS": "Anoniem",
 			"PLACEHOLDER": "Stuur een bericht ...",
 			"SEND": "Versturen",
 			"WRITE_DISABLED": "U hebt geen toestemming om berichten te versturen",

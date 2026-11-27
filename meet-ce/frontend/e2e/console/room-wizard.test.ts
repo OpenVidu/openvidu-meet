@@ -245,6 +245,94 @@ test.describe('Room wizard E2E Tests', () => {
 		await expect(page.locator('#captions-e2ee-warning')).toHaveCount(0);
 	});
 
+	// ── Saving the room's chat ──────────────────────────────────────────────────
+
+	const chatPersist = (page: Page) => page.locator('#room-feature-chat-persist button');
+
+	const expectChatPersist = async (page: Page, state: { enabled: boolean; on: boolean }): Promise<void> => {
+		if (state.enabled) {
+			await expect(chatPersist(page)).toBeEnabled();
+		} else {
+			await expect(chatPersist(page)).toBeDisabled();
+		}
+
+		await expect(chatPersist(page)).toHaveAttribute('aria-checked', String(state.on));
+	};
+
+	test('chat saving: a new room saves its chat by default', async ({ page }) => {
+		await openWizardAtMeeting(page);
+
+		await expectChatPersist(page, { enabled: true, on: true });
+	});
+
+	test('chat saving: turning chat off disables the toggle and keeps it on, turning chat on enables it again', async ({
+		page
+	}) => {
+		await openWizardAtMeeting(page);
+
+		await setFeature(page, 'room-feature-chat', false);
+		await expectChatPersist(page, { enabled: false, on: true });
+
+		await setFeature(page, 'room-feature-chat', true);
+		await expectChatPersist(page, { enabled: true, on: true });
+	});
+
+	test('chat saving: encryption disables the toggle, turns it off and lists that messages are not saved', async ({
+		page
+	}) => {
+		await openWizardAtMeeting(page);
+
+		await setFeature(page, 'room-feature-e2ee', true);
+
+		await expectChatPersist(page, { enabled: false, on: false });
+		await expect(page.locator('#e2ee-restriction-chat-not-saved')).toContainText(
+			'Chat messages are not saved while encryption is enabled.'
+		);
+	});
+
+	test('chat saving: turning encryption off again restores the toggle', async ({ page }) => {
+		await openWizardAtMeeting(page);
+
+		await setFeature(page, 'room-feature-e2ee', true);
+		await setFeature(page, 'room-feature-e2ee', false);
+
+		await expectChatPersist(page, { enabled: true, on: true });
+	});
+
+	test('chat saving: allowing recording turns encryption off and restores the toggle, disallowing it turns encryption back on', async ({
+		page
+	}) => {
+		await openWizardAtMeeting(page);
+		await setFeature(page, 'room-feature-e2ee', true);
+
+		await gotoStep(page, 2);
+		await setFeature(page, 'recording-enabled', true);
+		await gotoMeeting(page);
+
+		await expect(page.locator('#room-feature-e2ee button')).toHaveAttribute('aria-checked', 'false');
+		await expectChatPersist(page, { enabled: true, on: true });
+
+		await gotoStep(page, 2);
+		await setFeature(page, 'recording-enabled', false);
+		await gotoMeeting(page);
+
+		await expect(page.locator('#room-feature-e2ee button')).toHaveAttribute('aria-checked', 'true');
+		await expectChatPersist(page, { enabled: false, on: false });
+	});
+
+	test('chat saving: editing a room that does not save its chat shows the toggle off', async ({ page }) => {
+		const room = await createRoom({
+			roomName: 'wizard-chat-persist-edit',
+			config: { chat: { enabled: true, persist: false } }
+		});
+		createdRoomIds.push(room.roomId);
+
+		await page.goto(`${MEET_BASE_URL}/rooms/${room.roomId}/edit`, { waitUntil: 'domcontentloaded' });
+		await gotoMeeting(page);
+
+		await expectChatPersist(page, { enabled: true, on: false });
+	});
+
 	test('re-enabling a feature restores its role permissions', async ({ page }) => {
 		await openWizardAtMeeting(page);
 		await setFeature(page, 'room-feature-chat', false);

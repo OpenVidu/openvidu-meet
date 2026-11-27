@@ -4,7 +4,8 @@ set -e
 # Function to handle termination signals
 terminate_process() {
     echo "Terminating Node.js process..."
-    pkill -TERM node
+    kill -TERM "$node_pid"
+    wait "$node_pid"
 }
 
 # Trap termination signals

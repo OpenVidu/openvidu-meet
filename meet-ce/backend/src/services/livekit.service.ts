@@ -13,6 +13,7 @@ import { DataPacket_Kind, LiveKitAPI } from 'livekit-server-sdk';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
 import { EgressHelper } from '../helpers/egress.helper.js';
+import { MeetParticipantHelper } from '../helpers/participant.helper.js';
 import {
 	errorEgressNotAvailable,
 	errorEgressOptionsRefused,
@@ -99,6 +100,28 @@ export class LiveKitService {
 	}
 
 	/**
+	 * Like {@link findRoom}, but LiveKit refusing the connection is a 503, as for {@link getParticipant}.
+	 *
+	 * @param roomName - The name of the room to look up
+	 * @returns The room, or undefined if LiveKit has no room with that name
+	 * @throws A 503 error if LiveKit refuses the connection, an internal error for any other failure
+	 */
+	async findRoomOrUnavailable(roomName: string): Promise<Room | undefined> {
+		try {
+			const [room] = await this.lk.room.listRooms([roomName]);
+			return room;
+		} catch (error) {
+			this.logger.error(`Error getting room '${roomName}'`, error);
+
+			if (this.getErrorCauseCode(error) === 'ECONNREFUSED') {
+				throw errorLivekitNotAvailable();
+			}
+
+			throw internalError(`getting LiveKit room '${roomName}'`);
+		}
+	}
+
+	/**
 	 * Checks if a room with the specified name exists in LiveKit.
 	 *
 	 * @param roomName - The name of the room to check
@@ -110,7 +133,8 @@ export class LiveKitService {
 	}
 
 	/**
-	 * Checks if a LiveKit room has at least one participant.
+	 * Checks if a LiveKit room has at least one participant other than the chat saver, which is not
+	 * part of the meeting.
 	 *
 	 * @param roomName - The name of the room to check
 	 * @returns A promise that resolves to true if the room has at least one participant,
@@ -120,7 +144,7 @@ export class LiveKitService {
 	async roomHasParticipants(roomName: string): Promise<boolean> {
 		try {
 			const participants = await this.lk.room.listParticipants(roomName);
-			return participants.length > 0;
+			return participants.some((participant) => !MeetParticipantHelper.isChatSaver(participant));
 		} catch (error) {
 			if (this.isNotFoundError(error)) {
 				return false;
@@ -305,6 +329,28 @@ export class LiveKitService {
 
 			this.logger.debug(`Participant '${participantIdentity}' not found in room '${roomName}'`, error);
 			throw errorParticipantNotFound(participantIdentity, roomName);
+		}
+	}
+
+	/**
+	 * Like {@link getParticipant}, but only LiveKit's own not-found answer says the participant is not there:
+	 * any other failure is thrown, since it says nothing about whether they are.
+	 *
+	 * @param roomName - The name of the room where the participant is located
+	 * @param participantIdentity - The identity of the participant to retrieve
+	 * @returns The participant, or undefined if LiveKit has no such participant (or no such room)
+	 * @throws An internal error for any other failure
+	 */
+	async findParticipant(roomName: string, participantIdentity: string): Promise<ParticipantInfo | undefined> {
+		try {
+			return await this.lk.room.getParticipant(roomName, participantIdentity);
+		} catch (error) {
+			if (this.isNotFoundError(error)) {
+				return undefined;
+			}
+
+			this.logger.error(`Error retrieving participant '${participantIdentity}' in room '${roomName}'`, error);
+			throw internalError(`getting participant '${participantIdentity}' in room '${roomName}'`);
 		}
 	}
 

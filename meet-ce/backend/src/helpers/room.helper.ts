@@ -107,7 +107,8 @@ export class MeetRoomHelper {
 
 	/**
 	 * Turns off the features end-to-end encryption excludes: recording, live broadcast and live
-	 * captions need the server to read the media, which an encrypted room never lets it do.
+	 * captions need the server to read the media, which an encrypted room never lets it do, and the
+	 * server cannot read the chat to save it.
 	 *
 	 * @param config - The room config, changed in place
 	 */
@@ -124,6 +125,10 @@ export class MeetRoomHelper {
 
 		if (config.captions?.enabled) {
 			config.captions = { ...config.captions, enabled: false };
+		}
+
+		if (config.chat?.persist) {
+			config.chat = { ...config.chat, persist: false };
 		}
 	}
 
@@ -215,6 +220,21 @@ export class MeetRoomHelper {
 		return this.parseMetadata(metadata)?.createdBy === MEET_ENV.NAME_ID;
 	}
 
+	private static readonly CHAT_SAVER_CREATOR = 'meet-chat-saver';
+
+	/**
+	 * The metadata of the LiveKit room the chat saver's join creates when the meeting it was joining has
+	 * closed. It is never a Meet meeting, so it carries no mark of Meet's.
+	 */
+	static readonly CHAT_SAVER_ROOM_METADATA = JSON.stringify({ createdBy: MeetRoomHelper.CHAT_SAVER_CREATOR });
+
+	/**
+	 * Whether a LiveKit room's metadata is the one a chat saver's join gives the room it creates.
+	 */
+	static isChatSaverRoomMetadata(metadata?: string): boolean {
+		return this.parseMetadata(metadata)?.createdBy === this.CHAT_SAVER_CREATOR;
+	}
+
 	/**
 	 * Extracts the room options OpenVidu Meet embeds in a LiveKit room's metadata when it creates the
 	 * room (see `RoomService.createLivekitRoom`). Lets callers read room properties straight off a
@@ -232,6 +252,18 @@ export class MeetRoomHelper {
 		}
 
 		return roomOptions;
+	}
+
+	/**
+	 * Whether the meeting a LiveKit room hosts saves its chat: the config the meeting started with, which its
+	 * metadata carries, has chat and chat saving on and end-to-end encryption off. A room whose metadata
+	 * predates chat saving saves nothing.
+	 *
+	 * @param metadata - The raw LiveKit room metadata.
+	 */
+	static metadataSavesChat(metadata?: string): boolean {
+		const config = this.extractRoomOptionsFromMetadata(metadata)?.config;
+		return !!config?.chat?.enabled && !!config.chat.persist && !config.e2ee?.enabled;
 	}
 
 	/**

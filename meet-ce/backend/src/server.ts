@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import type { Express, Request, Response, Router } from 'express';
 import express from 'express';
+import ms from 'ms';
 import { container, initializeEagerServices, registerDependencies } from './config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from './config/internal-config.js';
 import { getInfo } from './controllers/system-info.controller.js';
@@ -28,6 +29,7 @@ import { internalRecordingRouter, recordingRouter } from './routes/recording.rou
 import { internalRoomRouter, roomRouter } from './routes/room.routes.js';
 import { internalUserRouter, userRouter } from './routes/user.routes.js';
 import { webhookRouter } from './routes/webhook.routes.js';
+import { ChatSaverService } from './services/chat-saver.service.js';
 import { LoggerService } from './services/logger.service.js';
 import { WebSocketService } from './services/websocket.service.js';
 import { getBasePath, getHtmlWithBasePath, getOpenApiHtmlWithBasePath } from './utils/html-dynamic-base-path.utils.js';
@@ -211,6 +213,21 @@ const registerProcessErrorHandlers = () => {
 };
 
 /**
+ * On SIGTERM or SIGINT the replica leaves the meetings whose chat it saves before exiting, so that LiveKit
+ * reports each departure at once and another replica takes them over.
+ */
+const registerShutdownHandlers = () => {
+	const shutdown = async () => {
+		const timeout = new Promise((resolve) => setTimeout(resolve, ms(INTERNAL_CONFIG.CHAT_SAVER_SHUTDOWN_TIMEOUT)));
+		await Promise.race([container.get(ChatSaverService).leaveAll(), timeout]);
+		process.exit(0);
+	};
+
+	process.once('SIGTERM', () => void shutdown());
+	process.once('SIGINT', () => void shutdown());
+};
+
+/**
  * Determines if the current module is the main entry point of the application.
  * @returns {boolean} True if this module is the main entry point, false otherwise.
  */
@@ -232,6 +249,7 @@ if (isMainModule()) {
 	checkModuleEnabled();
 	registerDependencies();
 	registerProcessErrorHandlers();
+	registerShutdownHandlers();
 	const app = createApp();
 	await initializeEagerServices();
 	startServer(app);

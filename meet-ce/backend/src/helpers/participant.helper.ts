@@ -11,6 +11,7 @@ import type {
 } from '@openvidu-meet/typings';
 import {
 	handRaiseDateOf,
+	MEET_CHAT_SAVER_IDENTITY,
 	MeetRoomMemberRole,
 	normalizePermissions,
 	participantLeaveReasonOf,
@@ -41,6 +42,26 @@ export class MeetParticipantHelper {
 	 */
 	static isStandardParticipant(participant: ParticipantInfo): boolean {
 		return participant.kind === ParticipantInfo_Kind.STANDARD;
+	}
+
+	/**
+	 * The attributes the chat saver joins with. Together with its identity, its kind and its `hidden` grant
+	 * they tell it apart from every other participant of the meeting.
+	 */
+	static readonly CHAT_SAVER_ATTRIBUTES: Readonly<Record<string, string>> = { 'meet.role': 'chatSaver' };
+
+	/**
+	 * Whether the participant is the hidden one the server joins to a meeting to save its chat.
+	 */
+	static isChatSaver(participant: ParticipantInfo): boolean {
+		return (
+			participant.identity === MEET_CHAT_SAVER_IDENTITY &&
+			participant.kind === ParticipantInfo_Kind.AGENT &&
+			!!participant.permission?.hidden &&
+			Object.entries(MeetParticipantHelper.CHAT_SAVER_ATTRIBUTES).every(
+				([name, value]) => participant.attributes?.[name] === value
+			)
+		);
 	}
 
 	/**
@@ -259,7 +280,9 @@ export class MeetParticipantHelper {
 	 *
 	 * @param participant - The LiveKit participant to inspect.
 	 */
-	static parseMeetingMetadata(participant: ParticipantInfo): ParticipantMeetingMetadata | undefined {
+	static parseMeetingMetadata(
+		participant: Pick<ParticipantInfo, 'metadata'>
+	): ParticipantMeetingMetadata | undefined {
 		if (!participant.metadata) {
 			return undefined;
 		}

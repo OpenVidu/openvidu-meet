@@ -305,6 +305,13 @@ export interface MeetChatConfig {
 	 * from every participant, whatever their `chatRead` and `chatWrite` permissions.
 	 */
 	enabled: boolean;
+	/**
+	 * Whether the server saves the chat messages of the room's meetings, so a participant who joins
+	 * or reloads sees the messages of the meeting in progress. Defaults to `true` in a new room and is
+	 * `false` in rooms created before this setting existed. End-to-end encryption forces it to
+	 * `false`: an encrypted room never saves its chat.
+	 */
+	persist: boolean;
 }
 
 /**

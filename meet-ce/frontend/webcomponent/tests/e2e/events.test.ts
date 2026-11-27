@@ -26,6 +26,7 @@ import {
 	createRoomMember,
 	decideOnWaitingParticipants,
 	deleteRooms,
+	getChatHistory,
 	getWaitingParticipants,
 	getRecordingUrl,
 	getRoom,
@@ -654,6 +655,52 @@ for (const integration of INTEGRATIONS) {
 					expect(nextPayload.externalId).toBeUndefined();
 					expect(nextPayload.metadata).toBeUndefined();
 				});
+
+				await speakerContext.close();
+			});
+		});
+
+		test.describe('PARTICIPANT_JOINED Event in a room that saves its chat', () => {
+			test('should fire once per participant and never for the server that saves the chat', async ({
+				page,
+				browser
+			}) => {
+				let roomMemberToken: string | undefined;
+				page.on('request', (request) => {
+					roomMemberToken =
+						request.headers()['x-room-member-token']?.replace(/^Bearer\s+/i, '') ?? roomMemberToken;
+				});
+				await openMeeting(page, roomId, { integration, role: 'moderator', name: 'Chat Moderator' });
+				await expectEvent(page, EmbeddedEventName.MEETING_JOINED);
+
+				// A stored message shows the server that saves the chat is in the meeting by now
+				await meetLocator(page, integration, '#chat-panel-btn').click();
+				await meetLocator(page, integration, '#chat-input').fill('Is anyone saving this?');
+				await meetLocator(page, integration, '#send-btn').click();
+				await expect
+					.poll(
+						async () =>
+							(await getChatHistory(roomId, roomMemberToken!).catch(() => [])).map(({ text }) => text),
+						{ timeout: 45_000 }
+					)
+					.toEqual(['Is anyone saving this?']);
+				await expectEvent(page, EmbeddedEventName.PARTICIPANT_JOINED, { count: 0 });
+
+				const speakerContext = await browser.newContext();
+				const speakerPage = await speakerContext.newPage();
+				await openMeeting(speakerPage, roomId, { role: 'speaker', name: 'Chat Speaker' });
+
+				await expectEvent(page, EmbeddedEventName.PARTICIPANT_JOINED);
+				const joined = await eventPayloads<MeetParticipantJoinedPayload>(
+					page,
+					EmbeddedEventName.PARTICIPANT_JOINED
+				);
+				expect(joined.map(({ participant }) => participant.participantName)).toEqual(['Chat Speaker']);
+
+				await leaveMeeting(speakerPage, { role: 'speaker' });
+				await expectEvent(page, EmbeddedEventName.PARTICIPANT_LEFT);
+				const left = await eventPayloads<MeetParticipantLeftPayload>(page, EmbeddedEventName.PARTICIPANT_LEFT);
+				expect(left.map(({ participant }) => participant.participantName)).toEqual(['Chat Speaker']);
 
 				await speakerContext.close();
 			});

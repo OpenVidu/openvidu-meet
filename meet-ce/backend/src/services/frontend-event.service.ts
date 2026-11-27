@@ -1,5 +1,6 @@
 import type {
 	MeetBroadcastInfo,
+	MeetChatMessageSavedPayload,
 	MeetBroadcastUpdatedPayload,
 	MeetWaitingParticipantListUpdatedPayload,
 	MeetWaitingParticipantStatusChangedSignalPayload,
@@ -147,6 +148,18 @@ export class FrontendEventService {
 		};
 
 		await this.sendSignal(roomId, signalPayload, { topic: MeetSignalType.MEET_PARTICIPANT_REACTION_SENT });
+	}
+
+	/**
+	 * Tells the sender of a chat message that the server stored it, so their client stops sending it again.
+	 */
+	async sendChatMessageSavedSignal(roomId: string, senderIdentity: string, messageId: string): Promise<void> {
+		const signalPayload: MeetChatMessageSavedPayload = { messageId };
+
+		await this.sendSignal(roomId, signalPayload, {
+			topic: MeetSignalType.MEET_CHAT_MESSAGE_SAVED,
+			destinationIdentities: [senderIdentity]
+		});
 	}
 
 	/**

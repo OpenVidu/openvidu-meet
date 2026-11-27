@@ -82,6 +82,8 @@
 			"TITLE": "Chat",
 			"YOU": "Sie",
 			"SUBTITLE": "Nachrichten werden am Ende des Meetings entfernt",
+			"NOT_SAVED": "Nachrichten werden nicht gespeichert und am Ende des Meetings entfernt",
+			"ANONYMOUS": "Anonym",
 			"PLACEHOLDER": "Eine Nachricht senden...",
 			"SEND": "Senden",
 			"WRITE_DISABLED": "Sie haben keine Berechtigung, Nachrichten zu senden",

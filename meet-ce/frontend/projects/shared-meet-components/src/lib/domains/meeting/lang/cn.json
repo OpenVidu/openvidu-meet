@@ -82,6 +82,8 @@
 			"TITLE": "聊天",
 			"YOU": "你",
 			"SUBTITLE": "信息将在会议结束时被删除",
+			"NOT_SAVED": "信息不会被保存，并将在会议结束时被删除",
+			"ANONYMOUS": "匿名",
 			"PLACEHOLDER": "发送消息...",
 			"SEND": "发送",
 			"WRITE_DISABLED": "您没有发送消息的权限",

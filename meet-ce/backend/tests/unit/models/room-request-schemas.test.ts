@@ -83,7 +83,7 @@ describe('RoomOptionsSchema defaults', () => {
 			config: {
 				recording: { enabled: true, layout: 'grid', encoding: 'H264_720P_30' },
 				broadcast: { enabled: false, destinations: [], layout: 'grid', encoding: 'H264_720P_30' },
-				chat: { enabled: true },
+				chat: { enabled: true, persist: true },
 				virtualBackground: { enabled: true },
 				e2ee: { enabled: false },
 				captions: { enabled: true },
@@ -109,7 +109,7 @@ describe('RoomOptionsSchema defaults', () => {
 		first.config.chat.enabled = false;
 		first.config.recording.layout = 'speaker';
 
-		expect(parseRoom({ config: {} }).config.chat).toEqual({ enabled: true });
+		expect(parseRoom({ config: {} }).config.chat).toEqual({ enabled: true, persist: true });
 		expect(parseRoom({ config: {} }).config.recording.layout).toBe('grid');
 	});
 
@@ -295,7 +295,7 @@ describe('RoomOptionsSchema config', () => {
 			expect(config.recording).toEqual({ enabled: false, layout: 'grid', encoding: 'H264_720P_30' });
 			expect(config.broadcast).toMatchObject({ enabled: false });
 			expect(config.captions).toEqual({ enabled: false });
-			expect(config.chat).toEqual({ enabled: true });
+			expect(config.chat).toEqual({ enabled: true, persist: false });
 		});
 
 		it('turns off the features that are on by default', () => {
@@ -311,6 +311,40 @@ describe('RoomOptionsSchema config', () => {
 			expect(config.recording.enabled).toBe(true);
 			expect(config.captions.enabled).toBe(true);
 		});
+	});
+});
+
+describe('RoomOptionsSchema chat saving', () => {
+	it('saves the chat of a room whose chat object omits it', () => {
+		expect(parseRoom({ config: { chat: { enabled: true } } }).config.chat).toEqual({
+			enabled: true,
+			persist: true
+		});
+		expect(parseRoom({ config: { chat: { enabled: false } } }).config.chat).toEqual({
+			enabled: false,
+			persist: true
+		});
+	});
+
+	it('keeps the value it is given', () => {
+		expect(parseRoom({ config: { chat: { enabled: true, persist: false } } }).config.chat).toEqual({
+			enabled: true,
+			persist: false
+		});
+	});
+
+	it('rejects a value that is not a boolean', () => {
+		expect(configIssues({ chat: { enabled: true, persist: 'true' } })).toEqual([
+			'config.chat.persist: Expected boolean, received string'
+		]);
+	});
+
+	it('is off in an encrypted room, whatever it is given and also when it is omitted', () => {
+		expect(parseRoom({ config: { e2ee: { enabled: true } } }).config.chat.persist).toBe(false);
+		expect(
+			parseRoom({ config: { e2ee: { enabled: true }, chat: { enabled: true, persist: true } } }).config.chat
+				.persist
+		).toBe(false);
 	});
 });
 
@@ -486,6 +520,26 @@ describe('room update schemas', () => {
 		expect(UpdateRoomConfigReqSchema.parse({ config: { broadcast: { enabled: true } } })).toEqual({
 			config: { broadcast: { enabled: true } }
 		});
+	});
+
+	it('UpdateRoomConfigReqSchema leaves chat saving out when the request does, so the stored value stays', () => {
+		expect(UpdateRoomConfigReqSchema.parse({ config: { chat: { enabled: false } } })).toEqual({
+			config: { chat: { enabled: false } }
+		});
+		expect(UpdateRoomConfigReqSchema.parse({ config: { chat: { enabled: true, persist: false } } })).toEqual({
+			config: { chat: { enabled: true, persist: false } }
+		});
+		expect(issues(UpdateRoomConfigReqSchema, { config: { chat: { enabled: true, persist: 1 } } })).toEqual([
+			'config.chat.persist: Expected boolean, received number'
+		]);
+	});
+
+	it('UpdateRoomConfigReqSchema turns chat saving off when it comes with encryption', () => {
+		expect(
+			UpdateRoomConfigReqSchema.parse({
+				config: { e2ee: { enabled: true }, chat: { enabled: true, persist: true } }
+			})
+		).toEqual({ config: { e2ee: { enabled: true }, chat: { enabled: true, persist: false } } });
 	});
 
 	it('UpdateRoomAccessReqSchema keeps a null lock message, which removes the stored one', () => {

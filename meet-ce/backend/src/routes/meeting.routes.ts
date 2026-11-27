@@ -7,6 +7,7 @@ import { apiLimiter } from '../middlewares/rate-limit.middleware.js';
 import {
 	validateBulkRejectWaitingParticipantsReq,
 	validateGetMeetingReq,
+	validateListChatMessagesReq,
 	validateWaitingParticipantLeaveReq,
 	validateLowerAllHandsReq,
 	validateMuteParticipantMediaReq,
@@ -167,4 +168,14 @@ internalMeetingRouter.post(
 	withValidRoomId,
 	validateWaitingParticipantLeaveReq,
 	waitingParticipantCtrl.leaveWaiting
+);
+
+// Only a participant in the meeting reads its chat, so only the room member token they joined with is accepted.
+internalMeetingRouter.get(
+	'/:roomId/chat/messages',
+	withAuth(roomMemberTokenValidator),
+	withValidRoomId,
+	validateListChatMessagesReq,
+	withRoomPermission('chatRead'),
+	meetingCtrl.listChatMessages
 );

@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 import { DialogService } from '../../../../../shared/services/dialog.service';
 import { MeetingConnectionError } from '../../models/meeting-view-state.model';
+import { ChatService } from '../../services/chat/chat.service';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
 import { DeviceService } from '../../services/device/device.service';
 import { LocalMediaService } from '../../services/local-media/local-media.service';
@@ -104,6 +105,7 @@ describe('MeetingViewComponent', () => {
 				{ provide: MeetingLiveKitService, useValue: meetingLiveKitService },
 				{ provide: ParticipantService, useValue: participantService },
 				{ provide: DialogService, useValue: dialogService },
+				{ provide: ChatService, useValue: { clear: () => {} } },
 				{
 					provide: MeetingUiConfigService,
 					useValue: {

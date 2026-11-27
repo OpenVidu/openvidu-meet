@@ -258,3 +258,30 @@ describe('FrontendEventService waiting list signal', () => {
 		expect(sendData).not.toHaveBeenCalled();
 	});
 });
+
+describe('FrontendEventService chat message saved signal', () => {
+	it('is sent to the sender of the message only', async () => {
+		const sendData = jest.fn(async (..._args: unknown[]) => {});
+		const service = new FrontendEventService(
+			...([noopLogger, { sendData }] as unknown as ConstructorParameters<typeof FrontendEventService>)
+		);
+
+		await service.sendChatMessageSavedSignal('room-1', 'alice', 'message-1');
+
+		expect(sendData).toHaveBeenCalledWith(
+			'room-1',
+			{ messageId: 'message-1' },
+			{ topic: MeetSignalType.MEET_CHAT_MESSAGE_SAVED, destinationIdentities: ['alice'] }
+		);
+	});
+
+	it('resolves when it cannot be delivered, since the sender sends the message again', async () => {
+		const service = new FrontendEventService(
+			...([noopLogger, new UnreachableLiveKitService()] as unknown as ConstructorParameters<
+				typeof FrontendEventService
+			>)
+		);
+
+		await expect(service.sendChatMessageSavedSignal('room-1', 'alice', 'message-1')).resolves.toBeUndefined();
+	});
+});

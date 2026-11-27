@@ -101,7 +101,8 @@ test.describe('Permissions E2E Tests', () => {
 	let moderatorGuest: MeetRoomMember;
 
 	test.beforeAll(async () => {
-		room = await createRoom();
+		// Its tests read the chat by index, and the guests of earlier tests can still be in the meeting
+		room = await createRoom({ config: { chat: { enabled: true, persist: false } } });
 		createdRoomIds.push(room.roomId);
 
 		adminUser = (await createReadyUser('Perm Admin')).user;

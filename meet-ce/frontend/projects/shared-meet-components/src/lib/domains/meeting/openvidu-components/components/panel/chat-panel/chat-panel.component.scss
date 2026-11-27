@@ -136,6 +136,15 @@
 	padding: 5px;
 }
 
+.participant-name-container .anonymous-label {
+	margin-left: 4px;
+	padding: 1px 6px;
+	border-radius: var(--ov-surface-radius);
+	background-color: var(--ov-secondary-action-color);
+	font-size: 11px;
+	font-style: normal;
+}
+
 .chat-message {
 	position: relative;
 	border-radius: var(--ov-surface-radius);

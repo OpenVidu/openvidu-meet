@@ -32,6 +32,7 @@ RUN pnpm safe-chain-verify
 # Copy workspace configuration files
 COPY --chown=node:node pnpm-workspace.yaml ./pnpm-workspace.yaml
 COPY --chown=node:node package.json pnpm-lock.yaml ./
+COPY --chown=node:node patches/ ./patches/
 
 # Copy package.json files for all workspace packages
 COPY --chown=node:node meet-ce/typings/package.json ./meet-ce/typings/
@@ -57,7 +58,7 @@ RUN pnpm install --frozen-lockfile && \
 # Stage 2: production dependencies
 # ====================================================
 # Runs on each target platform, so that native modules are installed for the platform they run on
-FROM node:24.22.3-alpine AS prod-deps
+FROM node:24.22.3-slim AS prod-deps
 
 # Install pnpm, at the version the root package.json pins in `packageManager`
 RUN corepack enable
@@ -65,6 +66,7 @@ RUN corepack enable
 WORKDIR /app
 
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY patches/ ./patches/
 COPY meet-ce/typings/package.json ./meet-ce/typings/
 COPY meet-ce/backend/package.json ./meet-ce/backend/
 
@@ -75,12 +77,15 @@ RUN pnpm --config.inject-workspace-packages=true --filter @openvidu-meet/backend
 # ====================================================
 # Stage 3: production
 # ====================================================
-FROM node:24-alpine AS production
+# Debian, not Alpine: the native binding of @livekit/rtc-node needs glibc
+FROM node:24-slim AS production
 
-# Alpine fixes published after the base image was built; npm, npx, corepack and yarn are not needed to run the
+# Debian fixes published after the base image was built; npm, npx, corepack and yarn are not needed to run the
 # backend, which the entrypoint starts with node.
-RUN apk upgrade --no-cache \
-    && apk add --no-cache tzdata \
+RUN apt-get update \
+    && apt-get upgrade -y \
+    && apt-get install -y --no-install-recommends tzdata \
+    && rm -rf /var/lib/apt/lists/* \
     && rm -rf /usr/local/lib/node_modules /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack \
         /usr/local/bin/yarn /usr/local/bin/yarnpkg /opt/yarn-*
 

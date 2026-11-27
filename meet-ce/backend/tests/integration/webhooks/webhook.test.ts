@@ -89,7 +89,7 @@ describe('Webhook Integration Tests', () => {
 			layout: MeetRecordingLayout.GRID,
 			encoding: MeetRecordingEncodingPreset.H264_720P_30
 		},
-		chat: { enabled: true },
+		chat: { enabled: true, persist: true },
 		virtualBackground: { enabled: true },
 		e2ee: { enabled: false },
 		broadcast: {
@@ -175,7 +175,7 @@ describe('Webhook Integration Tests', () => {
 		});
 
 		it('should send meeting_started webhook when room is created', async () => {
-			const context = await setupSingleRoom(true);
+			const context = await setupSingleRoom(true, 'TEST_ROOM', defaultRoomConfig);
 			const roomData = context.room;
 
 			// Wait for 'meetingStarted' webhook to be delivered
@@ -255,7 +255,7 @@ describe('Webhook Integration Tests', () => {
 		});
 
 		it('should send meeting_ended webhook when meeting is closed', async () => {
-			const context = await setupSingleRoom(true);
+			const context = await setupSingleRoom(true, 'TEST_ROOM', defaultRoomConfig);
 			const roomData = context.room;
 			const moderatorToken = context.moderatorToken;
 
@@ -280,7 +280,7 @@ describe('Webhook Integration Tests', () => {
 		});
 
 		it('should send meeting_ended when room is forcefully deleted', async () => {
-			const context = await setupSingleRoom(true);
+			const context = await setupSingleRoom(true, 'TEST_ROOM', defaultRoomConfig);
 			const roomData = context.room;
 			// Forcefully delete the room
 			await deleteRoom(roomData.roomId, { withMeeting: MeetRoomDeletionPolicyWithMeeting.FORCE });

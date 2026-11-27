@@ -6,6 +6,8 @@ import {
 	meetApiKeyCollectionName,
 	MeetApiKeyModel
 } from '../models/mongoose-schemas/api-key.schema.js';
+import type { MeetChatMessageDocument } from '../models/mongoose-schemas/chat-message.schema.js';
+import { meetChatMessageCollectionName, MeetChatMessageModel } from '../models/mongoose-schemas/chat-message.schema.js';
 import type {
 	MeetGlobalConfigDocument} from '../models/mongoose-schemas/global-config.schema.js';
 import {
@@ -29,6 +31,7 @@ import { meetRoomCollectionName, MeetRoomModel } from '../models/mongoose-schema
 import type { MeetUserDocument} from '../models/mongoose-schemas/user.schema.js';
 import { meetUserCollectionName, MeetUserModel } from '../models/mongoose-schemas/user.schema.js';
 import { apiKeyMigrations } from './api-key-migrations.js';
+import { chatMessageMigrations } from './chat-message-migrations.js';
 import { globalConfigMigrations } from './global-config-migrations.js';
 import { recordingMigrations } from './recording-migrations.js';
 import { roomMemberMigrations } from './room-member-migrations.js';
@@ -96,6 +99,16 @@ const recordingMigrationRegistry: CollectionMigrationRegistry<MeetRecordingDocum
 };
 
 /**
+ * Registry configuration for MeetChatMessage collection migrations.
+ */
+const chatMessageMigrationRegistry: CollectionMigrationRegistry<MeetChatMessageDocument> = {
+	collectionName: meetChatMessageCollectionName,
+	model: MeetChatMessageModel,
+	currentVersion: INTERNAL_CONFIG.CHAT_MESSAGE_SCHEMA_VERSION,
+	migrations: chatMessageMigrations
+};
+
+/**
  * Central registry of all collection migrations.
  */
 const migrationRegistry = [
@@ -104,7 +117,8 @@ const migrationRegistry = [
 	userMigrationRegistry,
 	roomMigrationRegistry,
 	roomMemberMigrationRegistry,
-	recordingMigrationRegistry
+	recordingMigrationRegistry,
+	chatMessageMigrationRegistry
 ];
 
 /**

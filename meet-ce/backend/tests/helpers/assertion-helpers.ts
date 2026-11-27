@@ -10,6 +10,7 @@ import {
 	MeetRoom,
 	MeetRoomAutoDeletionPolicy,
 	MeetRoomConfig,
+	MeetRoomConfigOptions,
 	MeetRoomMemberPermissions,
 	MeetRoomMemberUIBadge,
 	MeetRoomStatus,
@@ -174,7 +175,7 @@ export const expectExtraFieldsInResponse = (room: MeetRoom) => {
  */
 export type ExpectedRoom = {
 	roomIdPrefix?: string;
-	config?: MeetRoomConfig;
+	config?: MeetRoomConfigOptions;
 	autoDeletionDate?: number;
 	autoDeletionPolicy?: MeetRoomAutoDeletionPolicy;
 	status?: MeetRoomStatus;

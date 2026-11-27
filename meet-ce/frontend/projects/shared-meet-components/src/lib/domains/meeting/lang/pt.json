@@ -82,6 +82,8 @@
 			"TITLE": "Chat",
 			"YOU": "Eu",
 			"SUBTITLE": "As mensagens serão removidas no final da reunião",
+			"NOT_SAVED": "As mensagens não são guardadas e serão removidas no final da reunião",
+			"ANONYMOUS": "Anónimo",
 			"PLACEHOLDER": "Enviar uma mensagem...",
 			"SEND": "Enviar",
 			"WRITE_DISABLED": "Não tem permissão para enviar mensagens",

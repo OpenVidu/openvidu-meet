@@ -90,7 +90,7 @@ const DEFAULT_CONFIG: MeetRoomConfig = {
 		layout: MeetRecordingLayout.GRID
 	},
 	broadcast: { enabled: false, destinations: [], layout: MeetRecordingLayout.GRID },
-	chat: { enabled: true },
+	chat: { enabled: true, persist: true },
 	virtualBackground: { enabled: true },
 	e2ee: { enabled: false },
 	captions: { enabled: true },
@@ -308,6 +308,7 @@ export class RoomWizardStateService {
 				isCompleted: editMode,
 				formGroup: this.formBuilder.group({
 					chatEnabled: this.formBuilder.nonNullable.control(initialRoomOptions.config!.chat!.enabled),
+					chatPersistEnabled: this.formBuilder.nonNullable.control(initialRoomOptions.config!.chat!.persist!),
 					virtualBackgroundEnabled: this.formBuilder.nonNullable.control(
 						initialRoomOptions.config!.virtualBackground!.enabled
 					),
@@ -547,12 +548,18 @@ export class RoomWizardStateService {
 	}
 
 	/**
-	 * Turns end-to-end encryption on or off. Turning it on turns off every feature it excludes,
-	 * remembering which were on; turning it off puts those back.
+	 * Turns end-to-end encryption on or off from its own toggle.
 	 */
 	setE2EEEnabled(enabled: boolean): void {
 		this.e2eeOnBeforeFeature.clear();
+		this.applyE2EEExclusions(enabled);
+	}
 
+	/**
+	 * Turning end-to-end encryption on turns off every feature it excludes, remembering which were on;
+	 * turning it off puts those back. Every change of the encryption value goes through here.
+	 */
+	private applyE2EEExclusions(enabled: boolean): void {
 		for (const feature of E2EE_EXCLUSIVE_FEATURES) {
 			const control = this.featureEnabledControl(feature);
 
@@ -582,17 +589,22 @@ export class RoomWizardStateService {
 				return this.getStepById(WizardStepId.BROADCAST)?.formGroup.controls.broadcastEnabled;
 			case 'captions':
 				return this.getStepById(WizardStepId.MEETING)?.formGroup.controls.captionsEnabled;
+			case 'chatPersist':
+				return this.getStepById(WizardStepId.MEETING)?.formGroup.controls.chatPersistEnabled;
 		}
 	}
 
 	private patchE2EE(enabled: boolean): void {
 		this.e2eeEnabledControl()?.patchValue(enabled, { emitEvent: true });
 		this.updateStepData({ config: { e2ee: { enabled } } });
+		this.applyE2EEExclusions(enabled);
 	}
 
 	private patchFeature(feature: E2EEExclusiveFeature, control: FormControl<boolean>, enabled: boolean): void {
 		control.patchValue(enabled, { emitEvent: true });
-		this.updateStepData({ config: { [feature]: { enabled } } });
+		this.updateStepData({
+			config: feature === 'chatPersist' ? { chat: { persist: enabled } } : { [feature]: { enabled } }
+		});
 	}
 
 	/**

@@ -1,8 +1,10 @@
 import { inject, injectable } from 'inversify';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
+import { MeetRoomHelper } from '../helpers/room.helper.js';
 import type { IScheduledTask } from '../models/task-scheduler.model.js';
 import { RoomRepository } from '../repositories/room.repository.js';
 import { runConcurrently } from '../utils/concurrency.utils.js';
+import { ChatSaverService } from './chat-saver.service.js';
 import { LivekitWebhookService } from './livekit-webhook.service.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
@@ -21,7 +23,8 @@ export class RoomScheduledTasksService {
 		@inject(RoomService) protected roomService: RoomService,
 		@inject(TaskSchedulerService) protected taskSchedulerService: TaskSchedulerService,
 		@inject(LiveKitService) protected livekitService: LiveKitService,
-		@inject(LivekitWebhookService) protected livekitWebhookService: LivekitWebhookService
+		@inject(LivekitWebhookService) protected livekitWebhookService: LivekitWebhookService,
+		@inject(ChatSaverService) protected chatSaverService: ChatSaverService
 	) {
 		this.registerScheduledTasks();
 	}
@@ -136,6 +139,11 @@ export class RoomScheduledTasksService {
 					const exists = roomExistenceMap.get(room.roomId);
 					return !exists;
 				});
+				const liveRooms = activeRoomsPage.rooms.filter((room) => roomExistenceMap.get(room.roomId));
+
+				await runConcurrently(liveRooms, (room) => this.chatSaverService.ensureSaver(room.roomId), {
+					concurrency: INTERNAL_CONFIG.CONCURRENCY_VALIDATE_ROOMS_STATUS
+				});
 
 				totalInconsistentRooms += roomsToCleanup.length;
 
@@ -194,8 +202,11 @@ export class RoomScheduledTasksService {
 				return;
 			}
 
-			const openRoomIds = new Set(await this.roomRepository.findOpenRoomIds(liveRooms.map((room) => room.name)));
-			const roomsToReconcile = liveRooms.filter((room) => openRoomIds.has(room.name));
+			const meetingRooms = liveRooms.filter((room) => !MeetRoomHelper.isChatSaverRoomMetadata(room.metadata));
+			const openRoomIds = new Set(
+				await this.roomRepository.findOpenRoomIds(meetingRooms.map((room) => room.name))
+			);
+			const roomsToReconcile = meetingRooms.filter((room) => openRoomIds.has(room.name));
 
 			if (roomsToReconcile.length === 0) {
 				this.logger.verbose('All LiveKit-active rooms are already reflected as active in DB.');

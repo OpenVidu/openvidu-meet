@@ -1,0 +1,45 @@
+description: A page of the messages saved in the meeting, newest first
+content:
+    application/json:
+        schema:
+            type: object
+            required:
+                - items
+                - pagination
+            properties:
+                items:
+                    type: array
+                    description: >
+                        The messages of the page, newest first: the first item is the last message the server stored.
+                        Empty when the meeting does not save its chat.
+                    items:
+                        $ref: '../../schemas/meet-chat-message.yaml'
+                pagination:
+                    $ref: '../../../../shared/schemas/meet-pagination.yaml'
+        example:
+            items:
+                - messageId: 'b1f4a3e2-6c1d-4f7a-9d3b-0a5c7e2f8d41'
+                  roomId: 'room-123'
+                  meetingId: 'RM_a1B2c3D4e5F6'
+                  channel: all
+                  sendDate: 1620000060000
+                  meetingStartDate: 1619999000000
+                  text: 'Hi Alice'
+                  participant:
+                      identity: 'ben_smith'
+                      name: 'Ben Smith'
+                      type: identified_guest
+                - messageId: 'e0c8d7a1-3b2f-4a6e-8c15-9d4f2b7a6e30'
+                  roomId: 'room-123'
+                  meetingId: 'RM_a1B2c3D4e5F6'
+                  channel: all
+                  sendDate: 1620000000000
+                  meetingStartDate: 1619999000000
+                  text: 'Hello everyone'
+                  participant:
+                      identity: 'alice_smith'
+                      name: 'Alice Smith'
+                      type: user
+            pagination:
+                isTruncated: false
+                maxItems: 20

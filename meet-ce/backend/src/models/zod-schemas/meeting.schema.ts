@@ -8,9 +8,15 @@ import {
 import { z } from 'zod';
 import { INTERNAL_CONFIG } from '../../config/internal-config.js';
 import { fieldListSchema } from './field-selection.schema.js';
+import { pageSizeSchema } from './pagination.schema.js';
 
 export const GetMeetingQuerySchema = z.object({
 	extraFields: fieldListSchema(MEET_MEETING_EXTRA_FIELDS)
+});
+
+export const ListChatMessagesQuerySchema = z.object({
+	maxItems: pageSizeSchema.default(20),
+	nextPageToken: z.string().optional()
 });
 
 export const UpdateParticipantRoleReqSchema = z.object({

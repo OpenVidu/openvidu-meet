@@ -335,7 +335,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 		}
 	});
 	private readonly chatMessagesEffect = effect(() => {
-		const currentMessageCount = this.chatService.chatMessages().length;
+		const currentMessageCount = this.chatService.newMessageCount();
 		const newMessagesCount = Math.max(0, currentMessageCount - this.lastKnownChatMessageCount);
 
 		if (!this.isChatOpened() && newMessagesCount > 0) {

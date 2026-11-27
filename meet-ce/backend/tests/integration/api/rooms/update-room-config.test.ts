@@ -18,6 +18,7 @@ import {
 	createRoom,
 	deleteAllRooms,
 	getRoom,
+	getRoomConfig,
 	startTestServer,
 	updateRoomConfig
 } from '../../../helpers/request-helpers.js';
@@ -85,6 +86,7 @@ describe('Room API Tests', () => {
 				initialAudioActive: true, // Creation default, unchanged
 				initialVideoActive: true, // Creation default, unchanged
 				recording: { ...updatedConfig.recording, layout: MeetRecordingLayout.GRID }, // Layout remains unchanged
+				chat: { enabled: false, persist: false }, // Encryption turns chat saving off
 				captions: { enabled: false } // Encryption turns live captions off
 			});
 
@@ -96,6 +98,7 @@ describe('Room API Tests', () => {
 				initialAudioActive: true, // Creation default, unchanged
 				initialVideoActive: true, // Creation default, unchanged
 				recording: { ...updatedConfig.recording, layout: MeetRecordingLayout.GRID }, // Layout remains unchanged
+				chat: { enabled: false, persist: false }, // Encryption turns chat saving off
 				captions: { enabled: false } // Encryption turns live captions off
 			});
 		});
@@ -209,7 +212,7 @@ describe('Room API Tests', () => {
 					layout: MeetRecordingLayout.SPEAKER,
 					encoding: DEFAULT_RECORDING_ENCODING_PRESET
 				},
-				chat: { enabled: true },
+				chat: { enabled: true, persist: true },
 				virtualBackground: { enabled: true },
 				e2ee: { enabled: false },
 				broadcast: {
@@ -428,7 +431,7 @@ describe('Room API Tests', () => {
 					layout: MeetRecordingLayout.SPEAKER,
 					encoding: MeetRecordingEncodingPreset.H264_1080P_30
 				},
-				chat: { enabled: true },
+				chat: { enabled: true, persist: true },
 				virtualBackground: { enabled: true },
 				e2ee: { enabled: false },
 				broadcast: {
@@ -444,6 +447,37 @@ describe('Room API Tests', () => {
 				initialVideoActive: true // Creation default
 			};
 			expect(getResponse.body.config).toEqual(expectedConfig);
+		});
+
+		it('should keep the chat saving setting when the chat is switched off', async () => {
+			const createdRoom = await createRoom({ roomName: 'chat-off-keeps-saving' });
+
+			const response = await updateRoomConfig(createdRoom.roomId, { chat: { enabled: false } });
+
+			expect(response.status).toBe(200);
+			expect(response.body.chat).toEqual({ enabled: false, persist: true });
+		});
+
+		it('should keep the stored chat saving setting when the update leaves it out', async () => {
+			const createdRoom = await createRoom({
+				roomName: 'chat-saving-kept',
+				config: { chat: { enabled: true, persist: false } }
+			});
+
+			const response = await updateRoomConfig(createdRoom.roomId, { chat: { enabled: true } });
+
+			expect(response.status).toBe(200);
+			expect(response.body.chat).toEqual({ enabled: true, persist: false });
+		});
+
+		it('should turn chat saving off and on again', async () => {
+			const createdRoom = await createRoom({ roomName: 'chat-saving-toggle' });
+
+			const off = await updateRoomConfig(createdRoom.roomId, { chat: { enabled: true, persist: false } });
+			const on = await updateRoomConfig(createdRoom.roomId, { chat: { enabled: true, persist: true } });
+
+			expect(off.body.chat).toEqual({ enabled: true, persist: false });
+			expect(on.body.chat).toEqual({ enabled: true, persist: true });
 		});
 	});
 
@@ -466,6 +500,17 @@ describe('Room API Tests', () => {
 			expect(response.status).toBe(422);
 			expect(response.body.error).toContain('Unprocessable Entity');
 			expect(JSON.stringify(response.body.details)).toContain('recording.enabled');
+		});
+
+		it('should reject a chat saving setting that is not a boolean', async () => {
+			const createdRoom = await createRoom({ roomName: 'chat-saving-type-test' });
+
+			const response = await updateRoomConfig(createdRoom.roomId, {
+				chat: { enabled: true, persist: 'true' }
+			} as unknown as MeetRoomConfig);
+
+			expectValidationError(response, 'config.chat.persist', 'Expected boolean, received string');
+			expect((await getRoomConfig(createdRoom.roomId)).body.chat.persist).toBe(true);
 		});
 
 		it('should reject meeting limits outside the accepted range', async () => {

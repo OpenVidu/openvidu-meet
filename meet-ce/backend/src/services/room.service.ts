@@ -40,6 +40,7 @@ import {
 	toMeetError
 } from '../models/error.model.js';
 import type { MeetRoomDeletionOptions } from '../models/request-context.model.js';
+import { ChatMessageRepository } from '../repositories/chat-message.repository.js';
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { RoomRepository } from '../repositories/room.repository.js';
 import type {
@@ -70,7 +71,8 @@ export class RoomService {
 		@inject(RecordingService) protected recordingService: RecordingService,
 		@inject(LiveKitService) protected livekitService: LiveKitService,
 		@inject(RequestSessionService) protected requestSessionService: RequestSessionService,
-		@inject(WaitingParticipantService) protected waitingParticipantService: WaitingParticipantService
+		@inject(WaitingParticipantService) protected waitingParticipantService: WaitingParticipantService,
+		@inject(ChatMessageRepository) protected chatMessageRepository: ChatMessageRepository
 	) {}
 
 	/**
@@ -224,11 +226,15 @@ export class RoomService {
 	 * participant counts down to.
 	 **/
 	async createLivekitRoom(roomId: string): Promise<Room> {
-		const existingRoom = await this.livekitService.findRoom(roomId);
+		const existingRoom = await this.findLivekitRoomOutlivingChatSaver(roomId);
 
-		if (existingRoom) {
+		if (existingRoom && !MeetRoomHelper.isChatSaverRoomMetadata(existingRoom.metadata)) {
 			this.logger.verbose(`Room '${roomId}' already exists in LiveKit`);
 			return existingRoom;
+		}
+
+		if (existingRoom) {
+			await this.livekitService.deleteRoom(roomId);
 		}
 
 		const meetRoom: MeetRoom = await this.getMeetRoom(roomId);
@@ -244,6 +250,30 @@ export class RoomService {
 
 		const room = await this.livekitService.createRoom(livekitRoomOptions);
 		this.logger.verbose(`Room '${roomId}' created in LiveKit with options: ${JSON.stringify(livekitRoomOptions)}`);
+		return room;
+	}
+
+	/**
+	 * Reads the LiveKit room of a Meet room. One a chat saver's join created is no meeting: LiveKit closes
+	 * it by itself within about a second, so it is read again until it is gone. Nothing is deleted while
+	 * waiting, since requests that deleted it by name could delete the meeting's room another one just created.
+	 *
+	 * @returns The room, which still carries the chat saver's metadata when it outlived the wait
+	 */
+	protected async findLivekitRoomOutlivingChatSaver(roomId: string): Promise<Room | undefined> {
+		const { CHAT_SAVER_ROOM_CLOSE_WAIT, CHAT_SAVER_ROOM_CLOSE_POLL_INTERVAL } = INTERNAL_CONFIG;
+		const pollInterval = ms(CHAT_SAVER_ROOM_CLOSE_POLL_INTERVAL);
+		let room = await this.livekitService.findRoom(roomId);
+
+		for (
+			let waited = 0;
+			MeetRoomHelper.isChatSaverRoomMetadata(room?.metadata) && waited < ms(CHAT_SAVER_ROOM_CLOSE_WAIT);
+			waited += pollInterval
+		) {
+			await new Promise((resolve) => setTimeout(resolve, pollInterval));
+			room = await this.livekitService.findRoom(roomId);
+		}
+
 		return room;
 	}
 
@@ -666,10 +696,10 @@ export class RoomService {
 	/**
 	 * Executes the deletion strategy for a room based on its state and the provided deletion policies.
 	 * - Validates the deletion policies (throws if not allowed).
-	 * - If no active meeting and no recordings, deletes the room directly (and its members).
+	 * - If no active meeting and no recordings, deletes the room directly (and its members and chat messages).
 	 * - If there is an active meeting, sets the meeting end action (DELETE or CLOSE) and optionally ends the meeting.
 	 * - If there are recordings and policy is CLOSE, closes the room.
-	 * - If force delete is requested, deletes the room and all recordings and members.
+	 * - If force delete is requested, deletes the room and all recordings, members and chat messages.
 	 *
 	 * Every write is conditioned on the meeting state the strategy was chosen from.
 	 *
@@ -692,6 +722,7 @@ export class RoomService {
 
 			await Promise.all([
 				this.roomMemberRepository.deleteAllByRoomId(roomId),
+				this.chatMessageRepository.deleteAllByRoomId(roomId),
 				this.waitingParticipantService.closeRoom(roomId)
 			]);
 			return {};
@@ -734,6 +765,7 @@ export class RoomService {
 		await Promise.all([
 			this.recordingService.deleteAllRoomRecordings(roomId),
 			this.roomMemberRepository.deleteAllByRoomId(roomId),
+			this.chatMessageRepository.deleteAllByRoomId(roomId),
 			this.waitingParticipantService.closeRoom(roomId)
 		]);
 		return {};

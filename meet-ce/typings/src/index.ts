@@ -1,6 +1,7 @@
 export * from './ai-assistant.js';
 export * from './analytics.js';
 export * from './api-registry.js';
+export * from './chat.js';
 export * from './event-origin.js';
 export * from './frontend-signal.js';
 export * from './leave-reason.js';

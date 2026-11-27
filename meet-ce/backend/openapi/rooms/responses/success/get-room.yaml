@@ -58,6 +58,7 @@ content:
                     config:
                         chat:
                             enabled: true
+                            persist: true
                         recording:
                             enabled: true
                             layout: grid
@@ -95,6 +96,7 @@ content:
                     config:
                         chat:
                             enabled: true
+                            persist: true
                         recording:
                             enabled: true
                             layout: grid

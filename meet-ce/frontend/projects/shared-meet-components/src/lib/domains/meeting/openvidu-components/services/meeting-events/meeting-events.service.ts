@@ -1,6 +1,7 @@
 import { inject, Service, signal } from '@angular/core';
 import {
 	MeetBroadcastUpdatedPayload,
+	MeetChatMessageSavedPayload,
 	MeetRecordingStatus,
 	MeetRecordingUpdatedPayload,
 	MeetSignalPayload,
@@ -9,7 +10,7 @@ import {
 import { Subject } from 'rxjs';
 import { MAX_CHAT_MESSAGE_LENGTH } from '../../models/chat.model';
 import { DataTopic } from '../../models/data-topic.model';
-import { ParticipantLeftEvent, ParticipantLeftReason } from '../../models/participant.model';
+import { canReadChatOf, ParticipantLeftEvent, ParticipantLeftReason } from '../../models/participant.model';
 import {
 	ConnectionQuality,
 	DataPacket_Kind,
@@ -88,6 +89,7 @@ export class MeetingEventsService {
 		this.subscribeToEncryptionErrors(room);
 		this.subscribeToActiveSpeakersChanged(room);
 		this.subscribeToParticipantConnected(room);
+		this.subscribeToParticipantChatReadChanged(room);
 		this.subscribeToTrackPublished(room);
 		this.subscribeToTrackSubscribed(room);
 		this.subscribeToTrackUnpublished(room);
@@ -125,6 +127,10 @@ export class MeetingEventsService {
 		room.on(RoomEvent.ParticipantConnected, (participant: RemoteParticipant) => {
 			this.participantService.addRemoteParticipant(participant);
 
+			if (canReadChatOf(participant.metadata)) {
+				void this.chatService.forwardUnconfirmedTo(participant.identity);
+			}
+
 			// Auto-float the local video the first time a remote participant joins, unless the user
 			// has explicitly docked their tile before (persisted preference wins over the default).
 			if (
@@ -134,6 +140,18 @@ export class MeetingEventsService {
 				this.streamLayoutService.floatLocalCameraVideo(this.participantService.localParticipant());
 			}
 		});
+	}
+
+	/** A participant granted `chatRead` during the meeting has not received the messages still unconfirmed. */
+	private subscribeToParticipantChatReadChanged(room: Room) {
+		room.on(
+			RoomEvent.ParticipantMetadataChanged,
+			(previousMetadata: string | undefined, participant: Participant) => {
+				if (!participant.isLocal && !canReadChatOf(previousMetadata) && canReadChatOf(participant.metadata)) {
+					void this.chatService.forwardUnconfirmedTo(participant.identity);
+				}
+			}
+		);
 	}
 
 	private subscribeToTrackPublished(room: Room) {
@@ -340,7 +358,7 @@ export class MeetingEventsService {
 					}
 				}
 
-				this.chatService.addRemoteMessage(message, participant.name || participant.identity || 'Unknown');
+				this.chatService.addRemoteMessage(message, participant, reader.info.attributes);
 			} catch (err) {
 				this.log.e('Unhandled error processing chat message', err);
 			}
@@ -354,6 +372,8 @@ export class MeetingEventsService {
 			this.handleRecordingUpdated(event as MeetRecordingUpdatedPayload);
 		} else if (topic === MeetSignalType.MEET_BROADCAST_UPDATED) {
 			this.broadcastState.setBroadcast((event as MeetBroadcastUpdatedPayload).broadcast);
+		} else if (topic === MeetSignalType.MEET_CHAT_MESSAGE_SAVED) {
+			this.chatService.confirmSaved((event as MeetChatMessageSavedPayload).messageId);
 		}
 
 		this.meetSignals.next({ topic, payload: event as MeetSignalPayload });
@@ -390,10 +410,12 @@ export class MeetingEventsService {
 		// escalate to the full reconnect that unwinds the remote participants.
 		room.on(RoomEvent.SignalReconnecting, () => {
 			this.reconnectInProgress = true;
+			this.chatService.connectionLost();
 		});
 
 		room.on(RoomEvent.Reconnecting, () => {
 			this.reconnectInProgress = true;
+			this.chatService.connectionLost();
 			this.log.w('Connection lost: Reconnecting');
 			this.dialogService.showBlockingDialog({
 				title: this.translateService.translate('ERRORS.CONNECTION'),
@@ -405,6 +427,7 @@ export class MeetingEventsService {
 		room.on(RoomEvent.Reconnected, () => {
 			this.log.w('Connection lost: Reconnected');
 			this.dialogService.closeBlockingDialog();
+			void this.chatService.connectionRestored();
 			// LiveKit replays the ParticipantConnected events buffered during the reconnect
 			// synchronously right after this event, so release the flag one microtask later and
 			// only then re-evaluate whether the local video is truly alone (everyone may have

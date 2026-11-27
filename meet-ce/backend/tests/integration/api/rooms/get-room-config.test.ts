@@ -12,7 +12,7 @@ describe('Room API Tests', () => {
 			layout: MeetRecordingLayout.GRID,
 			encoding: MeetRecordingEncodingPreset.H264_720P_30
 		},
-		chat: { enabled: true },
+		chat: { enabled: true, persist: true },
 		virtualBackground: { enabled: true },
 		e2ee: { enabled: false },
 		broadcast: {
@@ -39,7 +39,7 @@ describe('Room API Tests', () => {
 
 	describe('Get Room Config Tests', () => {
 		it('should successfully retrieve a room by its ID', async () => {
-			const roomData = await setupSingleRoom();
+			const roomData = await setupSingleRoom(false, 'TEST_ROOM', DEFAULT_CONFIG);
 			const roomId = roomData.room.roomId;
 
 			const response: Response = await getRoomConfig(roomId);
@@ -55,7 +55,7 @@ describe('Room API Tests', () => {
 						layout: MeetRecordingLayout.SPEAKER,
 						encoding: MeetRecordingEncodingPreset.H264_1080P_30
 					},
-					chat: { enabled: true },
+					chat: { enabled: true, persist: false },
 					virtualBackground: { enabled: false },
 					e2ee: { enabled: false },
 					broadcast: {

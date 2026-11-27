@@ -2,6 +2,7 @@ import { Container, ContainerModule } from 'inversify';
 import { MEET_ENV } from '../environment.js';
 
 import { ApiKeyRepository } from '../repositories/api-key.repository.js';
+import { ChatMessageRepository } from '../repositories/chat-message.repository.js';
 import { GlobalConfigRepository } from '../repositories/global-config.repository.js';
 import { MigrationRepository } from '../repositories/migration.repository.js';
 import { RecordingRepository } from '../repositories/recording.repository.js';
@@ -17,6 +18,8 @@ import { RedisService } from '../services/redis.service.js';
 import { RequestSessionService } from '../services/request-session.service.js';
 import { TaskSchedulerService } from '../services/task-scheduler.service.js';
 
+import { ChatHistoryService } from '../services/chat-history.service.js';
+import { ChatSaverService } from '../services/chat-saver.service.js';
 import { ApiKeyService } from '../services/api-key.service.js';
 import { GlobalConfigService } from '../services/global-config.service.js';
 import { TokenService } from '../services/token.service.js';
@@ -104,6 +107,7 @@ const persistenceModule = new ContainerModule(({ bind }) => {
 	bind(RoomMemberRepository).toSelf().inSingletonScope();
 	bind(UserRepository).toSelf().inSingletonScope();
 	bind(ApiKeyRepository).toSelf().inSingletonScope();
+	bind(ChatMessageRepository).toSelf().inSingletonScope();
 	bind(GlobalConfigRepository).toSelf().inSingletonScope();
 	bind(RecordingRepository).toSelf().inSingletonScope();
 	bind(WebhookRepository).toSelf().inSingletonScope();
@@ -162,6 +166,8 @@ const domainModule = new ContainerModule(({ bind }) => {
 	bind(RoomAccessService).toSelf().inSingletonScope();
 	bind(RoomService).toSelf().inSingletonScope();
 	bind(MeetingService).toSelf().inSingletonScope();
+	bind(ChatHistoryService).toSelf().inSingletonScope();
+	bind(ChatSaverService).toSelf().inSingletonScope();
 	bind(ParticipantNameService).toSelf().inSingletonScope();
 	bind(ParticipantTokenRevocationService).toSelf().inSingletonScope();
 	bind(UserTokenRevocationService).toSelf().inSingletonScope();

@@ -1,4 +1,5 @@
 import { expect, type Page } from '@playwright/test';
+import { getChatHistory } from './meet-api.helper';
 
 const CHAT_NOTIFICATION = '.ov-notification[data-kind="chat-message"]';
 
@@ -173,3 +174,134 @@ export const receivedDataChannelMessageCount = (page: Page): Promise<number> =>
  */
 export const receivedDataChannelText = (page: Page): Promise<string> =>
 	page.evaluate(() => (window as unknown as { __dataChannelText: string[] }).__dataChannelText.join('\n'));
+
+/**
+ * Asserts the chat shows exactly these messages, in this order.
+ */
+export const expectChatMessageTexts = async (page: Page, texts: string[]): Promise<void> => {
+	await expect(page.locator('.chat-message p')).toHaveText(texts);
+};
+
+/**
+ * Asserts the message at {@link index} is labelled as the participant's own.
+ */
+export const expectOwnChatMessageAt = async (page: Page, index: number): Promise<void> => {
+	const message = page.locator('.message').nth(index);
+	await expect(message).toHaveClass(/right/);
+	await expect(message.locator('.participant-name-container p')).toHaveText(/^\s*You\s*$/i);
+};
+
+/**
+ * Asserts the message at {@link index} is another participant's, labelled with their name and, for an
+ * anonymous participant, with the anonymous label.
+ */
+export const expectChatMessageFromAt = async (
+	page: Page,
+	index: number,
+	senderName: string,
+	anonymous: boolean
+): Promise<void> => {
+	const message = page.locator('.message').nth(index);
+	await expect(message).toHaveClass(/left/);
+	await expect(message.locator('.participant-name-container p')).toContainText(senderName);
+	await expect(message.locator('.anonymous-label')).toHaveCount(anonymous ? 1 : 0);
+};
+
+/**
+ * The unread count of the chat button, which is absent while nothing is unread.
+ */
+export const expectNoUnreadChatMessages = async (page: Page): Promise<void> => {
+	await expect(page.locator('#chat-panel-btn .mat-badge-content:visible')).toHaveCount(0);
+};
+
+/**
+ * Resolves once the page has asked the server for the chat history and been answered, which is what
+ * makes "the chat shows nothing earlier" a statement about the history and not about a load still going.
+ */
+export const waitForChatHistoryResponse = (page: Page) =>
+	page.waitForResponse((response) => /\/chat\/messages\?/.test(response.url()), { timeout: 20_000 });
+
+/**
+ * Follows the room member token the page's meeting uses, read from the requests it makes with it. Must be
+ * installed before the page joins. The returned function resolves once the page has made one.
+ */
+export const trackRoomMemberToken = (page: Page): (() => Promise<string>) => {
+	let token: string | undefined;
+
+	page.on('request', (request) => {
+		const header = request.headers()['x-room-member-token'];
+
+		if (header) token = header.replace(/^Bearer\s+/i, '');
+	});
+
+	return async () => {
+		await expect.poll(() => token, { timeout: 20_000 }).toBeDefined();
+		return token!;
+	};
+};
+
+/**
+ * Waits until the server has stored exactly these messages in the room's current meeting, in this order, as
+ * a participant in it reads them. A participant who joins afterwards then sees them whatever the timing.
+ */
+export const waitForChatStored = async (
+	roomId: string,
+	roomMemberToken: () => Promise<string>,
+	texts: string[]
+): Promise<void> => {
+	const token = await roomMemberToken();
+
+	await expect
+		.poll(
+			async () => {
+				try {
+					return (await getChatHistory(roomId, token)).map(({ text }) => text).reverse();
+				} catch {
+					return [];
+				}
+			},
+			{ timeout: 45_000 }
+		)
+		.toEqual(texts);
+};
+
+/**
+ * Records, from before the page loads, what would tell the participant a message arrived: a chat notice shown,
+ * the chat sound played, an unread count shown on the chat button.
+ */
+export const recordChatAlerts = async (page: Page): Promise<void> => {
+	await page.addInitScript(() => {
+		const alerts = { notices: 0, sounds: 0, unread: 0 };
+		(window as unknown as { __chatAlerts: typeof alerts }).__chatAlerts = alerts;
+
+		const play = HTMLMediaElement.prototype.play;
+
+		HTMLMediaElement.prototype.play = function (this: HTMLMediaElement) {
+			if (this.src.includes('chat-message')) alerts.sounds++;
+
+			return play.call(this);
+		};
+
+		const seen = new WeakSet<Element>();
+		new MutationObserver(() => {
+			document.querySelectorAll('.ov-notification[data-kind="chat-message"]').forEach((notice) => {
+				if (!seen.has(notice)) {
+					seen.add(notice);
+					alerts.notices++;
+				}
+			});
+
+			const badge = document.querySelector('#chat-panel-btn .mat-badge-content');
+
+			if (badge?.textContent?.trim() && badge.getBoundingClientRect().width > 0) alerts.unread++;
+		}).observe(document, { childList: true, subtree: true, attributes: true, characterData: true });
+	});
+};
+
+/**
+ * What {@link recordChatAlerts} recorded.
+ */
+export const chatAlerts = (page: Page): Promise<{ notices: number; sounds: number; unread: number }> =>
+	page.evaluate(
+		() => (window as unknown as { __chatAlerts: { notices: number; sounds: number; unread: number } }).__chatAlerts
+	);

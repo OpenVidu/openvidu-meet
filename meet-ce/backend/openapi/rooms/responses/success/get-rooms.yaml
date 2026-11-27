@@ -114,6 +114,7 @@ content:
                                   encoding: H264_720P_30
                               chat:
                                   enabled: true
+                                  persist: true
                               virtualBackground:
                                   enabled: true
                               e2ee:
@@ -223,6 +224,7 @@ content:
                                           frequency: 48000
                               chat:
                                   enabled: false
+                                  persist: true
                               virtualBackground:
                                   enabled: false
                               e2ee:
@@ -321,6 +323,7 @@ content:
                                   encoding: H264_720P_30
                               chat:
                                   enabled: true
+                                  persist: true
                               virtualBackground:
                                   enabled: true
                               e2ee:
@@ -343,6 +346,7 @@ content:
                                   layout: grid
                               chat:
                                   enabled: false
+                                  persist: true
                               virtualBackground:
                                   enabled: false
                               e2ee:

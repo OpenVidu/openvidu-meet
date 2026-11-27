@@ -1,0 +1,67 @@
+type: object
+required:
+    - messageId
+    - roomId
+    - meetingId
+    - channel
+    - sendDate
+    - meetingStartDate
+    - text
+    - participant
+properties:
+    messageId:
+        type: string
+        example: 'b1f4a3e2-6c1d-4f7a-9d3b-0a5c7e2f8d41'
+        description: Identifier the sender's client gave the message. Unique per sender within a room.
+    roomId:
+        type: string
+        example: 'room-123'
+        description: ID of the room the message was sent in.
+    meetingId:
+        type: string
+        example: 'RM_a1B2c3D4e5F6'
+        description: Identifier of the meeting the message was sent in.
+    channel:
+        type: string
+        enum:
+            - all
+        example: all
+        description: Who the message was sent to. Every saved message was sent to the whole meeting.
+    sendDate:
+        type: integer
+        format: int64
+        example: 1620000000000
+        description: Timestamp when the server stored the message (milliseconds since epoch).
+    meetingStartDate:
+        type: integer
+        format: int64
+        example: 1619999000000
+        description: Timestamp when the meeting the message was sent in started (milliseconds since epoch).
+    text:
+        type: string
+        example: 'Hello everyone'
+        description: Text of the message.
+    participant:
+        type: object
+        description: Who sent the message, as the media server reported them when the message was stored.
+        required:
+            - type
+        properties:
+            identity:
+                type: string
+                example: 'alice_smith'
+                description: Identity the sender had in the meeting. Absent for a message no participant sent.
+            name:
+                type: string
+                example: 'Alice Smith'
+                description: Display name the sender had when the message was stored. Absent for a message no participant sent.
+            type:
+                type: string
+                enum:
+                    - user
+                    - identified_guest
+                    - anonymous
+                    - system
+                example: user
+                description: >
+                    How the sender joined the meeting, or `system` for a message no participant sent.

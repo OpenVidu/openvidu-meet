@@ -1,0 +1,11 @@
+name: maxItems
+in: query
+required: false
+description: >
+    Maximum number of messages to return per page. Values above 100 are capped to 100 rather than rejected, and
+    `pagination.maxItems` echoes the value actually applied. Zero, a negative value and a non-numeric one are
+    answered with `422`.
+schema:
+    type: integer
+    default: 20
+    minimum: 1

@@ -39,6 +39,47 @@
                 $ref: '../../shared/responses/errors/internal-server.yaml'
             '503':
                 $ref: '../../shared/responses/errors/service-unavailable.yaml'
+/meetings/{roomId}/chat/messages:
+    get:
+        operationId: chatListMessages
+        summary: List the saved chat messages of the meeting
+        description: >
+            Returns the chat messages saved in the meeting in progress, newest first, so the chat panel of a
+            participant who joins, reloads or reconnects shows what was said. Earlier meetings of the room are
+            never returned.
+
+            Only a participant who is in the meeting reads it: the room member token they joined with must
+            hold `chatRead` and the media server must list their identity in the meeting. A token that does not
+            join, a participant who is waiting or who left, a room with no meeting in progress and a token of
+            another room answer `403`; a participant a moderator kicked holds a revoked token and gets `401`.
+
+            The page is empty when the meeting does not save its chat: the room's `config.chat.persist` was
+            off, or its `config.e2ee.enabled` on, when the meeting started.
+        tags:
+            - Internal API - Meetings
+        security:
+            - roomMemberTokenHeader: []
+        parameters:
+            - $ref: '../../rooms/parameters/room-id-path.yaml'
+            - $ref: './parameters/chat-max-items.yaml'
+            - $ref: '../../shared/parameters/next-page-token.yaml'
+        responses:
+            '200':
+                $ref: './responses/success/list-chat-messages.yaml'
+            '400':
+                $ref: '../../shared/responses/errors/invalid-pagination-token.yaml'
+            '401':
+                $ref: '../../shared/responses/errors/unauthorized.yaml'
+            '403':
+                $ref: './responses/errors/forbidden-chat-history.yaml'
+            '422':
+                $ref: '../../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../../shared/responses/errors/too-many-requests.yaml'
+            '500':
+                $ref: '../../shared/responses/errors/internal-server.yaml'
+            '503':
+                $ref: '../../shared/responses/errors/service-unavailable.yaml'
 /meetings/{roomId}/waiting-participants/leave:
     post:
         operationId: waitingParticipantLeave

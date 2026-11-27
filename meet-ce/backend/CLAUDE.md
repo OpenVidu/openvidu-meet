@@ -150,6 +150,18 @@ what LiveKit's webhooks never told.
   call it and `WaitingParticipantAdmissionPolicy` holds the pure rules (the waiting gate, the permissions of a token
   without a participant identity). A wait is identified by `sha256(ticket)`; the ticket itself is never stored or
   logged.
+- **Chat saver** (`ChatSaverService`): a meeting that saves its chat (the config in its LiveKit room metadata) has
+  one hidden, subscribe-only participant of kind `agent` per meeting, held by whichever replica joined it through
+  `@livekit/rtc-node` (a native binding, loaded on the first join). It is not part of the meeting:
+  `MeetParticipantHelper.isChatSaver` recognizes it in the webhook handlers, `roomHasParticipants` does not count it
+  and the LiveKit room its join may create carries `MeetRoomHelper.CHAT_SAVER_ROOM_METADATA`, which Meet ignores. It
+  stores each text stream with `ChatMessageRepository.save` and confirms it to the sender; a message it cannot
+  attribute yet (it learns of a participant about two seconds after they join) or fails to store stays unconfirmed
+  and its sender sends it again. Webhooks and the room status sweep call `ensureSaver`; the connection is the only
+  per-replica state. `patches/@livekit__rtc-node@<version>.patch` initializes the binding without capturing its
+  logs: captured, every native record down to trace level reaches every room of the process, which saturated the
+  main thread with a few dozen meetings. A bump of `@livekit/rtc-node` carries the patch over until LiveKit ships
+  that default; `RUST_LOG` controls the native logs.
 - **Scheduled tasks**: `TaskSchedulerService` + `*-scheduled-tasks.service.ts` (cron), plus
   `MeetingDurationLimitService`, which owns its sweep next to the per-meeting timers. Intervals,
   batch sizes and concurrency limits are all constants in `config/internal-config.ts`; reuse them

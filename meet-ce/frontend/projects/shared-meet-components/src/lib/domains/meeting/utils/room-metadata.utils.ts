@@ -1,3 +1,4 @@
+import type { MeetRoomConfig } from '@openvidu-meet/typings';
 import { safeJsonParse } from '../openvidu-components/utils/utils';
 
 const MEETING_END_TOLERANCE_MS = 2_000;
@@ -41,3 +42,18 @@ export const parseMeetingEndDate = (metadata?: string): number | undefined => pa
  */
 export const hasReachedMeetingEnd = (endsAt: number | undefined): boolean =>
 	endsAt !== undefined && Date.now() >= endsAt - MEETING_END_TOLERANCE_MS;
+
+/**
+ * Whether the meeting saves its chat, by the room config the LiveKit room metadata carries: the one
+ * the meeting started with, the same for every participant whatever config they loaded before.
+ *
+ * @param metadata - The raw LiveKit room metadata.
+ * @returns `true` when chat and its saving are on and end-to-end encryption is off.
+ */
+export const parseMeetingSavesChat = (metadata?: string): boolean => {
+	const config = metadata
+		? safeJsonParse<{ roomOptions?: { config?: Partial<MeetRoomConfig> } }>(metadata)?.roomOptions?.config
+		: undefined;
+
+	return config?.chat?.enabled === true && config.chat.persist === true && config.e2ee?.enabled !== true;
+};

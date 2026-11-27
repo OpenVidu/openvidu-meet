@@ -14,11 +14,13 @@ import { MeetRoomHelper } from '../helpers/room.helper.js';
 import type { EgressWebhookAction } from '../models/egress.model.js';
 import { EGRESS_LOST_ERROR } from '../models/egress.model.js';
 import { RedisKeyName } from '../models/redis.model.js';
+import { ChatMessageRepository } from '../repositories/chat-message.repository.js';
 import { RecordingRepository } from '../repositories/recording.repository.js';
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { RoomRepository } from '../repositories/room.repository.js';
 import { AiAssistantService } from './ai-assistant.service.js';
 import { BroadcastService } from './broadcast.service.js';
+import { ChatSaverService } from './chat-saver.service.js';
 import { FrontendEventService } from './frontend-event.service.js';
 import { LiveKitService } from './livekit.service.js';
 import { WaitingParticipantService } from './waiting-participants/waiting-participant.service.js';
@@ -52,7 +54,9 @@ export class LivekitWebhookService {
 		@inject(LoggerService) protected logger: LoggerService,
 		@inject(BroadcastService) protected broadcastService: BroadcastService,
 		@inject(MeetingDurationLimitService) protected meetingDurationLimitService: MeetingDurationLimitService,
-		@inject(WaitingParticipantService) protected waitingParticipantService: WaitingParticipantService
+		@inject(WaitingParticipantService) protected waitingParticipantService: WaitingParticipantService,
+		@inject(ChatMessageRepository) protected chatMessageRepository: ChatMessageRepository,
+		@inject(ChatSaverService) protected chatSaverService: ChatSaverService
 	) {
 		this.webhookReceiver = new WebhookReceiver(MEET_ENV.LIVEKIT_API_KEY, MEET_ENV.LIVEKIT_API_SECRET);
 	}
@@ -85,13 +89,7 @@ export class LivekitWebhookService {
 		// Case 1: Check using room object from the event
 		if (room) {
 			if (!room.metadata) {
-				const updatedMetadata = await this.livekitService.getRoomMetadata(room.name);
-
-				if (MeetRoomHelper.checkIfMeetingBelogsToOpenViduMeet(updatedMetadata)) return true;
-
-				const roomExists = await this.roomService.meetRoomExists(room.name);
-				this.logger.debug(`Room '${room.name}' ${roomExists ? 'exists' : 'does not exist'} in OpenVidu Meet`);
-				return roomExists;
+				return this.liveRoomBelongsToOpenViduMeet(room.name);
 			}
 
 			const belongToOpenViduMeet = MeetRoomHelper.checkIfMeetingBelogsToOpenViduMeet(room.metadata);
@@ -117,11 +115,22 @@ export class LivekitWebhookService {
 			return false;
 		}
 
-		const updatedMetadata = await this.livekitService.getRoomMetadata(roomName);
+		return this.liveRoomBelongsToOpenViduMeet(roomName);
+	}
 
-		if (MeetRoomHelper.checkIfMeetingBelogsToOpenViduMeet(updatedMetadata)) return true;
+	/**
+	 * Decides by the metadata LiveKit holds for the room, falling back on the Meet room existing.
+	 */
+	protected async liveRoomBelongsToOpenViduMeet(roomName: string): Promise<boolean> {
+		const metadata = await this.livekitService.getRoomMetadata(roomName);
 
-		return await this.roomService.meetRoomExists(roomName);
+		if (MeetRoomHelper.isChatSaverRoomMetadata(metadata)) return false;
+
+		if (MeetRoomHelper.checkIfMeetingBelogsToOpenViduMeet(metadata)) return true;
+
+		const roomExists = await this.roomService.meetRoomExists(roomName);
+		this.logger.debug(`Room '${roomName}' ${roomExists ? 'exists' : 'does not exist'} in OpenVidu Meet`);
+		return roomExists;
 	}
 
 	/**
@@ -178,6 +187,8 @@ export class LivekitWebhookService {
 		await this.waitingParticipantService.joined(room.name, participant.identity);
 
 		if (await this.removeSessionWithRevokedToken(room, participant)) return;
+
+		void this.chatSaverService.ensureSaver(room.name, room.metadata);
 
 		// The room's recording may be configured to start by itself.
 		void this.recordingService.startAutoRecordingIfNeeded(room, participant);
@@ -278,6 +289,11 @@ export class LivekitWebhookService {
 	 * @param participant - Information about the participant who left.
 	 */
 	async handleParticipantLeft(room: Room, participant: ParticipantInfo) {
+		if (MeetParticipantHelper.isChatSaver(participant)) {
+			await this.rejoinChatSaverWhileParticipantsRemain(room);
+			return;
+		}
+
 		switch (participant.kind) {
 			case ParticipantInfo_Kind.STANDARD:
 				await this.handleMeetingParticipantLeft(room, participant);
@@ -285,6 +301,32 @@ export class LivekitWebhookService {
 			case ParticipantInfo_Kind.EGRESS:
 				await this.handleEgressParticipantLeft(room.name, participant.identity);
 				break;
+		}
+	}
+
+	/**
+	 * Handles the 'participant_connection_aborted' event, which LiveKit sends instead of 'participant_left'
+	 * when a session ends before it finished connecting, as the session of a chat saver that reconnects can.
+	 * @param room - Information about the room of the session.
+	 * @param participant - Information about the participant whose session ended.
+	 */
+	async handleParticipantConnectionAborted(room: Room, participant: ParticipantInfo) {
+		if (MeetParticipantHelper.isChatSaver(participant)) {
+			await this.rejoinChatSaverWhileParticipantsRemain(room);
+		}
+	}
+
+	/**
+	 * The chat saver is not part of the meeting: its departure reaches no webhook, and while people
+	 * remain in the meeting a saver joins again, which is how a crashed replica's saver is replaced.
+	 */
+	protected async rejoinChatSaverWhileParticipantsRemain(room: Room) {
+		try {
+			if (await this.livekitService.roomHasParticipants(room.name)) {
+				void this.chatSaverService.ensureSaver(room.name, room.metadata);
+			}
+		} catch (error) {
+			this.logger.warn(`Could not check whether room '${room.name}' needs a chat saver again`, error);
 		}
 	}
 
@@ -415,6 +457,8 @@ export class LivekitWebhookService {
 
 			// Send webhook notification
 			this.webhookDispatcherService.sendMeetingStartedWebhook(updatedRoom);
+
+			void this.chatSaverService.ensureSaver(roomId, room.metadata);
 		} catch (error) {
 			this.logger.error(`Error handling room started event for room '${roomId}'`, error);
 		}
@@ -440,6 +484,7 @@ export class LivekitWebhookService {
 			await this.recordingService.reactivateAutoRecording(roomId, meetingId);
 
 			this.meetingDurationLimitService.cancelMeetingEndAtDurationLimit(roomId);
+			await this.chatSaverService.leave(roomId, meetingId);
 
 			this.logger.info(`Processing room_finished event for room '${roomId}'`);
 			const endedRoom = await this.roomRepository.finishMeeting(roomId);
@@ -456,6 +501,7 @@ export class LivekitWebhookService {
 				tasks.push(
 					this.recordingService.deleteAllRoomRecordings(roomId),
 					this.roomMemberRepository.deleteAllByRoomId(roomId),
+					this.chatMessageRepository.deleteAllByRoomId(roomId),
 					this.waitingParticipantService.closeRoom(roomId)
 				);
 			} else if (endedRoom.status === MeetRoomStatus.CLOSED) {
